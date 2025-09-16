@@ -1,0 +1,296 @@
+# This file will automatically update with entries for new content after a build and reload
+
+Items: {
+	XLR8: {
+		Tooltip: ""
+		DisplayName: XLR8
+	}
+
+	Transformation: {
+		DisplayName: Transformation
+		Tooltip: ""
+	}
+
+	FourArms: {
+		DisplayName: Four Arms
+		Tooltip: ""
+	}
+
+	HeatBlast: {
+		DisplayName: Heat Blast
+		Tooltip: ""
+	}
+
+	HeatBlastWings: {
+		DisplayName: Heat Blast Wings
+		Tooltip: ""
+	}
+
+	DiamondHead: {
+		DisplayName: Diamond Head
+		Tooltip: ""
+	}
+
+	BuzzShock: {
+		DisplayName: Buzz Shock
+		Tooltip: ""
+	}
+
+	Chromastone: {
+		DisplayName: Chromastone
+		Tooltip: ""
+	}
+
+	GhostFreak: {
+		DisplayName: Ghost Freak
+		Tooltip: ""
+	}
+
+	RipJaws: {
+		DisplayName: Rip Jaws
+		Tooltip: ""
+	}
+
+	StinkFly: {
+		DisplayName: Stink Fly
+		Tooltip: ""
+	}
+
+	WildVine: {
+		DisplayName: Wild Vine
+		Tooltip: ""
+	}
+
+	ChromaStone: {
+		DisplayName: Chroma Stone
+		Tooltip: ""
+	}
+
+	TestItem: {
+		DisplayName: Test Item
+		Tooltip: ""
+	}
+
+	PrototypeOmnitrix: {
+		DisplayName: Prototype Omnitrix
+		Tooltip: ""
+	}
+
+	CongealedCodonBar: {
+		DisplayName: Congealed Codon Bar
+		Tooltip: ""
+	}
+
+	CongealedCodonOre: {
+		DisplayName: Congealed Codon Ore
+		Tooltip: ""
+	}
+
+	FourArmsFist: {
+		DisplayName: Four Arms Fist
+		Tooltip: ""
+	}
+
+	Ben10Shirt: {
+		DisplayName: Hero Shirt
+		Tooltip: This shirt seems odly familiar...
+	}
+
+	Ben10Pants: {
+		DisplayName: Hero Pants
+		Tooltip: These pants seem odly familiar...
+	}
+
+	PlumbersBadge: {
+		DisplayName: Plumbers Badge
+		Tooltip: Plumbers Identification Badge
+	}
+
+	RecalibratedOmnitrix: {
+		DisplayName: Recalibrated Omnitrix
+		Tooltip: ""
+	}
+
+	Omnitrix: {
+		DisplayName: Omnitrix
+		Tooltip: ""
+	}
+
+	StinkFlyWings: {
+		DisplayName: Stink Fly Wings
+		Tooltip: ""
+	}
+
+	PlumbersGlassHelmet: {
+		DisplayName: Plumbers Glass Helmet
+		Tooltip: ""
+	}
+
+	PlumbersHelmet: {
+		DisplayName: Plumbers Helmet
+		Tooltip: ""
+	}
+
+	PlumbersPants: {
+		DisplayName: Plumbers Pants
+		Tooltip: ""
+	}
+
+	PlumbersShirt: {
+		DisplayName: Plumbers Shirt
+		Tooltip: ""
+	}
+}
+
+Keybinds: {
+	Transorm.DisplayName: Transorm
+	"Prev Alien.DisplayName": Prev  Alien
+	"Next Alien.DisplayName": Next  Alien
+	"Alien Ten.DisplayName": Alien  Ten
+	"Alien Nine.DisplayName": Alien  Nine
+	"Alien Eight.DisplayName": Alien  Eight
+	"Alien Seven.DisplayName": Alien  Seven
+	"Alien Six.DisplayName": Alien  Six
+	"Alien Five.DisplayName": Alien  Five
+	"Alien Four.DisplayName": Alien  Four
+	"Alien Three.DisplayName": Alien  Three
+	"Alien Two.DisplayName": Alien  Two
+	"Alien One.DisplayName": Alien  One
+	Transform.DisplayName: Transform
+	"Primary Ability.DisplayName": Primary  Ability
+	"Secondary Ability.DisplayName": Secondary  Ability
+	"Open Menu.DisplayName": Open  Menu
+	"Quinary Ability.DisplayName": Quinary  Ability
+	"Quaternary Ability.DisplayName": Quaternary  Ability
+	"Tertiary Ability.DisplayName": Tertiary  Ability
+}
+
+Buffs: {
+	XLR8_Buff: {
+		DisplayName: XLR8
+		Description: Kineceleran
+	}
+
+	HeatBlast_Buff: {
+		DisplayName: Heatblast
+		Description: Pyronite
+	}
+
+	DiamondHead_Buff: {
+		DisplayName: Diamondhead
+		Description: Petrosapien
+	}
+
+	BuzzShock_Buff: {
+		DisplayName: Buzzshock
+		Description: Nosedeenian
+	}
+
+	ChromaStone_Buff: {
+		DisplayName: Chromastone
+		Description: Crystalsapien
+	}
+
+	FourArms_Buff: {
+		DisplayName: Fourarms
+		Description: Tetramand
+	}
+
+	GhostFreak_Buff: {
+		DisplayName: Ghostfreak
+		Description: Ectonurite
+	}
+
+	RipJaws_Buff: {
+		DisplayName: Ripjaws
+		Description: Piscciss Volann
+	}
+
+	StinkFly_Buff: {
+		DisplayName: Stinkfly
+		Description: Lepidopterran
+	}
+
+	WayBig_Buff: {
+		DisplayName: Wildvine
+		Description: Florauna
+	}
+
+	XLR8_Primary_Buff: {
+		DisplayName: XLR8 Speed Boost
+		Description: XLR8 Speed Boost
+	}
+
+	XLR8_Primary_Cooldown_Buff: {
+		DisplayName: XLR8 Speed Boost Cooldown
+		Description: XLR8 Speed Boost Cooldown
+	}
+
+	HeatBlast_Primary_Buff: {
+		DisplayName: Heatblast Flame Aura
+		Description: Heatblast Flame Aura
+	}
+
+	HeatBlast_Primary_Cooldown_Buff: {
+		DisplayName: Heatblast Flame Aura Cooldown
+		Description: Heatblast Flame Aura Cooldown
+	}
+
+	DiamondHead_Primary_Buff: {
+		DisplayName: Diamondhead Primary Ability
+		Description: Immune to damage but unable to move
+	}
+
+	DiamondHead_Primary_Cooldown_Buff: {
+		DisplayName: Diamondhead Primary Cooldown
+		Description: Cooldown for primary ability
+	}
+
+	ChromaStone_Primary_Buff: {
+		DisplayName: Chromastone Primary Ability
+		Description: Absorb and redirect incoming damage
+	}
+
+	ChromaStone_Primary_Cooldown_Buff: {
+		DisplayName: Chromastone Primary Cooldown
+		Description: Cooldown for primary ability
+	}
+
+	TransformationCooldown_Buff: {
+		Description: Timeout
+		DisplayName: Cannot transform while timed out
+	}
+
+	BuzzShock_Primary_Buff: {
+		DisplayName: Buzz Shock_ Primary_ Buff
+		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Buff.Description
+	}
+
+	BuzzShock_Primary_Cooldown_Buff: {
+		DisplayName: Buzz Shock_ Primary_ Cooldown_ Buff
+		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Cooldown_Buff.Description
+	}
+
+	WildVine_Buff: {
+		DisplayName: Wild Vine_ Buff
+		Description: Mods.Ben10Mod.Buffs.WildVine_Buff.Description
+	}
+}
+
+Projectiles: {
+	DiamondHeadProjectile.DisplayName: Diamond Head Projectile
+	RipJawsProjectile.DisplayName: Rip Jaws Projectile
+	ChromaStoneHoldout.DisplayName: Chroma Stone Holdout
+	ChromaStoneProjectile.DisplayName: Chroma Stone Projectile
+	FourArmsClap.DisplayName: Four Arms Clap
+	BuzzShockProjectile.DisplayName: Buzz Shock Projectile
+	FistProjectile.DisplayName: Fist Projectile
+	StinkFlyProjectile.DisplayName: Stink Fly Projectile
+	WildVineBomb.DisplayName: Wild Vine Bomb
+	HeatBlastFireSlam.DisplayName: Heat Blast Fire Slam
+	HeatBlastBomb.DisplayName: Heat Blast Bomb
+	Explosion.DisplayName: Explosion
+}
+
+Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore
+DamageClasses.HeroDamage.DisplayName: Hero Damage

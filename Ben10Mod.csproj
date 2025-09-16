@@ -1,0 +1,82 @@
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\tModLoader.targets" />
+  <PropertyGroup>
+    <AssemblyName>Ben10Mod</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Content\Buffs\Abilities\BuzzShock\BuzzShock_Primary_Buff.png" />
+    <None Remove="Content\Buffs\Transformations\FourArmsWatchFace.png" />
+    <None Remove="Content\Buffs\Transformations\TransformationCooldown.png" />
+    <None Remove="Content\Items\Accessories\RecalibratedOmnitrix.png" />
+    <None Remove="Content\Items\Accessories\RecalibratedOmnitrixAlt.png" />
+    <None Remove="Content\Items\Accessories\RecalibratedOmnitrixAlt_HandsOn.png" />
+    <None Remove="Content\Items\Accessories\RecalibratedOmnitrix_HandsOn.png" />
+    <None Remove="Content\Items\Accessories\Wings\HeatBlastWings.png" />
+    <None Remove="Content\Items\Accessories\Wings\StinkFlyWings.png" />
+    <None Remove="Content\Items\Accessories\Wings\StinkFlyWings_Wings.png" />
+    <None Remove="Content\Items\Placeables\Bars.png" />
+    <None Remove="Content\Items\Placeables\CongealedCodonBar.png" />
+    <None Remove="Content\Tiles\CodexFabricator.png" />
+    <None Remove="Content\Tiles\CongealedCodonOreTile.png" />
+    <None Remove="Content\Tiles\Congealed_Codon_Item.png" />
+    <None Remove="Content\Buffs\Abilities\ChromaStone\ChromaStone_Primary_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\ChromaStone\ChromaStone_Primary_Cooldown_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\DiamondHead\DiamondHead_Primary_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\DiamondHead\DiamondHead_Primary_Cooldown_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\HeatBlast\HeatBlast_Primary_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\HeatBlast\HeatBlast_Primary_Cooldown_Buff.png" />
+    <None Remove="Content\Buffs\Abilities\XLR8_Primary_Cooldown_Buff.png" />
+    <None Remove="Content\Buffs\Transformations\EmptyTransformation.png" />
+    <None Remove="Content\Buffs\Transformations\XLR8_Buff - Copy.png" />
+    <None Remove="Content\Items\PrototypeOmnitrix.png" />
+    <None Remove="Content\Projectiles\DiamondheadProjectile.png" />
+    <None Remove="Content\Projectiles\RipJawsProjectile.png" />
+    <None Remove="Content\Transformations\BuzzShock\BuzzShock.png" />
+    <None Remove="Content\Transformations\ChromaStone\ChromaStone.png" />
+    <None Remove="Content\Transformations\DiamondHead\DiamondHead.png" />
+    <None Remove="Content\Transformations\DiamondHead\DiamondHead_Back.png" />
+    <None Remove="Content\Transformations\FourArms\FourArms.png" />
+    <None Remove="Content\Transformations\FourArms\FourArms_Body.png" />
+    <None Remove="Content\Transformations\FourArms\FourArms_Head.png" />
+    <None Remove="Content\Transformations\FourArms\FourArms_Legs.png" />
+    <None Remove="Content\Transformations\GhostFreak\GhostFreak.png" />
+    <None Remove="Content\Transformations\HeatBlast\HeatBlast.png" />
+    <None Remove="Content\Transformations\RipJaws\RipJaws.png" />
+    <None Remove="Content\Transformations\StinkFly\StinkFly.png" />
+    <None Remove="Content\Transformations\WildVine\WildVine.png" />
+    <None Remove="Content\Transformations\WildVine\WIldVine_Body.png" />
+    <None Remove="Content\Transformations\WildVine\WIldVine_Head.png" />
+    <None Remove="Content\Transformations\WildVine\WIldVine_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Body.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Head.png" />
+    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Legs.png" />
+    <None Remove="Content\Transformations\XLR8\XLR8 - Copy.png" />
+    <None Remove="Content\Transformations\XLR8\XLR8.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Content\Sounds\" />
+  </ItemGroup>
+</Project>
