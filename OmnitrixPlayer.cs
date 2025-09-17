@@ -108,10 +108,15 @@ namespace Ben10Mod
 
         public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() {TransformationEnum.HeatBlast};
 
-        public Color[] colours = { Color.White, Color.LightPink, Color.Pink, Color.OrangeRed, Color.LightBlue, Color.Cyan, Color.LightGreen, Color.YellowGreen, Color.LightYellow };
+        public Color[] colours = { Color.White, Color.LightPink, Color.Pink, Color.OrangeRed, Color.LightBlue, Color.Cyan, Color.LightGreen, Color.YellowGreen, Color.LightYellow, Color.Yellow };
         public float colourAmount = 0.00f;
         public int thisColour = 0;
         public int nextColour = 1;
+
+        public Color GetChromaStoneOverlayColor()
+        {
+            return Color.Lerp(colours[thisColour], colours[nextColour], colourAmount);
+        }
 
         public override void SaveData(TagCompound tag) {
             tag["masterControl"] = masterControl;
@@ -400,6 +405,11 @@ namespace Ben10Mod
                     }
                 }
 
+                if (ChromaStonePrimaryAbilityEnabled)
+                {
+                    Lighting.AddLight(Player.Center, GetChromaStoneOverlayColor().ToVector3());
+                }
+
                 abilitySlot.FunctionalItem = new Item(ItemID.None);
 
             } else {
@@ -574,6 +584,17 @@ namespace Ben10Mod
             }
 
             return circlePoints;
+        }
+
+        public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
+        {
+            if (ChromaStoneTransformation && ChromaStonePrimaryAbilityEnabled) {
+                Color overlayColor = GetChromaStoneOverlayColor();
+                drawInfo.colorArmorHead = overlayColor;
+                drawInfo.colorArmorBody = overlayColor;
+                drawInfo.colorArmorLegs = overlayColor;
+            }
+
         }
 
         // Set the visuals for the aliens

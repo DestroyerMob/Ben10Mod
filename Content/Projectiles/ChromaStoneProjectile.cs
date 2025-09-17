@@ -29,13 +29,8 @@ namespace Ben10Mod.Content.Projectiles {
         public override bool PreDraw(ref Color lightColor) {
 
 
-            Color[] colours = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>().colours;
-            float colourAmount = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>().colourAmount;
-            int thisColour = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>().thisColour;
-            int nextColour = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>().nextColour;
-
-
-            lightColor = Color.Lerp(colours[thisColour], colours[nextColour], colourAmount);
+            OmnitrixPlayer omnitrixPlayer = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>();
+            lightColor = omnitrixPlayer.GetChromaStoneOverlayColor();
             Lighting.AddLight(Projectile.position + Projectile.velocity * 0.5f, lightColor.ToVector3() * 0.5f);
             return base.PreDraw(ref lightColor);
         }
