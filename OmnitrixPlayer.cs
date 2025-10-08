@@ -1,23 +1,15 @@
-﻿using Ben10Mod.Content.Buffs.Transformations;
-using Ben10Mod.Content.Transformations.XLR8;
+﻿using Ben10Mod.Content.Transformations.XLR8;
 using Ben10Mod.Keybinds;
 using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Microsoft.Xna.Framework.Input;
 using Ben10Mod.Content.Transformations.HeatBlast;
-using Terraria.Server;
 using Ben10Mod.Content.Items.Accessories;
-using System.Security.Cryptography.X509Certificates;
 using Terraria.DataStructures;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Ben10Mod.Content.Transformations.DiamondHead;
 using Terraria.GameInput;
 using Ben10Mod.Content.Buffs.Abilities.XLR8;
@@ -35,20 +27,11 @@ using Ben10Mod.Content.Buffs.Abilities.ChromaStone;
 using Ben10Mod.Enums;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content;
-using Terraria.Map;
-using log4net.Core;
-using Terraria.GameContent.Bestiary;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Weapons;
-using System.Runtime.InteropServices;
-using Microsoft.Build.Execution;
-using static Terraria.ModLoader.PlayerDrawLayer;
 using Terraria.Audio;
 using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
-using Hjson;
 using Ben10Mod.Content.Items.Accessories.Wings;
-using Terraria.GameContent.UI;
-using System.Diagnostics;
 
 namespace Ben10Mod
 {

@@ -17,7 +17,7 @@ namespace Ben10Mod.Content.Transformations.FourArms
                 return;
 
             // Add equip textures
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new FourArmsHead());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
 
@@ -33,15 +33,16 @@ namespace Ben10Mod.Content.Transformations.FourArms
             if (Main.netMode == NetmodeID.Server)
                 return;
 
-            int equipSlotHead = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Head);
-            int equipSlotBody = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
-            int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
+            var equipSlotHead = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Head);
+            var equipSlotBody = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
+            var equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
 
             //int equipSlotHeadAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Head);
             //int equipSlotBodyAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Body);
             //int equipSlotLegsAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Legs);
 
             ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
+            ArmorIDs.Head.Sets.IsTallHat[equipSlotHead] = true;
             //ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt] = false;
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
             ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true;
@@ -72,7 +73,7 @@ namespace Ben10Mod.Content.Transformations.FourArms
         }
     }
 
-    public class XLR8Head : EquipTexture {
+    public class FourArmsHead : EquipTexture {
         public override bool IsVanitySet(int head, int body, int legs) => true;
     }
 }
