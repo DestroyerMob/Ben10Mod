@@ -290,6 +290,7 @@ Projectiles: {
 	HeatBlastFireSlam.DisplayName: Heat Blast Fire Slam
 	HeatBlastBomb.DisplayName: Heat Blast Bomb
 	Explosion.DisplayName: Explosion
+	GhostFreakProjectile.DisplayName: Ghost Freak Projectile
 }
 
 Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore

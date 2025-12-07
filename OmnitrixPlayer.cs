@@ -457,34 +457,33 @@ namespace Ben10Mod
             // Ghostfreak Transformation
 
             if (currTransformation == TransformationEnum.GhostFreak) {
+                Random random = new Random();
 
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed / 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), heroDamage, 0, Player.whoAmI);
                     }
                 }
 
-                if (KeybindSystem.PrimaryAbility.Current) {
+                if (KeybindSystem.PrimaryAbility.Current) { // Phasing Logic
                     Vector2 move = Vector2.Zero;
                     if (Player.controlLeft)  move.X -= 1f;
                     if (Player.controlRight) move.X += 1f;
-                    if (Player.controlUp)    move.Y -= 2f;
-                    if (Player.controlDown)  move.Y += 2f;
+                    if (Player.controlUp)    move.Y -= 1f;
+                    if (Player.controlDown)  move.Y += 1f;
                     
                     if (move == Vector2.Zero)
                         return;
 
                     float phaseSpeed = 6f;
 
+                    move = Vector2.Normalize(move);
                     Player.velocity   = Vector2.Zero;
                     Player.gravity    = 0f;
                     Player.fallStart  = (int)(Player.position.Y / 16f);
-                    if (Player.controlUp && Player.velocity.Y == 0f) {
-                        Player.controlJump = true;
-                        Player.releaseJump = false;
-                    }
-
-                    // Player.position += move * phaseSpeed;
+                    Player.velocity.Y = move.Y;
+                    
+                    Player.position += move * phaseSpeed;
                 }
                 
                 abilitySlot.FunctionalItem = new Item(ItemID.None);
