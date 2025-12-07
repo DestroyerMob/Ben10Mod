@@ -31,6 +31,7 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Weapons;
 using Terraria.Audio;
 using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
+using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
 
 namespace Ben10Mod
@@ -38,59 +39,51 @@ namespace Ben10Mod
     public class OmnitrixPlayer : ModPlayer {
 
         public bool masterControl = false;
+        
+        public bool               omnitrixEquipped   = false;
+        public bool               isTransformed      = false;
+        public bool               wasTransformed     = false;
+        public bool               onCooldown         = false;
 
-        public int heroDamage = 0;
-        public int heroAttackSpeed = 0;
-        public bool omnitrixEquipped = false;
-        public bool isTransformed = false;
-        public bool wasTransformed = false;
-        public bool onCooldown = false;
-        public bool BuzzShockTransformation;
-        public bool ChromaStoneTransformation;
-        public bool DiamondHeadTransformation;
-        public bool FourArmsTransformation;
-        public bool GhostFreakTransformation;
-        public bool HeatBlastTransformation;
-        public bool RipJawsTransformation;
-        public bool StinkFlyTransformation;
-        public bool WildVineTransformation;
-        public bool XLR8Transformation;
-
-        public bool XLR8PrimaryAbilityEnabled = false;
-        public bool XLR8PrimaryAbilityWasEnabled = false;
-        public bool HeatBlastPrimaryAbilityEnabled = false;
-        public bool HeatBlastPrimaryAbilityWasEnabled = false;
-        public bool DiamondHeadPrimaryAbilityEnabled = false;
+        public bool XLR8PrimaryAbilityEnabled           = false;
+        public bool XLR8PrimaryAbilityWasEnabled        = false;
+        public bool HeatBlastPrimaryAbilityEnabled      = false;
+        public bool HeatBlastPrimaryAbilityWasEnabled   = false;
+        public bool DiamondHeadPrimaryAbilityEnabled    = false;
         public bool DiamondHeadPrimaryAbilityWasEnabled = false;
-        public bool ChromaStonePrimaryAbilityEnabled = false;
+        public bool ChromaStonePrimaryAbilityEnabled    = false;
         public bool ChromaStonePrimaryAbilityWasEnabled = false;
-        public bool BuzzShockPrimaryAbilityEnabled = false;
-        public bool BuzzShockPrimaryAbilityWasEnabled = false;
+        public bool BuzzShockPrimaryAbilityEnabled      = false;
+        public bool BuzzShockPrimaryAbilityWasEnabled   = false;
 
         public int ChromaStoneAbsorbtion = 0;
 
-        public int DashDir = -1;
-        public const int DashDown = 0;
-        public const int DashUp = 1;
-        public const int DashRight = 2;
-        public const int DashLeft = 3;
-        public int DashVelocity = 15;
-        public int DashDelay = 0;
-        public int DashTimer = 0;
+        // Dashing
+        public       int DashDir      = -1;
+        public const int DashDown     = 0;
+        public const int DashUp       = 1;
+        public const int DashRight    = 2;
+        public const int DashLeft     = 3;
+        public       int DashVelocity = 15;
+        public       int DashDelay    = 0;
+        public       int DashTimer    = 0;
         public const int DashCooldown = 15;
         public const int DashDuration = 15;
 
         public bool isPerformingHeatBlastDoubleJump;
-
-        public int AttackDelay = 0;
-        public const int AttackCooldown = 20;
-        public bool canHeatBlastDoubleJump = false;
+        
+        // Control attacking
+        public       int heroDamage      = 0;
+        public       int heroAttackSpeed = 0;
+        public       int AttackDelay     = 0;
+        public const int AttackCooldown  = 20;
 
         public TransformationEnum[] transformations = { TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast };
         public TransformationEnum currTransformation = TransformationEnum.None;
 
         public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() {TransformationEnum.HeatBlast};
-
+            
+        // Rainbow effect
         public Color[] colours = { Color.White, Color.LightPink, Color.Pink, Color.OrangeRed, Color.LightBlue, Color.Cyan, Color.LightGreen, Color.YellowGreen, Color.LightYellow, Color.Yellow };
         public float colourAmount = 0.00f;
         public int thisColour = 0;
@@ -147,16 +140,6 @@ namespace Ben10Mod
             // Transformations
             isTransformed = false;
             onCooldown = false;
-            BuzzShockTransformation = false;
-            ChromaStoneTransformation = false;
-            DiamondHeadTransformation = false;
-            FourArmsTransformation = false;
-            GhostFreakTransformation = false;
-            HeatBlastTransformation = false;
-            RipJawsTransformation = false;
-            StinkFlyTransformation = false;
-            WildVineTransformation = false;
-            XLR8Transformation = false;
             omnitrixEquipped = false;
 
             // Abilities
@@ -186,8 +169,8 @@ namespace Ben10Mod
 
         // Handles players abilities
 
-        public override void PostUpdateBuffs() {
-
+        public override void PostUpdate() {
+            
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
             if (!isTransformed) {
@@ -209,11 +192,10 @@ namespace Ben10Mod
                 }
                 wasTransformed = false;
             }
-
-
+            
             // XLR8 Transformation
 
-            if (XLR8Transformation) {
+            if (currTransformation == TransformationEnum.XLR8) {
                 float multiplier = 1;
 
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
@@ -262,7 +244,7 @@ namespace Ben10Mod
 
             // Heatblast Transformation
 
-            if (HeatBlastTransformation) {
+            if (currTransformation == TransformationEnum.HeatBlast) {
                 Random rand = new Random();
                 int dustNum = Dust.NewDust(Player.position, Player.width, Player.height, DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
                 Main.dust[dustNum].noGravity = true;
@@ -319,7 +301,7 @@ namespace Ben10Mod
 
             // Diamondhead Transformation
 
-            if (DiamondHeadTransformation) {
+            if (currTransformation == TransformationEnum.DiamondHead) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 35, ModContent.ProjectileType<DiamondHeadProjectile>(), heroDamage, 0, Player.whoAmI);
@@ -356,7 +338,7 @@ namespace Ben10Mod
 
             // Ripjaws Transformation
 
-            if (RipJawsTransformation) {
+            if (currTransformation == TransformationEnum.RipJaws) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<RipJawsProjectile>(), heroDamage, 0, Player.whoAmI);
@@ -376,7 +358,7 @@ namespace Ben10Mod
 
             // Chromastone Transformation
 
-            if (ChromaStoneTransformation) {
+            if (currTransformation == TransformationEnum.ChromaStone) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<ChromaStoneProjectile>(), heroDamage + ChromaStoneAbsorbtion, 0, Player.whoAmI);
@@ -404,7 +386,7 @@ namespace Ben10Mod
 
             // Buzzshock Transformation
 
-            if (BuzzShockTransformation) {
+            if (currTransformation == TransformationEnum.BuzzShock) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, Player.position);
@@ -437,7 +419,7 @@ namespace Ben10Mod
             
             // Fourarms Transformation
 
-            if (FourArmsTransformation) {
+            if (currTransformation == TransformationEnum.FourArms) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
@@ -462,7 +444,7 @@ namespace Ben10Mod
 
             // Stinkfly Transformation
 
-            if (StinkFlyTransformation) {
+            if (currTransformation == TransformationEnum.StinkFly) {
 
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
@@ -471,10 +453,46 @@ namespace Ben10Mod
                 }
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
             }
+            
+            // Ghostfreak Transformation
+
+            if (currTransformation == TransformationEnum.GhostFreak) {
+
+                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
+                    }
+                }
+
+                if (KeybindSystem.PrimaryAbility.Current) {
+                    Vector2 move = Vector2.Zero;
+                    if (Player.controlLeft)  move.X -= 1f;
+                    if (Player.controlRight) move.X += 1f;
+                    if (Player.controlUp)    move.Y -= 2f;
+                    if (Player.controlDown)  move.Y += 2f;
+                    
+                    if (move == Vector2.Zero)
+                        return;
+
+                    float phaseSpeed = 6f;
+
+                    Player.velocity   = Vector2.Zero;
+                    Player.gravity    = 0f;
+                    Player.fallStart  = (int)(Player.position.Y / 16f);
+                    if (Player.controlUp && Player.velocity.Y == 0f) {
+                        Player.controlJump = true;
+                        Player.releaseJump = false;
+                    }
+
+                    // Player.position += move * phaseSpeed;
+                }
+                
+                abilitySlot.FunctionalItem = new Item(ItemID.None);
+            }
 
             // Wildvine Transformation
 
-            if (WildVineTransformation) {
+            if (currTransformation == TransformationEnum.WildVine) {
                 if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
@@ -509,31 +527,6 @@ namespace Ben10Mod
             }
         }
 
-        private void DoubleJump() {
-            if (PlayerInput.Triggers.JustReleased.Jump) {
-                if (Player.velocity.Y == 0 || ((Player.velocity.Y < 0 || Player.velocity.Y > 1) && Player.jump == 0)) {
-                    if (HeatBlastTransformation && canHeatBlastDoubleJump) {
-                        SoundEngine.PlaySound(SoundID.DoubleJump, Player.position);
-                        Player.velocity.Y = (0f - Player.jumpSpeed) * Player.gravDir;
-                        Player.jump = Player.jumpHeight * 3;
-                        canHeatBlastDoubleJump = false;
-                        isPerformingHeatBlastDoubleJump = true;
-                    }
-                }
-            }
-
-            if (HeatBlastTransformation && isPerformingHeatBlastDoubleJump && !canHeatBlastDoubleJump && ((Player.gravDir == 1f && Player.velocity.Y < 0f) || (Player.gravDir == -1f && Player.velocity.Y > 0f))) {
-                int num = Player.height;
-                if (Player.gravDir == -1f) {
-                    num = -6;
-                }
-                for (int i = 0; i < 100; i++) {
-                    Dust.NewDust(new Vector2(Player.position.X - 4f, Player.position.Y + (float)num), Player.width + 8, 4, DustID.Torch, (0f - Player.velocity.X) * 0.5f, Player.velocity.Y * 0.5f);
-                }
-            }
-
-        }
-
         public override void OnHurt(Player.HurtInfo info) {
             if (ChromaStonePrimaryAbilityEnabled) {
                 ChromaStoneAbsorbtion += Math.Max(info.Damage / 5, 0);
@@ -545,7 +538,7 @@ namespace Ben10Mod
         public override void OnHitAnything(float x, float y, Entity victim) {
             foreach (NPC npc in Main.npc) {
                 if (npc.whoAmI == victim.whoAmI) {
-                    if (!npc.HasBuff(BuffID.OnFire) && HeatBlastTransformation) {
+                    if (!npc.HasBuff(BuffID.OnFire) && currTransformation == TransformationEnum.HeatBlast) {
                         npc.AddBuff(BuffID.OnFire, 3 * 60);
                     }
                 }
@@ -571,7 +564,7 @@ namespace Ben10Mod
 
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
         {
-            if (ChromaStoneTransformation && ChromaStonePrimaryAbilityEnabled) {
+            if (currTransformation == TransformationEnum.ChromaStone && ChromaStonePrimaryAbilityEnabled) {
                 Color overlayColor = GetChromaStoneOverlayColor();
                 drawInfo.colorArmorHead = overlayColor;
                 drawInfo.colorArmorBody = overlayColor;
@@ -611,38 +604,38 @@ namespace Ben10Mod
                 }
             }
             if (!customSlot.HideVisuals) {
-                if (BuzzShockTransformation) {
+                if (currTransformation == TransformationEnum.BuzzShock) {
                     var costume = ModContent.GetInstance<BuzzShock>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (ChromaStoneTransformation) {
+                if (currTransformation == TransformationEnum.ChromaStone) {
                     var costume = ModContent.GetInstance<ChromaStone>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (DiamondHeadTransformation) {
+                if (currTransformation == TransformationEnum.DiamondHead) {
                     var costume = ModContent.GetInstance<DiamondHead>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                     Player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
                 }
-                if (FourArmsTransformation) {
+                if (currTransformation == TransformationEnum.FourArms) {
                     var costume = ModContent.GetInstance<FourArms>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (GhostFreakTransformation) {
+                if (currTransformation == TransformationEnum.GhostFreak) {
                     var costume = ModContent.GetInstance<GhostFreak>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (HeatBlastTransformation) {
+                if (currTransformation == TransformationEnum.HeatBlast) {
                     var costume = ModContent.GetInstance<HeatBlast>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
@@ -653,7 +646,7 @@ namespace Ben10Mod
                     b = 255;
                     fullBright = true;
                 }
-                if (RipJawsTransformation) {
+                if (currTransformation == TransformationEnum.RipJaws) {
                     var costume = ModContent.GetInstance<RipJaws>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
@@ -664,19 +657,19 @@ namespace Ben10Mod
                         Player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
                     }
                 }
-                if (StinkFlyTransformation) {
+                if (currTransformation == TransformationEnum.StinkFly) {
                     var costume = ModContent.GetInstance<StinkFly>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (WildVineTransformation) {
+                if (currTransformation == TransformationEnum.WildVine) {
                     var costume = ModContent.GetInstance<WildVine>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
-                if (XLR8Transformation) {
+                if (currTransformation == TransformationEnum.XLR8) {
                     var costume = ModContent.GetInstance<XLR8>();
                     if (XLR8PrimaryAbilityEnabled) {
                         Player.head = EquipLoader.GetEquipSlot(Mod, "XLR8_alt", EquipType.Head);
@@ -693,12 +686,11 @@ namespace Ben10Mod
 
         public override void PreUpdateMovement() {
             DashMovement();
-            DoubleJump();
         }
 
         private void DashMovement() {
             if (CanUseDash() && DashDir != -1 && DashDelay == 0) {
-                if (XLR8Transformation) {
+                if (currTransformation == TransformationEnum.XLR8) {
                     Vector2 newVelocity = Player.velocity;
 
                     switch (DashDir) {

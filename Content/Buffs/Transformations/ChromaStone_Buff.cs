@@ -16,7 +16,6 @@ namespace Ben10Mod.Content.Buffs.Transformations {
 
             p.isTransformed = true;
             p.wasTransformed = true;
-            p.ChromaStoneTransformation = true;
         }
         public override bool RightClick(int buffIndex) => false;
     }

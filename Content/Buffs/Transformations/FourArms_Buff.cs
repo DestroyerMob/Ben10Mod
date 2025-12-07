@@ -16,7 +16,6 @@ namespace Ben10Mod.Content.Buffs.Transformations {
 
             p.isTransformed = true;
             p.wasTransformed = true;
-            p.FourArmsTransformation = true;
         }
         public override bool RightClick(int buffIndex) => false;
     }

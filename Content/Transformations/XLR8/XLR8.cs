@@ -18,16 +18,12 @@ namespace Ben10Mod.Content.Transformations.XLR8
                 return;
 
             // Add equip textures
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}_alt", EquipType.Head, this, "XLR8_alt", equipTexture: new XLR8Head());
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_Tail", EquipType.Back, this);
-
-            //Add a separate set of equip textures by providing a custom name reference instead of an item reference
-            //EquipLoader.AddEquipTexture(Mod, $"{Texture}Alt_{EquipType.Head}", EquipType.Head, name: "BlockyAlt", equipTexture: new BlockyHead());
-            //EquipLoader.AddEquipTexture(Mod, $"{Texture}Alt_{EquipType.Body}", EquipType.Body, name: "BlockyAlt");
-            //EquipLoader.AddEquipTexture(Mod, $"{Texture}Alt_{EquipType.Legs}", EquipType.Legs, name: "BlockyAlt");
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head()); // XLR8 default head
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}_alt", EquipType.Head, this, "XLR8_alt", equipTexture: new XLR8Head()); // XLR8 alt head
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this); // XLR8 default body
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this); // XLR8 default legs
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_Tail", EquipType.Back, this); // XLR8 default tail
+            
         }
 
         // Called in SetStaticDefaults
@@ -41,19 +37,16 @@ namespace Ben10Mod.Content.Transformations.XLR8
             int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
             int equipSlotBack = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Back);
 
-            //int equipSlotHeadAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Head);
-            //int equipSlotBodyAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Body);
-            //int equipSlotLegsAlt = EquipLoader.GetEquipSlot(Mod, "BlockyAlt", EquipType.Legs);
-
-            ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
-            //ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt] = false;
-            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
-            ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true;
-            //ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyAlt] = true;
-            //ArmorIDs.Body.Sets.HidesArms[equipSlotBodyAlt] = true;
-            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true;
-            //ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsAlt] = true;
-            ArmorIDs.Back.Sets.DrawInTailLayer[equipSlotBack] = true;
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false; // Hide player head under head
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt] = false; // Hide player head under head
+            
+            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true; // Hide body skin under body
+            
+            ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true; // Hide arms under body
+            
+            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true; // Hide skin under legs
+            
+            ArmorIDs.Back.Sets.DrawInTailLayer[equipSlotBack] = true; // Render tail as a tail
         }
 
         public override void SetStaticDefaults() {
