@@ -82,111 +82,66 @@ namespace Ben10Mod.Content.Interface {
         UIImage AlienNine;
         UIImage AlienTen;
 
-        public override void OnInitialize() {
-            panel = new UIPanel();
-            panel.Width.Set(512, 0);
-            panel.Height.Set(256, 0);
+    public override void OnInitialize() {
+        panel = new UIPanel();
+        panel.Width.Set(512, 0);
+        panel.Height.Set(256, 0);
+        panel.HAlign = panel.VAlign = 0.5f;
+        Append(panel);
 
-            panel.HAlign = panel.VAlign = 0.5f;
+        UIText text = new UIText("Alien Selection Screen");
+        text.HAlign = 0.5f;
+        text.Top.Set(10f, 0f);
+        panel.Append(text);
 
-            Append(panel);
+        int drawHeight = 60;
+        int drawWidth  = 50;
+        int padding    = 20; // space between icons
 
-            UIText text = new UIText("Alien Selection Screen");
+        AlienOne   = new(TransformationEnum.None.GetTransformationIcon());
+        AlienTwo   = new(TransformationEnum.None.GetTransformationIcon());
+        AlienThree = new(TransformationEnum.None.GetTransformationIcon());
+        AlienFour  = new(TransformationEnum.None.GetTransformationIcon());
+        AlienFive  = new(TransformationEnum.None.GetTransformationIcon());
 
-            text.HAlign = 0.5f;
+        // Hook up events
+        AlienOne.OnLeftClick   += NextAlienOne;
+        AlienOne.OnRightClick  += PrevAlienOne;
+        AlienTwo.OnLeftClick   += NextAlienTwo;
+        AlienTwo.OnRightClick  += PrevAlienTwo;
+        AlienThree.OnLeftClick += NextAlienThree;
+        AlienThree.OnRightClick+= PrevAlienThree;
+        AlienFour.OnLeftClick  += NextAlienFour;
+        AlienFour.OnRightClick += PrevAlienFour;
+        AlienFive.OnLeftClick  += NextAlienFive;
+        AlienFive.OnRightClick += PrevAlienFive;
 
-            panel.Append(text);
+        var aliens = new[] { AlienOne, AlienTwo, AlienThree, AlienFour, AlienFive };
+        int count = aliens.Length;
 
-            AlienOne = new(TransformationEnum.None.GetTransformationIcon());
-            AlienOne.OnLeftClick += NextAlienOne;
-            AlienOne.OnRightClick += PrevAlienOne;
-            AlienOne.Height.Set(32, 0);
-            AlienOne.Width.Set(32, 0);
-            AlienOne.VAlign = 0.5f;
-            AlienOne.Left.Set(0, 0);
-            panel.Append(AlienOne);   
-            
-            AlienTwo = new(TransformationEnum.None.GetTransformationIcon());
-            AlienTwo.OnLeftClick += NextAlienTwo;
-            AlienTwo.OnRightClick += PrevAlienTwo;
-            AlienTwo.Height.Set(32, 0);
-            AlienTwo.Width.Set(32, 0);
-            AlienTwo.VAlign = 0.5f;
-            AlienTwo.Left.Set(AlienTwo.Width.Pixels * 2.25f + (18 * 2.25f), 0);;
-            panel.Append(AlienTwo);    
-            
-            AlienThree = new(TransformationEnum.None.GetTransformationIcon());
-            AlienThree.OnLeftClick += NextAlienThree;
-            AlienThree.OnRightClick += PrevAlienThree;
-            AlienThree.Height.Set(32, 0);
-            AlienThree.Width.Set(32, 0);
-            AlienThree.VAlign = 0.5f;
-            AlienThree.Left.Set(AlienThree.Width.Pixels * 4.5f + (18 * 4.5f), 0);
-            panel.Append(AlienThree); 
-            
-            AlienFour = new(TransformationEnum.None.GetTransformationIcon());
-            AlienFour.OnLeftClick += NextAlienFour;
-            AlienFour.OnRightClick += PrevAlienFour;
-            AlienFour.Height.Set(32, 0);
-            AlienFour.Width.Set(32, 0);
-            AlienFour.VAlign = 0.5f;
-            AlienFour.Left.Set(AlienFour.Width.Pixels * 6.75f + (18 * 6.75f), 0);
-            panel.Append(AlienFour);
-            
-            AlienFive = new(TransformationEnum.None.GetTransformationIcon());
-            AlienFive.OnLeftClick += NextAlienFive;
-            AlienFive.OnRightClick += PrevAlienFive;
-            AlienFive.Height.Set(32, 0);
-            AlienFive.Width.Set(32, 0);
-            AlienFive.VAlign = 0.5f;
-            AlienFive.Left.Set(AlienFive.Width.Pixels * 9 + (18 * 9), 0);
-            panel.Append(AlienFive);  
-            
-            //AlienSix = new(TransformationEnum.None.GetTransformationIcon());
-            //AlienSix.OnLeftClick += NextAlienSix;
-            //AlienSix.OnRightClick += PrevAlienSix;
-            //AlienSix.Height.Set(32, 0);
-            //AlienSix.Width.Set(32, 0);
-            //AlienSix.VAlign = 0.5f;
-            //AlienSix.Left.Set(AlienSix.Width.Pixels * 5 + (18 * 5), 0);
-            //panel.Append(AlienSix);      
-            
-            //AlienSeven = new(TransformationEnum.None.GetTransformationIcon());
-            //AlienSeven.OnLeftClick += NextAlienSeven;
-            //AlienSeven.OnRightClick += PrevAlienSeven;
-            //AlienSeven.Height.Set(32, 0);
-            //AlienSeven.Width.Set(32, 0);
-            //AlienSeven.VAlign = 0.5f;
-            //AlienSeven.Left.Set(AlienSeven.Width.Pixels * 6 + (18 * 6), 0);
-            //panel.Append(AlienSeven);   
-            
-            //AlienEight = new(TransformationEnum.None.GetTransformationIcon());
-            //AlienEight.OnLeftClick += NextAlienEight;
-            //AlienEight.OnRightClick += PrevAlienEight;
-            //AlienEight.Height.Set(32, 0);
-            //AlienEight.Width.Set(32, 0);
-            //AlienEight.VAlign = 0.5f;
-            //AlienEight.Left.Set(AlienEight.Width.Pixels * 7 + (18 * 7), 0);
-            //panel.Append(AlienEight);
+        // spacing between icons (center-to-center)
+        float spacing = drawWidth + padding;
+        // middle index (2 for 5 items, 1.5 for 4 items, etc.)
+        float centerIndex = (count - 1) / 2f;
 
-            //AlienNine = new(TransformationEnum.None.GetTransformationIcon());
-            //AlienNine.OnLeftClick += NextAlienNine;
-            //AlienNine.OnRightClick += PrevAlienNine;
-            //AlienNine.Height.Set(32, 0);
-            //AlienNine.Width.Set(32, 0);
-            //AlienNine.VAlign = 0.5f;
-            //AlienNine.Left.Set(AlienNine.Width.Pixels * 8 + (18 * 8), 0);
-            //panel.Append(AlienNine);
+        for (int i = 0; i < count; i++) {
+            var alien = aliens[i];
 
-            //AlienTen = new(TransformationEnum.None.GetTransformationIcon());
-            //AlienTen.OnLeftClick += NextAlienTen;
-            //AlienTen.OnRightClick += PrevAlienTen;
-            //AlienTen.Height.Set(32, 0);
-            //AlienTen.Width.Set(32, 0);
-            //AlienTen.VAlign = 0.5f;
-            //AlienTen.Left.Set(AlienTen.Width.Pixels * 9 + (18 * 9), 0);
-            //panel.Append(AlienTen);
+            alien.Width.Set(drawWidth, 0f);
+            alien.Height.Set(drawHeight, 0f);
+
+            // vertically: some fixed offset below the title
+            alien.Top.Set(80f, 0f);
+
+            // horizontally: center aligned, then shifted left/right
+            alien.HAlign = 0.5f;
+            float offsetFromCenter = (i - centerIndex) * spacing;
+            alien.Left.Set(offsetFromCenter, 0f);
+
+            panel.Append(alien);
         }
+    }
+
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
             base.DrawSelf(spriteBatch);

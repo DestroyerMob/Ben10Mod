@@ -466,6 +466,7 @@ namespace Ben10Mod
                 }
 
                 if (KeybindSystem.PrimaryAbility.Current) { // Phasing Logic
+                    
                     Vector2 move = Vector2.Zero;
                     if (Player.controlLeft)  move.X -= 1f;
                     if (Player.controlRight) move.X += 1f;
@@ -508,7 +509,7 @@ namespace Ben10Mod
 
         public bool canUseAttack(bool input, int newAttackDelay) {
             if (AttackDelay <= 0) {
-                if ((Player.inventory[Player.selectedItem].IsAir || Player.inventory[Player.selectedItem].type == ModContent.GetInstance<PlumbersBadge>().Type) && !Player.mouseInterface && input) {
+                if ((Player.inventory[Player.selectedItem].IsAir || Player.inventory[Player.selectedItem].type == ModContent.GetInstance<PlumbersBadge>().Type) && !Player.mouseInterface && input && CanUseItem(Player.inventory[Player.selectedItem])) {
                     AttackDelay = newAttackDelay;
                     if (Main.myPlayer == Player.whoAmI) {
                         Vector2 direction = Main.MouseWorld - Player.Center;
@@ -524,6 +525,18 @@ namespace Ben10Mod
                 AttackDelay--;
                 return false;
             }
+        }
+
+        public override bool CanUseItem(Item item) {
+            return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
+        }
+
+        public override bool CanBeHitByNPC(NPC npc, ref int cooldownSlot) {
+            return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
+        }
+
+        public override bool CanBeHitByProjectile(Projectile proj) {
+            return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
         }
 
         public override void OnHurt(Player.HurtInfo info) {
@@ -568,6 +581,12 @@ namespace Ben10Mod
                 drawInfo.colorArmorHead = overlayColor;
                 drawInfo.colorArmorBody = overlayColor;
                 drawInfo.colorArmorLegs = overlayColor;
+            }
+
+            if (currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current) {
+                drawInfo.colorArmorHead.A /= 2;
+                drawInfo.colorArmorBody.A /= 2;
+                drawInfo.colorArmorLegs.A /= 2;
             }
 
         }
