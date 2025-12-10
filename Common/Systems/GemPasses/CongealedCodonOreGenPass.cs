@@ -18,7 +18,7 @@ namespace Ben10Mod.Common.Systems.GemPasses {
         protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration) {
             progress.Message = "Spawning Congealed Codon Ore";
 
-            int maxToSpawn = WorldGen.genRand.Next(300, 325);
+            int maxToSpawn = WorldGen.genRand.Next(325, 350);
             int numSpawned = 0;
             int attempts = 0;
 

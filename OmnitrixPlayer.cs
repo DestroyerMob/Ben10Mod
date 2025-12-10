@@ -169,6 +169,148 @@ namespace Ben10Mod
 
         // Handles players abilities
 
+        public override void PostUpdateBuffs() {
+            
+            var abilitySlot = ModContent.GetInstance<AbilitySlot>();
+
+            if (!isTransformed) {
+                abilitySlot.FunctionalItem = new Item(ItemID.None);
+            }
+
+            // Handles the detransformation effect
+
+            if (wasTransformed != isTransformed) {
+                var customSlot = ModContent.GetInstance<OmnitrixSlot>();
+                if (customSlot != null) {
+                    if (customSlot.FunctionalItem.ModItem is PrototypeOmnitrix prototypeOmnitrix) {
+                        if (masterControl) {
+                            TransformationHandler.Detransform(Player, 0, true, false);
+                        } else {
+                            TransformationHandler.Detransform(Player, prototypeOmnitrix.cooldownTime);
+                        }
+                    }
+                }
+                wasTransformed = false;
+            }
+            
+            // XLR8 Transformation
+
+            if (currTransformation == TransformationEnum.XLR8) {
+                float multiplier = 1;
+
+                if (XLR8PrimaryAbilityEnabled) {
+                    multiplier = 2;
+                }
+                else {
+                    multiplier = 1;
+                }
+
+                Player.moveSpeed *= 2 * multiplier;
+                Player.accRunSpeed *= 1.5f * multiplier;
+                Player.GetAttackSpeed(DamageClass.Generic) += multiplier;
+                if (Math.Abs(Player.velocity.X) > 2) {
+                    Player.jumpSpeed *= 1.25f * multiplier;
+                    Player.waterWalk = true;
+                }
+
+                if (Player.velocity.X == 0 && (Player.holdDownCardinalTimer[2] > 0 || Player.holdDownCardinalTimer[3] > 0)) {
+                    if (Player.holdDownCardinalTimer[0] > 0) {
+                        Player.maxFallSpeed *= 2.0f;
+                    } else if (Player.holdDownCardinalTimer[1] > 0) {
+                        Player.velocity.Y = -Player.maxFallSpeed * multiplier;
+                    } else {
+                        Player.maxFallSpeed = 0;
+                    }
+                }
+            }
+
+            // Heatblast Transformation
+
+            if (currTransformation == TransformationEnum.HeatBlast) {
+
+                Player.fireWalk = true;
+                Player.lavaImmune = true;
+            }
+
+            // Diamondhead Transformation
+
+            if (currTransformation == TransformationEnum.DiamondHead) {
+
+                Player.statDefense += 25;
+                Player.GetDamage(DamageClass.Melee) *= 1.25f;
+                Player.GetDamage<HeroDamage>() *= 1.25f;
+
+                if (DiamondHeadPrimaryAbilityEnabled) {
+                    Player.moveSpeed = 0;
+                    Player.lifeRegen += 10;
+                    Player.immune = true;
+                    Player.immuneAlpha = 0;
+                    Player.releaseJump = false;
+                }
+            }
+
+            // Ripjaws Transformation
+
+            if (currTransformation == TransformationEnum.RipJaws) {
+                if (Player.wet) {
+                    Player.merman = true;
+                    Player.breathCD = 0;
+                    Player.breath = Player.breathMax;
+                    Player.GetDamage<HeroDamage>() *= 2.0f;
+                }
+
+                Player.accFlipper = true;
+                
+            }
+
+            // Chromastone Transformation
+
+            if (currTransformation == TransformationEnum.ChromaStone) {
+            }
+
+            // Buzzshock Transformation
+
+            if (currTransformation == TransformationEnum.BuzzShock) { }
+
+            // Fourarms Transformation
+
+            if (currTransformation == TransformationEnum.FourArms) {
+
+                Player.GetDamage(DamageClass.Melee) *= 1.25f;
+                Player.GetDamage<HeroDamage>() *= 1.25f;
+                Player.GetAttackSpeed(DamageClass.Melee) += 0.25f;
+                Player.GetCritChance(DamageClass.Generic) = 100;
+                Player.noFallDmg = true;
+                Player.jumpSpeed *= 1.75f;
+            }
+
+            // Stinkfly Transformation
+
+            if (currTransformation == TransformationEnum.StinkFly) {
+            }
+            
+            // Ghostfreak Transformation
+
+            if (currTransformation == TransformationEnum.GhostFreak) {
+            }
+
+            // Wildvine Transformation
+
+            if (currTransformation == TransformationEnum.WildVine) {
+                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
+                    }
+                }
+                if (canUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), heroDamage * 2, 0, Player.whoAmI);
+                    }
+                }
+                abilitySlot.FunctionalItem = new Item(ItemID.IvyWhip);
+            }
+        }
+        
         public override void PostUpdate() {
             
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
