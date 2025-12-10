@@ -10,12 +10,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common/Systems/GemPasses/CongealedCodonOreGenPass.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Systems/GemPasses/CongealedCodonOreGenPass.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Accessories/PrototypeOmnitrix.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Accessories/PrototypeOmnitrix.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Enums/TranformationEnum.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Enums/TranformationEnum.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,7 +104,7 @@
       <workItem from="1764963425129" duration="19799000" />
       <workItem from="1765174563127" duration="2125000" />
       <workItem from="1765271610915" duration="714000" />
-      <workItem from="1765310950295" duration="2659000" />
+      <workItem from="1765310950295" duration="4418000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

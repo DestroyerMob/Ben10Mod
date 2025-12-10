@@ -85,26 +85,26 @@ namespace Ben10Mod.Enums
         public static ReLogic.Content.Asset<Texture2D> GetTransformationIcon(this TransformationEnum te) {
             switch (te) {
                 case TransformationEnum.BuzzShock:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.ChromaStone:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/ChromaStoneSelect");
                 case TransformationEnum.DiamondHead:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/DiamondHeadSelect");
                 case TransformationEnum.FourArms:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/FourArmsSelect");
                 case TransformationEnum.GhostFreak:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/GhostFreakSelect");
                 case TransformationEnum.HeatBlast:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/HeatBlastSelect");
                 case TransformationEnum.RipJaws:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/RipJawsSelect");
                 case TransformationEnum.StinkFly:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.WildVine:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.XLR8:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
-                default: return ModContent.Request<Texture2D>("Ben10Mod/Content/Buffs/Transformations/EmptyTransformation");
+                default: return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
             }
         }
 
