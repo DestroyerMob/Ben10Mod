@@ -20,11 +20,12 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.height = 64;
             Projectile.aiStyle = ProjAIStyleID.Arrow;
 
-            AIType = ProjectileID.Bullet;
-            Projectile.friendly = true;
-            Projectile.timeLeft = 5;
-            Projectile.penetrate = -1;
+            AIType                 = ProjectileID.Bullet;
+            Projectile.friendly    = true;
+            Projectile.timeLeft    = 5;
+            Projectile.penetrate   = -1;
             Projectile.tileCollide = false;
+            Projectile.DamageType  = DamageClass.Ranged;
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {

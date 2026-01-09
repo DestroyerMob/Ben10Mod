@@ -26,6 +26,8 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.timeLeft = 4;
             Projectile.penetrate = -1;
             Projectile.tileCollide = false;
+            
+            Projectile.DamageType = DamageClass.MeleeNoSpeed;
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {

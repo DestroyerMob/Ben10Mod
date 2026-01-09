@@ -23,6 +23,8 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.friendly = true;
             Projectile.tileCollide = false;
             Projectile.penetrate = 3;
+            
+            Projectile.DamageType = DamageClass.Magic;
 
         }
 

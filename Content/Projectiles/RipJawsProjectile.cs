@@ -16,17 +16,15 @@ namespace Ben10Mod.Content.Projectiles {
         int maxTime = 0;
 
         public override void SetDefaults() {
-            Projectile.height = 25;
-            Projectile.width = 50;
-            Projectile.aiStyle = ProjAIStyleID.Arrow;
-            Projectile.friendly = true;
-            Projectile.hostile = false;
-
-            Projectile.timeLeft = 25;
+            Projectile.height      = 25;
+            Projectile.width       = 50;
+            Projectile.aiStyle     = ProjAIStyleID.Arrow;
+            Projectile.friendly    = true;
+            Projectile.hostile     = false;
+            Projectile.timeLeft    = 25;
             Projectile.tileCollide = false;
-
-            AIType = ProjectileID.Bullet;
-
+            AIType                 = ProjectileID.Bullet;
+            Projectile.DamageType  = DamageClass.MeleeNoSpeed;
         }
 
         public override void OnSpawn(IEntitySource source) {

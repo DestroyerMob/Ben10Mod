@@ -13,15 +13,15 @@ namespace Ben10Mod.Content.Projectiles {
         public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
         public override void SetDefaults() {
-            Projectile.width = 64;
-            Projectile.height = 64;
-            Projectile.aiStyle = ProjAIStyleID.Arrow;
-
-            AIType = ProjectileID.Bullet;
-            Projectile.friendly = true;
-            Projectile.penetrate = -1;
+            Projectile.width       = 64;
+            Projectile.height      = 64;
+            Projectile.aiStyle     = ProjAIStyleID.Arrow;
+            AIType                 = ProjectileID.Bullet;
+            Projectile.friendly    = true;
+            Projectile.penetrate   = -1;
             Projectile.tileCollide = false;
-            Projectile.timeLeft = 20;
+            Projectile.timeLeft    = 20;
+            Projectile.DamageType  = DamageClass.Ranged;
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {

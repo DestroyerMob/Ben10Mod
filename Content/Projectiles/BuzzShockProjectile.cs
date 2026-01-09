@@ -22,6 +22,8 @@ namespace Ben10Mod.Content.Projectiles {
             AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
             Projectile.penetrate = -1;
+            
+            Projectile.DamageType = DamageClass.Ranged;
 
         }
 

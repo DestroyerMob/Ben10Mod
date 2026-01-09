@@ -9,15 +9,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/BuzzShockMinionProjectile.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/BuzzShockMinionProjectile.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Body.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Body.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Head.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Head.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Legs.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Legs.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Accessories/PrototypeOmnitrix.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Accessories/PrototypeOmnitrix.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/FourArmsFist.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/FourArmsFist.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/BuzzShockProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/BuzzShockProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/ChromaStoneProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/ChromaStoneProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/DiamondHeadProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/DiamondHeadProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FourArmsClap.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FourArmsClap.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/GhostFreakProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/GhostFreakProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HeatBlastFireSlam.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HeatBlastFireSlam.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/RipJawsProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/RipJawsProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Sounds/OmnitrixTimeout.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/TransformationHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/TransformationHandler.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,6 +124,7 @@
       <workItem from="1767418333319" duration="501000" />
       <workItem from="1767902169844" duration="3799000" />
       <workItem from="1767906448527" duration="489000" />
+      <workItem from="1767948843037" duration="2531000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

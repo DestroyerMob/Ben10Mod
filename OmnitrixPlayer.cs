@@ -729,27 +729,83 @@ namespace Ben10Mod
             return circlePoints;
         }
 
-        public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
-        {
-            if (currTransformation == TransformationEnum.ChromaStone && ChromaStonePrimaryAbilityEnabled) {
-                Color overlayColor = GetChromaStoneOverlayColor();
-                drawInfo.colorArmorHead = overlayColor;
-                drawInfo.colorArmorBody = overlayColor;
-                drawInfo.colorArmorLegs = overlayColor;
+        public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
+            switch (currTransformation) {
+                case TransformationEnum.HeatBlast:
+                    drawInfo.colorArmorHead = Color.White;
+                    drawInfo.colorArmorBody = Color.White;
+                    drawInfo.colorArmorLegs = Color.White;
+                    break;
+                case TransformationEnum.GhostFreak when KeybindSystem.PrimaryAbility.Current:
+                    drawInfo.colorArmorHead.A /= 2;
+                    drawInfo.colorArmorBody.A /= 2;
+                    drawInfo.colorArmorLegs.A /= 2;
+                    break;
+                case TransformationEnum.Arctiguana:
+                    break;
+                case TransformationEnum.BuzzShock:
+                    break;
+                case TransformationEnum.ChromaStone when ChromaStonePrimaryAbilityEnabled:
+                    Color overlayColor = GetChromaStoneOverlayColor();
+                    drawInfo.colorArmorHead = overlayColor;
+                    drawInfo.colorArmorBody = overlayColor;
+                    drawInfo.colorArmorLegs = overlayColor;
+                    break;
+                case TransformationEnum.DiamondHead:
+                case TransformationEnum.FourArms:
+                case TransformationEnum.RipJaws:
+                case TransformationEnum.StinkFly:
+                case TransformationEnum.WildVine:
+                case TransformationEnum.XLR8:
+                case TransformationEnum.None:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-
-            if (currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current) {
-                drawInfo.colorArmorHead.A /= 2;
-                drawInfo.colorArmorBody.A /= 2;
-                drawInfo.colorArmorLegs.A /= 2;
-            }
-
         }
 
         // Set the visuals for the aliens
 
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a, ref bool fullBright) {
 
+            var customSlot = ModContent.GetInstance<OmnitrixSlot>();
+
+            if (omnitrixEquipped) {
+                if (customSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>()) {
+                    var costume = ModContent.GetInstance<PrototypeOmnitrix>();
+                    if (!customSlot.HideVisuals && !isTransformed) {
+                        if (onCooldown) {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "PrototypeOmnitrixAlt", EquipType.HandsOn);
+                        }
+                        else {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.HandsOn);
+                        }
+                    }
+                }
+                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
+                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
+                    if (!customSlot.HideVisuals && !isTransformed) {
+                        if (onCooldown) {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
+                        }
+                        else {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
+                        }
+                    }
+                }
+            }
+            if (!customSlot.HideVisuals) {
+                if (currTransformation == TransformationEnum.HeatBlast) {
+                    r = 255;
+                    g = 255;
+                    b = 255;
+                    fullBright = true;
+                }
+            }
+
+        }
+
+        public override void FrameEffects() {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
             if (omnitrixEquipped) {
@@ -813,11 +869,6 @@ namespace Ben10Mod
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
-
-                    r = 255;
-                    g = 255;
-                    b = 255;
-                    fullBright = true;
                 }
                 if (currTransformation == TransformationEnum.RipJaws) {
                     var costume = ModContent.GetInstance<RipJaws>();
@@ -854,7 +905,6 @@ namespace Ben10Mod
                     Player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
                 }
             }
-
         }
 
         public override void PreUpdateMovement() {

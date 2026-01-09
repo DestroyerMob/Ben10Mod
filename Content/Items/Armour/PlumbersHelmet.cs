@@ -35,10 +35,9 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+10 hero damage";
+            player.setBonus = "+10 defence";
 
-            player.GetDamage<HeroDamage>().Flat += 10;
-            player.GetModPlayer<OmnitrixPlayer>().heroDamage += 10;
+            player.statDefense += 10;
         }
 
         public override void AddRecipes()

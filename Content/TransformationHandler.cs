@@ -52,7 +52,7 @@ namespace Ben10Mod.Content {
             }
 
             if (playSound) {
-                //SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
+                SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
             }
 
             player.ClearBuff(ModContent.BuffType<HeatBlast_Buff>());

@@ -19,6 +19,8 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.hostile = false;
 
             Projectile.aiStyle = ProjAIStyleID.Arrow;
+            
+            Projectile.DamageType = DamageClass.Ranged;
         }
     }
 }

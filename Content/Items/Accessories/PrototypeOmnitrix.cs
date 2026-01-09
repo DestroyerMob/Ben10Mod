@@ -81,7 +81,7 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.width = 22;
             Item.height = 28;
             Item.rare = ItemRarityID.Master;
-            Item.DamageType = ModContent.GetInstance<HeroDamage>();
+            Item.DamageType = DamageClass.Generic;
             Item.damage = 15;
             Item.crit = 100;
             Item.accessory = true;
