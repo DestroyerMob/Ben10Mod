@@ -33,6 +33,7 @@ using Terraria.Audio;
 using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
+using Microsoft.Xna.Framework.Input;
 
 namespace Ben10Mod
 {
@@ -227,7 +228,6 @@ namespace Ben10Mod
             // Heatblast Transformation
 
             if (currTransformation == TransformationEnum.HeatBlast) {
-
                 Player.fireWalk = true;
                 Player.lavaImmune = true;
             }
@@ -535,7 +535,7 @@ namespace Ben10Mod
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<BuzzShockProjectile>(), heroDamage, 0, Main.myPlayer);
                     }
                 }
-                if (KeybindSystem.PrimaryAbility.JustPressed) {
+                if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(BuffID.ChaosState)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.Item8, Player.position);
                         Random random = new Random();
@@ -548,6 +548,19 @@ namespace Ben10Mod
                             int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1, Player.height + 1, DustID.UltraBrightTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 2);
                             Main.dust[dustNum].noGravity = true;
                         }
+
+                        Player.AddBuff(BuffID.ChaosState, 60 * 6);
+                    }
+                }
+                
+                if (KeybindSystem.SecondaryAbility.JustPressed) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        Random random = new Random();
+                        for (int i = 0; i < 50; i++) {
+                            int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1, Player.height + 1, DustID.UltraBrightTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 2);
+                            Main.dust[dustNum].noGravity = true;
+                        }
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, new Vector2(0, 0), ModContent.ProjectileType<BuzzShockMinionProjectile>(), heroDamage, 0, Main.myPlayer);
                     }
                 }
 

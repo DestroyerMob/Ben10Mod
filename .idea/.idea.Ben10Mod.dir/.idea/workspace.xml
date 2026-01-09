@@ -9,10 +9,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/BuzzShockMinionProjectile.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/BuzzShockMinionProjectile.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common/Systems/GemPasses/CongealedCodonOreGenPass.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Systems/GemPasses/CongealedCodonOreGenPass.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Tiles/CongealedCodonOreTile.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Tiles/CongealedCodonOreTile.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Body.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Body.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Head.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Head.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Legs.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShock_Legs.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +111,11 @@
       <workItem from="1764963425129" duration="19799000" />
       <workItem from="1765174563127" duration="2125000" />
       <workItem from="1765271610915" duration="714000" />
-      <workItem from="1765310950295" duration="7319000" />
+      <workItem from="1765310950295" duration="7935000" />
+      <workItem from="1765564979119" duration="650000" />
+      <workItem from="1767418333319" duration="501000" />
+      <workItem from="1767902169844" duration="3799000" />
+      <workItem from="1767906448527" duration="489000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

@@ -291,6 +291,7 @@ Projectiles: {
 	HeatBlastBomb.DisplayName: Heat Blast Bomb
 	Explosion.DisplayName: Explosion
 	GhostFreakProjectile.DisplayName: Ghost Freak Projectile
+	BuzzShockMinionProjectile.DisplayName: Buzz Shock Minion Projectile
 }
 
 Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore
