@@ -1,104 +1,165 @@
-﻿using Ben10Mod.Common.Command;
+﻿using System.Runtime.CompilerServices;
 using Ben10Mod.Content;
-using Ben10Mod.Content.Items;
-using Ben10Mod.Content.Items.Vanity;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
-using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod {
-    public class OmnitrixNPC : GlobalNPC {
+    public class OmnitricNPC : GlobalNPC
+    {
+        public override bool InstancePerEntity => true;
 
-        public override void ModifyShop(NPCShop shop) {
-            if (shop.NpcType == NPCID.Clothier) {
-                shop.Add(new Item(ModContent.ItemType<Ben10Pants>()));
-                shop.Add(new Item(ModContent.ItemType<Ben10Shirt>()));
+        // total damage dealt to THIS npc instance by each player
+        private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
+
+        // optional: track who last damaged it as a tie-breaker
+        private int _lastDamager = -1;
+
+        private static bool CountsAsBoss(NPC npc)
+        {
+            // npc.boss is true for most bosses, but this catches extra boss-like NPCs too
+            return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
+        }
+
+        private void RecordDamage(int playerIndex, int damage)
+        {
+            if (damage <= 0) return;
+            if (playerIndex < 0 || playerIndex >= Main.maxPlayers) return;
+
+            Player p = Main.player[playerIndex];
+            if (!p.active) return;
+
+            _damageByPlayer[playerIndex] += damage;
+            _lastDamager = playerIndex;
+        }
+
+        
+
+        public override void OnHitByItem(NPC npc, Player player, Item item, NPC.HitInfo hit, int damageDone)
+        {
+            if (Main.netMode == NetmodeID.MultiplayerClient) return;
+            if (!CountsAsBoss(npc)) return;
+
+            // IMPORTANT: use damageDone (actual applied damage)
+            RecordDamage(player.whoAmI, damageDone);
+        }
+
+        public override void OnHitByProjectile(NPC npc, Projectile projectile, NPC.HitInfo hit, int damageDone)
+        {
+            if (Main.netMode == NetmodeID.MultiplayerClient) return;
+            if (!CountsAsBoss(npc)) return;
+            if (damageDone <= 0) return;
+
+            // Credit only player-owned friendly projectiles (weapons/minions/whips/etc.)
+            int owner = projectile.owner;
+            if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
+                RecordDamage(owner, damageDone);
             }
         }
 
         public override void OnKill(NPC npc)
         {
-            base.OnKill(npc);
+            if (Main.netMode == NetmodeID.MultiplayerClient) return;
+            if (!CountsAsBoss(npc)) return;
 
-            if (npc.boss)
+            int credited = GetTopDamager(npc);
+            if (credited == -1) return;
+
+            string msg = $"{Main.player[credited].name} dealt the most damage!";
+
+            // Show message in both SP and MP
+            if (Main.netMode == NetmodeID.SinglePlayer)
             {
-                int killerIndex = npc.lastInteraction;
-                if (killerIndex >= 0 && killerIndex < Main.maxPlayers)
-                {
-                    Player killer = Main.player[killerIndex];
-                    if (killer != null && killer.active)
-                    {
-                        switch (npc.type)
-                        {
-                            case NPCID.KingSlime:
-                                addTransformation(killer, TransformationEnum.DiamondHead);
-                                break;
-                            case NPCID.EyeofCthulhu:
-                                addTransformation(killer, TransformationEnum.XLR8);
-                                break;
-                            case NPCID.BrainofCthulhu:
-                                addTransformation(killer, TransformationEnum.FourArms);
-                                break;
-                            case NPCID.EaterofWorldsHead:
-                                if (NPC.downedBoss2)
-                                {
-                                    addTransformation(killer, TransformationEnum.FourArms);
-                                }
-                                break;
-                            case NPCID.EaterofWorldsBody:
-                                if (NPC.downedBoss2)
-                                {
-                                    addTransformation(killer, TransformationEnum.FourArms);
-                                }
-                                break;
-                            case NPCID.QueenBee:
-                                addTransformation(killer, TransformationEnum.StinkFly);
-                                break;
-                            case NPCID.SkeletronHead:
-                                addTransformation(killer, TransformationEnum.BuzzShock);
-                                break;
-                            case NPCID.Deerclops:
-                                addTransformation(killer, TransformationEnum.WildVine);
-                                break;
-                            case NPCID.WallofFlesh:
-                                addTransformation(killer, TransformationEnum.ChromaStone);
-                                break;
-                            case NPCID.WallofFleshEye:
-                                addTransformation(killer, TransformationEnum.ChromaStone);
-                                break;
-                            case NPCID.HallowBoss:
-                                if (Main.dayTime)
-                                {
-                                    if (!killer.GetModPlayer<OmnitrixPlayer>().masterControl)
-                                    {
-                                        Main.NewText(killer.name + " has unlocked master control!", Color.Green);
-                                        killer.GetModPlayer<OmnitrixPlayer>().masterControl = true;
-                                    }
-                                }
-                                break;
-                        }
-                    }
+                Main.NewText(msg, Color.Cyan);
+            }
+            else if (Main.netMode == NetmodeID.Server)
+            {
+                Terraria.Chat.ChatHelper.BroadcastChatMessage(
+                    Terraria.Localization.NetworkText.FromLiteral(msg),
+                    Color.Cyan
+                );
+            }
+
+            switch (npc.type) {
+                case NPCID.KingSlime: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.DiamondHead);
+                    break;
                 }
-
+                case NPCID.EyeofCthulhu: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.XLR8);
+                    break;
+                }
+                case NPCID.BrainofCthulhu: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.FourArms);
+                    break;
+                }
+                case NPCID.EaterofWorldsHead:
+                case NPCID.EaterofWorldsTail:
+                case NPCID.EaterofWorldsBody: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.FourArms);
+                    break;
+                }
+                case NPCID.QueenBee: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.StinkFly);
+                    break;
+                }
+                case NPCID.SkeletronHead: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.BuzzShock);
+                    break;
+                }
+                case NPCID.Deerclops: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.WildVine);
+                    break;
+                }
+                case NPCID.WallofFlesh: {
+                    Main.player[credited].GetModPlayer<OmnitrixPlayer>()
+                        .addTransformation(TransformationEnum.ChromaStone);
+                    break;
+                }
+                default: break;
             }
+
+            // TODO: store the kill credit here
+            // Main.player[credited].GetModPlayer<YourBossKillStatsPlayer>().RegisterBossKill(npc.type);
         }
 
-        private void addTransformation(Player player, TransformationEnum transformation) {
+        private int GetTopDamager(NPC npc)
+        {
+            int bestPlayer = -1;
+            int bestDamage = 0;
 
-            if (!TransformationHandler.HasTransformation(player, transformation))
+            for (int i = 0; i < Main.maxPlayers; i++)
             {
-                player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(transformation);
-                Main.NewText(player.name + " has unlocked " + transformation.GetName(), Color.Green);
-            }
-        }
+                if (!Main.player[i].active) continue;
 
+                int dmg = _damageByPlayer[i];
+                if (dmg > bestDamage)
+                {
+                    bestDamage = dmg;
+                    bestPlayer = i;
+                }
+            }
+
+            // If nobody recorded (weird edge case), fallback:
+            if (bestPlayer == -1)
+            {
+                if (npc.lastInteraction >= 0 && npc.lastInteraction < Main.maxPlayers && Main.player[npc.lastInteraction].active)
+                    return npc.lastInteraction;
+
+                if (_lastDamager >= 0 && _lastDamager < Main.maxPlayers && Main.player[_lastDamager].active)
+                    return _lastDamager;
+            }
+
+            return bestPlayer;
+        }
     }
 }

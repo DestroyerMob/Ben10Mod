@@ -202,16 +202,13 @@ namespace Ben10Mod.Content.Items.Accessories
 
             Recipe recipe = CreateRecipe()
                 .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
-                .AddIngredient(ItemID.GoldBar, 10)
                 .AddIngredient(ItemID.Emerald)
                 .AddTile(TileID.Anvils).Register();
 
             Recipe recipeAlt = CreateRecipe()
                 .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
-                .AddIngredient(ItemID.PlatinumBar, 10)
                 .AddIngredient(ItemID.Emerald)
                 .AddTile(TileID.Anvils).Register();
-
         }
 
     }

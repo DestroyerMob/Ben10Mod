@@ -174,10 +174,6 @@ namespace Ben10Mod
             
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
-            if (!isTransformed) {
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
-            }
-
             // Handles the detransformation effect
 
             if (wasTransformed != isTransformed) {
@@ -202,16 +198,13 @@ namespace Ben10Mod
                 if (XLR8PrimaryAbilityEnabled) {
                     multiplier = 2;
                 }
-                else {
-                    multiplier = 1;
-                }
-
-                Player.moveSpeed *= 2 * multiplier;
-                Player.accRunSpeed *= 1.5f * multiplier;
+                
+                Player.moveSpeed                           *= 2.5f * multiplier;
+                Player.accRunSpeed                         *= 2.0f * multiplier;
                 Player.GetAttackSpeed(DamageClass.Generic) += multiplier;
                 if (Math.Abs(Player.velocity.X) > 2) {
-                    Player.jumpSpeed *= 1.25f * multiplier;
-                    Player.waterWalk = true;
+                    Player.jumpSpeed *= 1.5f * multiplier;
+                    Player.waterWalk =  true;
                 }
 
                 if (Player.velocity.X == 0 && (Player.holdDownCardinalTimer[2] > 0 || Player.holdDownCardinalTimer[3] > 0)) {
@@ -297,17 +290,6 @@ namespace Ben10Mod
             // Wildvine Transformation
 
             if (currTransformation == TransformationEnum.WildVine) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
-                    }
-                }
-                if (canUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), heroDamage * 2, 0, Player.whoAmI);
-                    }
-                }
-                abilitySlot.FunctionalItem = new Item(ItemID.IvyWhip);
             }
         }
         
@@ -316,7 +298,7 @@ namespace Ben10Mod
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
             if (!isTransformed) {
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Handles the detransformation effect
@@ -334,15 +316,20 @@ namespace Ben10Mod
                 }
                 wasTransformed = false;
             }
+
+            int scaledRangedDamage = (int)Player.GetTotalDamage(DamageClass.Ranged).ApplyTo(heroDamage);
+            int scaledMeleeDamage = (int)Player.GetTotalDamage(DamageClass.Melee).ApplyTo(heroDamage);
+            int scaledSummonDamage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(heroDamage);
+            int scaledMagicDamage = (int)Player.GetTotalDamage(DamageClass.Magic).ApplyTo(heroDamage);
             
             // XLR8 Transformation
 
             if (currTransformation == TransformationEnum.XLR8) {
                 float multiplier = 1;
 
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), (int)(heroDamage / 2), 10, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), (int)(scaledMeleeDamage / 2), 10, Player.whoAmI);
                     }
                 }
 
@@ -353,27 +340,6 @@ namespace Ben10Mod
                 if (XLR8PrimaryAbilityEnabled) {
                     multiplier = 2;
                 }
-                else {
-                    multiplier = 1;
-                }
-
-                Player.moveSpeed *= 2 * multiplier;
-                Player.accRunSpeed *= 1.5f * multiplier;
-                Player.GetAttackSpeed(DamageClass.Generic) += multiplier;
-                if (Math.Abs(Player.velocity.X) > 2) {
-                    Player.jumpSpeed *= 1.25f * multiplier;
-                    Player.waterWalk = true;
-                }
-
-                if (Player.velocity.X == 0 && (Player.holdDownCardinalTimer[2] > 0 || Player.holdDownCardinalTimer[3] > 0)) {
-                    if (Player.holdDownCardinalTimer[0] > 0) {
-                        Player.maxFallSpeed *= 2.0f;
-                    } else if (Player.holdDownCardinalTimer[1] > 0) {
-                        Player.velocity.Y = -Player.maxFallSpeed * multiplier;
-                    } else {
-                        Player.maxFallSpeed = 0;
-                    }
-                }
 
 
                 if (XLR8PrimaryAbilityEnabled != XLR8PrimaryAbilityWasEnabled) {
@@ -381,7 +347,7 @@ namespace Ben10Mod
                     Player.AddBuff(ModContent.BuffType<XLR8_Primary_Cooldown_Buff>(), 10 * 60);
                 }
 
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Heatblast Transformation
@@ -390,16 +356,16 @@ namespace Ben10Mod
                 Random rand = new Random();
                 int dustNum = Dust.NewDust(Player.position, Player.width, Player.height, DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
                 Main.dust[dustNum].noGravity = true;
-                if (!PlayerInput.Triggers.Current.MouseRight && canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 3)) {
+                if (!PlayerInput.Triggers.Current.MouseRight && CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 3)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ProjectileID.ImpFireball, heroDamage, 0, Main.myPlayer);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ProjectileID.ImpFireball, scaledRangedDamage, 0, Main.myPlayer);
                     }
                 }
-                if (PlayerInput.Triggers.Current.MouseRight && canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 6))
+                if (PlayerInput.Triggers.Current.MouseRight && CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 6))
                 {
                     if (Main.myPlayer == Player.whoAmI)
                     {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 8, ModContent.ProjectileType<HeatBlastBomb>(), (int)(heroDamage * 2.5), 0, Main.myPlayer);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 8, ModContent.ProjectileType<HeatBlastBomb>(), (int)(scaledRangedDamage * 2.5), 0, Main.myPlayer);
                     }
                 }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
@@ -407,11 +373,11 @@ namespace Ben10Mod
                         Player.AddBuff(ModContent.BuffType<HeatBlast_Primary_Buff>(), 60 * 60);
                     }
                 }
-                if (canUseAttack(KeybindSystem.SecondaryAbility.Current, heroAttackSpeed * 4)) {
+                if (CanUseAttack(KeybindSystem.SecondaryAbility.Current, heroAttackSpeed * 4)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         if (Main.myPlayer == Player.whoAmI) {
-                            int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 75, ModContent.ProjectileType<HeatBlastFireSlam>(), heroDamage, 0, Main.myPlayer);
-                            projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * -75, ModContent.ProjectileType<HeatBlastFireSlam>(), heroDamage, 0, Main.myPlayer);
+                            int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 75, ModContent.ProjectileType<HeatBlastFireSlam>(), scaledRangedDamage, 0, Main.myPlayer);
+                            projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * -75, ModContent.ProjectileType<HeatBlastFireSlam>(), scaledRangedDamage, 0, Main.myPlayer);
                         }
                     }
                 }
@@ -444,9 +410,9 @@ namespace Ben10Mod
             // Diamondhead Transformation
 
             if (currTransformation == TransformationEnum.DiamondHead) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 35, ModContent.ProjectileType<DiamondHeadProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 35, ModContent.ProjectileType<DiamondHeadProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
                     }
                 }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
@@ -454,56 +420,28 @@ namespace Ben10Mod
                         Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Buff>(), 5 * 60);
                     }
                 }
-                if (canUseAttack(KeybindSystem.SecondaryAbility.Current, heroAttackSpeed * 3)) {
 
-                }
-
-                Player.statDefense += 25;
-                Player.GetDamage(DamageClass.Melee) *= 1.25f;
-                Player.GetDamage<HeroDamage>() *= 1.25f;
-
-                if (DiamondHeadPrimaryAbilityEnabled) {
-                    Player.moveSpeed = 0;
-                    Player.lifeRegen += 10;
-                    Player.immune = true;
-                    Player.immuneAlpha = 0;
-                    Player.releaseJump = false;
-                }
-
-                if (DiamondHeadPrimaryAbilityEnabled != DiamondHeadPrimaryAbilityWasEnabled) {
-                    DiamondHeadPrimaryAbilityWasEnabled = false;
-                    Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Cooldown_Buff>(), 10 * 60);
-                }
-
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Ripjaws Transformation
 
             if (currTransformation == TransformationEnum.RipJaws) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<RipJawsProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<RipJawsProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
                 }
-                if (Player.wet) {
-                    Player.merman = true;
-                    Player.breathCD = 0;
-                    Player.breath = Player.breathMax;
-                    Player.GetDamage<HeroDamage>() *= 2.0f;
-                }
 
-                Player.accFlipper = true;
-
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Chromastone Transformation
 
             if (currTransformation == TransformationEnum.ChromaStone) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<ChromaStoneProjectile>(), heroDamage + ChromaStoneAbsorbtion, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<ChromaStoneProjectile>(), scaledMagicDamage + ChromaStoneAbsorbtion, 0, Player.whoAmI);
                     }
                 }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
@@ -517,7 +455,7 @@ namespace Ben10Mod
                     Lighting.AddLight(Player.Center, GetChromaStoneOverlayColor().ToVector3());
                 }
 
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
 
             } else {
             }
@@ -529,10 +467,10 @@ namespace Ben10Mod
             // Buzzshock Transformation
 
             if (currTransformation == TransformationEnum.BuzzShock) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, Player.position);
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<BuzzShockProjectile>(), heroDamage, 0, Main.myPlayer);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<BuzzShockProjectile>(), scaledMagicDamage, 0, Main.myPlayer);
                     }
                 }
                 if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(BuffID.ChaosState)) {
@@ -560,11 +498,11 @@ namespace Ben10Mod
                             int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1, Player.height + 1, DustID.UltraBrightTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 2);
                             Main.dust[dustNum].noGravity = true;
                         }
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, new Vector2(0, 0), ModContent.ProjectileType<BuzzShockMinionProjectile>(), heroDamage, 0, Main.myPlayer);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, new Vector2(0, 0), ModContent.ProjectileType<BuzzShockMinionProjectile>(), scaledSummonDamage, 0, Main.myPlayer);
                     }
                 }
 
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             if (BuzzShockPrimaryAbilityEnabled != BuzzShockPrimaryAbilityWasEnabled) {
@@ -575,35 +513,28 @@ namespace Ben10Mod
             // Fourarms Transformation
 
             if (currTransformation == TransformationEnum.FourArms) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
                 }
 
-                if (canUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
+                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FourArmsClap>(), (int)(heroDamage / 2f), 20, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FourArmsClap>(), (int)(scaledMeleeDamage / 2f), 20, Player.whoAmI);
                     }
                 }
 
-                Player.GetDamage(DamageClass.Melee) *= 1.25f;
-                Player.GetDamage<HeroDamage>() *= 1.25f;
-                Player.GetAttackSpeed(DamageClass.Melee) += 0.25f;
-                Player.GetCritChance(DamageClass.Generic) = 100;
-                Player.noFallDmg = true;
-                Player.jumpSpeed *= 1.75f;
-
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Stinkfly Transformation
 
             if (currTransformation == TransformationEnum.StinkFly) {
 
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlyProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlyProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
                     }
                 }
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
@@ -614,55 +545,33 @@ namespace Ben10Mod
             if (currTransformation == TransformationEnum.GhostFreak) {
                 Random random = new Random();
 
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed / 2)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed / 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), scaledMagicDamage, 0, Player.whoAmI);
                     }
                 }
-
-                if (KeybindSystem.PrimaryAbility.Current) { // Phasing Logic
-                    
-                    Vector2 move = Vector2.Zero;
-                    if (Player.controlLeft)  move.X -= 1f;
-                    if (Player.controlRight) move.X += 1f;
-                    if (Player.controlUp)    move.Y -= 1f;
-                    if (Player.controlDown)  move.Y += 1f;
-                    
-                    if (move == Vector2.Zero)
-                        return;
-
-                    float phaseSpeed = 6f;
-
-                    move = Vector2.Normalize(move);
-                    Player.velocity   = Vector2.Zero;
-                    Player.gravity    = 0f;
-                    Player.fallStart  = (int)(Player.position.Y / 16f);
-                    Player.velocity.Y = move.Y;
-                    
-                    Player.position += move * phaseSpeed;
-                }
                 
-                abilitySlot.FunctionalItem = new Item(ItemID.None);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Wildvine Transformation
 
             if (currTransformation == TransformationEnum.WildVine) {
-                if (canUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), heroDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
                 }
-                if (canUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
+                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), heroDamage * 2, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), scaledRangedDamage * 2, 0, Player.whoAmI);
                     }
                 }
                 abilitySlot.FunctionalItem = new Item(ItemID.IvyWhip);
             }
         }
 
-        public bool canUseAttack(bool input, int newAttackDelay) {
+        public bool CanUseAttack(bool input, int newAttackDelay) {
             if (AttackDelay <= 0) {
                 if ((Player.inventory[Player.selectedItem].IsAir || Player.inventory[Player.selectedItem].type == ModContent.GetInstance<PlumbersBadge>().Type) && !Player.mouseInterface && input && CanUseItem(Player.inventory[Player.selectedItem])) {
                     AttackDelay = newAttackDelay;
@@ -703,12 +612,8 @@ namespace Ben10Mod
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
-            foreach (NPC npc in Main.npc) {
-                if (npc.whoAmI == victim.whoAmI) {
-                    if (!npc.HasBuff(BuffID.OnFire) && currTransformation == TransformationEnum.HeatBlast) {
-                        npc.AddBuff(BuffID.OnFire, 3 * 60);
-                    }
-                }
+            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire) && currTransformation == TransformationEnum.HeatBlast) {
+                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire, 3 * 60);
             }
         }
 
@@ -900,9 +805,10 @@ namespace Ben10Mod
                     } else {
                         Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     }
-                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
-                    Player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
+                    Player.body                  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                    Player.legs                  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    Player.back                  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
+                    Player.armorEffectDrawShadow = true;
                 }
             }
         }
@@ -1010,8 +916,7 @@ namespace Ben10Mod
             colourAmount += 0.1f;
         }
 
-        private void addTransformation(TransformationEnum transformation) {
-            
+        public void addTransformation(TransformationEnum transformation) { 
             if (!TransformationHandler.HasTransformation(Player, transformation)) {
                 unlockedTransformation.Add(transformation);
                 Main.NewText(Player.name + " has unlocked " + transformation.GetName(), Color.Green);

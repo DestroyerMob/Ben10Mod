@@ -140,6 +140,11 @@ Items: {
 		DisplayName: Plumbers Shirt
 		Tooltip: ""
 	}
+
+	BlankAccessory: {
+		DisplayName: Blank Accessory
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
