@@ -562,6 +562,11 @@ namespace Ben10Mod
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
                 }
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseRight, heroAttackSpeed * 6)) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineGrapple>(), scaledMeleeDamage, 0, Player.whoAmI);
+                    }
+                }
                 if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 6)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), scaledRangedDamage * 2, 0, Player.whoAmI);

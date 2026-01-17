@@ -298,6 +298,7 @@ Projectiles: {
 	GhostFreakProjectile.DisplayName: Ghost Freak Projectile
 	BuzzShockMinionProjectile.DisplayName: Buzz Shock Minion Projectile
 	WildVineProjectile.DisplayName: Wild Vine Projectile
+	WildVineGrapple.DisplayName: Wild Vine Grapple
 }
 
 Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore
