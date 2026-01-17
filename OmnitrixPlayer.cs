@@ -557,12 +557,12 @@ namespace Ben10Mod
             // Wildvine Transformation
 
             if (currTransformation == TransformationEnum.WildVine) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
                 }
-                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
+                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 6)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), scaledRangedDamage * 2, 0, Player.whoAmI);
                     }
