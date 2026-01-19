@@ -1,45 +1,36 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles {
-    public class FistProjectile : ModProjectile {
+    public class StinkFlyPoisonProjectile : ModProjectile {
 
         public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
-
-
         public override void SetDefaults() {
-            Projectile.width = 32;
-            Projectile.height = 32;
+            Projectile.width = 16;
+            Projectile.height = 16;
             Projectile.aiStyle = ProjAIStyleID.Arrow;
 
             AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
-            Projectile.timeLeft = 4;
-            Projectile.penetrate = -1;
-            Projectile.tileCollide = false;
-            
-            Projectile.DamageType = DamageClass.MeleeNoSpeed;
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-            Projectile.damage /= 2;
+            target.AddBuff(BuffID.Poisoned, 300);
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
-            Random random = new Random();
-            for (int i = 0; i < 5; i++) {
-                int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.WhiteTorch, 0, 0, 1, Color.White, 1);
-                Main.dust[dustNum].noGravity = true;
-            }
+            Random random  = new Random();
+            int    dustNum = Dust.NewDust(boxPosition, 0, 0, DustID.GreenBlood, 0, 0, 1, Color.White, 3);
+            Main.dust[dustNum].noGravity = true;
         }
     }
 }

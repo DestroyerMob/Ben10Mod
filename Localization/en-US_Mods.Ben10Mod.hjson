@@ -216,7 +216,7 @@ Buffs: {
 		Description: Lepidopterran
 	}
 
-	WayBig_Buff: {
+	WildVine_Buff: {
 		DisplayName: Wildvine
 		Description: Florauna
 	}
@@ -276,9 +276,9 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Cooldown_Buff.Description
 	}
 
-	WildVine_Buff: {
-		DisplayName: Wild Vine_ Buff
-		Description: Mods.Ben10Mod.Buffs.WildVine_Buff.Description
+	EnemySlow: {
+		Description: Mods.Ben10Mod.Buffs.EnemySlow.Description
+		DisplayName: Enemy Slow
 	}
 }
 
@@ -299,6 +299,8 @@ Projectiles: {
 	BuzzShockMinionProjectile.DisplayName: Buzz Shock Minion Projectile
 	WildVineProjectile.DisplayName: Wild Vine Projectile
 	WildVineGrapple.DisplayName: Wild Vine Grapple
+	StinkFlySlowProjectile.DisplayName: Stink Fly Slow Projectile
+	StinkFlyPoisonProjectile.DisplayName: Stink Fly Poison Projectile
 }
 
 Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore

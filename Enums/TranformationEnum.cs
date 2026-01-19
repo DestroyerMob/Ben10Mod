@@ -85,7 +85,7 @@ namespace Ben10Mod.Enums
         public static ReLogic.Content.Asset<Texture2D> GetTransformationIcon(this TransformationEnum te) {
             switch (te) {
                 case TransformationEnum.BuzzShock:
-                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/BuzzShockSelect");
                 case TransformationEnum.ChromaStone:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/ChromaStoneSelect");
                 case TransformationEnum.DiamondHead:

@@ -285,6 +285,7 @@ namespace Ben10Mod
             // Ghostfreak Transformation
 
             if (currTransformation == TransformationEnum.GhostFreak) {
+                Player.noFallDmg = true;
             }
 
             // Wildvine Transformation
@@ -532,9 +533,14 @@ namespace Ben10Mod
 
             if (currTransformation == TransformationEnum.StinkFly) {
 
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 2)) {
                     if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlyProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlySlowProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
+                    }
+                }
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseRight, heroAttackSpeed * 2)) {
+                    if (Main.myPlayer == Player.whoAmI) {
+                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlyPoisonProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
                     }
                 }
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
@@ -551,13 +557,35 @@ namespace Ben10Mod
                     }
                 }
                 
+                if (KeybindSystem.PrimaryAbility.Current) { // Phasing Logic
+                    
+                    Vector2 move                    = Vector2.Zero;
+                    if (Player.controlLeft)  move.X -= 1f;
+                    if (Player.controlRight) move.X += 1f;
+                    if (Player.controlUp)    move.Y -= 1f;
+                    if (Player.controlDown)  move.Y += 1f;
+                    
+                    if (move == Vector2.Zero)
+                        return;
+
+                    float phaseSpeed = 6f;
+
+                    move              = Vector2.Normalize(move);
+                    Player.velocity   = Vector2.Zero;
+                    Player.gravity    = 0f;
+                    Player.fallStart  = (int)(Player.position.Y / 16f);
+                    Player.velocity.Y = move.Y;
+                    
+                    Player.position += move * phaseSpeed;
+                }
+                
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Wildvine Transformation
 
             if (currTransformation == TransformationEnum.WildVine) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 2)) {
+                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 3)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
                     }
@@ -572,7 +600,7 @@ namespace Ben10Mod
                         int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), scaledRangedDamage * 2, 0, Player.whoAmI);
                     }
                 }
-                abilitySlot.FunctionalItem = new Item(ItemID.IvyWhip);
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
         }
 
@@ -885,6 +913,9 @@ namespace Ben10Mod
 
         public override void OnEnterWorld() {
             ModContent.GetInstance<UISystem>().HideMyUI();
+            if (!isTransformed) {
+                currTransformation = TransformationEnum.None;
+            }
         }
 
 

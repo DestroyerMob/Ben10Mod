@@ -9,8 +9,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/WildVineGrapple.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/EnemySlow.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/EnemySlow.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Interface/BuzzShockSelect.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/StinkFlySlowProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/StinkFlyProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/StinkFlyPoisonProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Enums/TranformationEnum.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Enums/TranformationEnum.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
     </list>
@@ -119,7 +125,10 @@
       <workItem from="1767959688834" duration="5711000" />
       <workItem from="1768299364722" duration="5725000" />
       <workItem from="1768432536662" duration="552000" />
-      <workItem from="1768672109426" duration="5038000" />
+      <workItem from="1768672109426" duration="5065000" />
+      <workItem from="1768688250940" duration="1665000" />
+      <workItem from="1768730161686" duration="2093000" />
+      <workItem from="1768820491139" duration="604000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />
