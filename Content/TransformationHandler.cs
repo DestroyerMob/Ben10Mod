@@ -35,7 +35,7 @@ namespace Ben10Mod.Content {
             }
             Main.NewText(transformation.GetName() + "!", Color.Green);
             player.AddBuff(transformation.GetTransformation(), 60 * seconds);
-            player.GetModPlayer<OmnitrixPlayer>().currTransformation = transformation;
+            // player.GetModPlayer<OmnitrixPlayer>().currTransformation = transformation;
         }
 
         public static void Detransform(Player player, int seconds, bool showParticles = true, bool addCooldown = true, bool playSound = true) {
