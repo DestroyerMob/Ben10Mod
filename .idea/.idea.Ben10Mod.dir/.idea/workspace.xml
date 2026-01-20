@@ -9,16 +9,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/EnemySlow.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/EnemySlow.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Interface/BuzzShockSelect.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/StinkFlySlowProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FistProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/StinkFlyProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/StinkFlyPoisonProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Enums/TranformationEnum.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Enums/TranformationEnum.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/RipJawsProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/RipJawsProjectile.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +121,7 @@
       <workItem from="1768672109426" duration="5065000" />
       <workItem from="1768688250940" duration="1665000" />
       <workItem from="1768730161686" duration="2093000" />
-      <workItem from="1768820491139" duration="604000" />
+      <workItem from="1768820491139" duration="1975000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />
