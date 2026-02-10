@@ -81,9 +81,6 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.width = 22;
             Item.height = 28;
             Item.rare = ItemRarityID.Master;
-            Item.DamageType = DamageClass.Generic;
-            Item.damage = 15;
-            Item.crit = 100;
             Item.accessory = true;
             this.transformationTime = 300;
         }
@@ -96,7 +93,6 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateAccessory(Player player, bool hideVisual) {
             this.player = player;
             player.GetModPlayer<OmnitrixPlayer>().omnitrixEquipped = true;
-            player.GetModPlayer<OmnitrixPlayer>().heroDamage = (int)player.GetDamage<HeroDamage>().ApplyTo(Item.damage);
             wasEquipedLastFrame = true;
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
@@ -177,7 +173,6 @@ namespace Ben10Mod.Content.Items.Accessories
                 } else {
                     TransformationHandler.Detransform(player, cooldownTime, false, false);
                 }
-                player.GetModPlayer<OmnitrixPlayer>().heroDamage = 0;
             }
         }
 
@@ -202,11 +197,13 @@ namespace Ben10Mod.Content.Items.Accessories
 
             Recipe recipe = CreateRecipe()
                 .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
+                .AddIngredient(ItemID.Lens, 3)
                 .AddIngredient(ItemID.Emerald)
                 .AddTile(TileID.Anvils).Register();
 
             Recipe recipeAlt = CreateRecipe()
                 .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
+                .AddIngredient(ItemID.Lens, 3)
                 .AddIngredient(ItemID.Emerald)
                 .AddTile(TileID.Anvils).Register();
         }

@@ -72,12 +72,6 @@ namespace Ben10Mod
         public const int DashDuration = 15;
 
         public bool isPerformingHeatBlastDoubleJump;
-        
-        // Control attacking
-        public       int heroDamage      = 0;
-        public       int heroAttackSpeed = 0;
-        public       int AttackDelay     = 0;
-        public const int AttackCooldown  = 20;
 
         public TransformationEnum[] transformations = { TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast };
         public TransformationEnum currTransformation = TransformationEnum.None;
@@ -318,21 +312,15 @@ namespace Ben10Mod
                 wasTransformed = false;
             }
 
-            int scaledRangedDamage = (int)Player.GetTotalDamage(DamageClass.Ranged).ApplyTo(heroDamage);
-            int scaledMeleeDamage = (int)Player.GetTotalDamage(DamageClass.Melee).ApplyTo(heroDamage);
-            int scaledSummonDamage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(heroDamage);
-            int scaledMagicDamage = (int)Player.GetTotalDamage(DamageClass.Magic).ApplyTo(heroDamage);
+            int scaledRangedDamage = (int)Player.GetTotalDamage(DamageClass.Ranged).ApplyTo(Player.inventory[Player.selectedItem].damage);
+            int scaledMeleeDamage = (int)Player.GetTotalDamage(DamageClass.Melee).ApplyTo(Player.inventory[Player.selectedItem].damage);
+            int scaledSummonDamage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(Player.inventory[Player.selectedItem].damage);
+            int scaledMagicDamage = (int)Player.GetTotalDamage(DamageClass.Magic).ApplyTo(Player.inventory[Player.selectedItem].damage);
             
             // XLR8 Transformation
 
             if (currTransformation == TransformationEnum.XLR8) {
                 float multiplier = 1;
-
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), (int)(scaledMeleeDamage / 2), 10, Player.whoAmI);
-                    }
-                }
 
                 if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(ModContent.BuffType<XLR8_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<XLR8_Primary_Buff>())) {
                     Player.AddBuff(ModContent.BuffType<XLR8_Primary_Buff>(), 10 * 60);
@@ -357,29 +345,9 @@ namespace Ben10Mod
                 Random rand = new Random();
                 int dustNum = Dust.NewDust(Player.position, Player.width, Player.height, DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
                 Main.dust[dustNum].noGravity = true;
-                if (!PlayerInput.Triggers.Current.MouseRight && CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 3)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ProjectileID.ImpFireball, scaledRangedDamage, 0, Main.myPlayer);
-                    }
-                }
-                if (PlayerInput.Triggers.Current.MouseRight && CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 6))
-                {
-                    if (Main.myPlayer == Player.whoAmI)
-                    {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 8, ModContent.ProjectileType<HeatBlastBomb>(), (int)(scaledRangedDamage * 2.5), 0, Main.myPlayer);
-                    }
-                }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (!Player.HasBuff(ModContent.BuffType<HeatBlast_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<HeatBlast_Primary_Buff>())) {
                         Player.AddBuff(ModContent.BuffType<HeatBlast_Primary_Buff>(), 60 * 60);
-                    }
-                }
-                if (CanUseAttack(KeybindSystem.SecondaryAbility.Current, heroAttackSpeed * 4)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        if (Main.myPlayer == Player.whoAmI) {
-                            int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 75, ModContent.ProjectileType<HeatBlastFireSlam>(), scaledRangedDamage, 0, Main.myPlayer);
-                            projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * -75, ModContent.ProjectileType<HeatBlastFireSlam>(), scaledRangedDamage, 0, Main.myPlayer);
-                        }
                     }
                 }
                 if (HeatBlastPrimaryAbilityEnabled) {
@@ -411,11 +379,6 @@ namespace Ben10Mod
             // Diamondhead Transformation
 
             if (currTransformation == TransformationEnum.DiamondHead) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 35, ModContent.ProjectileType<DiamondHeadProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
-                    }
-                }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (!Player.HasBuff(ModContent.BuffType<DiamondHead_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<DiamondHead_Primary_Buff>())) {
                         Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Buff>(), 5 * 60);
@@ -428,11 +391,6 @@ namespace Ben10Mod
             // Ripjaws Transformation
 
             if (currTransformation == TransformationEnum.RipJaws) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<RipJawsProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
-                    }
-                }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
@@ -440,11 +398,6 @@ namespace Ben10Mod
             // Chromastone Transformation
 
             if (currTransformation == TransformationEnum.ChromaStone) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<ChromaStoneProjectile>(), scaledMagicDamage + ChromaStoneAbsorbtion, 0, Player.whoAmI);
-                    }
-                }
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (!Player.HasBuff(ModContent.BuffType<ChromaStone_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<ChromaStone_Primary_Buff>())) {
                         Player.AddBuff(ModContent.BuffType<ChromaStone_Primary_Buff>(), 30 * 60);
@@ -468,12 +421,6 @@ namespace Ben10Mod
             // Buzzshock Transformation
 
             if (currTransformation == TransformationEnum.BuzzShock) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, Player.position);
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<BuzzShockProjectile>(), scaledMagicDamage, 0, Main.myPlayer);
-                    }
-                }
                 if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(BuffID.ChaosState)) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.Item8, Player.position);
@@ -514,35 +461,12 @@ namespace Ben10Mod
             // Fourarms Transformation
 
             if (currTransformation == TransformationEnum.FourArms) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FistProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
-                    }
-                }
-
-                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 2)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<FourArmsClap>(), (int)(scaledMeleeDamage / 2f), 20, Player.whoAmI);
-                    }
-                }
-
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
             // Stinkfly Transformation
 
             if (currTransformation == TransformationEnum.StinkFly) {
-
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 2)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlySlowProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
-                    }
-                }
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseRight, heroAttackSpeed * 2)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 25, ModContent.ProjectileType<StinkFlyPoisonProjectile>(), scaledRangedDamage, 0, Player.whoAmI);
-                    }
-                }
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
             }
             
@@ -550,12 +474,6 @@ namespace Ben10Mod
 
             if (currTransformation == TransformationEnum.GhostFreak) {
                 Random random = new Random();
-
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed / 2)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<GhostFreakProjectile>(), scaledMagicDamage, 0, Player.whoAmI);
-                    }
-                }
                 
                 if (KeybindSystem.PrimaryAbility.Current) { // Phasing Logic
                     
@@ -585,42 +503,7 @@ namespace Ben10Mod
             // Wildvine Transformation
 
             if (currTransformation == TransformationEnum.WildVine) {
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseLeft, heroAttackSpeed * 3)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineProjectile>(), scaledMeleeDamage, 0, Player.whoAmI);
-                    }
-                }
-                if (CanUseAttack(PlayerInput.Triggers.Current.MouseRight, heroAttackSpeed * 6)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 10, ModContent.ProjectileType<WildVineGrapple>(), scaledMeleeDamage, 0, Player.whoAmI);
-                    }
-                }
-                if (CanUseAttack(KeybindSystem.PrimaryAbility.Current, heroAttackSpeed * 6)) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Player.DirectionTo(Main.MouseWorld) * 5, ModContent.ProjectileType<WildVineBomb>(), scaledRangedDamage * 2, 0, Player.whoAmI);
-                    }
-                }
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
-            }
-        }
-
-        public bool CanUseAttack(bool input, int newAttackDelay) {
-            if (AttackDelay <= 0) {
-                if ((Player.inventory[Player.selectedItem].IsAir || Player.inventory[Player.selectedItem].type == ModContent.GetInstance<PlumbersBadge>().Type) && !Player.mouseInterface && input && CanUseItem(Player.inventory[Player.selectedItem])) {
-                    AttackDelay = newAttackDelay;
-                    if (Main.myPlayer == Player.whoAmI) {
-                        Vector2 direction = Main.MouseWorld - Player.Center;
-                        direction.Normalize();
-                        Player.direction = direction.X > 0 ? Player.direction = 1 : Player.direction = -1;
-                    }
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            } else {
-                AttackDelay--;
-                return false;
             }
         }
 

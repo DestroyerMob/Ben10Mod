@@ -35,9 +35,9 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+5 Generic damage";
+            player.setBonus = "+5 Hero damage";
             
-            player.GetDamage(DamageClass.Generic).Flat       += 5;
+            player.GetDamage(ModContent.GetInstance<HeroDamage>()).Flat       += 5;
         }
 
         public override void AddRecipes()

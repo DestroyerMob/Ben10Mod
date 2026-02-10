@@ -77,16 +77,13 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override void SetDefaults() {
-            Item.maxStack = 1;
-            Item.width = 22;
-            Item.height = 28;
-            Item.rare = ItemRarityID.Master;
-            Item.DamageType = ModContent.GetInstance<HeroDamage>();
-            Item.damage = 30;
-            Item.crit = 100;
-            Item.accessory = true;
+            Item.maxStack             = 1;
+            Item.width                = 22;
+            Item.height               = 28;
+            Item.rare                 = ItemRarityID.Master;
+            Item.accessory            = true;
             this.transformationEnergy = 300 * 60;
-            this.maxEnergy = 300 * 60;
+            this.maxEnergy            = 300 * 60;
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)
@@ -98,7 +95,6 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateAccessory(Player player, bool hideVisual) {
             this.player = player;
             player.GetModPlayer<OmnitrixPlayer>().omnitrixEquipped = true;
-            player.GetModPlayer<OmnitrixPlayer>().heroDamage = (int)player.GetDamage<HeroDamage>().ApplyTo(Item.damage);
             wasEquipedLastFrame = true;
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
@@ -193,7 +189,6 @@ namespace Ben10Mod.Content.Items.Accessories
                 } else {
                     TransformationHandler.Detransform(player, cooldownTime, false, false);
                 }
-                player.GetModPlayer<OmnitrixPlayer>().heroDamage = 0;
             }
         }
 

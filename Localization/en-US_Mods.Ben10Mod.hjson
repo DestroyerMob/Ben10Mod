@@ -145,6 +145,16 @@ Items: {
 		DisplayName: Blank Accessory
 		Tooltip: ""
 	}
+
+	PlumberHelperBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Helper Badge
+	}
+
+	ProvisionalAgentBadge: {
+		Tooltip: ""
+		DisplayName: Provisional Agent Badge
+	}
 }
 
 Keybinds: {

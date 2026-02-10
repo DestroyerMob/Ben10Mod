@@ -31,7 +31,9 @@ namespace Ben10Mod.Content.Projectiles {
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
             Random random  = new Random();
             int    dustNum = Dust.NewDust(boxPosition, 0, 0, DustID.GreenMoss, 0, 0, 1, Color.White, 3);
-            Main.dust[dustNum].noGravity = true;
+            Main.dust[dustNum].noGravity =  true;
+            Main.dust[dustNum].velocity  *= 0f;
+            Main.dust[dustNum].rotation  =  random.NextSingle();
         }
     }
 }
