@@ -93,12 +93,12 @@ Items: {
 
 	Ben10Shirt: {
 		DisplayName: Hero Shirt
-		Tooltip: This shirt seems odly familiar...
+		Tooltip: This shirt seems oddly familiar...
 	}
 
 	Ben10Pants: {
 		DisplayName: Hero Pants
-		Tooltip: These pants seem odly familiar...
+		Tooltip: These pants seem oddly familiar...
 	}
 
 	PlumbersBadge: {
@@ -158,6 +158,16 @@ Items: {
 
 	ProvisionalAgentBadgeDemonite: {
 		DisplayName: Provisional Agent Badge
+		Tooltip: ""
+	}
+
+	PlumberAgentBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Agent Badge
+	}
+
+	PlumberCapsulePodItem: {
+		DisplayName: Plumber Capsule Pod Item
 		Tooltip: ""
 	}
 }
@@ -324,5 +334,9 @@ Projectiles: {
 	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
 }
 
-Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore
+Tiles: {
+	CongealedCodonOreTile.MapEntry: Congealed Codon Ore
+	PlumberCapsulePod.MapEntry: Strange Capsule
+}
+
 DamageClasses.HeroDamage.DisplayName: Hero Damage

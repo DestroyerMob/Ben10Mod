@@ -11,7 +11,7 @@ using Ben10Mod.Content.Tiles;
 using Terraria.ID;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Ben10Mod.Common.Systems.GemPasses {
+namespace Ben10Mod.Common.Systems.GenPasses {
     public class CongealedCodonOreGenPass : GenPass {
         public CongealedCodonOreGenPass(string name, float weight) : base(name, weight) { }
 

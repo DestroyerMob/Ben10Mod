@@ -7,7 +7,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod {
-    public class OmnitricNPC : GlobalNPC
+    public class OmnitrixNPC : GlobalNPC
     {
         public override bool InstancePerEntity => true;
 
