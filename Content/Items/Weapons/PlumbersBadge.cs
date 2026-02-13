@@ -16,7 +16,6 @@ namespace Ben10Mod.Content.Items.Weapons
         // Override these in subclasses for tier-specific values
         public virtual int    BaseDamage               => 15;
         public virtual float  DamageMultiplier         => 1f; // For universal scaling if needed
-        public virtual int    CooldownReductionPercent => 0; // Example bonus
         public virtual string BadgeRankName            => "Helper";
         
         public override void SetDefaults()
@@ -63,11 +62,22 @@ namespace Ben10Mod.Content.Items.Weapons
             switch (omp.currTransformation)
             {
                 case TransformationEnum.HeatBlast:
-                    Item.useTime = Item.useAnimation = 24; // Fast enough for fireballs, bombs will feel strong but same rate
-                    Item.shootSpeed = 10f;
-                    break;
 
+                    if (player.altFunctionUse == 2) {
+                        Item.useStyle   = ItemUseStyleID.Swing;
+                        Item.useTime    = Item.useAnimation = 50;
+                        Item.shootSpeed = 10f;
+                    }
+                    else {
+                        Item.useStyle = ItemUseStyleID.Shoot;
+                        Item.useTime = Item.useAnimation = 6; // Fast enough for fireballs, bombs will feel strong but same rate
+                        Item.shootSpeed = 3f;
+                    }
+                    break;
                 case TransformationEnum.XLR8:
+                    Item.useTime    = Item.useAnimation = 10; // Fast punches
+                    Item.shootSpeed = 25f;
+                    break;
                 case TransformationEnum.FourArms:
                     Item.useTime = Item.useAnimation = 18; // Fast punches
                     Item.shootSpeed = 25f;
@@ -107,10 +117,10 @@ namespace Ben10Mod.Content.Items.Weapons
                     Item.useTime = Item.useAnimation = 32;
                     Item.shootSpeed = 10f;
                     break;
-
                 default:
-                    Item.useTime = Item.useAnimation = 25;
+                    Item.useTime    = Item.useAnimation = 25;
                     Item.shootSpeed = 10f;
+                    Item.useStyle   = ItemUseStyleID.Swing;
                     break;
             }
         }
@@ -128,18 +138,22 @@ namespace Ben10Mod.Content.Items.Weapons
             switch (omp.currTransformation)
             {
                 case TransformationEnum.HeatBlast:
-                    if (player.altFunctionUse == 2)
-                    {
+                    if (player.altFunctionUse == 2) {                        
                         projType = ModContent.ProjectileType<HeatBlastBomb>();
+                        // projType    = ProjectileID.Flamelash;
                         finalDamage = (int)(damage * 2.5f);
                     }
-                    else
-                    {
-                        projType = ProjectileID.ImpFireball;
+                    else {
+                        projType = ProjectileID.Flames;
+                        finalDamage = (int)(damage * 0.2f);
                     }
                     break;
 
                 case TransformationEnum.XLR8:
+                    projType = player.altFunctionUse == 2
+                        ? 0
+                        : ModContent.ProjectileType<FistProjectile>();
+                    break;
                 case TransformationEnum.FourArms:
                     projType = player.altFunctionUse == 2
                         ? ModContent.ProjectileType<FourArmsClap>()
@@ -163,12 +177,11 @@ namespace Ben10Mod.Content.Items.Weapons
                         ? 0
                         : ModContent.ProjectileType<ChromaStoneProjectile>();
                     finalDamage += omp.ChromaStoneAbsorbtion;
-                    Main.NewText(omp.ChromaStoneAbsorbtion);
                     break;
 
                 case TransformationEnum.BuzzShock:
                     projType = player.altFunctionUse == 2
-                        ? 0
+                        ? ModContent.ProjectileType<BuzzShockMinionProjectile>()
                         : ModContent.ProjectileType<BuzzShockProjectile>();
                     SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, player.position);
                     break;
@@ -181,7 +194,7 @@ namespace Ben10Mod.Content.Items.Weapons
 
                 case TransformationEnum.GhostFreak:
                     projType = player.altFunctionUse == 2
-                        ? 0
+                        ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
                         : ModContent.ProjectileType<GhostFreakProjectile>();
                     break;
 

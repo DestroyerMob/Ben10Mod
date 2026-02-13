@@ -83,6 +83,12 @@ namespace Ben10Mod
         public float colourAmount = 0.00f;
         public int thisColour = 0;
         public int nextColour = 1;
+        
+        public        bool    inPossessionMode      = false;
+        public        Vector2 prePossessionPosition = Vector2.Zero; // Save player's position before possession
+        public        NPC     possessedTarget       = null;
+        public        int     possessionTimer       = 0;
+        private const int     PossessionDuration    = 360; // 6 seconds
 
         public Color GetChromaStoneOverlayColor()
         {
@@ -195,7 +201,7 @@ namespace Ben10Mod
                 
                 Player.moveSpeed                           *= 2.5f * multiplier;
                 Player.accRunSpeed                         *= 2.0f * multiplier;
-                Player.GetAttackSpeed(DamageClass.Generic) += multiplier;
+                Player.GetAttackSpeed(DamageClass.Generic) += (multiplier / 5);
                 if (Math.Abs(Player.velocity.X) > 2) {
                     Player.jumpSpeed *= 1.5f * multiplier;
                     Player.waterWalk =  true;
@@ -311,25 +317,14 @@ namespace Ben10Mod
                 }
                 wasTransformed = false;
             }
-
-            int scaledRangedDamage = (int)Player.GetTotalDamage(DamageClass.Ranged).ApplyTo(Player.inventory[Player.selectedItem].damage);
-            int scaledMeleeDamage = (int)Player.GetTotalDamage(DamageClass.Melee).ApplyTo(Player.inventory[Player.selectedItem].damage);
-            int scaledSummonDamage = (int)Player.GetTotalDamage(DamageClass.Summon).ApplyTo(Player.inventory[Player.selectedItem].damage);
-            int scaledMagicDamage = (int)Player.GetTotalDamage(DamageClass.Magic).ApplyTo(Player.inventory[Player.selectedItem].damage);
             
             // XLR8 Transformation
 
             if (currTransformation == TransformationEnum.XLR8) {
-                float multiplier = 1;
 
                 if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(ModContent.BuffType<XLR8_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<XLR8_Primary_Buff>())) {
                     Player.AddBuff(ModContent.BuffType<XLR8_Primary_Buff>(), 10 * 60);
                 }
-
-                if (XLR8PrimaryAbilityEnabled) {
-                    multiplier = 2;
-                }
-
 
                 if (XLR8PrimaryAbilityEnabled != XLR8PrimaryAbilityWasEnabled) {
                     XLR8PrimaryAbilityWasEnabled = false;
@@ -438,17 +433,6 @@ namespace Ben10Mod
                         Player.AddBuff(BuffID.ChaosState, 60 * 6);
                     }
                 }
-                
-                if (KeybindSystem.SecondaryAbility.JustPressed) {
-                    if (Main.myPlayer == Player.whoAmI) {
-                        Random random = new Random();
-                        for (int i = 0; i < 50; i++) {
-                            int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1, Player.height + 1, DustID.UltraBrightTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 2);
-                            Main.dust[dustNum].noGravity = true;
-                        }
-                        int projectileNum = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, new Vector2(0, 0), ModContent.ProjectileType<BuzzShockMinionProjectile>(), scaledSummonDamage, 0, Main.myPlayer);
-                    }
-                }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
@@ -505,6 +489,40 @@ namespace Ben10Mod
             if (currTransformation == TransformationEnum.WildVine) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
+            
+            if (inPossessionMode)
+            {
+                if (possessedTarget == null || !possessedTarget.active || currTransformation != TransformationEnum.GhostFreak )
+                {
+                    EndPossession(); // Safety: end if target dies/missing
+                    return;
+                }
+
+                // Sync player to possessed NPC's center (camera follows player naturally)
+                Player.immuneNoBlink = true;
+                Player.immuneTime    = 999;
+                Player.Center        = possessedTarget.Center;
+
+                // Optional: Sync some velocity for "riding" feel (but keep player locked)
+                Player.velocity = possessedTarget.velocity * 0.8f; // Slight lag for smoothness
+
+                // Lock controls to prevent input interference
+                Player.controlJump    = false;
+                Player.controlDown    = false;
+                Player.controlLeft    = false;
+                Player.controlRight   = false;
+                Player.controlUp      = false;
+                Player.controlUseItem = false;
+                Player.controlUseTile = false;
+                Player.controlHook    = false;
+
+                possessionTimer--;
+
+                if (possessionTimer <= 0) {
+                    possessedTarget.SimpleStrikeNPC(Player.HeldItem.damage, Player.direction, false, 0, DamageClass.Magic);
+                    EndPossession();
+                }
+            }
         }
 
         public override bool CanUseItem(Item item) {
@@ -551,6 +569,8 @@ namespace Ben10Mod
         }
 
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
+            if (isTransformed) {
+            }
             switch (currTransformation) {
                 case TransformationEnum.HeatBlast:
                     drawInfo.colorArmorHead = Color.White;
@@ -561,6 +581,9 @@ namespace Ben10Mod
                     drawInfo.colorArmorHead.A /= 2;
                     drawInfo.colorArmorBody.A /= 2;
                     drawInfo.colorArmorLegs.A /= 2;
+                    break;
+                case TransformationEnum.GhostFreak when inPossessionMode:
+                    Player.invis              = true;
                     break;
                 case TransformationEnum.Arctiguana:
                     break;
@@ -615,6 +638,7 @@ namespace Ben10Mod
                     }
                 }
             }
+            
             if (!customSlot.HideVisuals) {
                 if (currTransformation == TransformationEnum.HeatBlast) {
                     r = 255;
@@ -654,6 +678,13 @@ namespace Ben10Mod
                 }
             }
             if (!customSlot.HideVisuals) {
+                if (isTransformed) {
+                    Player.wings   = -1;
+                    Player.shoe    = -1;
+                    Player.handoff = -1;
+                    Player.handon  = -1;
+                    Player.back    = -1;
+                }
                 if (currTransformation == TransformationEnum.BuzzShock) {
                     var costume = ModContent.GetInstance<BuzzShock>();
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
@@ -680,10 +711,18 @@ namespace Ben10Mod
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
                 if (currTransformation == TransformationEnum.GhostFreak) {
-                    var costume = ModContent.GetInstance<GhostFreak>();
-                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    if (inPossessionMode) {
+                        Player.head = -1;
+                        Player.body = -1;
+                        Player.legs = -1;
+                    }
+                    else {
+                        var costume = ModContent.GetInstance<GhostFreak>();
+                        Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                        Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                        Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs); 
+                    }
+
                 }
                 if (currTransformation == TransformationEnum.HeatBlast) {
                     var costume = ModContent.GetInstance<HeatBlast>();
@@ -704,9 +743,10 @@ namespace Ben10Mod
                 }
                 if (currTransformation == TransformationEnum.StinkFly) {
                     var costume = ModContent.GetInstance<StinkFly>();
-                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    Player.head  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                    Player.body  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                    Player.legs  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    Player.wings = EquipLoader.GetEquipSlot(Mod, ModContent.GetInstance<StinkFlyWings>().Name, EquipType.Wings);
                 }
                 if (currTransformation == TransformationEnum.WildVine) {
                     var costume = ModContent.GetInstance<WildVine>();
@@ -798,6 +838,33 @@ namespace Ben10Mod
             ModContent.GetInstance<UISystem>().HideMyUI();
             if (!isTransformed) {
                 currTransformation = TransformationEnum.None;
+            }
+        }
+        
+        private void EndPossession()
+        {
+            if (!inPossessionMode) return;
+
+            inPossessionMode = false;
+            possessedTarget  = null;
+
+            // Snap player back to pre-possession position
+            Player.position = prePossessionPosition;
+
+            // Re-enable visuals and remove immunity
+            Player.invis  = false;
+            Player.immune = false;
+
+            // Optional: Short invincibility after return
+            Player.immune     = true;
+            Player.immuneTime = 60;
+
+            // Visual/sound cue for return
+            SoundEngine.PlaySound(SoundID.MaxMana with { Pitch = -0.3f, Volume = 0.8f }, Player.Center);
+            for (int i = 0; i < 30; i++)
+            {
+                Dust d = Dust.NewDustPerfect(Player.Center, DustID.PurpleTorch, Main.rand.NextVector2Circular(6f, 6f), Scale: 1.8f);
+                d.noGravity = true;
             }
         }
 

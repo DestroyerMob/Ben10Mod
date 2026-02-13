@@ -1,3 +1,4 @@
+using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -15,4 +16,5 @@ public class ProvisionalAgentBadgeDemonite : PlumbersBadge {
             .AddTile(TileID.Anvils)
             .Register();
     }
+    
 }

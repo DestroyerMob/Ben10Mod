@@ -151,9 +151,14 @@ Items: {
 		DisplayName: Plumber Helper Badge
 	}
 
-	ProvisionalAgentBadge: {
-		Tooltip: ""
+	ProvisionalAgentBadgeCrimtane: {
 		DisplayName: Provisional Agent Badge
+		Tooltip: ""
+	}
+
+	ProvisionalAgentBadgeDemonite: {
+		DisplayName: Provisional Agent Badge
+		Tooltip: ""
 	}
 }
 
@@ -290,6 +295,11 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.EnemySlow.Description
 		DisplayName: Enemy Slow
 	}
+
+	GhostFreakPossesion: {
+		DisplayName: Ghost Freak Possesion
+		Description: Mods.Ben10Mod.Buffs.GhostFreakPossesion.Description
+	}
 }
 
 Projectiles: {
@@ -311,6 +321,7 @@ Projectiles: {
 	WildVineGrapple.DisplayName: Wild Vine Grapple
 	StinkFlySlowProjectile.DisplayName: Stink Fly Slow Projectile
 	StinkFlyPoisonProjectile.DisplayName: Stink Fly Poison Projectile
+	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
 }
 
 Tiles.CongealedCodonOreTile.MapEntry: Congealed Codon Ore
