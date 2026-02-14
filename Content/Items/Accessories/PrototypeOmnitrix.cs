@@ -32,8 +32,6 @@ namespace Ben10Mod.Content.Items.Accessories
     {
         private Player player = null;
         public int transformationNum = 0;
-        public int cooldownTime = 120;
-        public int transformationTime = 300;
         public TransformationEnum[] transformations = new TransformationEnum[5];
 
         bool wasEquipedLastFrame = false;
@@ -82,7 +80,6 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.height = 28;
             Item.rare = ItemRarityID.Master;
             Item.accessory = true;
-            this.transformationTime = 300;
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)
@@ -92,7 +89,8 @@ namespace Ben10Mod.Content.Items.Accessories
 
         public override void UpdateAccessory(Player player, bool hideVisual) {
             this.player = player;
-            player.GetModPlayer<OmnitrixPlayer>().omnitrixEquipped = true;
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            omp.omnitrixEquipped = true;
             wasEquipedLastFrame = true;
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
@@ -109,14 +107,14 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
-                TransformationHandler.Transform(player, transformations[transformationNum], transformationTime);
+                TransformationHandler.Transform(player, transformations[transformationNum], omp.transformationTime);
             }
             else if (KeybindSystem.TransformationKeybind.JustPressed && player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown && player.GetModPlayer<OmnitrixPlayer>().masterControl) {
                 if (player.GetModPlayer<OmnitrixPlayer>().currTransformation != transformations[transformationNum]) {
                     TransformationHandler.Detransform(player, 0, false, false, false);
-                    TransformationHandler.Transform(player, transformations[transformationNum], transformationTime);
+                    TransformationHandler.Transform(player, transformations[transformationNum], omp.transformationTime);
                 } else {
-                    TransformationHandler.Detransform(player, cooldownTime, true, false);
+                    TransformationHandler.Detransform(player, omp.cooldownTime, true, false);
                 }
             }
             else if (KeybindSystem.AlienOneKeybind.JustPressed) {
@@ -162,6 +160,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateInventory(Player player)
         {
             base.UpdateInventory(player);
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (wasEquipedLastFrame)
             {
@@ -169,9 +168,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 ModContent.GetInstance<UISystem>().HideMyUI();
                 showingUI = false;
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed) {
-                    TransformationHandler.Detransform(player, cooldownTime, true, true);
-                } else {
-                    TransformationHandler.Detransform(player, cooldownTime, false, false);
+                    TransformationHandler.Detransform(player, omp.cooldownTime, true, true);
                 }
             }
         }
@@ -195,16 +192,10 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void AddRecipes() {
             base.AddRecipes();
 
-            Recipe recipe = CreateRecipe()
-                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
-                .AddIngredient(ItemID.Lens, 3)
-                .AddIngredient(ItemID.Emerald)
-                .AddTile(TileID.Anvils).Register();
-
-            Recipe recipeAlt = CreateRecipe()
-                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 20)
-                .AddIngredient(ItemID.Lens, 3)
-                .AddIngredient(ItemID.Emerald)
+           CreateRecipe()
+                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 25)
+                .AddIngredient(ItemID.Lens, 6)
+                .AddIngredient(ItemID.Emerald, 3)
                 .AddTile(TileID.Anvils).Register();
         }
 

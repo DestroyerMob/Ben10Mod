@@ -170,6 +170,16 @@ Items: {
 		DisplayName: Plumber Capsule Pod Item
 		Tooltip: ""
 	}
+
+	AdvancedCircuitMatrix: {
+		DisplayName: Advanced Circuit Matrix
+		Tooltip: ""
+	}
+
+	PlumberMagisterBadge: {
+		DisplayName: Plumber Magister Badge
+		Tooltip: ""
+	}
 }
 
 Keybinds: {

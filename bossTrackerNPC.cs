@@ -7,7 +7,7 @@ using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod {
-    public class OmnitrixNPC : GlobalNPC
+    public class bossTrackerNPC : GlobalNPC
     {
         public override bool InstancePerEntity => true;
 
@@ -66,6 +66,24 @@ namespace Ben10Mod {
 
             int credited = GetTopDamager(npc);
             if (credited == -1) return;
+
+            int eaterCount = 0;
+            
+            if (npc.type == NPCID.EaterofWorldsBody || npc.type == NPCID.EaterofWorldsHead ||
+                npc.type == NPCID.EaterofWorldsTail) {
+                for (int i = 0; i < Main.npc.Length; i++) {
+                    if (Main.npc[i].type == NPCID.EaterofWorldsBody || Main.npc[i].type == NPCID.EaterofWorldsHead ||
+                        Main.npc[i].type == NPCID.EaterofWorldsTail) {
+                        if (Main.npc[i].active) {
+                            eaterCount++;
+                        }
+                    }
+                }
+            }
+
+            if (eaterCount > 1) {
+                return;
+            }
 
             string msg = $"{Main.player[credited].name} dealt the most damage!";
 

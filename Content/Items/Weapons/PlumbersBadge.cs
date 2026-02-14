@@ -22,7 +22,6 @@ namespace Ben10Mod.Content.Items.Weapons
         {
             Item.width        = 32;
             Item.height       = 32;
-            Item.useStyle     = ItemUseStyleID.Swing;
             Item.noUseGraphic = true;
             Item.useTurn      = false;
             Item.autoReuse    = true;
@@ -35,7 +34,8 @@ namespace Ben10Mod.Content.Items.Weapons
             Item.knockBack = 4f;
 
             // Base defaults - overridden per alien in HoldItem
-            Item.useTime = Item.useAnimation = 25;
+            Item.useStyle   = ItemUseStyleID.Swing;
+            Item.useTime    = Item.useAnimation = 25;
             Item.shootSpeed = 10f;
         }
 
@@ -52,8 +52,10 @@ namespace Ben10Mod.Content.Items.Weapons
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             // Safety defaults
-            Item.useTime = Item.useAnimation = 25;
-            Item.shootSpeed = 10f;
+            Item.useTime          = Item.useAnimation = 25;
+            Item.shootSpeed       = 10f;
+            Item.useStyle         = ItemUseStyleID.Swing;
+            Item.ArmorPenetration = 0;
 
             if (!omp.isTransformed)
                 return;
@@ -64,7 +66,6 @@ namespace Ben10Mod.Content.Items.Weapons
                 case TransformationEnum.HeatBlast:
 
                     if (player.altFunctionUse == 2) {
-                        Item.useStyle   = ItemUseStyleID.Swing;
                         Item.useTime    = Item.useAnimation = 50;
                         Item.shootSpeed = 10f;
                     }
@@ -84,8 +85,10 @@ namespace Ben10Mod.Content.Items.Weapons
                     break;
 
                 case TransformationEnum.DiamondHead:
-                    Item.useTime = Item.useAnimation = 30;
-                    Item.shootSpeed = 35f;
+                    Item.useStyle         = ItemUseStyleID.Shoot;
+                    Item.useTime          = Item.useAnimation = 8;
+                    Item.shootSpeed       = 35f;
+                    Item.ArmorPenetration = 10;
                     break;
 
                 case TransformationEnum.RipJaws:
@@ -164,6 +167,8 @@ namespace Ben10Mod.Content.Items.Weapons
                     projType = player.altFunctionUse == 2
                         ? 0
                         : ModContent.ProjectileType<DiamondHeadProjectile>();
+                    finalDamage = (int)(damage * 0.5f);
+                    velocity.Y += Main.rand.NextFloat(-0.35f, 0.35f);
                     break;
 
                 case TransformationEnum.RipJaws:

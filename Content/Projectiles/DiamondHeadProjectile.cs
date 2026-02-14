@@ -19,8 +19,13 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.hostile = false;
 
             Projectile.aiStyle = ProjAIStyleID.Arrow;
-            
+            AIType             = ProjectileID.Bullet;
+
             Projectile.DamageType = DamageClass.Ranged;
+        }
+
+        public override void AI() {
+            Projectile.spriteDirection = Projectile.direction;
         }
     }
 }

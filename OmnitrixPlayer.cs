@@ -46,6 +46,12 @@ namespace Ben10Mod
         public bool               wasTransformed     = false;
         public bool               onCooldown         = false;
 
+        public bool advancedCircuitMatrix = false;
+        public bool wasAdvancedCircuitMatrix = false;
+        
+        public int cooldownTime       = 120;
+        public int transformationTime = 300;
+
         public bool XLR8PrimaryAbilityEnabled           = false;
         public bool XLR8PrimaryAbilityWasEnabled        = false;
         public bool HeatBlastPrimaryAbilityEnabled      = false;
@@ -138,6 +144,11 @@ namespace Ben10Mod
 
         public override void ResetEffects() {
 
+            advancedCircuitMatrix = false;
+            
+            cooldownTime       = 120;
+            transformationTime = 300;
+
             // Transformations
             isTransformed = false;
             onCooldown = false;
@@ -175,19 +186,28 @@ namespace Ben10Mod
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
             // Handles the detransformation effect
+            
+            if (wasAdvancedCircuitMatrix != advancedCircuitMatrix) {
+                if (wasTransformed != isTransformed) {
+                    wasAdvancedCircuitMatrix = advancedCircuitMatrix;
+                }
+            }
 
             if (wasTransformed != isTransformed) {
                 var customSlot = ModContent.GetInstance<OmnitrixSlot>();
                 if (customSlot != null) {
-                    if (customSlot.FunctionalItem.ModItem is PrototypeOmnitrix prototypeOmnitrix) {
-                        if (masterControl) {
-                            TransformationHandler.Detransform(Player, 0, true, false);
-                        } else {
-                            TransformationHandler.Detransform(Player, prototypeOmnitrix.cooldownTime);
-                        }
+                    if (masterControl) {
+                        TransformationHandler.Detransform(Player, 0, true, false);
+                    } else {
+                        TransformationHandler.Detransform(Player, cooldownTime);
                     }
                 }
                 wasTransformed = false;
+            }
+
+            if (wasAdvancedCircuitMatrix) {
+                transformationTime *= 2;
+                cooldownTime       *= 2;
             }
             
             // XLR8 Transformation
@@ -201,7 +221,7 @@ namespace Ben10Mod
                 
                 Player.moveSpeed                           *= 2.5f * multiplier;
                 Player.accRunSpeed                         *= 2.0f * multiplier;
-                Player.GetAttackSpeed(DamageClass.Generic) += (multiplier / 5);
+                Player.GetAttackSpeed(DamageClass.Generic) += (multiplier / 2);
                 if (Math.Abs(Player.velocity.X) > 2) {
                     Player.jumpSpeed *= 1.5f * multiplier;
                     Player.waterWalk =  true;
@@ -230,15 +250,13 @@ namespace Ben10Mod
             if (currTransformation == TransformationEnum.DiamondHead) {
 
                 Player.statDefense += 25;
-                Player.GetDamage(DamageClass.Melee) *= 1.25f;
-                Player.GetDamage<HeroDamage>() *= 1.25f;
 
                 if (DiamondHeadPrimaryAbilityEnabled) {
-                    Player.moveSpeed = 0;
-                    Player.lifeRegen += 10;
-                    Player.immune = true;
-                    Player.immuneAlpha = 0;
-                    Player.releaseJump = false;
+                    Player.moveSpeed   /= 10;
+                    Player.lifeRegen   += 15;
+                    Player.statDefense *= 2;
+                    Player.releaseJump =  false;
+                    Player.gravity     *= 2f;
                 }
             }
 
@@ -268,13 +286,11 @@ namespace Ben10Mod
             // Fourarms Transformation
 
             if (currTransformation == TransformationEnum.FourArms) {
-
-                Player.GetDamage(DamageClass.Melee) *= 1.25f;
-                Player.GetDamage<HeroDamage>() *= 1.25f;
+                
                 Player.GetAttackSpeed(DamageClass.Melee) += 0.25f;
-                Player.GetCritChance(DamageClass.Generic) = 100;
+                Player.GetCritChance(DamageClass.Generic) = 50;
                 Player.noFallDmg = true;
-                Player.jumpSpeed *= 1.75f;
+                Player.jumpSpeed *= 1.9f;
             }
 
             // Stinkfly Transformation
@@ -300,22 +316,6 @@ namespace Ben10Mod
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
-            }
-
-            // Handles the detransformation effect
-
-            if (wasTransformed != isTransformed) {
-                var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-                if (customSlot != null) {
-                    if (customSlot.FunctionalItem.ModItem is PrototypeOmnitrix prototypeOmnitrix) {
-                        if (masterControl) {
-                            TransformationHandler.Detransform(Player, 0, true, false);
-                        } else {
-                            TransformationHandler.Detransform(Player, prototypeOmnitrix.cooldownTime);
-                        }
-                    }
-                }
-                wasTransformed = false;
             }
             
             // XLR8 Transformation
@@ -346,15 +346,15 @@ namespace Ben10Mod
                     }
                 }
                 if (HeatBlastPrimaryAbilityEnabled) {
-                    Vector2[] points = GenerateCirclePoints(250, 10 * (16));
+                    Vector2[] points = GenerateCirclePoints(250, 7 * (16));
                     for (int i = 0; i < points.Length; i++) {
                         dustNum = Dust.NewDust(points[i] + Player.Center, 1, 1, DustID.Torch, rand.Next(-1, 2), rand.Next(-1, 2));
                         Main.dust[dustNum].noGravity = true;
                     }
                     foreach (NPC npc in Main.npc) {
                         if (Player.Distance(npc.Center) <= 10 * (16) && !npc.friendly) {
-                            if (!npc.HasBuff(BuffID.OnFire)) {
-                                npc.AddBuff(BuffID.OnFire, 10 * 60);
+                            if (!npc.HasBuff(BuffID.OnFire3)) {
+                                npc.AddBuff(BuffID.OnFire3, 10 * 60);
                             }
                         }
                     }
@@ -376,11 +376,21 @@ namespace Ben10Mod
             if (currTransformation == TransformationEnum.DiamondHead) {
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (!Player.HasBuff(ModContent.BuffType<DiamondHead_Primary_Cooldown_Buff>()) && !Player.HasBuff(ModContent.BuffType<DiamondHead_Primary_Buff>())) {
-                        Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Buff>(), 5 * 60);
+                        Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Buff>(), 60 * 60);
+                        Player.velocity = Vector2.Zero;
                     }
                 }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
+            }
+
+            if (DiamondHeadPrimaryAbilityEnabled != DiamondHeadPrimaryAbilityWasEnabled) {
+                DiamondHeadPrimaryAbilityWasEnabled = false;
+                // Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Cooldown_Buff>(), 25 * 60);
+            }
+
+            if (DiamondHeadPrimaryAbilityEnabled) {
+                Lighting.AddLight(Player.Center, new Vector3(0.4f, 0.3f, 0.8f));
             }
 
             // Ripjaws Transformation
@@ -416,7 +426,7 @@ namespace Ben10Mod
             // Buzzshock Transformation
 
             if (currTransformation == TransformationEnum.BuzzShock) {
-                if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(BuffID.ChaosState)) {
+                if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.Item8, Player.position);
                         Random random = new Random();
@@ -596,6 +606,7 @@ namespace Ben10Mod
                     drawInfo.colorArmorLegs = overlayColor;
                     break;
                 case TransformationEnum.DiamondHead:
+                    break;
                 case TransformationEnum.FourArms:
                 case TransformationEnum.RipJaws:
                 case TransformationEnum.StinkFly:
@@ -626,17 +637,17 @@ namespace Ben10Mod
                         }
                     }
                 }
-                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (onCooldown) {
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                        }
-                        else {
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                        }
-                    }
-                }
+                // else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
+                //     var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
+                //     if (!customSlot.HideVisuals && !isTransformed) {
+                //         if (onCooldown) {
+                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
+                //         }
+                //         else {
+                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
+                //         }
+                //     }
+                // }
             }
             
             if (!customSlot.HideVisuals) {
@@ -665,17 +676,17 @@ namespace Ben10Mod
                         }
                     }
                 }
-                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (onCooldown) {
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                        }
-                        else {
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                        }
-                    }
-                }
+                // else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
+                //     var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
+                //     if (!customSlot.HideVisuals && !isTransformed) {
+                //         if (onCooldown) {
+                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
+                //         }
+                //         else {
+                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
+                //         }
+                //     }
+                // }
             }
             if (!customSlot.HideVisuals) {
                 if (isTransformed) {

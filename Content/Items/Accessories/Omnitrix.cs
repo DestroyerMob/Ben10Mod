@@ -32,7 +32,6 @@ namespace Ben10Mod.Content.Items.Accessories
 
         private Player player = null;
         public int transformationNum = 0;
-        public int cooldownTime = 0;
 
         public override string Texture => $"Terraria/Images/Item_{ItemID.None}";
 

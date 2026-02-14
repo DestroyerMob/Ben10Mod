@@ -10,13 +10,13 @@ public class PlumberHelperBadge : PlumbersBadge {
     {
         CreateRecipe()
             .AddIngredient(ItemID.IronBar, 15)
-            .AddIngredient(ItemID.Lens, 5)
+            .AddIngredient(ItemID.Glass, 5)
             .AddTile(TileID.Anvils)
             .Register();
 
         CreateRecipe()
             .AddIngredient(ItemID.LeadBar, 15)
-            .AddIngredient(ItemID.Lens, 5)
+            .AddIngredient(ItemID.Glass, 5)
             .AddTile(TileID.Anvils)
             .Register();
     }

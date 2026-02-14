@@ -11,7 +11,7 @@ public class ProvisionalAgentBadgeCrimtane : PlumbersBadge {
     {
         CreateRecipe()
             .AddIngredient(ModContent.ItemType<PlumberHelperBadge>())
-            .AddIngredient(ItemID.DemoniteBar, 15)
+            .AddIngredient(ItemID.CrimtaneBar, 15)
             .AddTile(TileID.Anvils)
             .Register();
     }
