@@ -358,17 +358,19 @@ namespace Ben10Mod
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastWings>());
                 
-                if (!Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
-                    Filters.Scene.Activate("Ben10Mod:HeatDistort", Player.Center);
+                if (!Main.dedServ && Filters.Scene[Ben10Mod.HeatDistortFilterKey] != null) {
+                    if (!Filters.Scene[Ben10Mod.HeatDistortFilterKey].IsActive())
+                        Filters.Scene.Activate(Ben10Mod.HeatDistortFilterKey, Player.Center);
 
-                Filters.Scene["Ben10Mod:HeatDistort"]
-                    .GetShader()
-                    .UseTargetPosition(Player.Center)
-                    .UseColor(1f, 0.45f, 0.1f)
-                    .UseIntensity(0.35f);
-            } else {
-                if (Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
-                    Filters.Scene["Ben10Mod:HeatDistort"].Deactivate();
+                    Filters.Scene[Ben10Mod.HeatDistortFilterKey]
+                        .GetShader()
+                        .UseTargetPosition(Player.Center)
+                        .UseColor(1f, 0.45f, 0.1f)
+                        .UseIntensity(0.35f);
+                }
+            } else if (!Main.dedServ && Filters.Scene[Ben10Mod.HeatDistortFilterKey] != null) {
+                if (Filters.Scene[Ben10Mod.HeatDistortFilterKey].IsActive())
+                    Filters.Scene[Ben10Mod.HeatDistortFilterKey].Deactivate();
             }
 
             if (HeatBlastPrimaryAbilityEnabled != HeatBlastPrimaryAbilityWasEnabled) {
