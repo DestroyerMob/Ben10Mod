@@ -3,6 +3,7 @@ using Ben10Mod.Keybinds;
 using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using System.CommandLine.Help;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -344,6 +345,7 @@ namespace Ben10Mod
                         dustNum = Dust.NewDust(points[i] + Player.Center, 1, 1, DustID.Torch, rand.Next(-1, 2), rand.Next(-1, 2));
                         Main.dust[dustNum].noGravity = true;
                     }
+                    
                     foreach (NPC npc in Main.npc) {
                         if (Player.Distance(npc.Center) <= 10 * (16) && !npc.friendly) {
                             if (!npc.HasBuff(BuffID.OnFire3)) {
@@ -356,20 +358,7 @@ namespace Ben10Mod
                 Player.fireWalk = true;
                 Player.lavaImmune = true;
 
-                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastWings>());
-                
-                if (!Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
-                    Filters.Scene.Activate("Ben10Mod:HeatDistort", Player.Center);
-
-                Filters.Scene["Ben10Mod:HeatDistort"]
-                    .GetShader()
-                    .UseTargetPosition(Player.Center)
-                    .UseColor(1f, 0.45f, 0.1f)
-                    .UseIntensity(0.35f);
-            } else {
-                if (Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
-                    Filters.Scene["Ben10Mod:HeatDistort"].Deactivate();
-            }
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastWings>()); }
 
             if (HeatBlastPrimaryAbilityEnabled != HeatBlastPrimaryAbilityWasEnabled) {
                 HeatBlastPrimaryAbilityWasEnabled = false;
@@ -416,7 +405,7 @@ namespace Ben10Mod
 
                 if (ChromaStonePrimaryAbilityEnabled)
                 {
-                    Lighting.AddLight(Player.Center, GetChromaStoneOverlayColor().ToVector3());
+                    Lighting.AddLight(Player.Center, Main.DiscoColor.ToVector3());
                 }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -605,7 +594,7 @@ namespace Ben10Mod
                 case TransformationEnum.BuzzShock:
                     break;
                 case TransformationEnum.ChromaStone when ChromaStonePrimaryAbilityEnabled:
-                    Color overlayColor = GetChromaStoneOverlayColor();
+                    Color overlayColor = Main.DiscoColor;
                     drawInfo.colorArmorHead = overlayColor;
                     drawInfo.colorArmorBody = overlayColor;
                     drawInfo.colorArmorLegs = overlayColor;
