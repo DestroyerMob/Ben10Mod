@@ -34,6 +34,7 @@ using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Microsoft.Xna.Framework.Input;
+using Terraria.Graphics.Effects;
 
 namespace Ben10Mod
 {
@@ -41,13 +42,14 @@ namespace Ben10Mod
 
         public bool masterControl = false;
         
-        public bool               omnitrixEquipped   = false;
-        public bool               isTransformed      = false;
-        public bool               wasTransformed     = false;
-        public bool               onCooldown         = false;
+        public bool omnitrixEquipped = false;
+        public bool isTransformed    = false;
+        public bool wasTransformed   = false;
+        public bool onCooldown       = false;
+        public bool altAttack        = false;
 
-        public bool advancedCircuitMatrix = false;
-        public bool wasAdvancedCircuitMatrix = false;
+        public bool advancedCircuitMatrix                         = false;
+        public bool advancedCircuitMatrixEquippedWhileTransformed = false;
         
         public int cooldownTime       = 120;
         public int transformationTime = 300;
@@ -186,12 +188,6 @@ namespace Ben10Mod
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
             // Handles the detransformation effect
-            
-            if (wasAdvancedCircuitMatrix != advancedCircuitMatrix) {
-                if (wasTransformed != isTransformed) {
-                    wasAdvancedCircuitMatrix = advancedCircuitMatrix;
-                }
-            }
 
             if (wasTransformed != isTransformed) {
                 var customSlot = ModContent.GetInstance<OmnitrixSlot>();
@@ -199,15 +195,12 @@ namespace Ben10Mod
                     if (masterControl) {
                         TransformationHandler.Detransform(Player, 0, true, false);
                     } else {
-                        TransformationHandler.Detransform(Player, cooldownTime);
+                        TransformationHandler.Detransform(Player, advancedCircuitMatrixEquippedWhileTransformed ? cooldownTime * 2 : cooldownTime);
                     }
+
+                    advancedCircuitMatrixEquippedWhileTransformed = false;
                 }
                 wasTransformed = false;
-            }
-
-            if (wasAdvancedCircuitMatrix) {
-                transformationTime *= 2;
-                cooldownTime       *= 2;
             }
             
             // XLR8 Transformation
@@ -364,6 +357,18 @@ namespace Ben10Mod
                 Player.lavaImmune = true;
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastWings>());
+                
+                if (!Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
+                    Filters.Scene.Activate("Ben10Mod:HeatDistort", Player.Center);
+
+                Filters.Scene["Ben10Mod:HeatDistort"]
+                    .GetShader()
+                    .UseTargetPosition(Player.Center)
+                    .UseColor(1f, 0.45f, 0.1f)
+                    .UseIntensity(0.35f);
+            } else {
+                if (Filters.Scene["Ben10Mod:HeatDistort"].IsActive())
+                    Filters.Scene["Ben10Mod:HeatDistort"].Deactivate();
             }
 
             if (HeatBlastPrimaryAbilityEnabled != HeatBlastPrimaryAbilityWasEnabled) {
@@ -556,8 +561,8 @@ namespace Ben10Mod
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
-            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire) && currTransformation == TransformationEnum.HeatBlast) {
-                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire, 3 * 60);
+            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire3) && currTransformation == TransformationEnum.HeatBlast) {
+                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire3, 3 * 60);
             }
         }
 
@@ -637,17 +642,17 @@ namespace Ben10Mod
                         }
                     }
                 }
-                // else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                //     var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                //     if (!customSlot.HideVisuals && !isTransformed) {
-                //         if (onCooldown) {
-                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                //         }
-                //         else {
-                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                //         }
-                //     }
-                // }
+                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
+                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
+                    if (!customSlot.HideVisuals && !isTransformed) {
+                        if (onCooldown) {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
+                        }
+                        else {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
+                        }
+                    }
+                }
             }
             
             if (!customSlot.HideVisuals) {
@@ -676,17 +681,17 @@ namespace Ben10Mod
                         }
                     }
                 }
-                // else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                //     var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                //     if (!customSlot.HideVisuals && !isTransformed) {
-                //         if (onCooldown) {
-                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                //         }
-                //         else {
-                //             Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                //         }
-                //     }
-                // }
+                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
+                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
+                    if (!customSlot.HideVisuals && !isTransformed) {
+                        if (onCooldown) {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
+                        }
+                        else {
+                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
+                        }
+                    }
+                }
             }
             if (!customSlot.HideVisuals) {
                 if (isTransformed) {

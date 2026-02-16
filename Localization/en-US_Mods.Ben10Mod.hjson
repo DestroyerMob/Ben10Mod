@@ -180,6 +180,11 @@ Items: {
 		DisplayName: Plumber Magister Badge
 		Tooltip: ""
 	}
+
+	MasterControlKey: {
+		Tooltip: ""
+		DisplayName: Master Control Key
+	}
 }
 
 Keybinds: {

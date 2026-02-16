@@ -22,6 +22,7 @@ namespace Ben10Mod.Content.Projectiles {
             AIType             = ProjectileID.Bullet;
 
             Projectile.DamageType = DamageClass.Ranged;
+            Projectile.penetrate  = 2;
         }
 
         public override void AI() {

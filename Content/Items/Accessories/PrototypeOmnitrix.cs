@@ -82,8 +82,7 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.accessory = true;
         }
 
-        public override void ModifyTooltips(List<TooltipLine> tooltips)
-        {
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
             tooltips.Add(new TooltipLine(Mod, "AlienSelection", "Alien " + (transformationNum + 1) + ": " + transformations[transformationNum].ToString()));
         }
 
@@ -107,12 +106,15 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
-                TransformationHandler.Transform(player, transformations[transformationNum], omp.transformationTime);
+                omp.advancedCircuitMatrixEquippedWhileTransformed = omp.advancedCircuitMatrix;
+                TransformationHandler.Transform(player, transformations[transformationNum],
+                    omp.advancedCircuitMatrixEquippedWhileTransformed ? omp.transformationTime * 2 : omp.transformationTime);
             }
             else if (KeybindSystem.TransformationKeybind.JustPressed && player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown && player.GetModPlayer<OmnitrixPlayer>().masterControl) {
                 if (player.GetModPlayer<OmnitrixPlayer>().currTransformation != transformations[transformationNum]) {
                     TransformationHandler.Detransform(player, 0, false, false, false);
-                    TransformationHandler.Transform(player, transformations[transformationNum], omp.transformationTime);
+                    TransformationHandler.Transform(player, transformations[transformationNum], 
+                        omp.advancedCircuitMatrixEquippedWhileTransformed ? omp.transformationTime * 2 : omp.transformationTime);
                 } else {
                     TransformationHandler.Detransform(player, omp.cooldownTime, true, false);
                 }

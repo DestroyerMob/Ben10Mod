@@ -1,4 +1,5 @@
-﻿using Ben10Mod.Content.DamageClasses;
+﻿using System.Collections.Generic;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
@@ -7,6 +8,7 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.Audio;
+using Terraria.Localization;
 
 namespace Ben10Mod.Content.Items.Weapons
 {
@@ -14,9 +16,10 @@ namespace Ben10Mod.Content.Items.Weapons
     {
         
         // Override these in subclasses for tier-specific values
-        public virtual int    BaseDamage               => 15;
-        public virtual float  DamageMultiplier         => 1f; // For universal scaling if needed
-        public virtual string BadgeRankName            => "Helper";
+        public virtual int    BaseDamage            => 15;
+        public virtual float  DamageMultiplier      => 1f; // For universal scaling if needed
+        public virtual float  AttackSpeedMultiplier => 1f;
+        public virtual string BadgeRankName         => "Helper";
         
         public override void SetDefaults()
         {
@@ -37,6 +40,11 @@ namespace Ben10Mod.Content.Items.Weapons
             Item.useStyle   = ItemUseStyleID.Swing;
             Item.useTime    = Item.useAnimation = 25;
             Item.shootSpeed = 10f;
+        }
+
+        public override void ModifyTooltips(List<TooltipLine> tooltips)
+        {
+            tooltips.Add(new TooltipLine(Mod, "badgeHelperLine", "Right click while holding to alternate between primary and secondary attacks"));
         }
 
         public override bool CanUseItem(Player player)
@@ -65,7 +73,7 @@ namespace Ben10Mod.Content.Items.Weapons
             {
                 case TransformationEnum.HeatBlast:
 
-                    if (player.altFunctionUse == 2) {
+                    if (omp.altAttack) {
                         Item.useTime    = Item.useAnimation = 50;
                         Item.shootSpeed = 10f;
                     }
@@ -88,7 +96,7 @@ namespace Ben10Mod.Content.Items.Weapons
                     Item.useStyle         = ItemUseStyleID.Shoot;
                     Item.useTime          = Item.useAnimation = 8;
                     Item.shootSpeed       = 35f;
-                    Item.ArmorPenetration = 10;
+                    Item.ArmorPenetration = 25;
                     break;
 
                 case TransformationEnum.RipJaws:
@@ -126,14 +134,20 @@ namespace Ben10Mod.Content.Items.Weapons
                     Item.useStyle   = ItemUseStyleID.Swing;
                     break;
             }
+
+            Item.useTime = Item.useAnimation = (int)(Item.useTime / AttackSpeedMultiplier);
+        }
+
+        public override bool? UseItem(Player player) {
+            if (player.altFunctionUse == 2) player.GetModPlayer<OmnitrixPlayer>().altAttack = !player.GetModPlayer<OmnitrixPlayer>().altAttack;
+            return base.UseItem(player);
         }
 
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
         {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-            if (!omp.isTransformed)
-                return false;
+            if (!omp.isTransformed || player.altFunctionUse == 2) return false;
 
             int projType = ProjectileID.ImpFireball; // Bright vanilla fallback - you SHOULD see this if alien not matched
             int finalDamage = damage;
@@ -141,70 +155,63 @@ namespace Ben10Mod.Content.Items.Weapons
             switch (omp.currTransformation)
             {
                 case TransformationEnum.HeatBlast:
-                    if (player.altFunctionUse == 2) {                        
+                    if (omp.altAttack) {                        
                         projType = ModContent.ProjectileType<HeatBlastBomb>();
                         // projType    = ProjectileID.Flamelash;
                         finalDamage = (int)(damage * 2.5f);
                     }
                     else {
                         projType = ProjectileID.Flames;
-                        finalDamage = (int)(damage * 0.2f);
+                        finalDamage = (int)(damage * 0.5f);
                     }
                     break;
 
                 case TransformationEnum.XLR8:
-                    projType = player.altFunctionUse == 2
-                        ? 0
-                        : ModContent.ProjectileType<FistProjectile>();
+                    projType    =  ModContent.ProjectileType<FistProjectile>();
+                    finalDamage = (int)(damage * 0.25f);
                     break;
                 case TransformationEnum.FourArms:
-                    projType = player.altFunctionUse == 2
+                    projType = omp.altAttack
                         ? ModContent.ProjectileType<FourArmsClap>()
                         : ModContent.ProjectileType<FistProjectile>();
                     break;
 
                 case TransformationEnum.DiamondHead:
-                    projType = player.altFunctionUse == 2
-                        ? 0
-                        : ModContent.ProjectileType<DiamondHeadProjectile>();
+                    projType = ModContent.ProjectileType<DiamondHeadProjectile>();
                     finalDamage = (int)(damage * 0.5f);
                     velocity.Y += Main.rand.NextFloat(-0.35f, 0.35f);
                     break;
 
                 case TransformationEnum.RipJaws:
-                    projType = player.altFunctionUse == 2
-                        ? 0
-                        : ModContent.ProjectileType<RipJawsProjectile>();
+                    projType = ModContent.ProjectileType<RipJawsProjectile>();
                     break;
 
                 case TransformationEnum.ChromaStone:
-                    projType = player.altFunctionUse == 2
-                        ? 0
-                        : ModContent.ProjectileType<ChromaStoneProjectile>();
+                    projType = ModContent.ProjectileType<ChromaStoneProjectile>();
                     finalDamage += omp.ChromaStoneAbsorbtion;
                     break;
 
                 case TransformationEnum.BuzzShock:
-                    projType = player.altFunctionUse == 2
+                    projType = omp.altAttack
                         ? ModContent.ProjectileType<BuzzShockMinionProjectile>()
                         : ModContent.ProjectileType<BuzzShockProjectile>();
                     SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, player.position);
                     break;
 
                 case TransformationEnum.StinkFly:
-                    projType = player.altFunctionUse == 2
+                    projType = omp.altAttack
                         ? ModContent.ProjectileType<StinkFlyPoisonProjectile>()
                         : ModContent.ProjectileType<StinkFlySlowProjectile>();
                     break;
 
                 case TransformationEnum.GhostFreak:
-                    projType = player.altFunctionUse == 2
+                    projType = omp.altAttack
                         ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
                         : ModContent.ProjectileType<GhostFreakProjectile>();
                     break;
 
                 case TransformationEnum.WildVine:
-                    projType = player.altFunctionUse == 2
+                    projType = omp.altAttack
                         ? ModContent.ProjectileType<WildVineGrapple>()
                         : ModContent.ProjectileType<WildVineProjectile>();
                     break;
@@ -212,7 +219,7 @@ namespace Ben10Mod.Content.Items.Weapons
 
             if (projType == 0) return false;
             
-            Projectile.NewProjectile(source, position, velocity, projType, finalDamage, knockback, player.whoAmI);
+            Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier), knockback, player.whoAmI);
 
             return false;
         }

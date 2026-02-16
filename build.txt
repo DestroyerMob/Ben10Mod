@@ -1,3 +1,3 @@
 displayName = Terraria 10 (Ben 10 mod)
 author = DestroyerMob
-version = 0.061
+version = 0.066
