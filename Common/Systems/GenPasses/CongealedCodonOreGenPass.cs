@@ -18,7 +18,7 @@ namespace Ben10Mod.Common.Systems.GenPasses {
         protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration) {
             progress.Message = "Spawning Congealed Codon Ore";
 
-            int maxToSpawn = WorldGen.genRand.Next(325, 350);
+            int maxToSpawn = WorldGen.genRand.Next(275, 325);
             int numSpawned = 0;
             int attempts = 0;
 
@@ -28,7 +28,7 @@ namespace Ben10Mod.Common.Systems.GenPasses {
 
                 Tile tile = Framing.GetTileSafely(x, y);
                 if (tile.TileType == TileID.Stone) {
-                    WorldGen.TileRunner(x, y, WorldGen.genRand.Next(10, 15), WorldGen.genRand.Next(1, 4), ModContent.TileType<CongealedCodonOreTile>());
+                    WorldGen.TileRunner(x, y, WorldGen.genRand.Next(8, 13), WorldGen.genRand.Next(1, 4), ModContent.TileType<CongealedCodonOreTile>());
                     numSpawned++;
                 }
 

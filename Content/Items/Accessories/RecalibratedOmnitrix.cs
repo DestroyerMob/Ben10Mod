@@ -100,8 +100,7 @@ namespace Ben10Mod.Content.Items.Accessories
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
             if (player.GetModPlayer<OmnitrixPlayer>().isTransformed && transformationEnergy > 0) {
                 transformationEnergy -= 1;
-            }
-            else if (transformationEnergy < maxEnergy) {
+            } else if (transformationEnergy < maxEnergy) {
                 transformationEnergy += 3;
                 transformationEnergy = Math.Min(transformationEnergy, maxEnergy);
             }
@@ -121,16 +120,14 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
-                TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy);
+                TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy / 60);
             }
             else if (KeybindSystem.TransformationKeybind.JustPressed && player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
                 if (player.GetModPlayer<OmnitrixPlayer>().currTransformation != transformations[transformationNum]) {
-                    TransformationHandler.Detransform(player, 0, false, false, false);
-                    if (transformationEnergy > 0) {
-                        transformationEnergy -= 30;
-                        transformationEnergy = Math.Max(transformationEnergy, 0);
-                    }
-                    TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy);
+                    transformationEnergy -= 50;
+                    TransformationHandler.Detransform(player, 60, false, transformationEnergy <= 0, false);
+                    transformationEnergy =  Math.Max(transformationEnergy, 0);
+                    TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy / 60);
                 } else {
                     TransformationHandler.Detransform(player, 0, true, false);
                 }

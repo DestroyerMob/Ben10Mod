@@ -54,6 +54,8 @@ namespace Ben10Mod.Content.Items.Consumable
             // Announcement
             Main.NewText("Master Control unlocked!", new Color(0, 255, 0));
 
+            Item.stack--;
+
             return true; // Item was used successfully
         }
 

@@ -32,7 +32,7 @@ namespace Ben10Mod.Content.Projectiles {
 
 
             OmnitrixPlayer omnitrixPlayer = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>();
-            lightColor = omnitrixPlayer.GetChromaStoneOverlayColor();
+            lightColor = Main.DiscoColor;
             Lighting.AddLight(Projectile.position + Projectile.velocity * 0.5f, lightColor.ToVector3() * 0.5f);
             return base.PreDraw(ref lightColor);
         }

@@ -105,6 +105,7 @@ namespace Ben10Mod
         }
 
         public override void SaveData(TagCompound tag) {
+            if (Player.whoAmI != Main.myPlayer) return;
             tag["masterControl"] = masterControl;
             int[] temp = new int[transformations.Length];
             for (int i = 0; i < temp.Length; i++) {
@@ -120,6 +121,7 @@ namespace Ben10Mod
         }
 
         public override void LoadData(TagCompound tag) {
+            if (Player.whoAmI != Main.myPlayer) return;
             int[] temp = null;
             if (tag.TryGet("roster", out temp)) {
                 if (temp != null) {
@@ -146,7 +148,7 @@ namespace Ben10Mod
 
 
         public override void ResetEffects() {
-
+            if (Player.whoAmI != Main.myPlayer) return;
             advancedCircuitMatrix = false;
             
             cooldownTime       = 120;
@@ -185,8 +187,9 @@ namespace Ben10Mod
         // Handles players abilities
 
         public override void PostUpdateBuffs() {
-            
+            if (Player.whoAmI != Main.myPlayer) return;
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
 
             // Handles the detransformation effect
 
@@ -196,7 +199,8 @@ namespace Ben10Mod
                     if (masterControl) {
                         TransformationHandler.Detransform(Player, 0, true, false);
                     } else {
-                        TransformationHandler.Detransform(Player, advancedCircuitMatrixEquippedWhileTransformed ? cooldownTime * 2 : cooldownTime);
+                        if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>())
+                            TransformationHandler.Detransform(Player, advancedCircuitMatrixEquippedWhileTransformed ? cooldownTime * 2 : cooldownTime);
                     }
 
                     advancedCircuitMatrixEquippedWhileTransformed = false;
@@ -243,12 +247,14 @@ namespace Ben10Mod
 
             if (currTransformation == TransformationEnum.DiamondHead) {
 
-                Player.statDefense += 25;
+                Player.statDefense += 20;
+                Player.wingTimeMax =  0;
+                Player.wingTime    =  0;
 
                 if (DiamondHeadPrimaryAbilityEnabled) {
                     Player.moveSpeed   /= 10;
                     Player.lifeRegen   += 15;
-                    Player.statDefense *= 2;
+                    Player.statDefense *= 1.5f;
                     Player.releaseJump =  false;
                     Player.gravity     *= 2f;
                 }
@@ -305,6 +311,7 @@ namespace Ben10Mod
         }
         
         public override void PostUpdate() {
+            if (Player.whoAmI != Main.myPlayer) return;
             
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
 
@@ -373,6 +380,10 @@ namespace Ben10Mod
                         Player.AddBuff(ModContent.BuffType<DiamondHead_Primary_Buff>(), 60 * 60);
                         Player.velocity = Vector2.Zero;
                     }
+                }
+
+                if (DiamondHeadPrimaryAbilityEnabled) {
+                    Player.velocity = new Vector2(float.Clamp(Player.velocity.X, -0.5f, 0.5f),  Math.Max(0,  Player.velocity.Y));
                 }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -530,18 +541,22 @@ namespace Ben10Mod
         }
 
         public override bool CanUseItem(Item item) {
+            if (Player.whoAmI != Main.myPlayer) return false;
             return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
         }
 
         public override bool CanBeHitByNPC(NPC npc, ref int cooldownSlot) {
+            if (Player.whoAmI != Main.myPlayer) return false;
             return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
         }
 
         public override bool CanBeHitByProjectile(Projectile proj) {
+            if (Player.whoAmI != Main.myPlayer) return false;
             return !(currTransformation == TransformationEnum.GhostFreak && KeybindSystem.PrimaryAbility.Current);
         }
 
         public override void OnHurt(Player.HurtInfo info) {
+            if (Player.whoAmI != Main.myPlayer) return;
             if (ChromaStonePrimaryAbilityEnabled) {
                 ChromaStoneAbsorbtion += Math.Max(info.Damage / 5, 0);
             }
@@ -550,6 +565,7 @@ namespace Ben10Mod
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
+            if (Player.whoAmI != Main.myPlayer) return;
             if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire3) && currTransformation == TransformationEnum.HeatBlast) {
                 Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire3, 3 * 60);
             }
@@ -573,6 +589,7 @@ namespace Ben10Mod
         }
 
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
+            if (Player.whoAmI != Main.myPlayer) return;
             if (isTransformed) {
             }
             switch (currTransformation) {
@@ -616,6 +633,8 @@ namespace Ben10Mod
         // Set the visuals for the aliens
 
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a, ref bool fullBright) {
+            
+            if (Player.whoAmI != Main.myPlayer) return;
 
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
@@ -656,6 +675,9 @@ namespace Ben10Mod
         }
 
         public override void FrameEffects() {
+
+            if (Player.whoAmI != Main.myPlayer) return;
+            
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
             if (omnitrixEquipped) {
@@ -775,6 +797,7 @@ namespace Ben10Mod
         }
 
         public override void PreUpdateMovement() {
+            if (Player.whoAmI != Main.myPlayer) return;
             DashMovement();
         }
 
@@ -840,6 +863,7 @@ namespace Ben10Mod
         }
 
         public override void OnEnterWorld() {
+            if (Player.whoAmI != Main.myPlayer) return;
             ModContent.GetInstance<UISystem>().HideMyUI();
             if (!isTransformed) {
                 currTransformation = TransformationEnum.None;
@@ -876,6 +900,7 @@ namespace Ben10Mod
 
         // This is where we unlock transformations
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            if (Player.whoAmI != Main.myPlayer) return;
             base.OnHitNPC(target, hit, damageDone);
             if (target.life <= 0) {
                 if (Main.bloodMoon)
@@ -890,6 +915,7 @@ namespace Ben10Mod
         }
 
         public override void PreUpdate() {
+            if (Player.whoAmI != Main.myPlayer) return;
 
             if (colourAmount >= 1.0f) {
                 thisColour++;
@@ -908,6 +934,7 @@ namespace Ben10Mod
         }
 
         public void addTransformation(TransformationEnum transformation) { 
+            if (Player.whoAmI != Main.myPlayer) return;
             if (!TransformationHandler.HasTransformation(Player, transformation)) {
                 unlockedTransformation.Add(transformation);
                 Main.NewText(Player.name + " has unlocked " + transformation.GetName(), Color.Green);
