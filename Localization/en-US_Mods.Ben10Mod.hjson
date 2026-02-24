@@ -185,6 +185,16 @@ Items: {
 		Tooltip: ""
 		DisplayName: Master Control Key
 	}
+
+	EyeGuy: {
+		Tooltip: ""
+		DisplayName: Eye Guy
+	}
+
+	HeroEmblem: {
+		Tooltip: ""
+		DisplayName: Hero Emblem
+	}
 }
 
 Keybinds: {
@@ -208,6 +218,7 @@ Keybinds: {
 	"Quinary Ability.DisplayName": Quinary  Ability
 	"Quaternary Ability.DisplayName": Quaternary  Ability
 	"Tertiary Ability.DisplayName": Tertiary  Ability
+	"Ultimate Ability.DisplayName": Ultimate  Ability
 }
 
 Buffs: {
@@ -325,6 +336,16 @@ Buffs: {
 		DisplayName: Ghost Freak Possesion
 		Description: Mods.Ben10Mod.Buffs.GhostFreakPossesion.Description
 	}
+
+	EyeGuy_Buff: {
+		Description: Mods.Ben10Mod.Buffs.EyeGuy_Buff.Description
+		DisplayName: Eye Guy_ Buff
+	}
+
+	UltimateAbility_Cooldown: {
+		DisplayName: Ultimate Ability_ Cooldown
+		Description: Mods.Ben10Mod.Buffs.UltimateAbility_Cooldown.Description
+	}
 }
 
 Projectiles: {
@@ -347,6 +368,8 @@ Projectiles: {
 	StinkFlySlowProjectile.DisplayName: Stink Fly Slow Projectile
 	StinkFlyPoisonProjectile.DisplayName: Stink Fly Poison Projectile
 	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
+	EyeGuyLaserbeam.DisplayName: Eye Guy Laserbeam
+	EyeGuyUltimateBeam.DisplayName: Eye Guy Ultimate Beam
 }
 
 Tiles: {

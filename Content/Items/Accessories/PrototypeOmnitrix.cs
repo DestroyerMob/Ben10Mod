@@ -92,6 +92,8 @@ namespace Ben10Mod.Content.Items.Accessories
             omp.omnitrixEquipped = true;
             wasEquipedLastFrame = true;
 
+            omp.omnitrixEnergyMax += 300;
+
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
             if (KeybindSystem.OpenTransformationScreen.JustPressed) {
                 if (!showingUI) {

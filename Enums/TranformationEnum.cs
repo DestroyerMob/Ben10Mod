@@ -25,7 +25,8 @@ namespace Ben10Mod.Enums
         RipJaws = 8,
         StinkFly = 9,
         WildVine = 10,
-        XLR8 = 11
+        XLR8 = 11,
+        EyeGuy = 12,
     }
 
     static class TransformationMethods {
@@ -51,6 +52,8 @@ namespace Ben10Mod.Enums
                     return ModContent.BuffType<WildVine_Buff>();
                 case TransformationEnum.XLR8:
                     return ModContent.BuffType<XLR8_Buff>();
+                case TransformationEnum.EyeGuy:
+                    return ModContent.BuffType<EyeGuy_Buff>();
                 default: return -1;
             }
         }
@@ -77,6 +80,8 @@ namespace Ben10Mod.Enums
                     return "Wildvine";
                 case TransformationEnum.XLR8:
                     return "XLR8";
+                case TransformationEnum.EyeGuy:
+                    return "Eye Guy";
                 default:
                     return "None";
             }
@@ -102,10 +107,53 @@ namespace Ben10Mod.Enums
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.WildVine:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
+                case TransformationEnum.EyeGuy:
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.XLR8:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");
                 default: return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
             }
+        }
+        
+        public static string GetDescription(this TransformationEnum trans)
+        {
+            return trans switch
+            {
+                TransformationEnum.None => "No alien selected. Choose one from the Omnitrix!",
+
+                TransformationEnum.HeatBlast => "A fiery Pyronite from the blazing star Pyros. A living inferno of plasma wrapped in molten rock.",
+
+                TransformationEnum.DiamondHead => "A crystalline Petrosapien from the shattered planet Petropia. Body forged from unbreakable diamond-like crystal.",
+
+                TransformationEnum.XLR8 => "A lightning-fast Kineceleran from the planet Kinet. Built like a velociraptor and engineered for pure speed.",
+
+                TransformationEnum.ChromaStone => "A radiant Crystalsapien from Petropia. Living energy crystal that absorbs and unleashes raw power.",
+
+                TransformationEnum.FourArms => "A mighty Tetramand from the harsh desert world Khoros. Four powerful arms of raw, unstoppable strength.",
+
+                TransformationEnum.BuzzShock => "A hyper-charged Nosedeenian from the Nosideen Quasar. Electric plasma being that crackles with limitless energy.",
+
+                TransformationEnum.RipJaws => "A ferocious Piscciss Volann from the ocean planet Piscciss. Aquatic predator with razor-sharp jaws and gills.",
+
+                TransformationEnum.GhostFreak => "A terrifying Ectonurite from the nightmare dimension Anur Phaetos. Intangible phantom that haunts the darkness.",
+
+                TransformationEnum.WildVine => "A versatile Florauna from the lush planet Flors Verdance. Living plant with stretching vines and natural camouflage.",
+
+                TransformationEnum.StinkFly => "A winged Lepidopterran from the insect world Lepidopterra. Acid-spitting flyer with a signature pungent aroma.",
+
+                _ => "A mysterious alien from the Omnitrix database."
+            };
+        }
+
+        public static List<string> GetAbilities(this TransformationEnum trans)
+        {
+            return trans switch
+            {
+                TransformationEnum.None => new List<string> { "None" },
+                TransformationEnum.HeatBlast => new List<string> { "Flamethrower blast", "Flight via Propulsion", "Heat Immunity", "Explosive Fireballs" },
+                // ← Add real abilities for every alien (this is where the fun Ben 10 flavor goes!)
+                _ => new List<string> { "Unknown abilities" }
+            };
         }
 
     }

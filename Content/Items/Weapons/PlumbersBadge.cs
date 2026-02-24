@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Enums;
@@ -20,8 +21,61 @@ namespace Ben10Mod.Content.Items.Weapons
         public virtual float  DamageMultiplier      => 1f; // For universal scaling if needed
         public virtual float  AttackSpeedMultiplier => 1f;
         public virtual string BadgeRankName         => "Helper";
-        
-        public override void SetDefaults()
+        public         int    OmnitrixEnergyUse = 0;
+
+
+        private int GetUltimateProjectileType(OmnitrixPlayer omp)
+        {
+            // Add more mappings here as you implement other ultimate attacks.
+            return omp.currTransformation switch
+            {
+                TransformationEnum.EyeGuy => ModContent.ProjectileType<EyeGuyUltimateBeam>(),
+                _ => 0
+            };
+        }
+
+        private static bool HasActiveOwnedProjectile(Player player, int projType)
+        {
+            if (projType <= 0) return false;
+
+            int owner = player.whoAmI;
+            for (int i = 0; i < Main.maxProjectiles; i++)
+            {
+                Projectile p = Main.projectile[i];
+                if (p.active && p.owner == owner && p.type == projType)
+                    return true;
+            }
+            return false;
+        }
+
+        private void FinalizeUltimateIfEnded(Player player, OmnitrixPlayer omp)
+        {
+            if (!omp.ultimateAttack) return;
+
+            var state = player.GetModPlayer<BadgeUltimateState>();
+
+            // If the ultimate hasn't actually started yet (no ultimate projectile spawned),
+            // don't auto-cancel it. This prevents "arming" the ultimate from immediately ending it.
+            if (!state.ultimateStarted)
+                return;
+
+            // If player is still holding the channel, ultimate is still in progress.
+            if (player.channel) return;
+
+            // If the ultimate projectile is still alive, ultimate is still in progress.
+            int ultimateProjType = GetUltimateProjectileType(omp);
+            if (HasActiveOwnedProjectile(player, ultimateProjType)) return;
+
+            // If we're here, the player has released channel and the ultimate projectile is gone.
+            if (!player.HasBuff<UltimateAbility_Cooldown>())
+                player.AddBuff(ModContent.BuffType<UltimateAbility_Cooldown>(), 60 * 60);
+
+            omp.ultimateAttack = false;
+            state.ultimateStarted = false;
+        }
+
+
+public override void SetDefaults()
         {
             Item.width        = 32;
             Item.height       = 32;
@@ -40,6 +94,8 @@ namespace Ben10Mod.Content.Items.Weapons
             Item.useStyle   = ItemUseStyleID.Swing;
             Item.useTime    = Item.useAnimation = 25;
             Item.shootSpeed = 10f;
+
+            Item.UseSound = null;
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips)
@@ -49,8 +105,8 @@ namespace Ben10Mod.Content.Items.Weapons
 
         public override bool CanUseItem(Player player)
         {
-            // Only usable when transformed - prevents any use/animation when human
-            return player.GetModPlayer<OmnitrixPlayer>().isTransformed;
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            return player.GetModPlayer<OmnitrixPlayer>().isTransformed && !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.ultimateAttack);
         }
 
         public override bool AltFunctionUse(Player player) => true;
@@ -59,11 +115,16 @@ namespace Ben10Mod.Content.Items.Weapons
         {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
+            FinalizeUltimateIfEnded(player, omp);
+
             // Safety defaults
             Item.useTime          = Item.useAnimation = 25;
             Item.shootSpeed       = 10f;
             Item.useStyle         = ItemUseStyleID.Swing;
             Item.ArmorPenetration = 0;
+            Item.UseSound         = null;
+            OmnitrixEnergyUse     = 0;
+            
 
             if (!omp.isTransformed)
                 return;
@@ -78,8 +139,8 @@ namespace Ben10Mod.Content.Items.Weapons
                         Item.shootSpeed = 10f;
                     }
                     else {
-                        Item.useStyle = ItemUseStyleID.Shoot;
-                        Item.useTime = Item.useAnimation = 6; // Fast enough for fireballs, bombs will feel strong but same rate
+                        Item.useStyle   = ItemUseStyleID.Shoot;
+                        Item.useTime    = Item.useAnimation = 6;
                         Item.shootSpeed = 3f;
                     }
                     break;
@@ -128,6 +189,14 @@ namespace Ben10Mod.Content.Items.Weapons
                     Item.useTime = Item.useAnimation = 32;
                     Item.shootSpeed = 10f;
                     break;
+                case TransformationEnum.EyeGuy:
+                    Item.useStyle   = ItemUseStyleID.Shoot;
+                    Item.useTime    = Item.useAnimation = 12;
+                    Item.shootSpeed = omp.ultimateAttack ? 0f : 35f;
+                    Item.UseSound   = omp.ultimateAttack ? null : SoundID.Item12;
+                    Item.channel    = omp.ultimateAttack;
+                    OmnitrixEnergyUse       = omp.ultimateAttack ? 10 : 0;
+                    break;
                 default:
                     Item.useTime    = Item.useAnimation = 25;
                     Item.shootSpeed = 10f;
@@ -140,6 +209,13 @@ namespace Ben10Mod.Content.Items.Weapons
 
         public override bool? UseItem(Player player) {
             if (player.altFunctionUse == 2) player.GetModPlayer<OmnitrixPlayer>().altAttack = !player.GetModPlayer<OmnitrixPlayer>().altAttack;
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.omnitrixEnergy >= OmnitrixEnergyUse) {
+                omp.omnitrixEnergy -= OmnitrixEnergyUse;
+            }
+            else {
+                return false;
+            }
             return base.UseItem(player);
         }
 
@@ -148,6 +224,21 @@ namespace Ben10Mod.Content.Items.Weapons
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (!omp.isTransformed || player.altFunctionUse == 2) return false;
+
+            // Block non-ultimate attacks while an ultimate is in progress (channeling or projectile alive).
+            int activeUltimateType = GetUltimateProjectileType(omp);
+            bool ultimateProjectileAlive = HasActiveOwnedProjectile(player, activeUltimateType);
+            bool ultimateInProgress = player.channel || ultimateProjectileAlive || player.GetModPlayer<BadgeUltimateState>().ultimateStarted;
+
+            // If ultimate is in progress, only allow firing the ultimate projectile itself (and only once).
+            if (ultimateInProgress && !omp.ultimateAttack)
+                return false;
+
+            // Don't allow starting an ultimate while on cooldown.
+
+            if (omp.ultimateAttack && player.HasBuff<UltimateAbility_Cooldown>())
+                return false;
+
 
             int projType = ProjectileID.ImpFireball; // Bright vanilla fallback - you SHOULD see this if alien not matched
             int finalDamage = damage;
@@ -162,7 +253,7 @@ namespace Ben10Mod.Content.Items.Weapons
                     }
                     else {
                         projType = ProjectileID.Flames;
-                        finalDamage = (int)(damage * 0.5f);
+                        finalDamage = (int)(damage * 0.3f);
                     }
                     break;
 
@@ -215,13 +306,34 @@ namespace Ben10Mod.Content.Items.Weapons
                         ? ModContent.ProjectileType<WildVineGrapple>()
                         : ModContent.ProjectileType<WildVineProjectile>();
                     break;
+                case TransformationEnum.EyeGuy:
+                    projType = omp.ultimateAttack ? ModContent.ProjectileType<EyeGuyUltimateBeam>() : ModContent.ProjectileType<EyeGuyLaserbeam>();
+                    finalDamage = omp.ultimateAttack ? (int)(damage * 1.2f) : damage;
+                    break;
             }
 
             if (projType == 0) return false;
-            
+
+            // While channeling an ultimate, keep exactly one ultimate projectile alive.
+            if (omp.ultimateAttack && HasActiveOwnedProjectile(player, projType))
+                return false;
+
+            // Mark ultimate as started the moment we actually fire its projectile.
+            if (omp.ultimateAttack && projType == activeUltimateType)
+                player.GetModPlayer<BadgeUltimateState>().ultimateStarted = true;
+
             Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier), knockback, player.whoAmI);
 
             return false;
+        }
+    }
+
+
+    public class BadgeUltimateState : ModPlayer {
+        public bool ultimateStarted;
+
+        public override void ResetEffects() {
+            // no per-tick reset; state persists until ultimate finishes
         }
     }
 }

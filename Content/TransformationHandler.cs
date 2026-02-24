@@ -73,12 +73,13 @@ namespace Ben10Mod.Content {
             player.ClearBuff(ModContent.BuffType<StinkFly_Buff>());
             player.ClearBuff(ModContent.BuffType<WildVine_Buff>());
             player.ClearBuff(ModContent.BuffType<ChromaStone_Buff>());
+            player.ClearBuff(ModContent.BuffType<EyeGuy_Buff>());
 
-            player.ClearBuff(ModContent.BuffType<HeatBlast_Primary_Buff>());
-            player.ClearBuff(ModContent.BuffType<DiamondHead_Primary_Buff>());
-            player.ClearBuff(ModContent.BuffType<ChromaStone_Primary_Buff>());
-            player.ClearBuff(ModContent.BuffType<XLR8_Primary_Buff>());
-            player.ClearBuff(ModContent.BuffType<BuzzShock_Primary_Buff>());
+            // player.ClearBuff(ModContent.BuffType<HeatBlast_Primary_Buff>());
+            // player.ClearBuff(ModContent.BuffType<DiamondHead_Primary_Buff>());
+            // player.ClearBuff(ModContent.BuffType<ChromaStone_Primary_Buff>());
+            // player.ClearBuff(ModContent.BuffType<XLR8_Primary_Buff>());
+            // player.ClearBuff(ModContent.BuffType<BuzzShock_Primary_Buff>());
 
             player.GetModPlayer<OmnitrixPlayer>().currTransformation = TransformationEnum.None;
 

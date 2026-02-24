@@ -23,7 +23,7 @@ namespace Ben10Mod.Content.Items.Armour {
 
             Item.value = 010000;
 
-            Item.defense = 5;
+            Item.defense = 2;
         }
 
         public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -35,9 +35,13 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+10 defence";
+            player.setBonus = "+8 defence while transformed";
+            
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-            player.statDefense += 10;
+            if (omp.isTransformed) {
+                player.statDefense += 8;
+            }
         }
 
         public override void AddRecipes()

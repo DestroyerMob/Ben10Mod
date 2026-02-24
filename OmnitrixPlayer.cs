@@ -4,6 +4,7 @@ using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.CommandLine.Help;
+using System.Linq;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -34,6 +35,7 @@ using Terraria.Audio;
 using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
+using Ben10Mod.Content.Transformations.EyeGuy;
 using Microsoft.Xna.Framework.Input;
 using Terraria.Graphics.Effects;
 
@@ -48,6 +50,7 @@ namespace Ben10Mod
         public bool wasTransformed   = false;
         public bool onCooldown       = false;
         public bool altAttack        = false;
+        public bool ultimateAttack   = false;
 
         public bool advancedCircuitMatrix                         = false;
         public bool advancedCircuitMatrixEquippedWhileTransformed = false;
@@ -84,8 +87,11 @@ namespace Ben10Mod
 
         public TransformationEnum[] transformations = { TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast };
         public TransformationEnum currTransformation = TransformationEnum.None;
-
-        public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() {TransformationEnum.HeatBlast};
+        public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() { TransformationEnum.HeatBlast };
+        
+        public float omnitrixEnergy      = 0f;
+        public float omnitrixEnergyMax   = 0f;
+        public float omnitrixEnergyRegen = 0f;
             
         // Rainbow effect
         public Color[] colours = { Color.White, Color.LightPink, Color.Pink, Color.OrangeRed, Color.LightBlue, Color.Cyan, Color.LightGreen, Color.YellowGreen, Color.LightYellow, Color.Yellow };
@@ -103,47 +109,58 @@ namespace Ben10Mod
         {
             return Color.Lerp(colours[thisColour], colours[nextColour], colourAmount);
         }
-
-        public override void SaveData(TagCompound tag) {
+        
+        public override void SaveData(TagCompound tag)
+        {
             if (Player.whoAmI != Main.myPlayer) return;
-            tag["masterControl"] = masterControl;
-            int[] temp = new int[transformations.Length];
-            for (int i = 0; i < temp.Length; i++) {
-                temp[i] = (int)transformations[i];
-            }
-            tag["roster"] = temp;
-            int[] tempList = new int[unlockedTransformation.Count];
-            for (int i = 0; i < tempList.Length; i++) {
-                tempList[i] = (int)unlockedTransformation[i];
-            }
-            tag["unlockedRoster"] = tempList;
+
+            tag["masterControl"]      = masterControl;
             tag["currTransformation"] = (int)currTransformation;
+
+            // Roster (5 slots)
+            tag["roster"] = transformations.Select(t => (int)t).ToArray();
+
+            // Unlocked aliens
+            tag["unlockedRoster"] = unlockedTransformation
+                .Where(t => t != TransformationEnum.None)
+                .Select(t => (int)t)
+                .ToArray();
         }
 
-        public override void LoadData(TagCompound tag) {
+        public override void LoadData(TagCompound tag)
+        {
             if (Player.whoAmI != Main.myPlayer) return;
-            int[] temp = null;
-            if (tag.TryGet("roster", out temp)) {
-                if (temp != null) {
-                    for (int i = 0; i < temp.Length; i++) {
-                        transformations[i] = (TransformationEnum)temp[i];
-                    }
-                }
-            }
-            int[] tempList = null;
-            if (tag.TryGet("unlockedRoster", out tempList)) {
-                if (tempList != null) {
-                    for (int i = 0; i < tempList.Length; i++) {
-                        if (!TransformationHandler.HasTransformation(Player, (TransformationEnum)tempList[i])) {
-                            unlockedTransformation.Add((TransformationEnum)tempList[i]);
-                        }
-                    }
-                }
-            }
-            int tempInt = -1;
-            tag.TryGet("currTransformation", out tempInt);
-            currTransformation = (TransformationEnum)tempInt;
+
             tag.TryGet("masterControl", out masterControl);
+
+            int currInt = -1;
+            tag.TryGet("currTransformation", out currInt);
+            currTransformation = (TransformationEnum)currInt;
+
+            // Load roster
+            if (tag.TryGet("roster", out int[] rosterArray) && rosterArray != null)
+            {
+                for (int i = 0; i < Math.Min(rosterArray.Length, transformations.Length); i++)
+                {
+                    transformations[i] = (TransformationEnum)rosterArray[i];
+                }
+            }
+
+            // Load unlocked (clears old duplicates automatically)
+            unlockedTransformation.Clear();
+            if (tag.TryGet("unlockedRoster", out int[] unlockedArray) && unlockedArray != null)
+            {
+                foreach (int id in unlockedArray)
+                {
+                    var trans = (TransformationEnum)id;
+                    if (trans != TransformationEnum.None && !unlockedTransformation.Contains(trans))
+                        unlockedTransformation.Add(trans);
+                }
+            }
+
+            // Safety: always have HeatBlast
+            if (!unlockedTransformation.Contains(TransformationEnum.HeatBlast))
+                unlockedTransformation.Insert(0, TransformationEnum.HeatBlast);
         }
 
 
@@ -151,8 +168,10 @@ namespace Ben10Mod
             if (Player.whoAmI != Main.myPlayer) return;
             advancedCircuitMatrix = false;
             
-            cooldownTime       = 120;
-            transformationTime = 300;
+            cooldownTime        = 120;
+            transformationTime  = 300;
+            omnitrixEnergyMax   = 0;
+            omnitrixEnergyRegen = 0;
 
             // Transformations
             isTransformed = false;
@@ -317,6 +336,23 @@ namespace Ben10Mod
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
+            }
+
+            omnitrixEnergy += (omnitrixEnergyRegen / 120);
+            
+            if (omnitrixEnergy > omnitrixEnergyMax) omnitrixEnergy = omnitrixEnergyMax;
+
+            if (isTransformed) {
+                if (KeybindSystem.UltimateAbility.JustPressed)
+                    if (!Player.HasBuff<UltimateAbility_Cooldown>()) {
+                        for (int i = 0; i < 50; i++)
+                        {
+                            Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue, Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                            d.noGravity = true;
+                        }
+                        ultimateAttack = !ultimateAttack;
+                    }
             }
             
             // XLR8 Transformation
@@ -617,16 +653,14 @@ namespace Ben10Mod
                     drawInfo.colorArmorLegs = overlayColor;
                     break;
                 case TransformationEnum.DiamondHead:
-                    break;
                 case TransformationEnum.FourArms:
                 case TransformationEnum.RipJaws:
                 case TransformationEnum.StinkFly:
                 case TransformationEnum.WildVine:
                 case TransformationEnum.XLR8:
+                case TransformationEnum.EyeGuy:
                 case TransformationEnum.None:
                     break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -793,6 +827,13 @@ namespace Ben10Mod
                     Player.back                  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
                     Player.armorEffectDrawShadow = true;
                 }
+
+                if (currTransformation == TransformationEnum.EyeGuy) {
+                    var costume = ModContent.GetInstance<EyeGuy>();
+                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                }
             }
         }
 
@@ -912,6 +953,9 @@ namespace Ben10Mod
                     addTransformation(TransformationEnum.RipJaws);
                 }
             }
+            
+            if (isTransformed && !ultimateAttack && omnitrixEnergyRegen == 0)
+                omnitrixEnergy += Math.Max(hit.Damage / 25, 1);
         }
 
         public override void PreUpdate() {

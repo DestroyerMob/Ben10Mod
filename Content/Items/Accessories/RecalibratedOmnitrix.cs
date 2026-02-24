@@ -32,8 +32,6 @@ namespace Ben10Mod.Content.Items.Accessories
 
         private Player player = null;
         public int transformationNum = 0;
-        public int transformationEnergy = 0;
-        private int maxEnergy = 0;
         public TransformationEnum[] transformations = new TransformationEnum[5];
 
         bool wasEquipedLastFrame = false;
@@ -82,28 +80,37 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.height               = 28;
             Item.rare                 = ItemRarityID.Master;
             Item.accessory            = true;
-            this.transformationEnergy = 300 * 60;
-            this.maxEnergy            = 300 * 60;
         }
 
-        public override void ModifyTooltips(List<TooltipLine> tooltips)
-        {
-            tooltips.Add(new TooltipLine(Mod, "TransformationEnergy", "Energy: " + (int)(transformationEnergy / 60)));
-            tooltips.Add(new TooltipLine(Mod, "AlienSelection", "Alien " + (transformationNum + 1) + ": " + transformations[transformationNum].ToString()));
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            tooltips.Add(new TooltipLine(Mod, "AlienSelection",
+                "Alien " + (transformationNum + 1) + ": " + transformations[transformationNum].ToString()));
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual) {
             this.player = player;
-            player.GetModPlayer<OmnitrixPlayer>().omnitrixEquipped = true;
-            wasEquipedLastFrame = true;
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            omp.omnitrixEnergyMax += 500;
+            omp.omnitrixEquipped  =  true;
+            wasEquipedLastFrame   =  true;
+            
+            if (omp.isTransformed) 
+                omp.omnitrixEnergyRegen -= 1;
+
+            if (omp.omnitrixEnergy <= 0 && omp.isTransformed) {
+                TransformationHandler.Detransform(player, 120);
+            }
+
+            if (omp.omnitrixEnergy > 0 && omp.isTransformed) {
+                TransformationHandler.Transform(player, omp.currTransformation, 2, false,false);
+            }
+            if (omp.isTransformed) 
+                omp.omnitrixEnergyRegen -= 1;
+            else 
+                omp.omnitrixEnergyRegen += 3;
+            
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
-            if (player.GetModPlayer<OmnitrixPlayer>().isTransformed && transformationEnergy > 0) {
-                transformationEnergy -= 1;
-            } else if (transformationEnergy < maxEnergy) {
-                transformationEnergy += 3;
-                transformationEnergy = Math.Min(transformationEnergy, maxEnergy);
-            }
             if (KeybindSystem.OpenTransformationScreen.JustPressed) {
                 if (!showingUI) {
                     player.GetModPlayer<OmnitrixPlayer>().transformations = transformations;
@@ -115,19 +122,21 @@ namespace Ben10Mod.Content.Items.Accessories
                     showingUI = false;
                 }
             }
-            if (transformationEnergy <= 0) {
-                TransformationHandler.Detransform(player, 60);
-            }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
-                TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy / 60);
+                TransformationHandler.Transform(player, transformations[transformationNum], 2);
             }
             else if (KeybindSystem.TransformationKeybind.JustPressed && player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
                 if (player.GetModPlayer<OmnitrixPlayer>().currTransformation != transformations[transformationNum]) {
-                    transformationEnergy -= 50;
-                    TransformationHandler.Detransform(player, 60, false, transformationEnergy <= 0, false);
-                    transformationEnergy =  Math.Max(transformationEnergy, 0);
-                    TransformationHandler.Transform(player, transformations[transformationNum], transformationEnergy / 60);
+                    omp.omnitrixEnergy -= 50;
+                    omp.omnitrixEnergy =  Math.Max(omp.omnitrixEnergy, 0);
+                    if (omp.omnitrixEnergy > 0) {
+                        TransformationHandler.Detransform(player, 0, false, false);
+                        TransformationHandler.Transform(player, transformations[transformationNum], 2);
+                    }
+                    else {
+                        TransformationHandler.Detransform(player, 60);
+                    }
                 } else {
                     TransformationHandler.Detransform(player, 0, true, false);
                 }
