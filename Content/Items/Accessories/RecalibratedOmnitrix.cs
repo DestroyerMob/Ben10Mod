@@ -1,28 +1,14 @@
- using Ben10Mod.Content.Transformations;
-using Ben10Mod.Content.Transformations.XLR8;
 using Ben10Mod.Keybinds;
 using Microsoft.Xna.Framework;
-using Steamworks;
 using System;
 using Terraria;
 using Terraria.DataStructures;
-using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 using Ben10Mod.Enums;
 using System.Collections.Generic;
-using System.Threading.Tasks.Dataflow;
-using System.Security.Cryptography.X509Certificates;
 using Ben10Mod.Content.Interface;
-using Ben10Mod.Content.Buffs.Abilities.ChromaStone;
-using Ben10Mod.Content.Buffs.Abilities.DiamondHead;
-using Ben10Mod.Content.Buffs.Abilities.HeatBlast;
-using Ben10Mod.Content.Buffs.Abilities.XLR8;
-using Ben10Mod.Content.Buffs.Transformations;
-using Ben10Mod.Content.Items.Placeables;
-using Ben10Mod.Content.DamageClasses;
-using Terraria.ModLoader.Default;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 
@@ -88,6 +74,9 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual) {
+            
+            if (player.whoAmI != Main.myPlayer) return;
+            
             this.player = player;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             omp.omnitrixEnergyMax += 500;
@@ -196,7 +185,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed) {
                     TransformationHandler.Detransform(player, omp.cooldownTime, true, true);
                 } else {
-                    TransformationHandler.Detransform(player, omp.cooldownTime, false, false);
+                    TransformationHandler.Detransform(player, omp.cooldownTime, false, false, false);
                 }
             }
         }
@@ -222,8 +211,8 @@ namespace Ben10Mod.Content.Items.Accessories
 
             Recipe recipeAlt = CreateRecipe()
                 .AddIngredient(ModContent.ItemType<PrototypeOmnitrix>())
-                .AddIngredient(ItemID.SoulofNight, 5)
-                .AddIngredient(ItemID.SoulofLight, 5)
+                .AddIngredient(ItemID.SoulofNight, 8)
+                .AddIngredient(ItemID.SoulofLight, 8)
                 .AddTile(TileID.MythrilAnvil).Register();
 
         }

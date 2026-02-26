@@ -1,28 +1,14 @@
- using Ben10Mod.Content.Transformations;
-using Ben10Mod.Content.Transformations.XLR8;
 using Ben10Mod.Keybinds;
 using Microsoft.Xna.Framework;
-using Steamworks;
-using System;
 using Terraria;
 using Terraria.DataStructures;
-using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 using Ben10Mod.Enums;
 using System.Collections.Generic;
-using System.Threading.Tasks.Dataflow;
-using System.Security.Cryptography.X509Certificates;
 using Ben10Mod.Content.Interface;
-using Ben10Mod.Content.Buffs.Abilities.ChromaStone;
-using Ben10Mod.Content.Buffs.Abilities.DiamondHead;
-using Ben10Mod.Content.Buffs.Abilities.HeatBlast;
-using Ben10Mod.Content.Buffs.Abilities.XLR8;
-using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Placeables;
-using Ben10Mod.Content.DamageClasses;
-using Terraria.ModLoader.Default;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 
@@ -47,6 +33,7 @@ namespace Ben10Mod.Content.Items.Accessories
 
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.HandsOn}", EquipType.HandsOn, this);
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Alt_{EquipType.HandsOn}", EquipType.HandsOn, name: "PrototypeOmnitrixAlt");
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}Updating_{EquipType.HandsOn}", EquipType.HandsOn, name: "PrototypeOmnitrixUpdating");
         }
 
         public override ModItem Clone(Item item) {
@@ -87,10 +74,12 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual) {
+            if (player.whoAmI != Main.myPlayer) return;
             this.player = player;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
-            omp.omnitrixEquipped = true;
-            wasEquipedLastFrame = true;
+            omp.omnitrixEquipped  = true;
+            omp.prototypeOmnitrix = true;
+            wasEquipedLastFrame   = true;
 
             omp.omnitrixEnergyMax += 300;
 
@@ -186,7 +175,7 @@ namespace Ben10Mod.Content.Items.Accessories
             if (player == null)
                 return true;
 
-            dynamicTexture = player.GetModPlayer<OmnitrixPlayer>().onCooldown ? ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixAlt").Value : ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix").Value;
+            dynamicTexture = player.GetModPlayer<OmnitrixPlayer>().omnitrixUpdating ? ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixUpdating").Value : player.GetModPlayer<OmnitrixPlayer>().onCooldown ? ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixAlt").Value : ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix").Value;
 
             spriteBatch.Draw(dynamicTexture, position, null, drawColor, 0f, origin, scale, SpriteEffects.None, 0f);
 

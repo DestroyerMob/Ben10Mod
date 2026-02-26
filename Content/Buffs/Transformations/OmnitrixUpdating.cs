@@ -1,0 +1,23 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Ben10Mod.Enums;
+using Terraria;
+using Terraria.ID;
+using Terraria.ModLoader;
+
+namespace Ben10Mod.Content.Buffs.Transformations {
+    public class OmnitrixUpdating : ModBuff {
+        public override string Texture => "Ben10Mod/Content/Buffs/Transformations/OmnitrixUpdating";
+        private OmnitrixPlayer p;
+        public override void Update(Player player, ref int buffIndex) {
+            p = player.GetModPlayer<OmnitrixPlayer>();
+
+            p.omnitrixUpdating    = true;
+            p.omnitrixWasUpdating = true;
+        }
+        public override bool RightClick(int buffIndex) => false;
+    }
+}

@@ -346,6 +346,21 @@ Buffs: {
 		DisplayName: Ultimate Ability_ Cooldown
 		Description: Mods.Ben10Mod.Buffs.UltimateAbility_Cooldown.Description
 	}
+
+	OmnitrixUpdating: {
+		Description: Mods.Ben10Mod.Buffs.OmnitrixUpdating.Description
+		DisplayName: Omnitrix Updating
+	}
+
+	PrimaryAbility: {
+		DisplayName: Primary Ability
+		Description: Mods.Ben10Mod.Buffs.PrimaryAbility.Description
+	}
+
+	PrimaryAbilityCooldown: {
+		DisplayName: Primary Ability Cooldown
+		Description: Mods.Ben10Mod.Buffs.PrimaryAbilityCooldown.Description
+	}
 }
 
 Projectiles: {

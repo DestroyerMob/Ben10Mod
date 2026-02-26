@@ -36,7 +36,7 @@ namespace Ben10Mod.Content.Interface
         }
 
         public override bool IsHidden() {
-            return Player.GetModPlayer<OmnitrixPlayer>().isTransformed;
+            return Player.GetModPlayer<OmnitrixPlayer>().isTransformed || Player.GetModPlayer<OmnitrixPlayer>().omnitrixUpdating;
         }
     }
 }

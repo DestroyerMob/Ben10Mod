@@ -3,11 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Ben10Mod.Content.Buffs.Abilities.ChromaStone;
-using Ben10Mod.Content.Buffs.Abilities.DiamondHead;
-using Ben10Mod.Content.Buffs.Abilities.HeatBlast;
-using Ben10Mod.Content.Buffs.Abilities.XLR8;
-using Ben10Mod.Content.Buffs.Abilities.BuzzShock;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Enums;
 using Terraria;
@@ -75,11 +71,7 @@ namespace Ben10Mod.Content {
             player.ClearBuff(ModContent.BuffType<ChromaStone_Buff>());
             player.ClearBuff(ModContent.BuffType<EyeGuy_Buff>());
 
-            // player.ClearBuff(ModContent.BuffType<HeatBlast_Primary_Buff>());
-            // player.ClearBuff(ModContent.BuffType<DiamondHead_Primary_Buff>());
-            // player.ClearBuff(ModContent.BuffType<ChromaStone_Primary_Buff>());
-            // player.ClearBuff(ModContent.BuffType<XLR8_Primary_Buff>());
-            // player.ClearBuff(ModContent.BuffType<BuzzShock_Primary_Buff>());
+            player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
 
             player.GetModPlayer<OmnitrixPlayer>().currTransformation = TransformationEnum.None;
 
