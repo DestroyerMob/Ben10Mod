@@ -29,6 +29,7 @@ using Terraria.Audio;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Transformations.EyeGuy;
+using Terraria.WorldBuilding;
 
 namespace Ben10Mod
 {
@@ -67,9 +68,6 @@ namespace Ben10Mod
         public       int DashTimer    = 0;
         public const int DashCooldown = 15;
         public const int DashDuration = 15;
-
-        public bool isPerformingHeatBlastDoubleJump;
-
         public TransformationEnum[] transformations = { TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast };
         public TransformationEnum currTransformation = TransformationEnum.None;
         public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() { TransformationEnum.HeatBlast };
@@ -257,8 +255,8 @@ namespace Ben10Mod
             // Heatblast Transformation
 
             if (currTransformation == TransformationEnum.HeatBlast) {
-                Player.fireWalk = true;
-                Player.lavaImmune = true;
+                Player.fireWalk   =  true;
+                Player.lavaImmune =  true;
             }
 
             // Diamondhead Transformation
@@ -396,7 +394,8 @@ namespace Ben10Mod
                 Player.fireWalk = true;
                 Player.lavaImmune = true;
 
-                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastWings>()); }
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastExtraJumpAccessory>()); 
+            }
 
             // Diamondhead Transformation
 
@@ -827,6 +826,7 @@ namespace Ben10Mod
 
         public override void PreUpdateMovement() {
             DashMovement();
+            
             if (PrimaryAbilityEnabled && currTransformation == TransformationEnum.GhostFreak) { // Phasing Logic
                 Vector2 input                    = Vector2.Zero;
                 if (Player.controlLeft)  input.X -= 1f;

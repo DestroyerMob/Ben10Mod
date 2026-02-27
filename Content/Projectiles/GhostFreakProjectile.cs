@@ -18,15 +18,15 @@ namespace Ben10Mod.Content.Projectiles {
 
         public override void SetDefaults() {
             
-            Projectile.width                = (int)(Projectile.width  * 0.6f);
-            Projectile.height               = (int)(Projectile.height * 0.6f);
-            Projectile.scale                = 0.6f;
-            Projectile.friendly             = true;
-            Projectile.hostile              = false;
-            Projectile.penetrate            = -1;
-            Projectile.timeLeft             = 35;
-            Projectile.DamageType           = DamageClass.Magic;
-            Projectile.usesLocalNPCImmunity = true;
+            Projectile.width       = (int)(Projectile.width  * 0.6f);
+            Projectile.height      = (int)(Projectile.height * 0.6f);
+            Projectile.scale       = 0.6f;
+            Projectile.friendly    = true;
+            Projectile.hostile     = false;
+            Projectile.penetrate   = -1;
+            Projectile.timeLeft    = 35;
+            Projectile.DamageType  = DamageClass.Magic;
+            Projectile.tileCollide = false;
 
         }
 

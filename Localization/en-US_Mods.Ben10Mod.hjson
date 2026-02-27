@@ -173,7 +173,7 @@ Items: {
 
 	AdvancedCircuitMatrix: {
 		DisplayName: Advanced Circuit Matrix
-		Tooltip: ""
+		Tooltip: Doubles Transformation and Cooldown times for the prototype omnitrix
 	}
 
 	PlumberMagisterBadge: {
@@ -194,6 +194,11 @@ Items: {
 	HeroEmblem: {
 		Tooltip: ""
 		DisplayName: Hero Emblem
+	}
+
+	HeatBlastExtraJumpAccessory: {
+		DisplayName: Heat Blast Extra Jump Accessory
+		Tooltip: ""
 	}
 }
 
