@@ -203,6 +203,8 @@ namespace Ben10Mod
                     } else {
                         if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>())
                             TransformationHandler.Detransform(Player, advancedCircuitMatrixEquippedWhileTransformed ? cooldownTime * 2 : cooldownTime);
+                        if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>())
+                            TransformationHandler.Detransform(Player, 0, addCooldown: false);
                     }
 
                     advancedCircuitMatrixEquippedWhileTransformed = false;
@@ -985,6 +987,15 @@ namespace Ben10Mod
             }
 
             colourAmount += 0.1f;
+
+            if (inPossessionMode) {
+                if (Main.GameUpdateCount % 60 == 0) {
+                    int dotDamage = 35;
+                    possessedTarget.life -= dotDamage;
+                    if (possessedTarget.life < 1) possessedTarget.life = 1;
+                    CombatText.NewText(possessedTarget.Hitbox, new Color(180, 80, 255), dotDamage, dramatic: true);
+                }
+            }
 
             if (PrimaryAbilityEnabled && currTransformation == TransformationEnum.GhostFreak) {
                 // Core noclip setup (DragonLens-style)

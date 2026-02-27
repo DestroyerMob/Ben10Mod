@@ -31,7 +31,7 @@ namespace Ben10Mod.Content.Projectiles {
 
         public override void AI() {
             // Rotate velocity a tiny random amount each tick -> tentacle-like curve
-            float maxCurve = 0.30f; // radians; tweak for more/less wiggle
+            float maxCurve = 0.15f; // radians; tweak for more/less wiggle
             Projectile.velocity = Projectile.velocity.RotatedByRandom(maxCurve);
 
             // Slow down over time so it doesn’t go forever

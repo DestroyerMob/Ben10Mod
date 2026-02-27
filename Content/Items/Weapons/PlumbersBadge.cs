@@ -27,9 +27,9 @@ namespace Ben10Mod.Content.Items.Weapons
         private int GetUltimateProjectileType(OmnitrixPlayer omp)
         {
             // Add more mappings here as you implement other ultimate attacks.
-            return omp.currTransformation switch
-            {
+            return omp.currTransformation switch {
                 TransformationEnum.EyeGuy => ModContent.ProjectileType<EyeGuyUltimateBeam>(),
+                TransformationEnum.GhostFreak => ModContent.ProjectileType<GhostFreakPossesionProjectile>(),
                 _ => 0
             };
         }
@@ -181,8 +181,9 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.GhostFreak:
-                    Item.useTime = Item.useAnimation = 14;
-                    Item.shootSpeed = 12f;
+                    Item.useTime      = Item.useAnimation = 14;
+                    Item.shootSpeed   = 12f;
+                    OmnitrixEnergyUse = omp.ultimateAttack ? 50 : 0;
                     break;
 
                 case TransformationEnum.WildVine:
@@ -296,7 +297,7 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.GhostFreak:
-                    projType = omp.altAttack
+                    projType = omp.ultimateAttack
                         ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
                         : ModContent.ProjectileType<GhostFreakProjectile>();
                     break;
@@ -308,7 +309,7 @@ public override void SetDefaults()
                     break;
                 case TransformationEnum.EyeGuy:
                     projType = omp.ultimateAttack ? ModContent.ProjectileType<EyeGuyUltimateBeam>() : ModContent.ProjectileType<EyeGuyLaserbeam>();
-                    finalDamage = omp.ultimateAttack ? (int)(damage * 1.2f) : damage;
+                    finalDamage = omp.ultimateAttack ? (int)(damage * 2f) : damage;
                     break;
             }
 

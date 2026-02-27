@@ -76,9 +76,23 @@ namespace Ben10Mod {
                 }
             }
 
-            if (eaterCount > 1) {
+            if (eaterCount > 1)
                 return;
+
+            int twinsCount = 0;
+
+            if (npc.type == NPCID.Retinazer || npc.type == NPCID.Spazmatism) {
+                for (int i = 0; i < Main.npc.Length; i++) {
+                    if (Main.npc[i].type == NPCID.Retinazer || Main.npc[i].type == NPCID.Spazmatism) {
+                        if (Main.npc[i].active) {
+                            twinsCount++;
+                        }
+                    }
+                }
             }
+
+            if (twinsCount > 1)
+                return;
 
             string msg = $"{Main.player[credited].name} dealt the most damage!";
             
@@ -145,6 +159,10 @@ namespace Ben10Mod {
                         .addTransformation(TransformationEnum.ChromaStone);
                     break;
                 }
+                case NPCID.Retinazer:
+                case NPCID.Spazmatism: 
+                    player.GetModPlayer<OmnitrixPlayer>().addTransformation(TransformationEnum.EyeGuy);
+                    break;
                 default: break;
             }
             

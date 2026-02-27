@@ -17,7 +17,7 @@ namespace Ben10Mod.Content.Projectiles
         private const float StartOffset = 52f;
 
         private SlotId _loopSlot;
-        private bool _loopStarted;
+        private bool   _loopStarted;
 
         // Beam lengths for this tick:
         // localAI[0] = collision length (reaches the first hit)
@@ -161,6 +161,7 @@ namespace Ben10Mod.Content.Projectiles
             Vector2 end    = start + dir * length;
 
             float _ = 0f;
+            
             return Collision.CheckAABBvLineCollision(
                 targetHitbox.TopLeft(),
                 targetHitbox.Size(),
@@ -260,6 +261,11 @@ namespace Ben10Mod.Content.Projectiles
 
             // End cap
             Vector2 endPos = start + dir * length;
+            for (int j = 0; j < 5; j++) {
+                int dustNum = Dust.NewDust(endPos, endFrame.Width, endFrame.Height, DustID.GreenTorch, 0, 0, 0, Color.White, 3f);
+                Main.dust[dustNum].noGravity = true;
+            }
+            
             Main.EntitySpriteDraw(
                 tex,
                 endPos - Main.screenPosition,

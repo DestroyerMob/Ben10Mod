@@ -18,7 +18,7 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.height = 4;
             Projectile.aiStyle = ProjAIStyleID.Arrow;
 
-            AIType = ProjectileID.Grenade;
+            AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
         }
 

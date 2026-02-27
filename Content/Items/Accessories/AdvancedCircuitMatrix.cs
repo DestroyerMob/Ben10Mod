@@ -1,5 +1,6 @@
 using Ben10Mod.Content.Items.Placeables;
 using Terraria;
+using Terraria.GameContent.UI.States;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -16,6 +17,7 @@ public class AdvancedCircuitMatrix : ModItem {
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.advancedCircuitMatrix    = true;
+        omp.advancedCircuitMatrix =  true;
+        omp.omnitrixEnergyRegen   += 50;
     }
 }
