@@ -30,6 +30,7 @@ namespace Ben10Mod.Content.Items.Weapons
             return omp.currTransformation switch {
                 TransformationEnum.EyeGuy => ModContent.ProjectileType<EyeGuyUltimateBeam>(),
                 TransformationEnum.GhostFreak => ModContent.ProjectileType<GhostFreakPossesionProjectile>(),
+                TransformationEnum.DiamondHead => ModContent.ProjectileType<GiantDiamondProjectile>(),
                 _ => 0
             };
         }
@@ -123,6 +124,7 @@ public override void SetDefaults()
             Item.useStyle         = ItemUseStyleID.Swing;
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
+            Item.channel          = false;
             OmnitrixEnergyUse     = 0;
             
 
@@ -158,6 +160,7 @@ public override void SetDefaults()
                     Item.useTime          = Item.useAnimation = 8;
                     Item.shootSpeed       = 35f;
                     Item.ArmorPenetration = 25;
+                    OmnitrixEnergyUse     = omp.ultimateAttack ? 25 : 0;
                     break;
 
                 case TransformationEnum.RipJaws:
@@ -269,9 +272,12 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.DiamondHead:
-                    projType = ModContent.ProjectileType<DiamondHeadProjectile>();
-                    finalDamage = (int)(damage * 0.5f);
-                    velocity.Y += Main.rand.NextFloat(-0.35f, 0.35f);
+                    projType = omp.ultimateAttack ? ModContent.ProjectileType<GiantDiamondProjectile>() : ModContent.ProjectileType<DiamondHeadProjectile>();
+                    finalDamage = omp.ultimateAttack ? damage * 5 : (int)(damage * 0.5f);
+                    if (omp.ultimateAttack) {
+                        velocity = Vector2.Zero;
+                        position = Main.MouseWorld;
+                    }
                     break;
 
                 case TransformationEnum.RipJaws:

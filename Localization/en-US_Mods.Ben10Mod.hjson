@@ -272,59 +272,9 @@ Buffs: {
 		Description: Florauna
 	}
 
-	XLR8_Primary_Buff: {
-		DisplayName: XLR8 Speed Boost
-		Description: XLR8 Speed Boost
-	}
-
-	XLR8_Primary_Cooldown_Buff: {
-		DisplayName: XLR8 Speed Boost Cooldown
-		Description: XLR8 Speed Boost Cooldown
-	}
-
-	HeatBlast_Primary_Buff: {
-		DisplayName: Heatblast Flame Aura
-		Description: Heatblast Flame Aura
-	}
-
-	HeatBlast_Primary_Cooldown_Buff: {
-		DisplayName: Heatblast Flame Aura Cooldown
-		Description: Heatblast Flame Aura Cooldown
-	}
-
-	DiamondHead_Primary_Buff: {
-		DisplayName: Diamondhead Primary Ability
-		Description: Immune to damage but unable to move
-	}
-
-	DiamondHead_Primary_Cooldown_Buff: {
-		DisplayName: Diamondhead Primary Cooldown
-		Description: Cooldown for primary ability
-	}
-
-	ChromaStone_Primary_Buff: {
-		DisplayName: Chromastone Primary Ability
-		Description: Absorb and redirect incoming damage
-	}
-
-	ChromaStone_Primary_Cooldown_Buff: {
-		DisplayName: Chromastone Primary Cooldown
-		Description: Cooldown for primary ability
-	}
-
 	TransformationCooldown_Buff: {
 		Description: Timeout
 		DisplayName: Cannot transform while timed out
-	}
-
-	BuzzShock_Primary_Buff: {
-		DisplayName: Buzz Shock_ Primary_ Buff
-		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Buff.Description
-	}
-
-	BuzzShock_Primary_Cooldown_Buff: {
-		DisplayName: Buzz Shock_ Primary_ Cooldown_ Buff
-		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Cooldown_Buff.Description
 	}
 
 	EnemySlow: {
@@ -332,34 +282,29 @@ Buffs: {
 		DisplayName: Enemy Slow
 	}
 
-	GhostFreakPossesion: {
-		DisplayName: Ghost Freak Possesion
-		Description: Mods.Ben10Mod.Buffs.GhostFreakPossesion.Description
-	}
-
 	EyeGuy_Buff: {
 		Description: Mods.Ben10Mod.Buffs.EyeGuy_Buff.Description
-		DisplayName: Eye Guy_ Buff
+		DisplayName: Opticoid
 	}
 
 	UltimateAbility_Cooldown: {
-		DisplayName: Ultimate Ability_ Cooldown
-		Description: Mods.Ben10Mod.Buffs.UltimateAbility_Cooldown.Description
+		DisplayName: Ultimate Ability Cooldown
+		Description: Ultimate Ability Cooldown
 	}
 
 	OmnitrixUpdating: {
-		Description: Mods.Ben10Mod.Buffs.OmnitrixUpdating.Description
+		Description: Omnitrix is undergoing updates
 		DisplayName: Omnitrix Updating
 	}
 
 	PrimaryAbility: {
 		DisplayName: Primary Ability
-		Description: Mods.Ben10Mod.Buffs.PrimaryAbility.Description
+		Description: Primary Ability Activated
 	}
 
 	PrimaryAbilityCooldown: {
 		DisplayName: Primary Ability Cooldown
-		Description: Mods.Ben10Mod.Buffs.PrimaryAbilityCooldown.Description
+		Description: Primary Ability On Cooldown
 	}
 }
 
@@ -385,6 +330,7 @@ Projectiles: {
 	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
 	EyeGuyLaserbeam.DisplayName: Eye Guy Laserbeam
 	EyeGuyUltimateBeam.DisplayName: Eye Guy Ultimate Beam
+	GiantDiamondProjectile.DisplayName: Giant Diamond Projectile
 }
 
 Tiles: {

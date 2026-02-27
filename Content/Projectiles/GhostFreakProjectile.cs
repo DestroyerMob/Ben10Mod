@@ -18,14 +18,15 @@ namespace Ben10Mod.Content.Projectiles {
 
         public override void SetDefaults() {
             
-            Projectile.width      = (int)(Projectile.width  * 0.6f);
-            Projectile.height     = (int)(Projectile.height * 0.6f);
-            Projectile.scale      = 0.6f;
-            Projectile.friendly   = true;
-            Projectile.hostile    = false;
-            Projectile.penetrate  = -1;
-            Projectile.timeLeft   = 35;
-            Projectile.DamageType = DamageClass.Magic;
+            Projectile.width                = (int)(Projectile.width  * 0.6f);
+            Projectile.height               = (int)(Projectile.height * 0.6f);
+            Projectile.scale                = 0.6f;
+            Projectile.friendly             = true;
+            Projectile.hostile              = false;
+            Projectile.penetrate            = -1;
+            Projectile.timeLeft             = 35;
+            Projectile.DamageType           = DamageClass.Magic;
+            Projectile.usesLocalNPCImmunity = true;
 
         }
 
@@ -39,6 +40,10 @@ namespace Ben10Mod.Content.Projectiles {
 
             // Face along direction of travel
             Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
+        }
+
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            if (Main.rand.NextBool(5)) target.AddBuff(BuffID.Confused, 60 * 5);
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {

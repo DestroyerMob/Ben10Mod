@@ -23,22 +23,20 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
-            Random random = new Random();
-            for (int i = 0; i < 6; i++) {
-                int dustNum = Dust.NewDust(boxPosition, 1, 1, DustID.Torch, 0, 0, 1, Color.White, 2);
-                Main.dust[dustNum].noGravity = true;
-            }
+            Random random  = new Random();
+            int    dustNum = Dust.NewDust(boxPosition, 1, 1, DustID.Torch, 0, 0, 1, Color.White, 5);
+            Main.dust[dustNum].noGravity = true;
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
         {
             base.OnHitNPC(target, hit, damageDone);
-            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 100);
+            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 50);
         }
 
         public override bool OnTileCollide(Vector2 oldVelocity)
         {
-            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 100);
+            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 50);
             return base.OnTileCollide(oldVelocity);
         }
     }

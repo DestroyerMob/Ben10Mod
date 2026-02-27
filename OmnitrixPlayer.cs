@@ -102,6 +102,7 @@ namespace Ben10Mod
 
             tag["masterControl"]      = masterControl;
             tag["currTransformation"] = (int)currTransformation;
+            tag["omnitrixEnergy"] = omnitrixEnergy;
 
             // Roster (5 slots)
             tag["roster"] = transformations.Select(t => (int)t).ToArray();
@@ -121,6 +122,7 @@ namespace Ben10Mod
             int currInt = -1;
             tag.TryGet("currTransformation", out currInt);
             currTransformation = (TransformationEnum)currInt;
+            omnitrixEnergy = tag.TryGet("omnitrixEnergy", out omnitrixEnergy) ? omnitrixEnergy : 0f;
 
             // Load roster
             if (tag.TryGet("roster", out int[] rosterArray) && rosterArray != null)
