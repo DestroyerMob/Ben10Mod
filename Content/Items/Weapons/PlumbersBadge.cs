@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
@@ -11,46 +13,45 @@ using Terraria.ModLoader;
 using Terraria.Audio;
 using Terraria.Localization;
 
-namespace Ben10Mod.Content.Items.Weapons
-{
-    public abstract class PlumbersBadge : ModItem
-    {
-        
+namespace Ben10Mod.Content.Items.Weapons {
+    public abstract class PlumbersBadge : ModItem {
+
         // Override these in subclasses for tier-specific values
-        public virtual int    BaseDamage            => 15;
-        public virtual float  DamageMultiplier      => 1f; // For universal scaling if needed
-        public virtual float  AttackSpeedMultiplier => 1f;
+        public virtual int   BaseDamage                 => 15;
+        public virtual float DamageMultiplier           => 1f; // For universal scaling if needed
+        public virtual float AttackSpeedMultiplier      => 1f;
+        public virtual float AdditionalProjectileChance => 0;
+        
         public virtual string BadgeRankName         => "Helper";
+        public virtual int    BadgeRankValue        => 0;
         public         int    OmnitrixEnergyUse = 0;
 
 
-        private int GetUltimateProjectileType(OmnitrixPlayer omp)
-        {
+        private int GetUltimateProjectileType(OmnitrixPlayer omp) {
             // Add more mappings here as you implement other ultimate attacks.
             return omp.currTransformation switch {
                 TransformationEnum.EyeGuy => ModContent.ProjectileType<EyeGuyUltimateBeam>(),
                 TransformationEnum.GhostFreak => ModContent.ProjectileType<GhostFreakPossesionProjectile>(),
                 TransformationEnum.DiamondHead => ModContent.ProjectileType<GiantDiamondProjectile>(),
+                TransformationEnum.HeatBlast => ModContent.ProjectileType<HeatBlastUltimateProjectile>(),
                 _ => 0
             };
         }
 
-        private static bool HasActiveOwnedProjectile(Player player, int projType)
-        {
+        private static bool HasActiveOwnedProjectile(Player player, int projType) {
             if (projType <= 0) return false;
 
             int owner = player.whoAmI;
-            for (int i = 0; i < Main.maxProjectiles; i++)
-            {
+            for (int i = 0; i < Main.maxProjectiles; i++) {
                 Projectile p = Main.projectile[i];
                 if (p.active && p.owner == owner && p.type == projType)
                     return true;
             }
+
             return false;
         }
 
-        private void FinalizeUltimateIfEnded(Player player, OmnitrixPlayer omp)
-        {
+        private void FinalizeUltimateIfEnded(Player player, OmnitrixPlayer omp) {
             if (!omp.ultimateAttack) return;
 
             var state = player.GetModPlayer<BadgeUltimateState>();
@@ -65,31 +66,30 @@ namespace Ben10Mod.Content.Items.Weapons
 
             // If the ultimate projectile is still alive, ultimate is still in progress.
             int ultimateProjType = GetUltimateProjectileType(omp);
-            if (HasActiveOwnedProjectile(player, ultimateProjType)) return;
+            if (HasActiveOwnedProjectile(player, ultimateProjType) && omp.currTransformation == TransformationEnum.EyeGuy) return;
 
             // If we're here, the player has released channel and the ultimate projectile is gone.
             if (!player.HasBuff<UltimateAbility_Cooldown>())
                 player.AddBuff(ModContent.BuffType<UltimateAbility_Cooldown>(), 60 * 60);
 
-            omp.ultimateAttack = false;
+            omp.ultimateAttack    = false;
             state.ultimateStarted = false;
         }
 
 
-public override void SetDefaults()
-        {
+        public override void SetDefaults() {
             Item.width        = 32;
             Item.height       = 32;
             Item.noUseGraphic = true;
             Item.useTurn      = false;
             Item.autoReuse    = true;
             Item.noMelee      = true;
-            
+
             Item.shoot = 1;
 
             Item.DamageType = ModContent.GetInstance<HeroDamage>();
-            Item.damage = BaseDamage;
-            Item.knockBack = 4f;
+            Item.damage     = BaseDamage;
+            Item.knockBack  = 4f;
 
             // Base defaults - overridden per alien in HoldItem
             Item.useStyle   = ItemUseStyleID.Swing;
@@ -99,21 +99,20 @@ public override void SetDefaults()
             Item.UseSound = null;
         }
 
-        public override void ModifyTooltips(List<TooltipLine> tooltips)
-        {
-            tooltips.Add(new TooltipLine(Mod, "badgeHelperLine", "Right click while holding to alternate between primary and secondary attacks"));
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            tooltips.Add(new TooltipLine(Mod, "badgeHelperLine",
+                "Right click while holding to alternate between primary and secondary attacks"));
         }
 
-        public override bool CanUseItem(Player player)
-        {
+        public override bool CanUseItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
-            return player.GetModPlayer<OmnitrixPlayer>().isTransformed && !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.ultimateAttack);
+            return player.GetModPlayer<OmnitrixPlayer>().isTransformed &&
+                   !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.ultimateAttack);
         }
 
         public override bool AltFunctionUse(Player player) => true;
 
-        public override void HoldItem(Player player)
-        {
+        public override void HoldItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             FinalizeUltimateIfEnded(player, omp);
@@ -126,32 +125,27 @@ public override void SetDefaults()
             Item.UseSound         = null;
             Item.channel          = false;
             OmnitrixEnergyUse     = 0;
-            
+
 
             if (!omp.isTransformed)
                 return;
 
             // Fixed per-alien useTime/shootSpeed (balanced to feel good - no alt-dependent for now to avoid timing issues)
-            switch (omp.currTransformation)
-            {
+            switch (omp.currTransformation) {
                 case TransformationEnum.HeatBlast:
-
-                    if (omp.altAttack) {
-                        Item.useTime    = Item.useAnimation = 50;
-                        Item.shootSpeed = 10f;
-                    }
-                    else {
-                        Item.useStyle   = ItemUseStyleID.Shoot;
-                        Item.useTime    = Item.useAnimation = 6;
-                        Item.shootSpeed = 3f;
-                    }
+                    Item.useTime    = Item.useAnimation = omp.altAttack ? 50 : 6;
+                    Item.shootSpeed = omp.ultimateAttack ? 0 : omp.altAttack ? 10f : 3f;
+                    Item.useStyle = omp.ultimateAttack ? ItemUseStyleID.HoldUp :
+                        omp.altAttack ? ItemUseStyleID.Swing : ItemUseStyleID.Shoot;
+                    OmnitrixEnergyUse = omp.ultimateAttack ? 10 : 0;
+                    Item.channel      = omp.ultimateAttack;
                     break;
                 case TransformationEnum.XLR8:
                     Item.useTime    = Item.useAnimation = 10; // Fast punches
                     Item.shootSpeed = 25f;
                     break;
                 case TransformationEnum.FourArms:
-                    Item.useTime = Item.useAnimation = 18; // Fast punches
+                    Item.useTime    = Item.useAnimation = 18; // Fast punches
                     Item.shootSpeed = 25f;
                     break;
 
@@ -164,22 +158,22 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.RipJaws:
-                    Item.useTime = Item.useAnimation = 28;
+                    Item.useTime    = Item.useAnimation = 28;
                     Item.shootSpeed = 6f;
                     break;
 
                 case TransformationEnum.ChromaStone:
-                    Item.useTime = Item.useAnimation = 20;
+                    Item.useTime    = Item.useAnimation = 20;
                     Item.shootSpeed = 25f;
                     break;
 
                 case TransformationEnum.BuzzShock:
-                    Item.useTime = Item.useAnimation = 20;
+                    Item.useTime    = Item.useAnimation = 20;
                     Item.shootSpeed = 25f;
                     break;
 
                 case TransformationEnum.StinkFly:
-                    Item.useTime = Item.useAnimation = 30;
+                    Item.useTime    = Item.useAnimation = 30;
                     Item.shootSpeed = 25f;
                     break;
 
@@ -190,16 +184,16 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.WildVine:
-                    Item.useTime = Item.useAnimation = 32;
+                    Item.useTime    = Item.useAnimation = 32;
                     Item.shootSpeed = 10f;
                     break;
                 case TransformationEnum.EyeGuy:
-                    Item.useStyle   = ItemUseStyleID.Shoot;
-                    Item.useTime    = Item.useAnimation = 12;
-                    Item.shootSpeed = omp.ultimateAttack ? 0f : 35f;
-                    Item.UseSound   = omp.ultimateAttack ? null : SoundID.Item12;
-                    Item.channel    = omp.ultimateAttack;
-                    OmnitrixEnergyUse       = omp.ultimateAttack ? 10 : 0;
+                    Item.useStyle     = ItemUseStyleID.Shoot;
+                    Item.useTime      = Item.useAnimation = 12;
+                    Item.shootSpeed   = omp.ultimateAttack ? 0f : 35f;
+                    Item.UseSound     = omp.ultimateAttack ? null : SoundID.Item12;
+                    Item.channel      = omp.ultimateAttack;
+                    OmnitrixEnergyUse = omp.ultimateAttack ? 10 : 0;
                     break;
                 default:
                     Item.useTime    = Item.useAnimation = 25;
@@ -212,7 +206,8 @@ public override void SetDefaults()
         }
 
         public override bool? UseItem(Player player) {
-            if (player.altFunctionUse == 2) player.GetModPlayer<OmnitrixPlayer>().altAttack = !player.GetModPlayer<OmnitrixPlayer>().altAttack;
+            if (player.altFunctionUse == 2)
+                player.GetModPlayer<OmnitrixPlayer>().altAttack = !player.GetModPlayer<OmnitrixPlayer>().altAttack;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (omp.omnitrixEnergy >= OmnitrixEnergyUse) {
                 omp.omnitrixEnergy -= OmnitrixEnergyUse;
@@ -220,19 +215,20 @@ public override void SetDefaults()
             else {
                 return false;
             }
+
             return base.UseItem(player);
         }
 
-        public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type, int damage, float knockback)
-        {
+        public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position,
+            Vector2 velocity, int type, int damage, float knockback) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (!omp.isTransformed || player.altFunctionUse == 2) return false;
 
             // Block non-ultimate attacks while an ultimate is in progress (channeling or projectile alive).
-            int activeUltimateType = GetUltimateProjectileType(omp);
-            bool ultimateProjectileAlive = HasActiveOwnedProjectile(player, activeUltimateType);
-            bool ultimateInProgress = player.channel || ultimateProjectileAlive || player.GetModPlayer<BadgeUltimateState>().ultimateStarted;
+            int  activeUltimateType      = GetUltimateProjectileType(omp);
+            bool ultimateInProgress = player.channel ||
+                                      player.GetModPlayer<BadgeUltimateState>().ultimateStarted;
 
             // If ultimate is in progress, only allow firing the ultimate projectile itself (and only once).
             if (ultimateInProgress && !omp.ultimateAttack)
@@ -244,25 +240,21 @@ public override void SetDefaults()
                 return false;
 
 
-            int projType = ProjectileID.ImpFireball; // Bright vanilla fallback - you SHOULD see this if alien not matched
+            int projType =
+                ProjectileID.ImpFireball; // Bright vanilla fallback - you SHOULD see this if alien not matched
             int finalDamage = damage;
 
-            switch (omp.currTransformation)
-            {
+            switch (omp.currTransformation) {
                 case TransformationEnum.HeatBlast:
-                    if (omp.altAttack) {                        
-                        projType = ModContent.ProjectileType<HeatBlastBomb>();
-                        // projType    = ProjectileID.Flamelash;
-                        finalDamage = (int)(damage * 2.5f);
-                    }
-                    else {
-                        projType = ProjectileID.Flames;
-                        finalDamage = (int)(damage * 0.3f);
+                    projType = omp.ultimateAttack ? ModContent.ProjectileType<HeatBlastUltimateProjectile>() :
+                        omp.altAttack ? ModContent.ProjectileType<HeatBlastBomb>() : ProjectileID.Flames;
+                    finalDamage = omp.ultimateAttack ? (int)(damage * 3f) : omp.altAttack ? (int)(damage * 1.5f) : (int)(damage * 0.3f);
+                    if (omp.ultimateAttack) {
+                        velocity   =  Vector2.Zero;
                     }
                     break;
-
                 case TransformationEnum.XLR8:
-                    projType    =  ModContent.ProjectileType<FistProjectile>();
+                    projType    = ModContent.ProjectileType<FistProjectile>();
                     finalDamage = (int)(damage * 0.25f);
                     break;
                 case TransformationEnum.FourArms:
@@ -272,12 +264,15 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.DiamondHead:
-                    projType = omp.ultimateAttack ? ModContent.ProjectileType<GiantDiamondProjectile>() : ModContent.ProjectileType<DiamondHeadProjectile>();
+                    projType = omp.ultimateAttack
+                        ? ModContent.ProjectileType<GiantDiamondProjectile>()
+                        : ModContent.ProjectileType<DiamondHeadProjectile>();
                     finalDamage = omp.ultimateAttack ? damage * 5 : (int)(damage * 0.5f);
                     if (omp.ultimateAttack) {
                         velocity = Vector2.Zero;
                         position = Main.MouseWorld;
                     }
+
                     break;
 
                 case TransformationEnum.RipJaws:
@@ -285,7 +280,7 @@ public override void SetDefaults()
                     break;
 
                 case TransformationEnum.ChromaStone:
-                    projType = ModContent.ProjectileType<ChromaStoneProjectile>();
+                    projType    =  ModContent.ProjectileType<ChromaStoneProjectile>();
                     finalDamage += omp.ChromaStoneAbsorbtion;
                     break;
 
@@ -305,7 +300,7 @@ public override void SetDefaults()
                 case TransformationEnum.GhostFreak:
                     projType = omp.ultimateAttack
                         ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
-                        : ModContent.ProjectileType<GhostFreakProjectile>();
+                        : omp.altAttack ? ProjectileID.CursedFlameFriendly : ModContent.ProjectileType<GhostFreakProjectile>();
                     break;
 
                 case TransformationEnum.WildVine:
@@ -314,7 +309,9 @@ public override void SetDefaults()
                         : ModContent.ProjectileType<WildVineProjectile>();
                     break;
                 case TransformationEnum.EyeGuy:
-                    projType = omp.ultimateAttack ? ModContent.ProjectileType<EyeGuyUltimateBeam>() : ModContent.ProjectileType<EyeGuyLaserbeam>();
+                    projType = omp.ultimateAttack
+                        ? ModContent.ProjectileType<EyeGuyUltimateBeam>()
+                        : ModContent.ProjectileType<EyeGuyLaserbeam>();
                     finalDamage = omp.ultimateAttack ? (int)(damage * 2f) : damage;
                     break;
             }
@@ -329,7 +326,20 @@ public override void SetDefaults()
             if (omp.ultimateAttack && projType == activeUltimateType)
                 player.GetModPlayer<BadgeUltimateState>().ultimateStarted = true;
 
-            Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier), knockback, player.whoAmI);
+            Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier),
+                knockback, player.whoAmI);
+
+            if (!omp.ultimateAttack) {
+                for (int i = (int)Math.Floor(AdditionalProjectileChance); i >= 1; i--) {
+                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType, (int)(finalDamage * DamageMultiplier),
+                        knockback, player.whoAmI);
+                }
+
+                if (Main.rand.Next(100) <= 100 * (int)(AdditionalProjectileChance - Math.Floor(AdditionalProjectileChance))) {
+                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType, (int)(finalDamage * DamageMultiplier),
+                        knockback, player.whoAmI);
+                }
+            }
 
             return false;
         }

@@ -21,7 +21,6 @@ namespace Ben10Mod.Content.Items.Accessories
         public TransformationEnum[] transformations = new TransformationEnum[5];
 
         bool wasEquipedLastFrame = false;
-        bool showingUI = false;
 
         Texture2D dynamicTexture;
 
@@ -100,17 +99,6 @@ namespace Ben10Mod.Content.Items.Accessories
             
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
-            if (KeybindSystem.OpenTransformationScreen.JustPressed) {
-                if (!showingUI) {
-                    player.GetModPlayer<OmnitrixPlayer>().transformations = transformations;
-                    ModContent.GetInstance<UISystem>().ShowMyUI();
-                    showingUI = true;
-                }
-                else {
-                    ModContent.GetInstance<UISystem>().HideMyUI();
-                    showingUI = false;
-                }
-            }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
                 TransformationHandler.Transform(player, transformations[transformationNum], 2);
@@ -181,7 +169,6 @@ namespace Ben10Mod.Content.Items.Accessories
             {
                 wasEquipedLastFrame = false;
                 ModContent.GetInstance<UISystem>().HideMyUI();
-                showingUI = false;
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed) {
                     TransformationHandler.Detransform(player, omp.cooldownTime, true, true);
                 } else {

@@ -45,8 +45,6 @@ namespace Ben10Mod.Content.Projectiles {
             for (int i = 0; i < 30; i++) {
                 Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Smoke,
                     Main.rand.NextFloat(-6, 6), Main.rand.NextFloat(-6, 6));
-                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Torch,
-                    Main.rand.NextFloat(-25, 25), Main.rand.NextFloat(0, 25), Scale: 3);
             }
         }
     }

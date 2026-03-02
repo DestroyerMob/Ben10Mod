@@ -146,24 +146,9 @@ Items: {
 		Tooltip: ""
 	}
 
-	PlumberHelperBadge: {
-		Tooltip: ""
-		DisplayName: Plumber Helper Badge
-	}
-
-	ProvisionalAgentBadgeCrimtane: {
-		DisplayName: Provisional Agent Badge
-		Tooltip: ""
-	}
-
-	ProvisionalAgentBadgeDemonite: {
-		DisplayName: Provisional Agent Badge
-		Tooltip: ""
-	}
-
 	PlumberAgentBadge: {
 		Tooltip: ""
-		DisplayName: Plumber Agent Badge
+		DisplayName: Plumbers Agent Badge
 	}
 
 	PlumberCapsulePodItem: {
@@ -177,7 +162,7 @@ Items: {
 	}
 
 	PlumberMagisterBadge: {
-		DisplayName: Plumber Magister Badge
+		DisplayName: Plumbers Magister Badge
 		Tooltip: ""
 	}
 
@@ -199,6 +184,66 @@ Items: {
 	HeatBlastExtraJumpAccessory: {
 		DisplayName: Heat Blast Extra Jump Accessory
 		Tooltip: ""
+	}
+
+	PlumberCadetBadge: {
+		DisplayName: Plumbers Cadet Badge
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeCrimtane: {
+		DisplayName: Plumbers Deputy Badge Crimtane
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeDemonite: {
+		DisplayName: Plumbers Deputy Badge Demonite
+		Tooltip: ""
+	}
+
+	SnowFlake: {
+		DisplayName: Snow Flake
+		Tooltip: ""
+	}
+
+	Snowflake: {
+		DisplayName: Snowflake
+		Tooltip: ""
+	}
+
+	PlumberSeniorDeputyBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Senior Deputy Badge
+	}
+
+	HeavenlyCrystallineBadge: {
+		DisplayName: Heavenly Crystalline Badge
+		Tooltip: ""
+	}
+
+	PlumberSeniorAgentBadge: {
+		DisplayName: Plumber Senior Agent Badge
+		Tooltip: ""
+	}
+
+	PlumberProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Proctor Badge
+	}
+
+	PlumberMagistrataBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Magistrata Badge
+	}
+
+	PlumberFieldProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Field Proctor Badge
+	}
+
+	HeroFragment: {
+		Tooltip: ""
+		DisplayName: Hero Fragment
 	}
 }
 
@@ -336,6 +381,8 @@ Projectiles: {
 	EyeGuyLaserbeam.DisplayName: Eye Guy Laserbeam
 	EyeGuyUltimateBeam.DisplayName: Eye Guy Ultimate Beam
 	GiantDiamondProjectile.DisplayName: Giant Diamond Projectile
+	HeatBlastUltimateProjectile.DisplayName: Heat Blast Ultimate Projectile
+	IcyFlames.DisplayName: Icy Flames
 }
 
 Tiles: {

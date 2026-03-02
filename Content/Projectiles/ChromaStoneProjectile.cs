@@ -21,17 +21,14 @@ namespace Ben10Mod.Content.Projectiles {
 
             AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
-            Projectile.tileCollide = false;
-            Projectile.penetrate = 3;
+            Projectile.tileCollide = true;
+            Projectile.penetrate = -1;
             
             Projectile.DamageType = DamageClass.Magic;
 
         }
 
         public override bool PreDraw(ref Color lightColor) {
-
-
-            OmnitrixPlayer omnitrixPlayer = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>();
             lightColor = Main.DiscoColor;
             Lighting.AddLight(Projectile.position + Projectile.velocity * 0.5f, lightColor.ToVector3() * 0.5f);
             return base.PreDraw(ref lightColor);

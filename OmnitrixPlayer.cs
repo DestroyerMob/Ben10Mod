@@ -3,6 +3,7 @@ using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.CommandLine.Help;
+using System.Data.SqlTypes;
 using System.Linq;
 using Terraria;
 using Terraria.ID;
@@ -44,9 +45,6 @@ namespace Ben10Mod
         public bool onCooldown        = false;
         public bool altAttack         = false;
         public bool ultimateAttack    = false;
-
-        public bool advancedCircuitMatrix                         = false;
-        public bool advancedCircuitMatrixEquippedWhileTransformed = false;
         
         public int cooldownTime       = 120;
         public int transformationTime = 300;
@@ -71,6 +69,7 @@ namespace Ben10Mod
         public TransformationEnum[] transformations = { TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast };
         public TransformationEnum currTransformation = TransformationEnum.None;
         public List<TransformationEnum> unlockedTransformation = new List<TransformationEnum>() { TransformationEnum.HeatBlast };
+        public bool showingUI = false;
 
         public bool  omnitrixUpdating    = false;
         public bool  omnitrixWasUpdating = false;
@@ -89,6 +88,11 @@ namespace Ben10Mod
         public        NPC     possessedTarget       = null;
         public        int     possessionTimer       = 0;
         private const int     PossessionDuration    = 360; // 6 seconds
+        
+        // Accessory Values
+        public bool snowflake                                     = false;
+        public bool advancedCircuitMatrix                         = false;
+        public bool advancedCircuitMatrixEquippedWhileTransformed = false;
 
         public Color GetChromaStoneOverlayColor()
         {
@@ -151,6 +155,7 @@ namespace Ben10Mod
 
         public override void ResetEffects() {
             advancedCircuitMatrix = false;
+            snowflake             = false;
             
             cooldownTime        = 120;
             transformationTime  = 300;
@@ -302,11 +307,10 @@ namespace Ben10Mod
             // Fourarms Transformation
 
             if (currTransformation == TransformationEnum.FourArms) {
-                
-                Player.GetAttackSpeed(DamageClass.Melee) += 0.25f;
-                Player.GetCritChance(DamageClass.Generic) = 50;
-                Player.noFallDmg = true;
-                Player.jumpSpeed *= 1.9f;
+                Player.GetAttackSpeed(DamageClass.Melee)  += 0.25f;
+                Player.GetCritChance(DamageClass.Generic) =  50;
+                Player.noFallDmg                          =  true;
+                Player.jumpSpeed                          *= 1.9f;
             }
 
             // Stinkfly Transformation
@@ -337,6 +341,17 @@ namespace Ben10Mod
             omnitrixEnergy += (omnitrixEnergyRegen / 120);
             
             if (omnitrixEnergy > omnitrixEnergyMax) omnitrixEnergy = omnitrixEnergyMax;
+            
+            if (KeybindSystem.OpenTransformationScreen.JustPressed && omnitrixEquipped) {
+                if (!showingUI) {
+                    ModContent.GetInstance<UISystem>().ShowMyUI();
+                    showingUI = true;
+                }
+                else {
+                    ModContent.GetInstance<UISystem>().HideMyUI();
+                    showingUI = false;
+                }
+            }
 
             if (isTransformed) {
                 if (KeybindSystem.UltimateAbility.JustPressed)
@@ -367,7 +382,7 @@ namespace Ben10Mod
 
             if (currTransformation == TransformationEnum.HeatBlast) {
                 Random rand = new Random();
-                int dustNum = Dust.NewDust(Player.position, Player.width, Player.height, DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
+                int dustNum = Dust.NewDust(Player.position, Player.width, Player.height, snowflake ? DustID.IceTorch : DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
                 Main.dust[dustNum].noGravity = true;
                 if (KeybindSystem.PrimaryAbility.JustPressed) {
                     if (!Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) && !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
@@ -378,13 +393,15 @@ namespace Ben10Mod
                 if (PrimaryAbilityEnabled) {
                     Vector2[] points = GenerateCirclePoints(250, 7 * (16));
                     for (int i = 0; i < points.Length; i++) {
-                        dustNum = Dust.NewDust(points[i] + Player.Center, 1, 1, DustID.Torch, rand.Next(-1, 2), rand.Next(-1, 2));
+                        dustNum = Dust.NewDust(points[i] + Player.Center, 1, 1, snowflake ? DustID.IceTorch : DustID.Torch, rand.Next(-1, 2), rand.Next(-1, 2));
                         Main.dust[dustNum].noGravity = true;
                     }
                     
                     foreach (NPC npc in Main.npc) {
                         if (Player.Distance(npc.Center) <= 10 * (16) && !npc.friendly) {
-                            if (!npc.HasBuff(BuffID.OnFire3)) {
+                            if (!npc.HasBuff(BuffID.Frostburn2) && snowflake) {
+                                npc.AddBuff(BuffID.Frostburn2, 10 * 60);
+                            } else if (!npc.HasBuff(BuffID.OnFire3)) {
                                 npc.AddBuff(BuffID.OnFire3, 10 * 60);
                             }
                         }
@@ -588,8 +605,10 @@ namespace Ben10Mod
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
-            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire3) && currTransformation == TransformationEnum.HeatBlast) {
-                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire3, 3 * 60);
+            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.Frostburn2) && snowflake && currTransformation == TransformationEnum.HeatBlast) {
+                Main.npc[victim.whoAmI].AddBuff(BuffID.Frostburn2, 10 * 60);
+            } else if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire3) && !snowflake && currTransformation == TransformationEnum.HeatBlast) {
+                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire3, 10 * 60);
             }
         }
 
@@ -696,7 +715,6 @@ namespace Ben10Mod
 
         public override void FrameEffects() {
             
-            
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
             if (omnitrixEquipped) {
@@ -774,9 +792,16 @@ namespace Ben10Mod
                 }
                 if (currTransformation == TransformationEnum.HeatBlast) {
                     var costume = ModContent.GetInstance<HeatBlast>();
-                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    if (snowflake) {
+                        Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name + "Alt", EquipType.Head);
+                        Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name + "Alt", EquipType.Body);
+                        Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name + "Alt", EquipType.Legs);
+                    }
+                    else {
+                        Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                        Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                        Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    }
                 }
                 if (currTransformation == TransformationEnum.RipJaws) {
                     var costume = ModContent.GetInstance<RipJaws>();

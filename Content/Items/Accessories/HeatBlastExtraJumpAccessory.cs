@@ -27,10 +27,16 @@ public class HeatBlastExtraJump : ExtraJump {
     }
 
     public override void ShowVisuals(Player player) {
+
+        int offsetY = player.height - 6;
+        var omp = player.GetModPlayer<OmnitrixPlayer>();
+        
         for (int i = 0; i < 6; i++) {
-            int dustNum = Dust.NewDust(new Vector2(player.position.X, player.position.Y + player.height), player.width,
-                0, DustID.Torch, 1F, 1F, Scale: 2f);
+            int dustNum = Dust.NewDust(new Vector2(player.position.X, player.position.Y + offsetY), player.width,
+                0, omp.snowflake ? DustID.IceTorch : DustID.Torch, 1F, 1F, Scale: 2f);
             Main.dust[dustNum].noGravity = true;
         }
+        if (!player.controlUseItem && Main.GameUpdateCount % 4 == 0)
+            player.direction = -player.direction;
     }
 }

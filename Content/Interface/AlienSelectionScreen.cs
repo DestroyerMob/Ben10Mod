@@ -194,7 +194,7 @@ namespace Ben10Mod.Content.Interface
                 slot.Height.Set(slotSize, 0f);
                 slot.Left.Set(rosterStartX + i * (slotSize + 26f), 0f);
                 slot.Top.Set(rosterY, 0f);
-
+                slot.OnMouseOver += (_, _) => UpdateInfoPanel(TransformationEnum.None);
                 int index = i;
                 slot.OnLeftClick += (_, _) => AssignToSlot(index);
                 slot.OnRightClick += (_, _) => ClearSlot(index);
@@ -272,7 +272,10 @@ namespace Ben10Mod.Content.Interface
             var closeBtn = new UITextPanel<string>("Close Roster");
             closeBtn.HAlign = 0.5f;
             closeBtn.Top.Set(-58f, 1f);
-            closeBtn.OnLeftClick += (_, _) => ModContent.GetInstance<UISystem>().HideMyUI();
+            closeBtn.OnLeftClick += (_, _) => {
+                ModContent.GetInstance<UISystem>().HideMyUI();
+                Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
+            };
             mainPanel.Append(closeBtn);
         }
 
@@ -297,8 +300,11 @@ namespace Ben10Mod.Content.Interface
 
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
 
-            for (int i = 0; i < rosterSlots.Count; i++)
+            for (int i = 0; i < rosterSlots.Count; i++) {
                 rosterSlots[i].SetImage(player.transformations[i].GetTransformationIcon());
+                var i1 = i;
+                rosterSlots[i].OnMouseOver += (_, _) => UpdateInfoPanel(player.transformations[i1]);
+            }
 
             unlockedGrid.Clear();
             foreach (var trans in player.unlockedTransformation)

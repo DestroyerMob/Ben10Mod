@@ -84,17 +84,6 @@ namespace Ben10Mod.Content.Items.Accessories
             omp.omnitrixEnergyMax += 300;
 
             transformations = player.GetModPlayer<OmnitrixPlayer>().transformations;
-            if (KeybindSystem.OpenTransformationScreen.JustPressed) {
-                if (!showingUI) {
-                    player.GetModPlayer<OmnitrixPlayer>().transformations = transformations;
-                    ModContent.GetInstance<UISystem>().ShowMyUI();
-                    showingUI = true;
-                }
-                else {
-                    ModContent.GetInstance<UISystem>().HideMyUI();
-                    showingUI = false;
-                }
-            }
 
             if (KeybindSystem.TransformationKeybind.JustPressed && !player.GetModPlayer<OmnitrixPlayer>().isTransformed && !player.GetModPlayer<OmnitrixPlayer>().onCooldown) {
                 omp.advancedCircuitMatrixEquippedWhileTransformed = omp.advancedCircuitMatrix;
@@ -159,7 +148,6 @@ namespace Ben10Mod.Content.Items.Accessories
             {
                 wasEquipedLastFrame = false;
                 ModContent.GetInstance<UISystem>().HideMyUI();
-                showingUI = false;
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed) {
                     TransformationHandler.Detransform(player, omp.cooldownTime, true, true);
                 }

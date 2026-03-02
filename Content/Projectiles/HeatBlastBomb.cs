@@ -23,8 +23,12 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
-            Random random  = new Random();
-            int    dustNum = Dust.NewDust(boxPosition, 1, 1, DustID.Torch, 0, 0, 1, Color.White, 5);
+            Player player    = null;
+            bool   gotPlayer = Projectile.TryGetOwner(out player);
+            var    omp       = gotPlayer ? player.GetModPlayer<OmnitrixPlayer>() : null;
+            int    dust      = gotPlayer ? omp.snowflake ? DustID.IceTorch : DustID.Torch : DustID.Torch;
+            Random random    = new Random();
+            int    dustNum   = Dust.NewDust(boxPosition, 1, 1, dust, 0, 0, 1, Color.White, 5);
             Main.dust[dustNum].noGravity = true;
         }
 
