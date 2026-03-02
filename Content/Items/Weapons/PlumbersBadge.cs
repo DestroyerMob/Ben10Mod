@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Ben10Mod.Content.Buffs.Summons;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
@@ -21,9 +22,9 @@ namespace Ben10Mod.Content.Items.Weapons {
         public virtual float DamageMultiplier           => 1f; // For universal scaling if needed
         public virtual float AttackSpeedMultiplier      => 1f;
         public virtual float AdditionalProjectileChance => 0;
-        
-        public virtual string BadgeRankName         => "Helper";
-        public virtual int    BadgeRankValue        => 0;
+
+        public virtual string BadgeRankName  => "Helper";
+        public virtual int    BadgeRankValue => 0;
         public         int    OmnitrixEnergyUse = 0;
 
 
@@ -66,7 +67,8 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             // If the ultimate projectile is still alive, ultimate is still in progress.
             int ultimateProjType = GetUltimateProjectileType(omp);
-            if (HasActiveOwnedProjectile(player, ultimateProjType) && omp.currTransformation == TransformationEnum.EyeGuy) return;
+            if (HasActiveOwnedProjectile(player, ultimateProjType) &&
+                omp.currTransformation == TransformationEnum.EyeGuy) return;
 
             // If we're here, the player has released channel and the ultimate projectile is gone.
             if (!player.HasBuff<UltimateAbility_Cooldown>())
@@ -75,7 +77,6 @@ namespace Ben10Mod.Content.Items.Weapons {
             omp.ultimateAttack    = false;
             state.ultimateStarted = false;
         }
-
 
         public override void SetDefaults() {
             Item.width        = 32;
@@ -91,7 +92,6 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.damage     = BaseDamage;
             Item.knockBack  = 4f;
 
-            // Base defaults - overridden per alien in HoldItem
             Item.useStyle   = ItemUseStyleID.Swing;
             Item.useTime    = Item.useAnimation = 25;
             Item.shootSpeed = 10f;
@@ -225,38 +225,36 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (!omp.isTransformed || player.altFunctionUse == 2) return false;
 
-            // Block non-ultimate attacks while an ultimate is in progress (channeling or projectile alive).
-            int  activeUltimateType      = GetUltimateProjectileType(omp);
+            int activeUltimateType = GetUltimateProjectileType(omp);
             bool ultimateInProgress = player.channel ||
                                       player.GetModPlayer<BadgeUltimateState>().ultimateStarted;
 
-            // If ultimate is in progress, only allow firing the ultimate projectile itself (and only once).
             if (ultimateInProgress && !omp.ultimateAttack)
                 return false;
-
-            // Don't allow starting an ultimate while on cooldown.
 
             if (omp.ultimateAttack && player.HasBuff<UltimateAbility_Cooldown>())
                 return false;
 
-
-            int projType =
-                ProjectileID.ImpFireball; // Bright vanilla fallback - you SHOULD see this if alien not matched
+            int projType    = ProjectileID.ImpFireball;
             int finalDamage = damage;
 
             switch (omp.currTransformation) {
                 case TransformationEnum.HeatBlast:
                     projType = omp.ultimateAttack ? ModContent.ProjectileType<HeatBlastUltimateProjectile>() :
                         omp.altAttack ? ModContent.ProjectileType<HeatBlastBomb>() : ProjectileID.Flames;
-                    finalDamage = omp.ultimateAttack ? (int)(damage * 3f) : omp.altAttack ? (int)(damage * 1.5f) : (int)(damage * 0.3f);
+                    finalDamage = omp.ultimateAttack ? (int)(damage * 3f) :
+                        omp.altAttack ? (int)(damage * 1.5f) : (int)(damage * 0.3f);
                     if (omp.ultimateAttack) {
-                        velocity   =  Vector2.Zero;
+                        velocity = Vector2.Zero;
                     }
+
                     break;
+
                 case TransformationEnum.XLR8:
                     projType    = ModContent.ProjectileType<FistProjectile>();
                     finalDamage = (int)(damage * 0.25f);
                     break;
+
                 case TransformationEnum.FourArms:
                     projType = omp.altAttack
                         ? ModContent.ProjectileType<FourArmsClap>()
@@ -285,10 +283,24 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.BuzzShock:
-                    projType = omp.altAttack
-                        ? ModContent.ProjectileType<BuzzShockMinionProjectile>()
-                        : ModContent.ProjectileType<BuzzShockProjectile>();
+                    
+                    if (omp.altAttack) {
+                        SoundEngine.PlaySound(SoundID.AbigailSummon, player.position);
+                        int buffType   = ModContent.BuffType<BuzzShockMinionBuff>();
+                        int minionType = ModContent.ProjectileType<BuzzShockMinionProjectile>();
+                        player.AddBuff(buffType, 2);
+                        player.SpawnMinionOnCursor(
+                            source,
+                            player.whoAmI,
+                            minionType,
+                            (int)(finalDamage * DamageMultiplier),
+                            knockback
+                        );
+
+                        return false;
+                    }
                     SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, player.position);
+                    projType = ModContent.ProjectileType<BuzzShockProjectile>();
                     break;
 
                 case TransformationEnum.StinkFly:
@@ -300,7 +312,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                 case TransformationEnum.GhostFreak:
                     projType = omp.ultimateAttack
                         ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
-                        : omp.altAttack ? ProjectileID.CursedFlameFriendly : ModContent.ProjectileType<GhostFreakProjectile>();
+                        : omp.altAttack
+                            ? ProjectileID.CursedFlameFriendly
+                            : ModContent.ProjectileType<GhostFreakProjectile>();
                     break;
 
                 case TransformationEnum.WildVine:
@@ -308,6 +322,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                         ? ModContent.ProjectileType<WildVineGrapple>()
                         : ModContent.ProjectileType<WildVineProjectile>();
                     break;
+
                 case TransformationEnum.EyeGuy:
                     projType = omp.ultimateAttack
                         ? ModContent.ProjectileType<EyeGuyUltimateBeam>()
@@ -318,11 +333,9 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (projType == 0) return false;
 
-            // While channeling an ultimate, keep exactly one ultimate projectile alive.
             if (omp.ultimateAttack && HasActiveOwnedProjectile(player, projType))
                 return false;
 
-            // Mark ultimate as started the moment we actually fire its projectile.
             if (omp.ultimateAttack && projType == activeUltimateType)
                 player.GetModPlayer<BadgeUltimateState>().ultimateStarted = true;
 
@@ -331,12 +344,15 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (!omp.ultimateAttack) {
                 for (int i = (int)Math.Floor(AdditionalProjectileChance); i >= 1; i--) {
-                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType, (int)(finalDamage * DamageMultiplier),
+                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType,
+                        (int)(finalDamage * DamageMultiplier),
                         knockback, player.whoAmI);
                 }
 
-                if (Main.rand.Next(100) <= 100 * (int)(AdditionalProjectileChance - Math.Floor(AdditionalProjectileChance))) {
-                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType, (int)(finalDamage * DamageMultiplier),
+                if (Main.rand.Next(100) <=
+                    100 * (int)(AdditionalProjectileChance - Math.Floor(AdditionalProjectileChance))) {
+                    Projectile.NewProjectile(source, position, velocity.RotatedByRandom(0.25f), projType,
+                        (int)(finalDamage * DamageMultiplier),
                         knockback, player.whoAmI);
                 }
             }

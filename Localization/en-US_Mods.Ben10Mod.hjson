@@ -356,6 +356,11 @@ Buffs: {
 		DisplayName: Primary Ability Cooldown
 		Description: Primary Ability On Cooldown
 	}
+
+	BuzzShockMinionBuff: {
+		DisplayName: Buzz Shock Minion Buff
+		Description: Mods.Ben10Mod.Buffs.BuzzShockMinionBuff.Description
+	}
 }
 
 Projectiles: {
