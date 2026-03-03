@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Ben10Mod.Content;
-using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Terraria;

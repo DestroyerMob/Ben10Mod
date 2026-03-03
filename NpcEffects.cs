@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -15,6 +17,14 @@ public class NpcEffects : GlobalNPC {
             if (omp.inPossessionMode && omp.possessedTarget.whoAmI == npc.whoAmI) return true;
         }
         return false;
+    }
+
+    public override bool PreAI(NPC npc) {
+        var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        if (omp.ultimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
+            npc.velocity = Vector2.Zero;
+        }
+        return base.PreAI(npc);
     }
 
     public override void AI(NPC npc) {

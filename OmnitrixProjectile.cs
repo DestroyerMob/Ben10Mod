@@ -12,7 +12,7 @@ namespace Ben10Mod;
 public class OmnitrixProjectile : GlobalProjectile {
     public override bool InstancePerEntity => true;
 
-    public int itemUsed = 0;
+    public  int itemUsed  = 0;
     
     public override void OnSpawn(Projectile projectile, IEntitySource source) {
         if (source is IEntitySource_WithStatsFromItem itemSource) {

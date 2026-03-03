@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Terraria;
 using Terraria.ModLoader;
 
-namespace Ben10Mod.Content.Buffs.Transformations {
+namespace Ben10Mod.Content.Buffs.Abilities {
     public class TransformationCooldown_Buff : ModBuff {
         public override string Texture => "Ben10Mod/Content/Buffs/Transformations/TransformationCooldown";
         private OmnitrixPlayer p;

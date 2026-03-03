@@ -8,7 +8,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace Ben10Mod.Content.Buffs.Transformations {
+namespace Ben10Mod.Content.Buffs.Abilities {
     public class OmnitrixUpdating : ModBuff {
         public override string Texture => "Ben10Mod/Content/Buffs/Transformations/OmnitrixUpdating";
         private OmnitrixPlayer p;

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Ben10Mod.Content.Buffs.Summons;
-using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Enums;
@@ -72,8 +72,8 @@ namespace Ben10Mod.Content.Items.Weapons {
                 omp.currTransformation == TransformationEnum.EyeGuy) return;
 
             // If we're here, the player has released channel and the ultimate projectile is gone.
-            if (!player.HasBuff<UltimateAbility_Cooldown>())
-                player.AddBuff(ModContent.BuffType<UltimateAbility_Cooldown>(), 60 * 60);
+            if (!player.HasBuff<UltimateAbilityCooldown>())
+                player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
 
             omp.ultimateAttack    = false;
             state.ultimateStarted = false;
@@ -234,7 +234,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (ultimateInProgress && !omp.ultimateAttack)
                 return false;
 
-            if (omp.ultimateAttack && player.HasBuff<UltimateAbility_Cooldown>())
+            if (omp.ultimateAttack && player.HasBuff<UltimateAbilityCooldown>())
                 return false;
 
             int projType    = ProjectileID.ImpFireball;

@@ -27,7 +27,6 @@ using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Terraria.Audio;
-using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Terraria.WorldBuilding;
@@ -49,9 +48,11 @@ namespace Ben10Mod
         public int cooldownTime       = 120;
         public int transformationTime = 300;
         
-        public bool PrimaryAbilityEnabled               = false;
-        public bool PrimaryAbilityWasEnabled           = false;
-        public TransformationEnum tranUsedAbility = TransformationEnum.None;
+        public bool               PrimaryAbilityEnabled     = false;
+        public bool               PrimaryAbilityWasEnabled  = false;
+        public bool               ultimateAbilityEnabled    = false;
+        public bool               ultimateAbilityWasEnabled = false;
+        public TransformationEnum tranUsedAbility           = TransformationEnum.None;
 
         public int ChromaStoneAbsorbtion = 0;
 
@@ -172,7 +173,8 @@ namespace Ben10Mod
             omnitrixUpdating = false;
 
             // Abilities
-            PrimaryAbilityEnabled = false;
+            PrimaryAbilityEnabled  = false;
+            ultimateAbilityEnabled = false;
 
             // Handle dashing
             if (Player.controlDown && Player.releaseDown && Player.doubleTapCardinalTimer[DashDown] < 15) {
@@ -353,18 +355,7 @@ namespace Ben10Mod
                 }
             }
 
-            if (isTransformed) {
-                if (KeybindSystem.UltimateAbility.JustPressed)
-                    if (!Player.HasBuff<UltimateAbility_Cooldown>()) {
-                        for (int i = 0; i < 50; i++)
-                        {
-                            Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
-                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue, Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
-                            d.noGravity = true;
-                        }
-                        ultimateAttack = !ultimateAttack;
-                    }
-            }
+
             
             // XLR8 Transformation
 
@@ -372,6 +363,10 @@ namespace Ben10Mod
 
                 if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) && !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
                     Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 10 * 60);
+                    tranUsedAbility = currTransformation;
+                }
+                if (KeybindSystem.UltimateAbility.JustPressed && !Player.HasBuff(ModContent.BuffType<UltimateAbilityCooldown>()) && !Player.HasBuff(ModContent.BuffType<UltimateAbility>())) {
+                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 10 * 60);
                     tranUsedAbility = currTransformation;
                 }
 
@@ -551,6 +546,19 @@ namespace Ben10Mod
                 }
             }
             
+            if (isTransformed) {
+                if (KeybindSystem.UltimateAbility.JustPressed)
+                    if (!Player.HasBuff<UltimateAbilityCooldown>() && !Player.HasBuff<UltimateAbility>()) {
+                        for (int i = 0; i < 50; i++)
+                        {
+                            Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue, Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                            d.noGravity = true;
+                        }
+                        ultimateAttack = !ultimateAttack;
+                    }
+            }
+            
             if (PrimaryAbilityEnabled != PrimaryAbilityWasEnabled) {
                 PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
                 switch (tranUsedAbility) {
@@ -578,6 +586,16 @@ namespace Ben10Mod
                 
                 ChromaStoneAbsorbtion = 0;
                 PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
+            }
+
+            if (ultimateAbilityEnabled != ultimateAbilityWasEnabled) {
+                ultimateAbilityWasEnabled = ultimateAbilityEnabled;
+                switch (tranUsedAbility) {
+                    case TransformationEnum.XLR8: {
+                        Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 30 * 60);
+                        break;
+                    }
+                }
             }
         }
 

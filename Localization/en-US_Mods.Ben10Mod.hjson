@@ -361,6 +361,16 @@ Buffs: {
 		DisplayName: Buzz Shock Minion Buff
 		Description: Mods.Ben10Mod.Buffs.BuzzShockMinionBuff.Description
 	}
+
+	UltimateAbilityCooldown: {
+		Description: Mods.Ben10Mod.Buffs.UltimateAbilityCooldown.Description
+		DisplayName: Ultimate Ability Cooldown
+	}
+
+	UltimateAbility: {
+		Description: Mods.Ben10Mod.Buffs.UltimateAbility.Description
+		DisplayName: Ultimate Ability
+	}
 }
 
 Projectiles: {

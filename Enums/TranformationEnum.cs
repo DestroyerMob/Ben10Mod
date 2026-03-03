@@ -1,5 +1,4 @@
 ﻿using Ben10Mod.Content.Buffs.Abilities;
-using Ben10Mod.Content.Buffs.Transformations;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
