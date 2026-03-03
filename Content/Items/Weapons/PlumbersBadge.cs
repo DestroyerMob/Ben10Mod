@@ -25,7 +25,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
-        public         int    OmnitrixEnergyUse = 0;
+        public         int    OmnitrixEnergyUse  = 0;
 
 
         private int GetUltimateProjectileType(OmnitrixPlayer omp) {
@@ -35,6 +35,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                 TransformationEnum.GhostFreak => ModContent.ProjectileType<GhostFreakPossesionProjectile>(),
                 TransformationEnum.DiamondHead => ModContent.ProjectileType<GiantDiamondProjectile>(),
                 TransformationEnum.HeatBlast => ModContent.ProjectileType<HeatBlastUltimateProjectile>(),
+                TransformationEnum.BuzzShock => ModContent.ProjectileType<BuzzShockUltimateProjectile>(),
                 _ => 0
             };
         }
@@ -168,8 +169,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.BuzzShock:
-                    Item.useTime    = Item.useAnimation = 20;
-                    Item.shootSpeed = 25f;
+                    Item.useTime      = Item.useAnimation = 20;
+                    Item.shootSpeed   = 25f;
+                    OmnitrixEnergyUse = omp.ultimateAttack ? 25 : 0;
                     break;
 
                 case TransformationEnum.StinkFly:
@@ -278,7 +280,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.ChromaStone:
-                    projType    =  ModContent.ProjectileType<ChromaStoneProjectile>();
+                    projType    = ModContent.ProjectileType<ChromaStoneProjectile>();
                     finalDamage += omp.ChromaStoneAbsorbtion;
                     break;
 
@@ -300,7 +302,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                         return false;
                     }
                     SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, player.position);
-                    projType = ModContent.ProjectileType<BuzzShockProjectile>();
+                    if (omp.ultimateAttack) finalDamage = (int)(2.5f * finalDamage);
+                    projType = omp.ultimateAttack ? ModContent.ProjectileType<BuzzShockUltimateProjectile>() : ModContent.ProjectileType<BuzzShockProjectile>();
+
                     break;
 
                 case TransformationEnum.StinkFly:
@@ -339,6 +343,15 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (omp.ultimateAttack && projType == activeUltimateType)
                 player.GetModPlayer<BadgeUltimateState>().ultimateStarted = true;
 
+            if (omp.currTransformation == TransformationEnum.BuzzShock && omp.ultimateAttack) {
+                for (int i = 0; i < 5; i++) {
+                    Projectile.NewProjectile(source, position, velocity.RotatedBy(i * 2.5), projType, (int)(finalDamage * DamageMultiplier),
+                        knockback, player.whoAmI);
+                }
+            
+                return false;
+            }
+            
             Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier),
                 knockback, player.whoAmI);
 

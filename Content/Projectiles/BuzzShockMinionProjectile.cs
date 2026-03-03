@@ -2,6 +2,7 @@
 using System;
 using Ben10Mod.Content.Buffs.Summons;
 using Terraria;
+using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -106,6 +107,14 @@ namespace Ben10Mod.Content.Projectiles {
             away.Normalize();
             Projectile.velocity = away * 14f;
             Projectile.netUpdate = true;
+
+            for (int i = 0; i < 25; i++) {
+                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height,
+                    DustID.UltraBrightTorch, Scale: Main.rand.Next(1, 4));
+                Main.dust[dustNum].noGravity = true;
+            }
+
+            SoundEngine.PlaySound(SoundID.Thunder, Projectile.position);
         }
 
         private Vector2 GetIdlePosition(Player player) {

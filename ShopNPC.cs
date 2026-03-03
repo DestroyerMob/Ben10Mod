@@ -3,6 +3,7 @@ using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Consumable;
 using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Items.Vanity;
+using Ben10Mod.Content.Items.Weapons;
 using Terraria;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
@@ -50,6 +51,11 @@ public class ShopNPC : GlobalNPC {
                 ItemID.SummonerEmblem,
                 ModContent.ItemType<HeroEmblem>()
             ));
+        }
+
+        if (npc.type == NPCID.QueenSlimeBoss) {
+            npcLoot.Add(ItemDropRule.BossBagByCondition(new NotNormalMode(), ModContent.ItemType<HeavenlyCrystallineBadge>()));
+            npcLoot.Add(ItemDropRule.ByCondition(new IsNormalMode(), ModContent.ItemType<HeavenlyCrystallineBadge>(), 10, 0));
         }
     }
 }

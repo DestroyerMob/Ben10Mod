@@ -21,10 +21,11 @@ namespace Ben10Mod.Content.Projectiles {
 
             AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
-            Projectile.tileCollide = true;
+            Projectile.tileCollide = false;
             Projectile.penetrate = -1;
             
             Projectile.DamageType = DamageClass.Magic;
+            Projectile.timeLeft   = 60 * 5;
 
         }
 

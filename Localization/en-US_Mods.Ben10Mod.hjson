@@ -388,6 +388,7 @@ Projectiles: {
 	GiantDiamondProjectile.DisplayName: Giant Diamond Projectile
 	HeatBlastUltimateProjectile.DisplayName: Heat Blast Ultimate Projectile
 	IcyFlames.DisplayName: Icy Flames
+	BuzzShockUltimateProjectile.DisplayName: Buzz Shock Ultimate Projectile
 }
 
 Tiles: {
