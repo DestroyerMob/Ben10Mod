@@ -28,8 +28,10 @@ using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
+using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Terraria.Graphics.Effects;
+using Terraria.Graphics.Shaders;
 using Terraria.WorldBuilding;
 
 namespace Ben10Mod {
@@ -690,9 +692,9 @@ namespace Ben10Mod {
                     break;
                 case TransformationEnum.ChromaStone when PrimaryAbilityEnabled:
                     Color overlayColor = Main.DiscoColor;
-                    drawInfo.colorArmorHead = overlayColor;
-                    drawInfo.colorArmorBody = overlayColor;
-                    drawInfo.colorArmorLegs = overlayColor;
+                    // drawInfo.colorArmorHead = overlayColor;
+                    // drawInfo.colorArmorBody = overlayColor;
+                    // drawInfo.colorArmorLegs = overlayColor;
                     break;
                 case TransformationEnum.DiamondHead:
                 case TransformationEnum.FourArms:
@@ -794,6 +796,8 @@ namespace Ben10Mod {
                     Player.handoff = -1;
                     Player.handon  = -1;
                     Player.back    = -1;
+                    Player.waist   = -1;
+                    Player.shield  = -1;
                 }
 
                 if (currTransformation == TransformationEnum.BuzzShock) {
@@ -808,6 +812,13 @@ namespace Ben10Mod {
                     Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    if (PrimaryAbilityEnabled) {
+                        int shaderID = GameShaders.Armor.GetShaderIdFromItemId(ModContent.ItemType<DiscoDye>());
+                        GameShaders.Armor.GetShaderFromItemId(ModContent.ItemType<DiscoDye>())?.UseColor(Main.DiscoR / 255f, Main.DiscoG / 255f, Main.DiscoB / 255f);
+                        Player.cHead = shaderID;
+                        Player.cBody = shaderID;
+                        Player.cLegs = shaderID;
+                    }
                 }
 
                 if (currTransformation == TransformationEnum.DiamondHead) {

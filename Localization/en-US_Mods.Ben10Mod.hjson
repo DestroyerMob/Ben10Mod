@@ -245,6 +245,11 @@ Items: {
 		Tooltip: ""
 		DisplayName: Hero Fragment
 	}
+
+	DiscoDye: {
+		DisplayName: Disco Dye
+		Tooltip: ""
+	}
 }
 
 Keybinds: {

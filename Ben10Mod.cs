@@ -1,7 +1,9 @@
 using System.IO;
 using Ben10Mod.Content.Items.Accessories;
+using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework.Graphics;
+using Mono.Cecil;
 using ReLogic.Content;
 using Terraria;
 using Terraria.Graphics.Effects;
@@ -13,12 +15,13 @@ namespace Ben10Mod {
 	public class Ben10Mod : Mod {
 		public override void Load() {
 			if (Main.netMode != NetmodeID.Server) {
-				// Asset<Effect> dyeShader = this.Assets.Request<Effect>("Effects/BasicTint");
-				//
-				// GameShaders.Armor.BindShader(ModContent.ItemType<PrototypeOmnitrix>(),
-				// 	new ArmorShaderData(dyeShader, "ArmorBasic")).UseColor(1f, 0, 0);
-
+				Asset<Effect> dyeShader = this.Assets.Request<Effect>("Effects/MyDyes");
 				Asset<Effect> filterShader = this.Assets.Request<Effect>("Effects/MyFilters");
+
+
+				GameShaders.Armor.BindShader(ModContent.ItemType<DiscoDye>(),
+					new ArmorShaderData(dyeShader, "BasicTint"));
+
 				
 				Filters.Scene["Ben10Mod:Grayscale"] = new Filter(new ScreenShaderData(filterShader, "Grayscale"), EffectPriority.Medium);
 			}
