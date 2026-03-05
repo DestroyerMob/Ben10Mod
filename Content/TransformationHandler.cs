@@ -36,9 +36,7 @@ namespace Ben10Mod.Content {
             if (playSound) {
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
             }
-            // Main.NewText(transformation.GetName() + "!", Color.Green);
             player.AddBuff(transformation.GetTransformation(), 60 * seconds);
-            // player.GetModPlayer<OmnitrixPlayer>().currTransformation = transformation;
         }
 
         public static void Detransform(Player player, int seconds, bool showParticles = true, bool addCooldown = true, bool playSound = true) {
@@ -71,6 +69,7 @@ namespace Ben10Mod.Content {
             player.ClearBuff(ModContent.BuffType<EyeGuy_Buff>());
 
             player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
+            player.ClearBuff(ModContent.BuffType<UltimateAbility>());
 
             player.GetModPlayer<OmnitrixPlayer>().currTransformation = TransformationEnum.None;
 

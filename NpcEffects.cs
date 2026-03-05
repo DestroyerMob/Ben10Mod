@@ -21,7 +21,7 @@ public class NpcEffects : GlobalNPC {
 
     public override bool PreAI(NPC npc) {
         var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-        if (omp.ultimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
+        if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
             npc.velocity = Vector2.Zero;
         }
         return base.PreAI(npc);

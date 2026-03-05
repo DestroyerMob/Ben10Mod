@@ -10,7 +10,7 @@ public class UltimateAbility : ModBuff {
     public override void Update(Player player, ref int buffIndex) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-        omp.ultimateAbilityEnabled    = true;
+        omp.UltimateAbilityEnabled    = true;
         omp.ultimateAbilityWasEnabled = true;
     }
     

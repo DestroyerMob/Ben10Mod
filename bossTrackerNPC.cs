@@ -112,39 +112,39 @@ namespace Ben10Mod {
             switch (npc.type) {
                 case NPCID.KingSlime: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.DiamondHead);
+                        .AddTransformation(TransformationEnum.DiamondHead);
                     break;
                 }
                 case NPCID.EyeofCthulhu: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.XLR8);
+                        .AddTransformation(TransformationEnum.XLR8);
                     break;
                 }
                 case NPCID.BrainofCthulhu: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.FourArms);
+                        .AddTransformation(TransformationEnum.FourArms);
                     break;
                 }
                 case NPCID.EaterofWorldsHead:
                 case NPCID.EaterofWorldsTail:
                 case NPCID.EaterofWorldsBody: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.FourArms);
+                        .AddTransformation(TransformationEnum.FourArms);
                     break;
                 }
                 case NPCID.QueenBee: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.StinkFly);
+                        .AddTransformation(TransformationEnum.StinkFly);
                     break;
                 }
                 case NPCID.SkeletronHead: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.BuzzShock);
+                        .AddTransformation(TransformationEnum.BuzzShock);
                     break;
                 }
                 case NPCID.Deerclops: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.WildVine);
+                        .AddTransformation(TransformationEnum.WildVine);
                     break;
                 }
                 case NPCID.WallofFlesh: {
@@ -156,12 +156,12 @@ namespace Ben10Mod {
                 }
                 case NPCID.QueenSlimeBoss: {
                     player.GetModPlayer<OmnitrixPlayer>()
-                        .addTransformation(TransformationEnum.ChromaStone);
+                        .AddTransformation(TransformationEnum.ChromaStone);
                     break;
                 }
                 case NPCID.Retinazer:
                 case NPCID.Spazmatism: 
-                    player.GetModPlayer<OmnitrixPlayer>().addTransformation(TransformationEnum.EyeGuy);
+                    player.GetModPlayer<OmnitrixPlayer>().AddTransformation(TransformationEnum.EyeGuy);
                     break;
                 default: break;
             }

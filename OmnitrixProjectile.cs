@@ -13,12 +13,15 @@ namespace Ben10Mod;
 public class OmnitrixProjectile : GlobalProjectile {
     public override bool InstancePerEntity => true;
 
-    public  int itemUsed    = 0;
-    private int framesAlive = 0;
+    public  int     itemUsed         = 0;
+    private int     framesAlive      = 0;
+    public  bool    projectileSlowed = false;
+    public  Vector2 initialVelocity  = Vector2.Zero;
     
     public override void OnSpawn(Projectile projectile, IEntitySource source) {
         if (source is IEntitySource_WithStatsFromItem itemSource) {
-            itemUsed = itemSource.Item.type;
+            itemUsed        = itemSource.Item.type;
+            initialVelocity = projectile.velocity;
         }
     }
 
@@ -33,9 +36,12 @@ public class OmnitrixProjectile : GlobalProjectile {
         framesAlive++;
         if (projectile.owner == Main.LocalPlayer.whoAmI) {
             var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            if (framesAlive >= 60 && omp.ultimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
-                projectile.velocity.Normalize();
+            if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
+                projectile.velocity = initialVelocity * (1 - framesAlive / 60f);
+                if (framesAlive >= 60) projectile.velocity = Vector2.Zero;
+                projectileSlowed    = true;
             }
+            else if (projectileSlowed) projectile.velocity = initialVelocity * 2f;
         }
     }
 

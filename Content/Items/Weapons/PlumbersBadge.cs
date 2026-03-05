@@ -16,20 +16,17 @@ using Terraria.Localization;
 
 namespace Ben10Mod.Content.Items.Weapons {
     public abstract class PlumbersBadge : ModItem {
-
-        // Override these in subclasses for tier-specific values
         public virtual int   BaseDamage                 => 15;
-        public virtual float DamageMultiplier           => 1f; // For universal scaling if needed
+        public virtual float DamageMultiplier           => 1f;
         public virtual float AttackSpeedMultiplier      => 1f;
         public virtual float AdditionalProjectileChance => 0;
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
-        public         int    OmnitrixEnergyUse  = 0;
+        public         int    OmnitrixEnergyUse = 0;
 
 
         private int GetUltimateProjectileType(OmnitrixPlayer omp) {
-            // Add more mappings here as you implement other ultimate attacks.
             return omp.currTransformation switch {
                 TransformationEnum.EyeGuy => ModContent.ProjectileType<EyeGuyUltimateBeam>(),
                 TransformationEnum.GhostFreak => ModContent.ProjectileType<GhostFreakPossesionProjectile>(),
@@ -58,20 +55,15 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             var state = player.GetModPlayer<BadgeUltimateState>();
 
-            // If the ultimate hasn't actually started yet (no ultimate projectile spawned),
-            // don't auto-cancel it. This prevents "arming" the ultimate from immediately ending it.
             if (!state.ultimateStarted)
                 return;
 
-            // If player is still holding the channel, ultimate is still in progress.
             if (player.channel) return;
 
-            // If the ultimate projectile is still alive, ultimate is still in progress.
             int ultimateProjType = GetUltimateProjectileType(omp);
             if (HasActiveOwnedProjectile(player, ultimateProjType) &&
                 omp.currTransformation == TransformationEnum.EyeGuy) return;
 
-            // If we're here, the player has released channel and the ultimate projectile is gone.
             if (!player.HasBuff<UltimateAbilityCooldown>())
                 player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
 
@@ -131,7 +123,6 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (!omp.isTransformed)
                 return;
 
-            // Fixed per-alien useTime/shootSpeed (balanced to feel good - no alt-dependent for now to avoid timing issues)
             switch (omp.currTransformation) {
                 case TransformationEnum.HeatBlast:
                     Item.useTime    = Item.useAnimation = omp.altAttack ? 50 : 6;
@@ -142,11 +133,11 @@ namespace Ben10Mod.Content.Items.Weapons {
                     Item.channel      = omp.ultimateAttack;
                     break;
                 case TransformationEnum.XLR8:
-                    Item.useTime    = Item.useAnimation = 10; // Fast punches
+                    Item.useTime    = Item.useAnimation = 10;
                     Item.shootSpeed = 25f;
                     break;
                 case TransformationEnum.FourArms:
-                    Item.useTime    = Item.useAnimation = 18; // Fast punches
+                    Item.useTime    = Item.useAnimation = 18;
                     Item.shootSpeed = 25f;
                     break;
 
@@ -280,12 +271,12 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.ChromaStone:
-                    projType    = ModContent.ProjectileType<ChromaStoneProjectile>();
+                    projType    =  ModContent.ProjectileType<ChromaStoneProjectile>();
                     finalDamage += omp.ChromaStoneAbsorbtion;
                     break;
 
                 case TransformationEnum.BuzzShock:
-                    
+
                     if (omp.altAttack) {
                         SoundEngine.PlaySound(SoundID.AbigailSummon, player.position);
                         int buffType   = ModContent.BuffType<BuzzShockMinionBuff>();
@@ -301,9 +292,12 @@ namespace Ben10Mod.Content.Items.Weapons {
 
                         return false;
                     }
+
                     SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, player.position);
                     if (omp.ultimateAttack) finalDamage = (int)(2.5f * finalDamage);
-                    projType = omp.ultimateAttack ? ModContent.ProjectileType<BuzzShockUltimateProjectile>() : ModContent.ProjectileType<BuzzShockProjectile>();
+                    projType = omp.ultimateAttack
+                        ? ModContent.ProjectileType<BuzzShockUltimateProjectile>()
+                        : ModContent.ProjectileType<BuzzShockProjectile>();
 
                     break;
 
@@ -345,13 +339,14 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (omp.currTransformation == TransformationEnum.BuzzShock && omp.ultimateAttack) {
                 for (int i = 0; i < 5; i++) {
-                    Projectile.NewProjectile(source, position, velocity.RotatedBy(i * 2.5), projType, (int)(finalDamage * DamageMultiplier),
+                    Projectile.NewProjectile(source, position, velocity.RotatedBy(i * 2.5), projType,
+                        (int)(finalDamage * DamageMultiplier),
                         knockback, player.whoAmI);
                 }
-            
+
                 return false;
             }
-            
+
             Projectile.NewProjectile(source, position, velocity, projType, (int)(finalDamage * DamageMultiplier),
                 knockback, player.whoAmI);
 
@@ -378,8 +373,6 @@ namespace Ben10Mod.Content.Items.Weapons {
     public class BadgeUltimateState : ModPlayer {
         public bool ultimateStarted;
 
-        public override void ResetEffects() {
-            // no per-tick reset; state persists until ultimate finishes
-        }
+        public override void ResetEffects() { }
     }
 }
