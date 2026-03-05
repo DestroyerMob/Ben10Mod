@@ -545,20 +545,20 @@ namespace Ben10Mod
                     EndPossession();
                 }
             }
-            
+
             if (isTransformed) {
                 if (KeybindSystem.UltimateAbility.JustPressed)
                     if (!Player.HasBuff<UltimateAbilityCooldown>() && !Player.HasBuff<UltimateAbility>()) {
-                        for (int i = 0; i < 50; i++)
-                        {
+                        for (int i = 0; i < 50; i++) {
                             Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
-                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue, Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue,
+                                Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
                             d.noGravity = true;
                         }
                         ultimateAttack = !ultimateAttack;
                     }
             }
-            
+
             if (PrimaryAbilityEnabled != PrimaryAbilityWasEnabled) {
                 PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
                 switch (tranUsedAbility) {
