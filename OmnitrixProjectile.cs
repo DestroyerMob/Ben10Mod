@@ -38,7 +38,7 @@ public class OmnitrixProjectile : GlobalProjectile {
             var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
             if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
                 projectile.velocity = initialVelocity * (1 - framesAlive / 60f);
-                if (framesAlive >= 60) projectile.velocity = Vector2.Zero;
+                if (framesAlive >= 60) projectile.velocity = initialVelocity.SafeNormalize(Vector2.Zero);
                 projectileSlowed    = true;
             }
             else if (projectileSlowed) projectile.velocity = initialVelocity * 2f;

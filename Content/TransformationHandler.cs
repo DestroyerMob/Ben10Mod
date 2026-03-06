@@ -67,6 +67,7 @@ namespace Ben10Mod.Content {
             player.ClearBuff(ModContent.BuffType<WildVine_Buff>());
             player.ClearBuff(ModContent.BuffType<ChromaStone_Buff>());
             player.ClearBuff(ModContent.BuffType<EyeGuy_Buff>());
+            player.ClearBuff(ModContent.BuffType<BigChill_Buff>());
 
             player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
             player.ClearBuff(ModContent.BuffType<UltimateAbility>());

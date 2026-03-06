@@ -327,6 +327,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                         : ModContent.ProjectileType<EyeGuyLaserbeam>();
                     finalDamage = omp.ultimateAttack ? (int)(damage * 2f) : damage;
                     break;
+                case TransformationEnum.BigChill:
+                    projType = ProjectileID.FrostBlastFriendly;
+                    break;
             }
 
             if (projType == 0) return false;

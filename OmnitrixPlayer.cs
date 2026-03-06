@@ -29,6 +29,7 @@ using Ben10Mod.Content.DamageClasses;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
+using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
@@ -527,6 +528,17 @@ namespace Ben10Mod {
             if (currTransformation == TransformationEnum.WildVine) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
+            
+            // Bigchill Transformation
+
+            if (currTransformation == TransformationEnum.BigChill)
+            {
+                if (KeybindSystem.PrimaryAbility.Current && !Player.HasBuff<PrimaryAbilityCooldown>() &&
+                    !Player.HasBuff<PrimaryAbility>()) {
+                    Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 15 * 60);
+                    tranUsedAbility = currTransformation;
+                }
+            }
 
             if (inPossessionMode) {
                 if (possessedTarget == null || !possessedTarget.active ||
@@ -596,6 +608,11 @@ namespace Ben10Mod {
                         Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
                         break;
                     }
+                    case TransformationEnum.BigChill:
+                    {
+                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
+                        break;
+                    }
                 }
 
                 ChromaStoneAbsorbtion    = 0;
@@ -612,7 +629,7 @@ namespace Ben10Mod {
                 }
             }
 
-            if (!isTransformed) {
+            if (!isTransformed || !UltimateAbilityEnabled) {
                 Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
                 Filters.Scene.Deactivate("Ben10Mod:Grayscale");
             }
@@ -620,17 +637,17 @@ namespace Ben10Mod {
 
         public override bool CanUseItem(Item item) {
             if (Player.whoAmI != Main.myPlayer) return false;
-            return !(currTransformation == TransformationEnum.GhostFreak && PrimaryAbilityEnabled);
+            return !((currTransformation == TransformationEnum.GhostFreak || currTransformation == TransformationEnum.BigChill) && PrimaryAbilityEnabled);
         }
 
         public override bool CanBeHitByNPC(NPC npc, ref int cooldownSlot) {
             if (Player.whoAmI != Main.myPlayer) return false;
-            return !(currTransformation == TransformationEnum.GhostFreak && PrimaryAbilityEnabled);
+            return !((currTransformation == TransformationEnum.GhostFreak || currTransformation == TransformationEnum.BigChill) && PrimaryAbilityEnabled);
         }
 
         public override bool CanBeHitByProjectile(Projectile proj) {
             if (Player.whoAmI != Main.myPlayer) return false;
-            return !(currTransformation == TransformationEnum.GhostFreak && PrimaryAbilityEnabled);
+            return !((currTransformation == TransformationEnum.GhostFreak || currTransformation == TransformationEnum.BigChill) && PrimaryAbilityEnabled);
         }
 
         public override void OnHurt(Player.HurtInfo info) {
@@ -685,6 +702,11 @@ namespace Ben10Mod {
                     break;
                 case TransformationEnum.GhostFreak when inPossessionMode:
                     Player.invis = true;
+                    break;
+                case TransformationEnum.BigChill when PrimaryAbilityEnabled:
+                    drawInfo.colorArmorHead.A /= 2;
+                    drawInfo.colorArmorBody.A /= 2;
+                    drawInfo.colorArmorLegs.A /= 2;
                     break;
                 case TransformationEnum.Arctiguana:
                     break;
@@ -915,13 +937,20 @@ namespace Ben10Mod {
                     Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
                     Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
                 }
+                
+                if (currTransformation == TransformationEnum.BigChill) {
+                    var costume = ModContent.GetInstance<BigChill>();
+                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                }
             }
         }
 
         public override void PreUpdateMovement() {
             DashMovement();
 
-            if (PrimaryAbilityEnabled && currTransformation == TransformationEnum.GhostFreak) { // Phasing Logic
+            if (PrimaryAbilityEnabled && (currTransformation == TransformationEnum.GhostFreak || currTransformation == TransformationEnum.BigChill)) { // Phasing Logic
                 Vector2 input                    = Vector2.Zero;
                 if (Player.controlLeft) input.X  -= 1f;
                 if (Player.controlRight) input.X += 1f;

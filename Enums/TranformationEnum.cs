@@ -26,6 +26,7 @@ namespace Ben10Mod.Enums
         WildVine = 10,
         XLR8 = 11,
         EyeGuy = 12,
+        BigChill = 13,
     }
 
     static class TransformationMethods {
@@ -53,6 +54,8 @@ namespace Ben10Mod.Enums
                     return ModContent.BuffType<XLR8_Buff>();
                 case TransformationEnum.EyeGuy:
                     return ModContent.BuffType<EyeGuy_Buff>();
+                case TransformationEnum.BigChill:
+                    return ModContent.BuffType<BigChill_Buff>();
                 default: return -1;
             }
         }
@@ -81,6 +84,8 @@ namespace Ben10Mod.Enums
                     return "XLR8";
                 case TransformationEnum.EyeGuy:
                     return "Eye Guy";
+                case TransformationEnum.BigChill:
+                    return "Bigchill";
                 default:
                     return "None";
             }
@@ -107,6 +112,8 @@ namespace Ben10Mod.Enums
                 case TransformationEnum.WildVine:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.EyeGuy:
+                    return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
+                case TransformationEnum.BigChill:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
                 case TransformationEnum.XLR8:
                     return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/XLR8Select");

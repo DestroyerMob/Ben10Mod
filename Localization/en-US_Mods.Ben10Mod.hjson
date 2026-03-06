@@ -250,6 +250,11 @@ Items: {
 		DisplayName: Disco Dye
 		Tooltip: ""
 	}
+
+	BigChill: {
+		Tooltip: ""
+		DisplayName: Big Chill
+	}
 }
 
 Keybinds: {
@@ -375,6 +380,11 @@ Buffs: {
 	UltimateAbility: {
 		Description: Mods.Ben10Mod.Buffs.UltimateAbility.Description
 		DisplayName: Ultimate Ability
+	}
+
+	BigChill_Buff: {
+		Description: Mods.Ben10Mod.Buffs.BigChill_Buff.Description
+		DisplayName: Big Chill_ Buff
 	}
 }
 
