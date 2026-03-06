@@ -414,6 +414,8 @@ Projectiles: {
 	HeatBlastUltimateProjectile.DisplayName: Heat Blast Ultimate Projectile
 	IcyFlames.DisplayName: Icy Flames
 	BuzzShockUltimateProjectile.DisplayName: Buzz Shock Ultimate Projectile
+	BigChillProjectile.DisplayName: Big Chill Projectile
+	BigChillFrostBreathProjectile.DisplayName: Big Chill Frost Breath Projectile
 }
 
 Tiles: {

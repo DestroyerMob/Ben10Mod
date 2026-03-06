@@ -5,6 +5,7 @@ using Ben10Mod.Content.Buffs.Summons;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
+using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -188,6 +189,11 @@ namespace Ben10Mod.Content.Items.Weapons {
                     Item.channel      = omp.ultimateAttack;
                     OmnitrixEnergyUse = omp.ultimateAttack ? 10 : 0;
                     break;
+                case TransformationEnum.BigChill:
+                    Item.useStyle   = ItemUseStyleID.Shoot;
+                    Item.shootSpeed = omp.altAttack ? 3f : 20f;
+                    Item.useTime    = Item.useAnimation = omp.altAttack ? 6 : 25;
+                    break;
                 default:
                     Item.useTime    = Item.useAnimation = 25;
                     Item.shootSpeed = 10f;
@@ -328,7 +334,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                     finalDamage = omp.ultimateAttack ? (int)(damage * 2f) : damage;
                     break;
                 case TransformationEnum.BigChill:
-                    projType = ProjectileID.FrostBlastFriendly;
+                    projType = omp.altAttack ? ModContent.ProjectileType<BigChillFrostBreathProjectile>() : ModContent.ProjectileType<BigChillProjectile>();
                     break;
             }
 
