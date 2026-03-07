@@ -28,8 +28,14 @@ public class NpcEffects : GlobalNPC {
     }
 
     public override void AI(NPC npc) {
+        var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        
         if (IsPossessed(npc)) {
             npc.velocity *= 0.68f;
+        }
+
+        if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled) {
+            npc.AddBuff(BuffID.Frozen, 120);
         }
     }
 

@@ -29,7 +29,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         float   scaledW = Projectile.width  * Projectile.scale;
         float   scaledH = Projectile.height * Projectile.scale;
 
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 12; i++) {
             Vector2 spawnPos = center + new Vector2(
                 Main.rand.NextFloat(-scaledW / 2f, scaledW / 2f),
                 Main.rand.NextFloat(-scaledH / 2f, scaledH / 2f)
@@ -38,5 +38,9 @@ public class BigChillFrostBreathProjectile : ModProjectile {
             int dustNum = Dust.NewDust(spawnPos, 1, 1, DustID.Frost);
             Main.dust[dustNum].noGravity = true;
         }
+    }
+
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        target.AddBuff(BuffID.Frostburn2, 120);
     }
 }

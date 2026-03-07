@@ -192,7 +192,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                 case TransformationEnum.BigChill:
                     Item.useStyle   = ItemUseStyleID.Shoot;
                     Item.shootSpeed = omp.altAttack ? 3f : 20f;
-                    Item.useTime    = Item.useAnimation = omp.altAttack ? 6 : 25;
+                    Item.useTime    = Item.useAnimation = omp.altAttack ? 10 : 25;
                     break;
                 default:
                     Item.useTime    = Item.useAnimation = 25;
@@ -335,6 +335,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
                 case TransformationEnum.BigChill:
                     projType = omp.altAttack ? ModContent.ProjectileType<BigChillFrostBreathProjectile>() : ModContent.ProjectileType<BigChillProjectile>();
+                    finalDamage = omp.altAttack ? (int)(damage * 0.3f) : damage;
                     break;
             }
 

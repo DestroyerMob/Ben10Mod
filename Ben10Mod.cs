@@ -24,6 +24,7 @@ namespace Ben10Mod {
 
 				
 				Filters.Scene["Ben10Mod:Grayscale"] = new Filter(new ScreenShaderData(filterShader, "Grayscale"), EffectPriority.Medium);
+				Filters.Scene["Ben10Mod:Bluescale"] = new Filter(new ScreenShaderData(filterShader, "Bluescale"), EffectPriority.Medium);
 			}
 		}
 

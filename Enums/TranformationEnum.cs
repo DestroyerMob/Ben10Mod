@@ -161,6 +161,39 @@ namespace Ben10Mod.Enums
                 _ => new List<string> { "Unknown abilities" }
             };
         }
-
+        
+        public static bool HasUltimateAttack(this TransformationEnum te) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return true;
+                case TransformationEnum.ChromaStone:
+                    return true;
+                case TransformationEnum.DiamondHead:
+                    return true;
+                case TransformationEnum.FourArms:
+                    return true;
+                case TransformationEnum.GhostFreak:
+                    return true;
+                case TransformationEnum.HeatBlast:
+                    return true;
+                case TransformationEnum.RipJaws:
+                    return true;
+                case TransformationEnum.StinkFly:
+                    return true;
+                case TransformationEnum.WildVine:
+                    return true;
+                case TransformationEnum.XLR8:
+                    return false;
+                case TransformationEnum.EyeGuy:
+                    return true;
+                case TransformationEnum.BigChill:
+                    return false;
+                default: return true;
+            }
+        }
+        
+        public static bool HasUltimateAbility(this TransformationEnum te) {
+            return !HasUltimateAttack(te);
+        }
     }
 }

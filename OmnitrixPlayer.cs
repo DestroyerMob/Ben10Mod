@@ -365,14 +365,10 @@ namespace Ben10Mod {
 
                 if (KeybindSystem.UltimateAbility.JustPressed &&
                     !Player.HasBuff(ModContent.BuffType<UltimateAbilityCooldown>()) &&
-                    !Player.HasBuff(ModContent.BuffType<UltimateAbility>())) {
-                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 10 * 60);
-                    tranUsedAbility = currTransformation;
-                }
-
-                if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server) {
-                    Filters.Scene.Activate("Ben10Mod:Grayscale");
-                    Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
+                    !Player.HasBuff(ModContent.BuffType<UltimateAbility>()) && omnitrixEnergy >= 50) {
+                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 4 * 60);
+                    tranUsedAbility =  currTransformation;
+                    omnitrixEnergy  -= 50;
                 }
 
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -538,6 +534,13 @@ namespace Ben10Mod {
                     Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 15 * 60);
                     tranUsedAbility = currTransformation;
                 }
+                
+                if (KeybindSystem.UltimateAbility.JustPressed &&
+                    !Player.HasBuff(ModContent.BuffType<UltimateAbilityCooldown>()) &&
+                    !Player.HasBuff(ModContent.BuffType<UltimateAbility>())) {
+                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 10 * 60);
+                    tranUsedAbility = currTransformation;
+                }
             }
 
             if (inPossessionMode) {
@@ -626,12 +629,11 @@ namespace Ben10Mod {
                         Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 30 * 60);
                         break;
                     }
+                    case TransformationEnum.BigChill: {
+                        Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 30 * 60);
+                        break;
+                    }
                 }
-            }
-
-            if (!isTransformed || !UltimateAbilityEnabled) {
-                Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
-                Filters.Scene.Deactivate("Ben10Mod:Grayscale");
             }
         }
 
@@ -779,7 +781,6 @@ namespace Ben10Mod {
         }
 
         public override void FrameEffects() {
-
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
             if (omnitrixEquipped) {
@@ -1087,12 +1088,34 @@ namespace Ben10Mod {
                 }
             }
 
-            if (PrimaryAbilityEnabled && currTransformation == TransformationEnum.GhostFreak) {
+            if (PrimaryAbilityEnabled && currTransformation is TransformationEnum.GhostFreak or TransformationEnum.BigChill) {
                 Player.gravity     = 0f;
                 Player.noKnockback = true;
                 Player.noFallDmg   = true;
 
                 Player.fallStart = (int)(Player.position.Y / 16f);
+            }
+            
+            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server && currTransformation == TransformationEnum.BigChill) {
+                if (!Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
+                    Filters.Scene.Activate("Ben10Mod:Bluescale");
+                    Filters.Scene["Ben10Mod:Bluescale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
+                }
+            }
+            else if (Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
+                Filters.Scene["Ben10Mod:Bluescale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
+                Filters.Scene.Deactivate("Ben10Mod:Bluescale");
+            }
+            
+            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server && currTransformation == TransformationEnum.XLR8) {
+                if (!Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
+                    Filters.Scene.Activate("Ben10Mod:Grayscale");
+                    Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
+                }
+            }
+            else if (Filters.Scene["Ben10Mod:Grayscale"].IsActive()) {
+                Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
+                Filters.Scene.Deactivate("Ben10Mod:Grayscale");
             }
         }
 
