@@ -47,6 +47,7 @@ namespace Ben10Mod {
         public bool onCooldown        = false;
         public bool altAttack         = false;
         public bool ultimateAttack    = false;
+        public bool ultimateForm      = false;
 
         public int cooldownTime       = 120;
         public int transformationTime = 300;
@@ -91,7 +92,7 @@ namespace Ben10Mod {
 
         public        bool    inPossessionMode      = false;
         public        Vector2 prePossessionPosition = Vector2.Zero;
-        public        NPC     possessedTarget       = null;
+        public        int     possessedTargetIndex  = -1;
         public        int     possessionTimer       = 0;
         private const int     PossessionDuration    = 360;
 
@@ -207,7 +208,7 @@ namespace Ben10Mod {
                     advancedCircuitMatrixEquippedWhileTransformed = false;
                 }
 
-                wasTransformed = false;
+                wasTransformed = isTransformed;
             }
 
             if (omnitrixUpdating != omnitrixWasUpdating) {
@@ -284,13 +285,22 @@ namespace Ben10Mod {
             // Ripjaws Transformation
 
             if (currTransformation == TransformationEnum.RipJaws) {
-                if (Player.wet) {
+                if (Player.wet || Main.raining) {
                     Player.merman                  =  true;
                     Player.breathCD                =  0;
                     Player.breath                  =  Player.breathMax;
                     Player.GetDamage<HeroDamage>() *= 2.0f;
+                    Lighting.AddLight(Player.Center, new Vector3(1, 1, 1));
+                    Player.maxFallSpeed *= 2;
+                    Player.moveSpeed    *= 4;
                 }
-
+                else {
+                    Player.breath -= 4;
+                    if (Player.breath <= 1) {
+                        Player.lifeRegen -= 60;
+                    }
+                }
+                
                 Player.accFlipper = true;
 
             }
@@ -541,20 +551,27 @@ namespace Ben10Mod {
                     Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 10 * 60);
                     tranUsedAbility = currTransformation;
                 }
+                
+                abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BigChillWings>());
             }
 
             if (inPossessionMode) {
-                if (possessedTarget == null || !possessedTarget.active ||
-                    currTransformation != TransformationEnum.GhostFreak) {
+                if (possessedTargetIndex < 0 || possessedTargetIndex >= Main.maxNPCs) {
                     EndPossession();
                     return;
                 }
-
+                
+                NPC npc = Main.npc[possessedTargetIndex];
+                if (npc == null || !npc.active || npc.whoAmI != possessedTargetIndex) {
+                    EndPossession();
+                    return;
+                }
+                
                 Player.immuneNoBlink = true;
                 Player.immuneTime    = 999;
-                Player.Center        = possessedTarget.Center;
+                Player.Center        = npc.Center;
 
-                Player.velocity = possessedTarget.velocity * 0.8f;
+                Player.velocity = npc.velocity * 0.8f;
 
                 Player.controlJump    = false;
                 Player.controlDown    = false;
@@ -566,16 +583,15 @@ namespace Ben10Mod {
                 Player.controlHook    = false;
 
                 possessionTimer--;
-
                 if (possessionTimer <= 0) {
-                    possessedTarget.SimpleStrikeNPC(Player.HeldItem.damage * 2, Player.direction, false, 0,
+                    npc.SimpleStrikeNPC(Player.HeldItem.damage * 2, Player.direction, false, 0,
                         DamageClass.Magic);
                     EndPossession();
                 }
             }
 
             if (isTransformed) {
-                if (KeybindSystem.UltimateAbility.JustPressed)
+                if (KeybindSystem.UltimateAbility.JustPressed && currTransformation.HasUltimateAttack())
                     if (!Player.HasBuff<UltimateAbilityCooldown>() && !Player.HasBuff<UltimateAbility>()) {
                         for (int i = 0; i < 50; i++) {
                             Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
@@ -661,13 +677,13 @@ namespace Ben10Mod {
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
-            if (!Main.npc[victim.whoAmI].HasBuff(BuffID.Frostburn2) && snowflake &&
-                currTransformation == TransformationEnum.HeatBlast) {
-                Main.npc[victim.whoAmI].AddBuff(BuffID.Frostburn2, 10 * 60);
-            }
-            else if (!Main.npc[victim.whoAmI].HasBuff(BuffID.OnFire3) && !snowflake &&
-                     currTransformation == TransformationEnum.HeatBlast) {
-                Main.npc[victim.whoAmI].AddBuff(BuffID.OnFire3, 10 * 60);
+            if (victim is NPC npc && currTransformation == TransformationEnum.HeatBlast) {
+                if (!npc.HasBuff(BuffID.Frostburn2) && snowflake) {
+                    npc.AddBuff(BuffID.Frostburn2, 10 * 60);
+                }
+                else if (!npc.HasBuff(BuffID.OnFire3) && !snowflake) {
+                    npc.AddBuff(BuffID.OnFire3, 10 * 60);
+                }
             }
         }
 
@@ -941,9 +957,12 @@ namespace Ben10Mod {
                 
                 if (currTransformation == TransformationEnum.BigChill) {
                     var costume = ModContent.GetInstance<BigChill>();
-                    Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-                    Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-                    Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    Player.head = ultimateForm ? EquipLoader.GetEquipSlot(Mod, "Ultimate" + costume.Name, EquipType.Head) : EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+                    Player.body = ultimateForm ? EquipLoader.GetEquipSlot(Mod, "Ultimate" + costume.Name, EquipType.Body) : EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+                    Player.legs = ultimateForm ? EquipLoader.GetEquipSlot(Mod, "Ultimate" + costume.Name, EquipType.Legs) : EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+                    Player.wings = ultimateForm ? EquipLoader.GetEquipSlot(Mod, "Ultimate" + ModContent.GetInstance<BigChillWings>().Name,
+                        EquipType.Wings) : EquipLoader.GetEquipSlot(Mod, ModContent.GetInstance<BigChillWings>().Name,
+                        EquipType.Wings);
                 }
             }
         }
@@ -1042,8 +1061,8 @@ namespace Ben10Mod {
         private void EndPossession() {
             if (!inPossessionMode) return;
 
-            inPossessionMode = false;
-            possessedTarget  = null;
+            inPossessionMode     = false;
+            possessedTargetIndex = -1;
             
             Player.position = prePossessionPosition;
             
@@ -1074,41 +1093,54 @@ namespace Ben10Mod {
             }
 
 
-            if (isTransformed && !ultimateAttack && omnitrixEnergyRegen == 0)
+            if (isTransformed && !ultimateAttack && omnitrixEnergyRegen == 0 && !UltimateAbilityEnabled && !ultimateAttack)
                 omnitrixEnergy += Math.Max(hit.Damage / 25, 1);
         }
 
         public override void PreUpdate() {
             if (inPossessionMode) {
+                if (possessedTargetIndex < 0 || possessedTargetIndex >= Main.maxNPCs) {
+                    EndPossession();
+                    return;
+                }
+
+                NPC npc = Main.npc[possessedTargetIndex];
+                if (npc == null || !npc.active || npc.whoAmI != possessedTargetIndex || npc.life <= 0) {
+                    EndPossession();
+                    return;
+                }
+                
                 if (Main.GameUpdateCount % 60 == 0) {
-                    int dotDamage = 35;
-                    possessedTarget.life -= dotDamage;
-                    if (possessedTarget.life < 1) possessedTarget.life = 1;
-                    CombatText.NewText(possessedTarget.Hitbox, new Color(180, 80, 255), dotDamage, dramatic: true);
+                    if (npc.active && npc.whoAmI == possessedTargetIndex && npc.life > 0) {
+                        int dotDamage = 35;
+                        npc.life -= dotDamage;
+                        if (npc.life < 1) npc.life = 1;
+                        CombatText.NewText(npc.Hitbox, new Color(180, 80, 255), dotDamage, dramatic: true);
+                    }
                 }
             }
 
-            if (PrimaryAbilityEnabled && currTransformation is TransformationEnum.GhostFreak or TransformationEnum.BigChill) {
+            if (PrimaryAbilityEnabled &&
+                currTransformation is TransformationEnum.GhostFreak or TransformationEnum.BigChill) {
                 Player.gravity     = 0f;
                 Player.noKnockback = true;
                 Player.noFallDmg   = true;
-
-                Player.fallStart = (int)(Player.position.Y / 16f);
+                Player.fallStart   = (int)(Player.position.Y / 16f);
             }
-            
-            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server && currTransformation == TransformationEnum.BigChill) {
+
+            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server &&
+                currTransformation == TransformationEnum.BigChill) {
                 if (!Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
                     Filters.Scene.Activate("Ben10Mod:Bluescale");
-                    Filters.Scene["Ben10Mod:Bluescale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
                 }
             }
             else if (Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
-                Filters.Scene["Ben10Mod:Bluescale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
                 Filters.Scene.Deactivate("Ben10Mod:Bluescale");
             }
-            
-            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server && currTransformation == TransformationEnum.XLR8) {
-                if (!Filters.Scene["Ben10Mod:Bluescale"].IsActive()) {
+
+            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server &&
+                currTransformation == TransformationEnum.XLR8) {
+                if (!Filters.Scene["Ben10Mod:Grayscale"].IsActive()) {
                     Filters.Scene.Activate("Ben10Mod:Grayscale");
                     Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
                 }

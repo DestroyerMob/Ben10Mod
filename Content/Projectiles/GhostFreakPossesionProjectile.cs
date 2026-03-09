@@ -32,7 +32,7 @@ public class GhostFreakPossesionProjectile : ModProjectile {
             // Only start possession if not already in mode (prevent stacking)
             if (!omp.inPossessionMode) {
                 omp.prePossessionPosition = player.position; // Save current pos
-                omp.possessedTarget       = target;
+                omp.possessedTargetIndex  = target.whoAmI;
                 omp.possessionTimer       = 360;
                 omp.inPossessionMode      = true;
 

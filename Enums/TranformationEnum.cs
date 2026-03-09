@@ -195,5 +195,35 @@ namespace Ben10Mod.Enums
         public static bool HasUltimateAbility(this TransformationEnum te) {
             return !HasUltimateAttack(te);
         }
+        
+        public static bool HasUltimateForm(this TransformationEnum te) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return false;
+                case TransformationEnum.ChromaStone:
+                    return false;
+                case TransformationEnum.DiamondHead:
+                    return false;
+                case TransformationEnum.FourArms:
+                    return false;
+                case TransformationEnum.GhostFreak:
+                    return false;
+                case TransformationEnum.HeatBlast:
+                    return false;
+                case TransformationEnum.RipJaws:
+                    return false;
+                case TransformationEnum.StinkFly:
+                    return false;
+                case TransformationEnum.WildVine:
+                    return false;
+                case TransformationEnum.XLR8:
+                    return false;
+                case TransformationEnum.EyeGuy:
+                    return false;
+                case TransformationEnum.BigChill:
+                    return true;
+                default: return true;
+            }
+        }
     }
 }

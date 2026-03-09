@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Buffs.Debuffs;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -42,5 +43,6 @@ public class BigChillFrostBreathProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(BuffID.Frostburn2, 120);
+        target.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
     }
 }

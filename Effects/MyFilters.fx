@@ -33,10 +33,13 @@ float4 Grayscale(float2 uv : TEXCOORD0) : COLOR0
     return color;
 }
 
-float4 FrostyScreen(float4 sampleColor: COLOR0, float2 uv : TEXCOORD0) : COLOR0
+float4 FrostyScreen(float4 sampleColor : COLOR0, float2 uv : TEXCOORD0) : COLOR0
 {
     float4 color = tex2D(uImage0, uv);
-    float luminosity = (color.r + color.g + color.b) / 3;
+
+    float3 blueTint = float3(0.7, 0.85, 1.25);
+    color.rgb *= blueTint;
+
     return color * sampleColor;
 }
 

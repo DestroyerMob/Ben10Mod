@@ -73,7 +73,35 @@ namespace Ben10Mod.Content {
             player.ClearBuff(ModContent.BuffType<UltimateAbility>());
 
             player.GetModPlayer<OmnitrixPlayer>().currTransformation = TransformationEnum.None;
+            player.GetModPlayer<OmnitrixPlayer>().ultimateForm       = false;
 
+        }
+        
+        public static void GoUltimate(Player player, TransformationEnum transformation, bool showParticles = true, bool playSound = true) {
+            if (transformation.GetTransformation() == -1)
+                return;
+            if (!transformation.HasUltimateForm() && !player.GetModPlayer<OmnitrixPlayer>().ultimateForm)
+                return;
+            if (showParticles) {
+                Random random = new Random();
+                for (int i = 0; i < 25; i++) {
+                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1, DustID.GreenTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 4);
+                    Main.dust[dustNum].noGravity = true;
+                }
+
+                CombatText.NewText(
+                    new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height),
+                    new Color(0, 255, 0),
+                    "Ultimate " + transformation.GetName() + "!",
+                    dramatic: true,
+                    dot: false
+                );
+            }
+            if (playSound) {
+                SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
+            }
+
+            player.GetModPlayer<OmnitrixPlayer>().ultimateForm = true;
         }
 
         public static void NextTransformation(Player player, ref TransformationEnum transformation) {

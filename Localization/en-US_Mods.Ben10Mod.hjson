@@ -255,6 +255,21 @@ Items: {
 		Tooltip: ""
 		DisplayName: Big Chill
 	}
+
+	BigChillWings: {
+		DisplayName: Big Chill Wings
+		Tooltip: ""
+	}
+
+	Ultimatrix: {
+		Tooltip: ""
+		DisplayName: Ultimatrix
+	}
+
+	UltimateBigChillWings: {
+		Tooltip: ""
+		DisplayName: Ultimate Big Chill Wings
+	}
 }
 
 Keybinds: {
@@ -416,6 +431,8 @@ Projectiles: {
 	BuzzShockUltimateProjectile.DisplayName: Buzz Shock Ultimate Projectile
 	BigChillProjectile.DisplayName: Big Chill Projectile
 	BigChillFrostBreathProjectile.DisplayName: Big Chill Frost Breath Projectile
+	RipJawsBiteProjectile.DisplayName: Rip Jaws Bite Projectile
+	GhostFreakShadowProjectile.DisplayName: Ghost Freak Shadow Projectile
 }
 
 Tiles: {

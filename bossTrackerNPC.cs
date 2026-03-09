@@ -163,6 +163,9 @@ namespace Ben10Mod {
                 case NPCID.Spazmatism: 
                     player.GetModPlayer<OmnitrixPlayer>().AddTransformation(TransformationEnum.EyeGuy);
                     break;
+                case NPCID.IceQueen:
+                    player.GetModPlayer<OmnitrixPlayer>().AddTransformation(TransformationEnum.BigChill);
+                    break;
                 default: break;
             }
             

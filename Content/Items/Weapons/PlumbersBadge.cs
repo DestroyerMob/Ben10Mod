@@ -118,6 +118,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
             Item.channel          = false;
+            Item.noMelee          = false;
             OmnitrixEnergyUse     = 0;
 
 
@@ -151,8 +152,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.RipJaws:
-                    Item.useTime    = Item.useAnimation = 28;
+                    Item.useTime    = Item.useAnimation = omp.altAttack ? 75 : 28;
                     Item.shootSpeed = 6f;
+                    Item.useStyle   = omp.altAttack ? ItemUseStyleID.HiddenAnimation : ItemUseStyleID.Swing;
                     break;
 
                 case TransformationEnum.ChromaStone:
@@ -273,7 +275,11 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.RipJaws:
-                    projType = ModContent.ProjectileType<RipJawsProjectile>();
+                    projType = omp.altAttack ? ModContent.ProjectileType<RipJawsBiteProjectile>() : ModContent.ProjectileType<RipJawsProjectile>();
+                    if (omp.altAttack) {
+                        finalDamage     =  (int)(damage * 3f);
+                        player.velocity += velocity * 2f;
+                    }
                     break;
 
                 case TransformationEnum.ChromaStone:
@@ -314,11 +320,15 @@ namespace Ben10Mod.Content.Items.Weapons {
                     break;
 
                 case TransformationEnum.GhostFreak:
-                    projType = omp.ultimateAttack
-                        ? ModContent.ProjectileType<GhostFreakPossesionProjectile>()
-                        : omp.altAttack
-                            ? ProjectileID.CursedFlameFriendly
-                            : ModContent.ProjectileType<GhostFreakProjectile>();
+                    if (omp.ultimateAttack) {
+                        projType = ModContent.ProjectileType<GhostFreakPossesionProjectile>();
+                    } else if (omp.altAttack) {
+                        projType = ModContent.ProjectileType<GhostFreakProjectile>();
+                    }
+                    else {
+                        projType = ModContent.ProjectileType<GhostFreakProjectile>();
+                    }
+                            
                     break;
 
                 case TransformationEnum.WildVine:

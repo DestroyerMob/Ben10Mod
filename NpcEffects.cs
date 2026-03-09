@@ -1,4 +1,5 @@
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,7 +15,7 @@ public class NpcEffects : GlobalNPC {
     public bool IsPossessed(NPC npc) {
         foreach (Player p in Main.ActivePlayers) {
             var omp = p.GetModPlayer<OmnitrixPlayer>();
-            if (omp.inPossessionMode && omp.possessedTarget.whoAmI == npc.whoAmI) return true;
+            if (omp.inPossessionMode && omp.possessedTargetIndex == npc.whoAmI) return true;
         }
         return false;
     }
@@ -34,8 +35,8 @@ public class NpcEffects : GlobalNPC {
             npc.velocity *= 0.68f;
         }
 
-        if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled) {
-            npc.AddBuff(BuffID.Frozen, 120);
+        if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled && npc.active && !npc.friendly) {
+            npc.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
         }
     }
 
