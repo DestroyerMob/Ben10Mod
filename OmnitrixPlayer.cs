@@ -29,6 +29,7 @@ using Ben10Mod.Content.DamageClasses;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
+using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Terraria.Graphics.Effects;
@@ -360,27 +361,15 @@ namespace Ben10Mod {
                 }
             }
 
+            if (Main.mouseRight && Main.mouseRightRelease && Player.HeldItem.ModItem is PlumbersBadge) {
+                altAttack = !altAttack;
+            }
+
 
 
             // XLR8 Transformation
 
             if (currTransformation == TransformationEnum.XLR8) {
-
-                if (KeybindSystem.PrimaryAbility.JustPressed &&
-                    !Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) &&
-                    !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
-                    Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 10 * 60);
-                    tranUsedAbility = currTransformation;
-                }
-
-                if (KeybindSystem.UltimateAbility.JustPressed &&
-                    !Player.HasBuff(ModContent.BuffType<UltimateAbilityCooldown>()) &&
-                    !Player.HasBuff(ModContent.BuffType<UltimateAbility>()) && omnitrixEnergy >= 50) {
-                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 4 * 60);
-                    tranUsedAbility =  currTransformation;
-                    omnitrixEnergy  -= 50;
-                }
-
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
@@ -392,13 +381,6 @@ namespace Ben10Mod {
                     snowflake ? DustID.IceTorch : DustID.Flare, 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White,
                     rand.Next(3));
                 Main.dust[dustNum].noGravity = true;
-                if (KeybindSystem.PrimaryAbility.JustPressed) {
-                    if (!Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) &&
-                        !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 60 * 60);
-                        tranUsedAbility = currTransformation;
-                    }
-                }
 
                 if (PrimaryAbilityEnabled) {
                     Vector2[] points = GenerateCirclePoints(250, 7 * (16));
@@ -429,15 +411,6 @@ namespace Ben10Mod {
             // Diamondhead Transformation
 
             if (currTransformation == TransformationEnum.DiamondHead) {
-                if (KeybindSystem.PrimaryAbility.JustPressed) {
-                    if (!Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) &&
-                        !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 60 * 60);
-                        tranUsedAbility = currTransformation;
-                        Player.velocity = Vector2.Zero;
-                    }
-                }
-
                 if (PrimaryAbilityEnabled) {
                     Player.velocity = new Vector2(float.Clamp(Player.velocity.X, -0.5f, 0.5f),
                         Math.Max(0, Player.velocity.Y));
@@ -456,14 +429,6 @@ namespace Ben10Mod {
             // Chromastone Transformation
 
             if (currTransformation == TransformationEnum.ChromaStone) {
-                if (KeybindSystem.PrimaryAbility.JustPressed) {
-                    if (!Player.HasBuff(ModContent.BuffType<PrimaryAbilityCooldown>()) &&
-                        !Player.HasBuff(ModContent.BuffType<PrimaryAbility>())) {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 30 * 60);
-                        tranUsedAbility = currTransformation;
-                    }
-                }
-
                 if (PrimaryAbilityEnabled) {
                     Lighting.AddLight(Player.Center, Main.DiscoColor.ToVector3());
                 }
@@ -477,7 +442,7 @@ namespace Ben10Mod {
             // Buzzshock Transformation
 
             if (currTransformation == TransformationEnum.BuzzShock) {
-                if (KeybindSystem.PrimaryAbility.JustPressed && !Player.HasBuff<PrimaryAbilityCooldown>()) {
+                if (PrimaryAbilityEnabled) {
                     if (Main.myPlayer == Player.whoAmI) {
                         SoundEngine.PlaySound(SoundID.Item8, Player.position);
                         Random random = new Random();
@@ -495,8 +460,6 @@ namespace Ben10Mod {
                                 Color.White, 2);
                             Main.dust[dustNum].noGravity = true;
                         }
-
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 60 * 6);
                     }
                 }
 
@@ -518,14 +481,6 @@ namespace Ben10Mod {
             // Ghostfreak Transformation
 
             if (currTransformation == TransformationEnum.GhostFreak) {
-                Random random = new Random();
-
-                if (KeybindSystem.PrimaryAbility.Current && !Player.HasBuff<PrimaryAbilityCooldown>() &&
-                    !Player.HasBuff<PrimaryAbility>()) {
-                    Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 15 * 60);
-                    tranUsedAbility = currTransformation;
-                }
-
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
             }
 
@@ -537,21 +492,7 @@ namespace Ben10Mod {
             
             // Bigchill Transformation
 
-            if (currTransformation == TransformationEnum.BigChill)
-            {
-                if (KeybindSystem.PrimaryAbility.Current && !Player.HasBuff<PrimaryAbilityCooldown>() &&
-                    !Player.HasBuff<PrimaryAbility>()) {
-                    Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), 15 * 60);
-                    tranUsedAbility = currTransformation;
-                }
-                
-                if (KeybindSystem.UltimateAbility.JustPressed &&
-                    !Player.HasBuff(ModContent.BuffType<UltimateAbilityCooldown>()) &&
-                    !Player.HasBuff(ModContent.BuffType<UltimateAbility>())) {
-                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), 10 * 60);
-                    tranUsedAbility = currTransformation;
-                }
-                
+            if (currTransformation == TransformationEnum.BigChill) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BigChillWings>());
             }
 
@@ -591,66 +532,88 @@ namespace Ben10Mod {
             }
 
             if (isTransformed) {
-                if (KeybindSystem.UltimateAbility.JustPressed && currTransformation.HasUltimateAttack())
-                    if (!Player.HasBuff<UltimateAbilityCooldown>() && !Player.HasBuff<UltimateAbility>()) {
-                        for (int i = 0; i < 50; i++) {
-                            Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
-                                ultimateAttack ? DustID.Firework_Yellow : DustID.Firework_Blue,
-                                Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
-                            d.noGravity = true;
-                        }
-
-                        ultimateAttack = !ultimateAttack;
+                if (omnitrixEnergy < currTransformation.GetUltimateAbilityCost(this) && ultimateAttack) {
+                    for (int i = 0; i < 50; i++) {
+                        Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                            DustID.Firework_Yellow,
+                            Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                        d.noGravity = true;
                     }
+                    
+                    ultimateAttack = !ultimateAttack;
+                }
+            }
+            
+            if (isTransformed) {
+                if (KeybindSystem.PrimaryAbility.JustPressed && currTransformation.HasPrimaryAbility()) {
+                    ActivatePrimaryAbility();
+                }
             }
 
-            if (PrimaryAbilityEnabled != PrimaryAbilityWasEnabled) {
-                PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
-                switch (tranUsedAbility) {
-                    case TransformationEnum.HeatBlast: {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
-                    case TransformationEnum.XLR8: {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
-                    case TransformationEnum.DiamondHead: {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
-                    case TransformationEnum.ChromaStone: {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 60 * 60);
-                        break;
-                    }
-                    case TransformationEnum.GhostFreak: {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
-                    case TransformationEnum.BigChill:
-                    {
-                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
+            if (isTransformed) {
+                if (KeybindSystem.UltimateAbility.JustPressed && (currTransformation.HasUltimateAbility() || currTransformation.HasUltimateAttack())) {
+                    ActivateUltimateAbility();
                 }
-
-                ChromaStoneAbsorbtion    = 0;
+            }
+            
+            if (PrimaryAbilityEnabled != PrimaryAbilityWasEnabled) {
+                Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), tranUsedAbility.GetPrimaryCooldownDuration(this));
                 PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
+                ChromaStoneAbsorbtion = 0;
             }
 
             if (UltimateAbilityEnabled != ultimateAbilityWasEnabled) {
                 ultimateAbilityWasEnabled = UltimateAbilityEnabled;
-                switch (tranUsedAbility) {
-                    case TransformationEnum.XLR8: {
-                        Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
-                    case TransformationEnum.BigChill: {
-                        Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 30 * 60);
-                        break;
-                    }
+                Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), tranUsedAbility.GetUltimateCooldownDuration(this));
+            }
+        }
+
+        public bool ActivateUltimateAbility() {
+
+            if (currTransformation.HasUltimateAbility() && !Player.HasBuff<UltimateAbilityCooldown>() && !Player.HasBuff<UltimateAbility>()) {
+                if (omnitrixEnergy >= currTransformation.GetUltimateAbilityCost(this)) {
+                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), currTransformation.GetUltimateAbilityDuration(this));
+                    tranUsedAbility = currTransformation;
+                    omnitrixEnergy -= currTransformation.GetUltimateAbilityCost(this);
+                    return true;
                 }
             }
+            else {
+                if (omnitrixEnergy >= currTransformation.GetUltimateAbilityCost(this) && !ultimateAttack && !Player.HasBuff<UltimateAbilityCooldown>()) {
+                    for (int i = 0; i < 50; i++) {
+                        Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                            DustID.Firework_Blue,
+                            Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                        d.noGravity = true;
+                    }
+
+                    ultimateAttack = true;
+                    return true;
+                }
+                if (ultimateAttack) {
+                    for (int i = 0; i < 50; i++) {
+                        Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                            DustID.Firework_Yellow,
+                            Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                        d.noGravity = true;
+                    }
+
+                    ultimateAttack = false;
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        public bool ActivatePrimaryAbility() {
+            if (!Player.HasBuff<PrimaryAbilityCooldown>() && !Player.HasBuff<PrimaryAbility>()) {
+                Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), currTransformation.GetPrimaryAbilityDuration(this));
+                tranUsedAbility =  currTransformation;
+                return true;
+            }
+            
+            return false;
         }
 
         public override bool CanUseItem(Item item) {

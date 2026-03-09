@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Terraria;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Enums
@@ -188,7 +189,7 @@ namespace Ben10Mod.Enums
                     return true;
                 case TransformationEnum.BigChill:
                     return false;
-                default: return true;
+                default: return false;
             }
         }
         
@@ -222,7 +223,197 @@ namespace Ben10Mod.Enums
                     return false;
                 case TransformationEnum.BigChill:
                     return true;
-                default: return true;
+                default: return false;
+            }
+        }
+        
+        public static int GetUltimateAbilityCost(this TransformationEnum te, OmnitrixPlayer omp) { // Determines the cost for both the ultimate ability and the ultimate attack, will be used to check if the player can use ultimate abilities
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return 50;
+                case TransformationEnum.ChromaStone:
+                    return 50;
+                case TransformationEnum.DiamondHead:
+                    return 50;
+                case TransformationEnum.FourArms:
+                    return 50;
+                case TransformationEnum.GhostFreak:
+                    return 50;
+                case TransformationEnum.HeatBlast:
+                    return 50;
+                case TransformationEnum.RipJaws:
+                    return 50;
+                case TransformationEnum.StinkFly:
+                    return 50;
+                case TransformationEnum.WildVine:
+                    return 50;
+                case TransformationEnum.XLR8:
+                    return 50;
+                case TransformationEnum.EyeGuy:
+                    return 50;
+                case TransformationEnum.BigChill when omp.ultimateForm:
+                    return 150;
+                case TransformationEnum.BigChill:
+                    return 50;
+                default: return 50;
+            }
+        }
+        
+        public static int GetUltimateAbilityDuration(this TransformationEnum te, OmnitrixPlayer omp) { // Determines the cost for both the ultimate ability and the ultimate attack, will be used to check if the player can use ultimate abilities
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return 30 * 60;
+                case TransformationEnum.ChromaStone:
+                    return 30 * 60;
+                case TransformationEnum.DiamondHead:
+                    return 30 * 60;
+                case TransformationEnum.FourArms:
+                    return 30 * 60;
+                case TransformationEnum.GhostFreak:
+                    return 30 * 60;
+                case TransformationEnum.HeatBlast:
+                    return 30 * 60;
+                case TransformationEnum.RipJaws:
+                    return 30 * 60;
+                case TransformationEnum.StinkFly:
+                    return 30 * 60;
+                case TransformationEnum.WildVine:
+                    return 30 * 60;
+                case TransformationEnum.XLR8:
+                    return 30 * 60;
+                case TransformationEnum.EyeGuy:
+                    return 30 * 60;
+                case TransformationEnum.BigChill when omp.ultimateForm:
+                    return 60 * 60;
+                case TransformationEnum.BigChill:
+                    return 30 * 60;
+                default: return 30 * 60;
+            }
+        }
+        
+        public static int GetUltimateCooldownDuration(this TransformationEnum te, OmnitrixPlayer omp) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return 60 * 60;
+                case TransformationEnum.ChromaStone:
+                    return 60 * 60;
+                case TransformationEnum.DiamondHead:
+                    return 60 * 60;
+                case TransformationEnum.FourArms:
+                    return 60 * 60;
+                case TransformationEnum.GhostFreak:
+                    return 60 * 60;
+                case TransformationEnum.HeatBlast:
+                    return 60 * 60;
+                case TransformationEnum.RipJaws:
+                    return 60 * 60;
+                case TransformationEnum.StinkFly:
+                    return 60 * 60;
+                case TransformationEnum.WildVine:
+                    return 60 * 60;
+                case TransformationEnum.XLR8:
+                    return 60 * 60;
+                case TransformationEnum.EyeGuy:
+                    return 60 * 60;
+                case TransformationEnum.BigChill when omp.ultimateForm:
+                    return 120 * 60;
+                case TransformationEnum.BigChill:
+                    return 60 * 60;
+                default: return 60 * 60;
+            }
+        }
+        
+        public static bool HasPrimaryAbility(this TransformationEnum te) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return true;
+                case TransformationEnum.ChromaStone:
+                    return true;
+                case TransformationEnum.DiamondHead:
+                    return true;
+                case TransformationEnum.FourArms:
+                    return false;
+                case TransformationEnum.GhostFreak:
+                    return false;
+                case TransformationEnum.HeatBlast:
+                    return true;
+                case TransformationEnum.RipJaws:
+                    return false;
+                case TransformationEnum.StinkFly:
+                    return false;
+                case TransformationEnum.WildVine:
+                    return false;
+                case TransformationEnum.XLR8:
+                    return true;
+                case TransformationEnum.EyeGuy:
+                    return false;
+                case TransformationEnum.BigChill:
+                    return true;
+                default: return false;
+            }
+        }
+        
+        public static int GetPrimaryAbilityDuration(this TransformationEnum te, OmnitrixPlayer omp) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return 1;
+                case TransformationEnum.ChromaStone:
+                    return 30 * 60;
+                case TransformationEnum.DiamondHead:
+                    return 30 * 60;
+                case TransformationEnum.FourArms:
+                    return 30 * 60;
+                case TransformationEnum.GhostFreak:
+                    return 30 * 60;
+                case TransformationEnum.HeatBlast:
+                    return 30 * 60;
+                case TransformationEnum.RipJaws:
+                    return 30 * 60;
+                case TransformationEnum.StinkFly:
+                    return 30 * 60;
+                case TransformationEnum.WildVine:
+                    return 30 * 60;
+                case TransformationEnum.XLR8:
+                    return 30 * 60;
+                case TransformationEnum.EyeGuy:
+                    return 30 * 60;
+                case TransformationEnum.BigChill when omp.ultimateForm:
+                    return 60 * 60;
+                case TransformationEnum.BigChill:
+                    return 30 * 60;
+                default: return 30 * 60;
+            }
+        }
+        
+        public static int GetPrimaryCooldownDuration(this TransformationEnum te, OmnitrixPlayer omp) {
+            switch (te) {
+                case TransformationEnum.BuzzShock:
+                    return 60 * 60;
+                case TransformationEnum.ChromaStone:
+                    return 60 * 60;
+                case TransformationEnum.DiamondHead:
+                    return 60 * 60;
+                case TransformationEnum.FourArms:
+                    return 60 * 60;
+                case TransformationEnum.GhostFreak:
+                    return 60 * 60;
+                case TransformationEnum.HeatBlast:
+                    return 60 * 60;
+                case TransformationEnum.RipJaws:
+                    return 60 * 60;
+                case TransformationEnum.StinkFly:
+                    return 60 * 60;
+                case TransformationEnum.WildVine:
+                    return 60 * 60;
+                case TransformationEnum.XLR8:
+                    return 60 * 60;
+                case TransformationEnum.EyeGuy:
+                    return 60 * 60;
+                case TransformationEnum.BigChill when omp.ultimateForm:
+                    return 120 * 60;
+                case TransformationEnum.BigChill:
+                    return 60 * 60;
+                default: return 60 * 60;
             }
         }
     }

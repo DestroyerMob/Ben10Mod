@@ -104,8 +104,6 @@ namespace Ben10Mod.Content.Items.Weapons {
                    !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.ultimateAttack);
         }
 
-        public override bool AltFunctionUse(Player player) => true;
-
         public override void HoldItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
@@ -207,8 +205,6 @@ namespace Ben10Mod.Content.Items.Weapons {
         }
 
         public override bool? UseItem(Player player) {
-            if (player.altFunctionUse == 2)
-                player.GetModPlayer<OmnitrixPlayer>().altAttack = !player.GetModPlayer<OmnitrixPlayer>().altAttack;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (omp.omnitrixEnergy >= OmnitrixEnergyUse) {
                 omp.omnitrixEnergy -= OmnitrixEnergyUse;
