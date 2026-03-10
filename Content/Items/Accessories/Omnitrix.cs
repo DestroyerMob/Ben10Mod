@@ -47,20 +47,30 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.accessory  = true;
         }
 
-        public override void ModifyTooltips(List<TooltipLine> tooltips)
-        {
-            var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            string slotName = "Empty Slot";
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            // Keep any existing tooltip lines you already added here
 
-            if (transformationNum < transformationSlots.Length)
+            var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+
+            // Safety net - no transformation active yet
+            if (string.IsNullOrEmpty(player
+                    .currentTransformationId)) // ← change variable name if yours is different (e.g. CurrentForm, ActiveAlien, etc.)
             {
-                var trans = TransformationLoader.Get(transformationSlots[transformationNum]);
-                if (trans != null)
-                    slotName = trans.TransformationName;
+                tooltips.Add(new TooltipLine(Mod, "Status", "Current Form: None - Transform to begin!"));
+                return;
             }
 
-            tooltips.Add(new TooltipLine(Mod, "AlienSelection",
-                $"Alien {transformationNum + 1}: {slotName}"));
+            var trans = TransformationLoader.Get(player.currentTransformationId); // ← your loader's Get method
+            if (trans == null) {
+                tooltips.Add(
+                    new TooltipLine(Mod, "Status", $"Current Form: Unknown ({player.currentTransformationId})"));
+                return;
+            }
+
+            // Safe data usage now that we know it exists
+            tooltips.Add(new TooltipLine(Mod, "CurrentForm", $"Current Form: {trans.TransformationName}"));
+            tooltips.Add(new TooltipLine(Mod, "Description", trans.Description));
+            // Add any other lines you had (attacks, cooldowns, etc.) using trans.XXX
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual)

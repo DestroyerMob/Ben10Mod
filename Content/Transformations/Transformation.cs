@@ -8,7 +8,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations {
     public abstract class Transformation : ModType {
-        public string FullID => $"{Mod.Name}:{Name}";
+        public virtual string FullID => $"{Mod.Name}:{TransformationName}";
 
         // ──────────────────────────────────────────────────────────────
         // Core stats
@@ -74,7 +74,8 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int GetEnergyCost(OmnitrixPlayer omp) => 0;
 
         protected sealed override void Register() {
-            TransformationLoader.Register(this);
+            TransformationLoader.Register(this); // ← This line makes EVERY alien auto-register
+            Mod.Logger.Info($"[Ben10Mod] Registered transformation: {FullID}");
         }
 
         public sealed override void SetupContent() => SetStaticDefaults();
