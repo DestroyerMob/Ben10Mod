@@ -2,8 +2,6 @@
 using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
-using System.CommandLine.Help;
-using System.Data.SqlTypes;
 using System.Linq;
 using Terraria;
 using Terraria.ID;
@@ -34,7 +32,6 @@ using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
-using Terraria.WorldBuilding;
 
 namespace Ben10Mod {
     public class OmnitrixPlayer : ModPlayer {
@@ -56,7 +53,7 @@ namespace Ben10Mod {
         public bool               PrimaryAbilityEnabled     = false;
         public bool               PrimaryAbilityWasEnabled  = false;
         public bool               UltimateAbilityEnabled    = false;
-        public bool               ultimateAbilityWasEnabled = false;
+        public bool               UltimateAbilityWasEnabled = false;
         public TransformationEnum tranUsedAbility           = TransformationEnum.None;
 
         public int ChromaStoneAbsorbtion = 0;
@@ -74,8 +71,8 @@ namespace Ben10Mod {
         public const int DashDuration = 15;
 
         public TransformationEnum[] transformations = {
-            TransformationEnum.HeatBlast, TransformationEnum.HeatBlast, TransformationEnum.HeatBlast,
-            TransformationEnum.HeatBlast, TransformationEnum.HeatBlast
+            TransformationEnum.HeatBlast, TransformationEnum.None, TransformationEnum.None,
+            TransformationEnum.None, TransformationEnum.None
         };
 
         public TransformationEnum currTransformation = TransformationEnum.None;
@@ -200,13 +197,10 @@ namespace Ben10Mod {
                     }
                     else {
                         if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>())
-                            TransformationHandler.Detransform(Player,
-                                advancedCircuitMatrixEquippedWhileTransformed ? cooldownTime * 2 : cooldownTime);
+                            TransformationHandler.Detransform(Player, ModContent.GetInstance<PrototypeOmnitrix>().TimeoutDuration);
                         if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>())
                             TransformationHandler.Detransform(Player, 0, addCooldown: false);
                     }
-
-                    advancedCircuitMatrixEquippedWhileTransformed = false;
                 }
 
                 wasTransformed = isTransformed;
@@ -562,8 +556,8 @@ namespace Ben10Mod {
                 ChromaStoneAbsorbtion = 0;
             }
 
-            if (UltimateAbilityEnabled != ultimateAbilityWasEnabled) {
-                ultimateAbilityWasEnabled = UltimateAbilityEnabled;
+            if (UltimateAbilityEnabled != UltimateAbilityWasEnabled) {
+                UltimateAbilityWasEnabled = UltimateAbilityEnabled;
                 Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), tranUsedAbility.GetUltimateCooldownDuration(this));
             }
         }

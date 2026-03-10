@@ -15,9 +15,16 @@ using Terraria.Audio;
 namespace Ben10Mod.Content {
     public static class TransformationHandler {
 
-        public static void Transform(Player player, TransformationEnum transformation, int seconds, bool showParticles = true, bool playSound = true) {
+        public static void Transform(Player player, TransformationEnum transformation, int seconds, bool showParticles = true, bool playSound = true, bool stayUltimate = false) {
             if (transformation.GetTransformation() == -1)
                 return;
+
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            omp.currTransformation = transformation;
+            omp.isTransformed      = true;
+            if (!stayUltimate)
+                omp.ultimateForm       = false;
+
             if (showParticles) {
                 Random random = new Random();
                 for (int i = 0; i < 25; i++) {
@@ -42,7 +49,6 @@ namespace Ben10Mod.Content {
         public static void Detransform(Player player, int seconds, bool showParticles = true, bool addCooldown = true, bool playSound = true) {
             if (addCooldown)
                 player.AddBuff(ModContent.BuffType<TransformationCooldown_Buff>(), 60 * seconds);
-            
 
             if (showParticles) {
                 Random random = new Random();
