@@ -9,10 +9,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations {
     public abstract class Transformation : ModType {
         public virtual string FullID => $"{Mod.Name}:{TransformationName}";
-
-        // ──────────────────────────────────────────────────────────────
-        // Core stats
-        // ──────────────────────────────────────────────────────────────
+        
         public virtual int          PrimaryAttack           => -1;
         public virtual int          SecondaryAttack         => -1;
         public virtual int          UltimateAttack          => -1;
@@ -39,16 +36,10 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string       IconPath                => "Ben10Mod/Content/Interface/EmptyAlien";
         public virtual string       Description             => "A mysterious alien from the Omnitrix database.";
         public virtual List<string> Abilities               => new List<string> { "Unknown abilities" };
-
-        // ──────────────────────────────────────────────────────────────
-        // NEW: Icon support (this was missing)
-        // ──────────────────────────────────────────────────────────────
+        
         public virtual Asset<Texture2D> GetTransformationIcon()
             => ModContent.Request<Texture2D>(IconPath);
-
-        // ──────────────────────────────────────────────────────────────
-        // Behavior hooks
-        // ──────────────────────────────────────────────────────────────
+        
         public virtual void OnTransform(Player player, OmnitrixPlayer omp)                { }
         public virtual void OnDetransform(Player player, OmnitrixPlayer omp)              { }
         public virtual void UpdateEffects(Player player, OmnitrixPlayer omp)              { }
@@ -58,10 +49,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp)          { }
         public virtual bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp)  => false;
         public virtual bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) => false;
-
-        // ──────────────────────────────────────────────────────────────
-        // PlumbersBadge Attack System
-        // ──────────────────────────────────────────────────────────────
+        
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) { }
 
         public virtual bool Shoot(Player player, OmnitrixPlayer omp,
@@ -72,6 +60,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int UltimateProjectileType => 0;
 
         public virtual int GetEnergyCost(OmnitrixPlayer omp) => 0;
+        public virtual void FrameEffects(Player player, OmnitrixPlayer omp) { }
 
         protected sealed override void Register() {
             TransformationLoader.Register(this); // ← This line makes EVERY alien auto-register

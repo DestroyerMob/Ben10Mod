@@ -128,7 +128,9 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (ultimateInProgress && !omp.ultimateAttack) return false;
             if (omp.ultimateAttack && player.HasBuff<UltimateAbilityCooldown>()) return false;
 
-            return trans.Shoot(player, omp, source, position, velocity, damage, knockback);
+            trans.Shoot(player, omp, source, position, velocity, damage, knockback);
+
+            return false;
         }
     }
 

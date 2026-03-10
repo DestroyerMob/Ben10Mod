@@ -148,5 +148,12 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
             return circlePoints;
         }
+
+        public override void FrameEffects(Player player, OmnitrixPlayer omp) {
+            var costume = ModContent.GetInstance<HeatBlast>();
+            player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+            player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+            player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+        }
     }
 }

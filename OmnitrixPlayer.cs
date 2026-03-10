@@ -503,6 +503,7 @@ namespace Ben10Mod
             if (trans != null)
             {
                 // Future: trans.FrameEffects(Player); – you can add this hook later if you want per-alien FrameEffects
+                trans.FrameEffects(Player, this);
             }
         }
 
