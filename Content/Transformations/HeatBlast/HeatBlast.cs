@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 using Ben10Mod.Content.Items.Placeables;
 
 namespace Ben10Mod.Content.Transformations.HeatBlast
@@ -68,10 +67,12 @@ namespace Ben10Mod.Content.Transformations.HeatBlast
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.HeatBlast);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:HeatBlast");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.HeatBlast);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:HeatBlast");
             return true;
         }
     }

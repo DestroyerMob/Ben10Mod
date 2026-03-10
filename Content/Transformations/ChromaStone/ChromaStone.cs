@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.ChromaStone
 {
@@ -64,10 +63,12 @@ namespace Ben10Mod.Content.Transformations.ChromaStone
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.ChromaStone);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:ChromaStone");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.ChromaStone);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:ChromaStone");
             return true;
         }
     }

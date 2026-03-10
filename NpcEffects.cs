@@ -1,6 +1,7 @@
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
-using Ben10Mod.Enums;
+using Ben10Mod.Content.Transformations.HeatBlast;
+using Ben10Mod.Content.Transformations.XLR8;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -22,7 +23,7 @@ public class NpcEffects : GlobalNPC {
 
     public override bool PreAI(NPC npc) {
         var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-        if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
+        if (omp.UltimateAbilityEnabled && omp.CurrentTransformation == ModContent.GetInstance<HeatBlastTransformation>()) {
             npc.velocity = Vector2.Zero;
         }
         return base.PreAI(npc);
@@ -35,9 +36,9 @@ public class NpcEffects : GlobalNPC {
             npc.velocity *= 0.68f;
         }
 
-        if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled && npc.active && !npc.friendly) {
-            npc.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
-        }
+        // if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled && npc.active && !npc.friendly) {
+        //     npc.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
+        // }
     }
 
     public override void DrawEffects(NPC npc, ref Color drawColor) {

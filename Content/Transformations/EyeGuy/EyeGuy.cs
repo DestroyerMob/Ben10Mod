@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Terraria;
 using Terraria.ID;
-using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.EyeGuy
 {
@@ -64,10 +58,12 @@ namespace Ben10Mod.Content.Transformations.EyeGuy
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.EyeGuy);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:EyeGuy");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.EyeGuy);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:EyeGuy");
             return true;
         }
     }

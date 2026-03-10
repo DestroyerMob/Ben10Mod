@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 using Ben10Mod.Content.Items.Placeables;
 
 namespace Ben10Mod.Content.Transformations.XLR8
@@ -62,10 +61,12 @@ namespace Ben10Mod.Content.Transformations.XLR8
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.XLR8);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:XLR8");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.XLR8);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:XLR8");
             return true;
         }
     }

@@ -1,5 +1,4 @@
-﻿using Ben10Mod.Enums;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
+using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Content.Interface
 {
@@ -39,8 +39,8 @@ namespace Ben10Mod.Content.Interface
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
         {
             int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Mouse Text"));
-            if (mouseTextIndex != -1) {
-                // Your existing Alien Roster layer
+            if (mouseTextIndex != -1)
+            {
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
                     "Ben10Mod: AlienSelection",
                     delegate {
@@ -50,7 +50,6 @@ namespace Ben10Mod.Content.Interface
                     },
                     InterfaceScaleType.UI));
 
-                // NEW: Omnitrix Energy Bar (always visible when transformed)
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
                     "Ben10Mod: OmnitrixEnergyBar",
                     delegate {
@@ -61,9 +60,10 @@ namespace Ben10Mod.Content.Interface
             }
         }
 
-        private void DrawOmnitrixEnergyBar() {
+        private void DrawOmnitrixEnergyBar()
+        {
             Player player = Main.LocalPlayer;
-            var    omp    = player.GetModPlayer<OmnitrixPlayer>();
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (!omp.omnitrixEquipped) return;
 
@@ -74,45 +74,36 @@ namespace Ben10Mod.Content.Interface
             Texture2D panelRight = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Right").Value;
             Texture2D fillTex    = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Fill").Value;
 
-            // Width: left + (mid repeated N times) + right
             int midCount = 20;
             int barWidth = panelLeft.Width + panelMid.Width * midCount + panelRight.Width;
             
-            int uiMargin   = 20;     // distance from screen edge (matches vanilla feel)
-            int gap        = 26;          // space between your bar and the HP bar
-            int hpBarWidth = 252;  // horizontal bars HP width (works with your screenshot)
-            int y          = 30;            // top padding (match vanilla horizontal bars baseline)
+            int uiMargin   = 20;
+            int gap        = 26;
+            int hpBarWidth = 252;
+            int y          = 30;
 
-            // left edge of the vanilla HP bar area
             int hpLeftX = Main.screenWidth - uiMargin - hpBarWidth;
-
-            // your bar goes immediately to the left of that
             int x = hpLeftX - gap - barWidth;
 
-            // Height: unify by using the tallest piece, then center the others vertically
             int barHeight = Math.Max(panelLeft.Height, Math.Max(panelMid.Height, panelRight.Height));
 
             int yLeft  = y + (barHeight - panelLeft.Height) / 2;
             int yMid   = y + (barHeight - panelMid.Height) / 2;
             int yRight = y + (barHeight - panelRight.Height) / 2;
 
-            // Draw left
             Main.spriteBatch.Draw(panelLeft, new Vector2(x, yLeft), Color.White);
 
-            // Draw tiled middle
             int midStartX = x + panelLeft.Width;
             int midEndX   = x + barWidth - panelRight.Width;
-
-            for (int drawX = midStartX; drawX < midEndX; drawX += panelMid.Width) {
-                int       w   = Math.Min(panelMid.Width, midEndX - drawX);
+            for (int drawX = midStartX; drawX < midEndX; drawX += panelMid.Width)
+            {
+                int w = Math.Min(panelMid.Width, midEndX - drawX);
                 Rectangle src = new Rectangle(0, 0, w, panelMid.Height);
                 Main.spriteBatch.Draw(panelMid, new Vector2(drawX, yMid), src, Color.White);
             }
 
-            // Draw right (now vertically aligned)
             Main.spriteBatch.Draw(panelRight, new Vector2(x + barWidth - panelRight.Width, yRight), Color.White);
 
-            // ===== Fill inset tuned for your art =====
             int padLeft   = 6;
             int padRight  = 6;
             int padTop    = 6;
@@ -121,12 +112,11 @@ namespace Ben10Mod.Content.Interface
             int innerX      = x + padLeft;
             int innerY      = y + padTop;
             int innerWidth  = barWidth - padLeft - padRight;
-            int innerHeight = barHeight - padTop - padBottom; // 12
+            int innerHeight = barHeight - padTop - padBottom;
 
-            if (innerWidth < 1 || innerHeight < 1)
-                return;
+            if (innerWidth < 1 || innerHeight < 1) return;
 
-            int fillWidth                                    = (int)(innerWidth * fillPercent);
+            int fillWidth = (int)(innerWidth * fillPercent);
             if (fillPercent > 0f && fillWidth < 1) fillWidth = 1;
 
             if (fillWidth > 0)
@@ -135,7 +125,6 @@ namespace Ben10Mod.Content.Interface
                 Main.spriteBatch.Draw(fillTex, fillRect, Color.White);
             }
 
-            // Energy text above the bar
             string text = $"{(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}";
             Utils.DrawBorderString(
                 Main.spriteBatch,
@@ -163,7 +152,7 @@ namespace Ben10Mod.Content.Interface
         private UIText descriptionText;
         private UIList abilityList;
 
-        private TransformationEnum currentlySelected = TransformationEnum.None;
+        private string currentlySelectedId = "";
 
         public override void OnInitialize()
         {
@@ -189,12 +178,11 @@ namespace Ben10Mod.Content.Interface
 
             for (int i = 0; i < 5; i++)
             {
-                var slot = new UIImage(TransformationEnum.None.GetTransformationIcon());
+                var slot = new UIImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
                 slot.Width.Set(slotSize, 0f);
                 slot.Height.Set(slotSize, 0f);
                 slot.Left.Set(rosterStartX + i * (slotSize + 26f), 0f);
                 slot.Top.Set(rosterY, 0f);
-                slot.OnMouseOver += (_, _) => UpdateInfoPanel(TransformationEnum.None);
                 int index = i;
                 slot.OnLeftClick += (_, _) => AssignToSlot(index);
                 slot.OnRightClick += (_, _) => ClearSlot(index);
@@ -218,14 +206,14 @@ namespace Ben10Mod.Content.Interface
 
             unlockedGrid = new UIGrid();
             unlockedGrid.Width.Set(610f, 0f);
-            unlockedGrid.Height.Set(315f, 0f);        // ← SHORTENED so it ends before Close button
+            unlockedGrid.Height.Set(315f, 0f);
             unlockedGrid.Left.Set(65f, 0f);
             unlockedGrid.Top.Set(rosterY + slotSize + 85f, 0f);
             unlockedGrid.ListPadding = 10f;
             mainPanel.Append(unlockedGrid);
 
             var gridScrollbar = new UIScrollbar();
-            gridScrollbar.Height.Set(315f, 0f);       // ← matches new grid height
+            gridScrollbar.Height.Set(315f, 0f);
             gridScrollbar.Left.Set(685f, 0f);
             gridScrollbar.Top.Set(rosterY + slotSize + 85f, 0f);
             mainPanel.Append(gridScrollbar);
@@ -238,7 +226,7 @@ namespace Ben10Mod.Content.Interface
             infoPanel.Top.Set(92f, 0f);
             mainPanel.Append(infoPanel);
 
-            previewImage = new UIImage(TransformationEnum.None.GetTransformationIcon());
+            previewImage = new UIImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
             previewImage.Width.Set(158f, 0f);
             previewImage.Height.Set(158f, 0f);
             previewImage.HAlign = 0.5f;
@@ -272,7 +260,8 @@ namespace Ben10Mod.Content.Interface
             var closeBtn = new UITextPanel<string>("Close Roster");
             closeBtn.HAlign = 0.5f;
             closeBtn.Top.Set(-58f, 1f);
-            closeBtn.OnLeftClick += (_, _) => {
+            closeBtn.OnLeftClick += (_, _) =>
+            {
                 ModContent.GetInstance<UISystem>().HideMyUI();
                 Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
             };
@@ -281,17 +270,17 @@ namespace Ben10Mod.Content.Interface
 
         private void AssignToSlot(int slotIndex)
         {
-            if (currentlySelected == TransformationEnum.None) return;
+            if (string.IsNullOrEmpty(currentlySelectedId)) return;
 
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            if (player.unlockedTransformation.Contains(currentlySelected))
-                player.transformations[slotIndex] = currentlySelected;
+            if (player.unlockedTransformations.Contains(currentlySelectedId))
+                player.transformationSlots[slotIndex] = currentlySelectedId;
         }
 
         private void ClearSlot(int slotIndex)
         {
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            player.transformations[slotIndex] = TransformationEnum.None;
+            player.transformationSlots[slotIndex] = "";
         }
 
         public override void Update(GameTime gameTime)
@@ -300,16 +289,20 @@ namespace Ben10Mod.Content.Interface
 
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
 
-            for (int i = 0; i < rosterSlots.Count; i++) {
-                rosterSlots[i].SetImage(player.transformations[i].GetTransformationIcon());
-                var i1 = i;
-                rosterSlots[i].OnMouseOver += (_, _) => UpdateInfoPanel(player.transformations[i1]);
+            for (int i = 0; i < rosterSlots.Count; i++)
+            {
+                string id = player.transformationSlots[i];
+                var trans = TransformationLoader.Get(id);
+                rosterSlots[i].SetImage(trans?.GetTransformationIcon() ?? ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
             }
 
             unlockedGrid.Clear();
-            foreach (var trans in player.unlockedTransformation)
+            foreach (var id in player.unlockedTransformations)
             {
-                if (trans == TransformationEnum.None) continue;
+                if (string.IsNullOrEmpty(id)) continue;
+
+                var trans = TransformationLoader.Get(id);
+                if (trans == null) continue;
 
                 var btn = new UIImage(trans.GetTransformationIcon());
                 btn.Width.Set(80f, 0f);
@@ -317,7 +310,7 @@ namespace Ben10Mod.Content.Interface
 
                 btn.OnLeftClick += (_, _) =>
                 {
-                    currentlySelected = trans;
+                    currentlySelectedId = id;
                     UpdateInfoPanel(trans);
                 };
 
@@ -333,14 +326,23 @@ namespace Ben10Mod.Content.Interface
                 Main.LocalPlayer.mouseInterface = true;
         }
 
-        private void UpdateInfoPanel(TransformationEnum trans)
+        private void UpdateInfoPanel(Transformation trans)
         {
+            if (trans == null)
+            {
+                previewImage.SetImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
+                nameText.SetText("Select an alien");
+                descriptionText.SetText("Click any unlocked alien");
+                abilityList.Clear();
+                return;
+            }
+
             previewImage.SetImage(trans.GetTransformationIcon());
-            nameText.SetText(trans.GetName());
-            descriptionText.SetText(trans.GetDescription());
+            nameText.SetText(trans.TransformationName);
+            descriptionText.SetText(trans.Description);
 
             abilityList.Clear();
-            var abilities = trans.GetAbilities();
+            var abilities = trans.Abilities;
             foreach (var ability in abilities)
                 abilityList.Add(new UIText("• " + ability, 0.95f));
         }

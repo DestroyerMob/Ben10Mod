@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.RipJaws
 {
@@ -71,10 +70,12 @@ namespace Ben10Mod.Content.Transformations.RipJaws
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.RipJaws);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:RipJaws");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.RipJaws);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:RipJaws");
             return true;
         }
     }

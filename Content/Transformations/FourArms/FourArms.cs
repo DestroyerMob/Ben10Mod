@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.FourArms
 {
@@ -65,10 +64,12 @@ namespace Ben10Mod.Content.Transformations.FourArms
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.FourArms);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:FourArms");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.FourArms);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:FourArms");
             return true;
         }
     }

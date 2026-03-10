@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 using Ben10Mod.Content.Items.Placeables;
 
 namespace Ben10Mod.Content.Transformations.DiamondHead
@@ -63,10 +62,12 @@ namespace Ben10Mod.Content.Transformations.DiamondHead
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.DiamondHead);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:DiamondHead");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.DiamondHead);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:DiamondHead");
             return true;
         }
 

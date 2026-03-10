@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.BuzzShock
 {
@@ -64,10 +63,12 @@ namespace Ben10Mod.Content.Transformations.BuzzShock
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.BuzzShock);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:BuzzShock");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.BuzzShock);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:BuzzShock");
             return true;
         }
     }

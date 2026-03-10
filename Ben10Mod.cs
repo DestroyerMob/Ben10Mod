@@ -1,7 +1,6 @@
 using System.IO;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
-using Ben10Mod.Enums;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using ReLogic.Content;
@@ -33,21 +32,21 @@ namespace Ben10Mod {
 			UnlockTransformation
 		}
 
-		public override void HandlePacket(BinaryReader reader, int whoAmI) {
-			MessageType msgType = (MessageType)reader.ReadByte();
-
-			switch (msgType) {
-				case MessageType.UnlockTransformation:
-					int                playerIndex    = reader.ReadByte();
-					TransformationEnum transformation = (TransformationEnum)reader.ReadInt32();
-
-					if (playerIndex >= 0 && playerIndex < Main.maxPlayers) {
-						var modPlayer = Main.player[playerIndex].GetModPlayer<OmnitrixPlayer>();
-						modPlayer.AddTransformation(transformation); // client will apply it locally
-					}
-
-					break;
-			}
-		}
+		// public override void HandlePacket(BinaryReader reader, int whoAmI) {
+		// 	MessageType msgType = (MessageType)reader.ReadByte();
+		//
+		// 	switch (msgType) {
+		// 		case MessageType.UnlockTransformation:
+		// 			int                playerIndex    = reader.ReadByte();
+		// 			Transformation transformation = (TransformationEnum)reader.ReadInt32();
+		//
+		// 			if (playerIndex >= 0 && playerIndex < Main.maxPlayers) {
+		// 				var modPlayer = Main.player[playerIndex].GetModPlayer<OmnitrixPlayer>();
+		// 				modPlayer.AddTransformation(transformation); // client will apply it locally
+		// 			}
+		//
+		// 			break;
+		// 	}
+		// }
 	}
 }
