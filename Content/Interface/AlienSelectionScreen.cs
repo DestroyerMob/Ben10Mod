@@ -3,217 +3,353 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
 using Terraria.GameContent.UI.Elements;
-using Terraria.GameInput;
 using Terraria.ModLoader;
-using Terraria.ModLoader.UI;
+using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
 
-namespace Ben10Mod.Content.Interface {
-    public class UISystem : ModSystem {
+namespace Ben10Mod.Content.Interface
+{
+    public class UISystem : ModSystem
+    {
         internal UserInterface MyInterface;
         internal AlienSelectionScreen AS;
-
         private GameTime _lastUpdateUiGameTime;
 
-        public override void Load() {
-            base.Load();
-            if (!Main.dedServ) {
+        public override void Load()
+        {
+            if (!Main.dedServ)
+            {
                 MyInterface = new UserInterface();
                 AS = new AlienSelectionScreen();
                 AS.Activate();
             }
         }
 
-        public override void Unload() {
-            base.Unload();
-            AS = null;
-        }
+        public override void Unload() => AS = null;
 
-        public override void UpdateUI(GameTime gameTime) {
+        public override void UpdateUI(GameTime gameTime)
+        {
             _lastUpdateUiGameTime = gameTime;
-            if (MyInterface?.CurrentState != null) {
+            if (MyInterface?.CurrentState != null)
                 MyInterface.Update(gameTime);
-            }
         }
 
-
-        public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers) {
+        public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
+        {
             int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Mouse Text"));
             if (mouseTextIndex != -1) {
+                // Your existing Alien Roster layer
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
-                    "MyMod: MyInterface",
+                    "Ben10Mod: AlienSelection",
                     delegate {
-                        if (_lastUpdateUiGameTime != null && MyInterface?.CurrentState != null) {
+                        if (_lastUpdateUiGameTime != null && MyInterface?.CurrentState != null)
                             MyInterface.Draw(Main.spriteBatch, _lastUpdateUiGameTime);
-                        }
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
+
+                // NEW: Omnitrix Energy Bar (always visible when transformed)
+                layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
+                    "Ben10Mod: OmnitrixEnergyBar",
+                    delegate {
+                        DrawOmnitrixEnergyBar();
                         return true;
                     },
                     InterfaceScaleType.UI));
             }
         }
 
-        internal void ShowMyUI() {
-            MyInterface?.SetState(AS);
+        private void DrawOmnitrixEnergyBar() {
+            Player player = Main.LocalPlayer;
+            var    omp    = player.GetModPlayer<OmnitrixPlayer>();
+
+            if (!omp.omnitrixEquipped) return;
+
+            float fillPercent = MathHelper.Clamp(omp.omnitrixEnergy / (float)omp.omnitrixEnergyMax, 0f, 1f);
+
+            Texture2D panelLeft  = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Left").Value;
+            Texture2D panelMid   = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Middle").Value;
+            Texture2D panelRight = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Right").Value;
+            Texture2D fillTex    = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Fill").Value;
+
+            // Width: left + (mid repeated N times) + right
+            int midCount = 20;
+            int barWidth = panelLeft.Width + panelMid.Width * midCount + panelRight.Width;
+            
+            int uiMargin   = 20;     // distance from screen edge (matches vanilla feel)
+            int gap        = 26;          // space between your bar and the HP bar
+            int hpBarWidth = 252;  // horizontal bars HP width (works with your screenshot)
+            int y          = 30;            // top padding (match vanilla horizontal bars baseline)
+
+            // left edge of the vanilla HP bar area
+            int hpLeftX = Main.screenWidth - uiMargin - hpBarWidth;
+
+            // your bar goes immediately to the left of that
+            int x = hpLeftX - gap - barWidth;
+
+            // Height: unify by using the tallest piece, then center the others vertically
+            int barHeight = Math.Max(panelLeft.Height, Math.Max(panelMid.Height, panelRight.Height));
+
+            int yLeft  = y + (barHeight - panelLeft.Height) / 2;
+            int yMid   = y + (barHeight - panelMid.Height) / 2;
+            int yRight = y + (barHeight - panelRight.Height) / 2;
+
+            // Draw left
+            Main.spriteBatch.Draw(panelLeft, new Vector2(x, yLeft), Color.White);
+
+            // Draw tiled middle
+            int midStartX = x + panelLeft.Width;
+            int midEndX   = x + barWidth - panelRight.Width;
+
+            for (int drawX = midStartX; drawX < midEndX; drawX += panelMid.Width) {
+                int       w   = Math.Min(panelMid.Width, midEndX - drawX);
+                Rectangle src = new Rectangle(0, 0, w, panelMid.Height);
+                Main.spriteBatch.Draw(panelMid, new Vector2(drawX, yMid), src, Color.White);
+            }
+
+            // Draw right (now vertically aligned)
+            Main.spriteBatch.Draw(panelRight, new Vector2(x + barWidth - panelRight.Width, yRight), Color.White);
+
+            // ===== Fill inset tuned for your art =====
+            int padLeft   = 6;
+            int padRight  = 6;
+            int padTop    = 6;
+            int padBottom = 6;
+
+            int innerX      = x + padLeft;
+            int innerY      = y + padTop;
+            int innerWidth  = barWidth - padLeft - padRight;
+            int innerHeight = barHeight - padTop - padBottom; // 12
+
+            if (innerWidth < 1 || innerHeight < 1)
+                return;
+
+            int fillWidth                                    = (int)(innerWidth * fillPercent);
+            if (fillPercent > 0f && fillWidth < 1) fillWidth = 1;
+
+            if (fillWidth > 0)
+            {
+                Rectangle fillRect = new Rectangle(innerX, innerY, fillWidth, innerHeight);
+                Main.spriteBatch.Draw(fillTex, fillRect, Color.White);
+            }
+
+            // Energy text above the bar
+            string text = $"{(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}";
+            Utils.DrawBorderString(
+                Main.spriteBatch,
+                text,
+                new Vector2(x + barWidth * 0.5f, y - 12),
+                Color.White,
+                0.9f,
+                0.5f,
+                0.5f
+            );
         }
 
-        internal void HideMyUI() {
-            MyInterface?.SetState(null);
-        }
-
+        internal void ShowMyUI() => MyInterface?.SetState(AS);
+        internal void HideMyUI() => MyInterface?.SetState(null);
     }
 
-    public class AlienSelectionScreen : UIState {
+    public class AlienSelectionScreen : UIState
+    {
+        private UIPanel mainPanel;
+        private readonly List<UIImage> rosterSlots = new();
+        private UIGrid unlockedGrid;
+        private UIPanel infoPanel;
+        private UIImage previewImage;
+        private UIText nameText;
+        private UIText descriptionText;
+        private UIList abilityList;
 
-        UIPanel panel;
+        private TransformationEnum currentlySelected = TransformationEnum.None;
 
-        UIImage AlienOne;
-        UIImage AlienTwo;
-        UIImage AlienThree;
-        UIImage AlienFour;
-        UIImage AlienFive;
-        UIImage AlienSix;
-        UIImage AlienSeven;
-        UIImage AlienEight;
-        UIImage AlienNine;
-        UIImage AlienTen;
+        public override void OnInitialize()
+        {
+            mainPanel = new UIPanel();
+            mainPanel.Width.Set(1220f, 0f);
+            mainPanel.Height.Set(680f, 0f);
+            mainPanel.HAlign = mainPanel.VAlign = 0.5f;
+            Append(mainPanel);
 
-    public override void OnInitialize() {
-        panel = new UIPanel();
-        panel.Width.Set(512, 0);
-        panel.Height.Set(256, 0);
-        panel.HAlign = panel.VAlign = 0.5f;
-        Append(panel);
+            var title = new UIText("Omnitrix - Alien Roster", 1.45f);
+            title.HAlign = 0.5f;
+            title.Top.Set(18f, 0f);
+            mainPanel.Append(title);
 
-        UIText text = new UIText("Alien Selection Screen");
-        text.HAlign = 0.5f;
-        text.Top.Set(10f, 0f);
-        panel.Append(text);
+            var rosterHeader = new UIText("Active Roster", 1.25f);
+            rosterHeader.Left.Set(65f, 0f);
+            rosterHeader.Top.Set(68f, 0f);
+            mainPanel.Append(rosterHeader);
 
-        int drawHeight = 60;
-        int drawWidth  = 50;
-        int padding    = 20; // space between icons
+            int slotSize = 92;
+            int rosterStartX = 65;
+            int rosterY = 105;
 
-        AlienOne   = new(TransformationEnum.None.GetTransformationIcon());
-        AlienTwo   = new(TransformationEnum.None.GetTransformationIcon());
-        AlienThree = new(TransformationEnum.None.GetTransformationIcon());
-        AlienFour  = new(TransformationEnum.None.GetTransformationIcon());
-        AlienFive  = new(TransformationEnum.None.GetTransformationIcon());
+            for (int i = 0; i < 5; i++)
+            {
+                var slot = new UIImage(TransformationEnum.None.GetTransformationIcon());
+                slot.Width.Set(slotSize, 0f);
+                slot.Height.Set(slotSize, 0f);
+                slot.Left.Set(rosterStartX + i * (slotSize + 26f), 0f);
+                slot.Top.Set(rosterY, 0f);
+                slot.OnMouseOver += (_, _) => UpdateInfoPanel(TransformationEnum.None);
+                int index = i;
+                slot.OnLeftClick += (_, _) => AssignToSlot(index);
+                slot.OnRightClick += (_, _) => ClearSlot(index);
 
-        // Hook up events
-        AlienOne.OnLeftClick   += NextAlienOne;
-        AlienOne.OnRightClick  += PrevAlienOne;
-        AlienTwo.OnLeftClick   += NextAlienTwo;
-        AlienTwo.OnRightClick  += PrevAlienTwo;
-        AlienThree.OnLeftClick += NextAlienThree;
-        AlienThree.OnRightClick+= PrevAlienThree;
-        AlienFour.OnLeftClick  += NextAlienFour;
-        AlienFour.OnRightClick += PrevAlienFour;
-        AlienFive.OnLeftClick  += NextAlienFive;
-        AlienFive.OnRightClick += PrevAlienFive;
-
-        var aliens = new[] { AlienOne, AlienTwo, AlienThree, AlienFour, AlienFive };
-        int count = aliens.Length;
-
-        // spacing between icons (center-to-center)
-        float spacing = drawWidth + padding;
-        // middle index (2 for 5 items, 1.5 for 4 items, etc.)
-        float centerIndex = (count - 1) / 2f;
-
-        for (int i = 0; i < count; i++) {
-            var alien = aliens[i];
-
-            alien.Width.Set(drawWidth, 0f);
-            alien.Height.Set(drawHeight, 0f);
-
-            // vertically: some fixed offset below the title
-            alien.Top.Set(80f, 0f);
-
-            // horizontally: center aligned, then shifted left/right
-            alien.HAlign = 0.5f;
-            float offsetFromCenter = (i - centerIndex) * spacing;
-            alien.Left.Set(offsetFromCenter, 0f);
-
-            panel.Append(alien);
-        }
-    }
-
-
-        protected override void DrawSelf(SpriteBatch spriteBatch) {
-            base.DrawSelf(spriteBatch);
-            // If this code is in the panel or container element, check it directly
-            if (ContainsPoint(Main.MouseScreen)) {
-                Main.LocalPlayer.mouseInterface = true;
-            }
-            // Otherwise, we can check a child element instead
-            if (panel.ContainsPoint(Main.MouseScreen)) {
-                Main.LocalPlayer.mouseInterface = true;
+                mainPanel.Append(slot);
+                rosterSlots.Add(slot);
             }
 
-            if (IsMouseHovering) {
-                PlayerInput.LockVanillaMouseScroll("MyMod/ScrollListA"); // The passed in string can be anything.
-            }
+            var divider = new UIPanel();
+            divider.Width.Set(610f, 0f);
+            divider.Height.Set(4f, 0f);
+            divider.Left.Set(65f, 0f);
+            divider.Top.Set(rosterY + slotSize + 22f, 0f);
+            divider.BackgroundColor = new Color(80, 120, 255, 180);
+            mainPanel.Append(divider);
+
+            var unlockedHeader = new UIText("Unlocked Aliens", 1.25f);
+            unlockedHeader.Left.Set(65f, 0f);
+            unlockedHeader.Top.Set(rosterY + slotSize + 52f, 0f);
+            mainPanel.Append(unlockedHeader);
+
+            unlockedGrid = new UIGrid();
+            unlockedGrid.Width.Set(610f, 0f);
+            unlockedGrid.Height.Set(315f, 0f);        // ← SHORTENED so it ends before Close button
+            unlockedGrid.Left.Set(65f, 0f);
+            unlockedGrid.Top.Set(rosterY + slotSize + 85f, 0f);
+            unlockedGrid.ListPadding = 10f;
+            mainPanel.Append(unlockedGrid);
+
+            var gridScrollbar = new UIScrollbar();
+            gridScrollbar.Height.Set(315f, 0f);       // ← matches new grid height
+            gridScrollbar.Left.Set(685f, 0f);
+            gridScrollbar.Top.Set(rosterY + slotSize + 85f, 0f);
+            mainPanel.Append(gridScrollbar);
+            unlockedGrid.SetScrollbar(gridScrollbar);
+
+            infoPanel = new UIPanel();
+            infoPanel.Width.Set(460f, 0f);
+            infoPanel.Height.Set(545f, 0f);
+            infoPanel.Left.Set(740f, 0f);
+            infoPanel.Top.Set(92f, 0f);
+            mainPanel.Append(infoPanel);
+
+            previewImage = new UIImage(TransformationEnum.None.GetTransformationIcon());
+            previewImage.Width.Set(158f, 0f);
+            previewImage.Height.Set(158f, 0f);
+            previewImage.HAlign = 0.5f;
+            previewImage.Top.Set(28f, 0f);
+            infoPanel.Append(previewImage);
+
+            nameText = new UIText("Select an alien", 1.3f);
+            nameText.HAlign = 0.5f;
+            nameText.Top.Set(205f, 0f);
+            infoPanel.Append(nameText);
+
+            descriptionText = new UIText("Click any unlocked alien", 0.95f);
+            descriptionText.HAlign = 0.5f;
+            descriptionText.Top.Set(240f, 0f);
+            descriptionText.Width.Set(400f, 0f);
+            descriptionText.IsWrapped = true;
+            infoPanel.Append(descriptionText);
+
+            var abilitiesHeader = new UIText("Abilities:", 1.15f);
+            abilitiesHeader.Left.Set(32f, 0f);
+            abilitiesHeader.Top.Set(295f, 0f);
+            infoPanel.Append(abilitiesHeader);
+
+            abilityList = new UIList();
+            abilityList.Width.Set(400f, 0f);
+            abilityList.Height.Set(190f, 0f);
+            abilityList.Left.Set(32f, 0f);
+            abilityList.Top.Set(325f, 0f);
+            infoPanel.Append(abilityList);
+
+            var closeBtn = new UITextPanel<string>("Close Roster");
+            closeBtn.HAlign = 0.5f;
+            closeBtn.Top.Set(-58f, 1f);
+            closeBtn.OnLeftClick += (_, _) => {
+                ModContent.GetInstance<UISystem>().HideMyUI();
+                Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
+            };
+            mainPanel.Append(closeBtn);
         }
 
-        private void NextAlienOne(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.NextTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[0]);
-        }
-        private void NextAlienTwo(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.NextTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[1]);
-        }
-        private void NextAlienThree(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.NextTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[2]);
-        }
-        private void NextAlienFour(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.NextTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[3]);
-        }
-        private void NextAlienFive(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.NextTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[4]);
-        }
-        private void PrevAlienOne(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.PrevTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[0]);
-        }
-        private void PrevAlienTwo(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.PrevTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[1]);
-        }
-        private void PrevAlienThree(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.PrevTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[2]);
-        }
-        private void PrevAlienFour(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.PrevTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[3]);
-        }
-        private void PrevAlienFive(UIMouseEvent evt, UIElement listeningElement) {
-            TransformationHandler.PrevTransformation(Main.LocalPlayer, ref Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[4]);
+        private void AssignToSlot(int slotIndex)
+        {
+            if (currentlySelected == TransformationEnum.None) return;
+
+            var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            if (player.unlockedTransformation.Contains(currentlySelected))
+                player.transformations[slotIndex] = currentlySelected;
         }
 
+        private void ClearSlot(int slotIndex)
+        {
+            var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            player.transformations[slotIndex] = TransformationEnum.None;
+        }
 
-        public override void Update(GameTime gameTime) {
+        public override void Update(GameTime gameTime)
+        {
             base.Update(gameTime);
-            AlienOne.SetImage(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[0].GetTransformationIcon());
-            AlienTwo.SetImage(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[1].GetTransformationIcon());
-            AlienThree.SetImage(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[2].GetTransformationIcon());
-            AlienFour.SetImage(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[3].GetTransformationIcon());
-            AlienFive.SetImage(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[4].GetTransformationIcon());
 
-            if (AlienOne.IsMouseHovering) {
-                Main.instance.MouseText(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[0].GetName());
+            var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+
+            for (int i = 0; i < rosterSlots.Count; i++) {
+                rosterSlots[i].SetImage(player.transformations[i].GetTransformationIcon());
+                var i1 = i;
+                rosterSlots[i].OnMouseOver += (_, _) => UpdateInfoPanel(player.transformations[i1]);
             }
-            if (AlienTwo.IsMouseHovering) {
-                Main.instance.MouseText(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[1].GetName());
+
+            unlockedGrid.Clear();
+            foreach (var trans in player.unlockedTransformation)
+            {
+                if (trans == TransformationEnum.None) continue;
+
+                var btn = new UIImage(trans.GetTransformationIcon());
+                btn.Width.Set(80f, 0f);
+                btn.Height.Set(80f, 0f);
+
+                btn.OnLeftClick += (_, _) =>
+                {
+                    currentlySelected = trans;
+                    UpdateInfoPanel(trans);
+                };
+
+                btn.OnMouseOver += (_, _) => UpdateInfoPanel(trans);
+
+                unlockedGrid.Add(btn);
             }
-            if (AlienThree.IsMouseHovering) {
-                Main.instance.MouseText(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[2].GetName());
-            }
-            if (AlienFour.IsMouseHovering) {
-                Main.instance.MouseText(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[3].GetName());
-            }
-            if (AlienFive.IsMouseHovering) {
-                Main.instance.MouseText(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().transformations[4].GetName());
-            }
+
+            unlockedGrid.Recalculate();
+            unlockedGrid.RecalculateChildren();
+
+            if (mainPanel.ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
+        }
+
+        private void UpdateInfoPanel(TransformationEnum trans)
+        {
+            previewImage.SetImage(trans.GetTransformationIcon());
+            nameText.SetText(trans.GetName());
+            descriptionText.SetText(trans.GetDescription());
+
+            abilityList.Clear();
+            var abilities = trans.GetAbilities();
+            foreach (var ability in abilities)
+                abilityList.Add(new UIText("• " + ability, 0.95f));
+        }
+
+        protected override void DrawSelf(SpriteBatch spriteBatch)
+        {
+            base.DrawSelf(spriteBatch);
+            if (ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
         }
     }
 }

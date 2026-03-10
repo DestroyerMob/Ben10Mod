@@ -146,29 +146,129 @@ Items: {
 		Tooltip: ""
 	}
 
-	PlumberHelperBadge: {
-		Tooltip: ""
-		DisplayName: Plumber Helper Badge
-	}
-
-	ProvisionalAgentBadgeCrimtane: {
-		DisplayName: Provisional Agent Badge
-		Tooltip: ""
-	}
-
-	ProvisionalAgentBadgeDemonite: {
-		DisplayName: Provisional Agent Badge
-		Tooltip: ""
-	}
-
 	PlumberAgentBadge: {
 		Tooltip: ""
-		DisplayName: Plumber Agent Badge
+		DisplayName: Plumbers Agent Badge
 	}
 
 	PlumberCapsulePodItem: {
 		DisplayName: Plumber Capsule Pod Item
 		Tooltip: ""
+	}
+
+	AdvancedCircuitMatrix: {
+		DisplayName: Advanced Circuit Matrix
+		Tooltip: Doubles Transformation and Cooldown times for the prototype omnitrix
+	}
+
+	PlumberMagisterBadge: {
+		DisplayName: Plumbers Magister Badge
+		Tooltip: ""
+	}
+
+	MasterControlKey: {
+		Tooltip: ""
+		DisplayName: Master Control Key
+	}
+
+	EyeGuy: {
+		Tooltip: ""
+		DisplayName: Eye Guy
+	}
+
+	HeroEmblem: {
+		Tooltip: ""
+		DisplayName: Hero Emblem
+	}
+
+	HeatBlastExtraJumpAccessory: {
+		DisplayName: Heat Blast Extra Jump Accessory
+		Tooltip: ""
+	}
+
+	PlumberCadetBadge: {
+		DisplayName: Plumbers Cadet Badge
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeCrimtane: {
+		DisplayName: Plumbers Deputy Badge Crimtane
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeDemonite: {
+		DisplayName: Plumbers Deputy Badge Demonite
+		Tooltip: ""
+	}
+
+	SnowFlake: {
+		DisplayName: Snow Flake
+		Tooltip: ""
+	}
+
+	Snowflake: {
+		DisplayName: Snowflake
+		Tooltip: ""
+	}
+
+	PlumberSeniorDeputyBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Senior Deputy Badge
+	}
+
+	HeavenlyCrystallineBadge: {
+		DisplayName: Heavenly Crystalline Badge
+		Tooltip: ""
+	}
+
+	PlumberSeniorAgentBadge: {
+		DisplayName: Plumber Senior Agent Badge
+		Tooltip: ""
+	}
+
+	PlumberProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Proctor Badge
+	}
+
+	PlumberMagistrataBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Magistrata Badge
+	}
+
+	PlumberFieldProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Field Proctor Badge
+	}
+
+	HeroFragment: {
+		Tooltip: ""
+		DisplayName: Hero Fragment
+	}
+
+	DiscoDye: {
+		DisplayName: Disco Dye
+		Tooltip: ""
+	}
+
+	BigChill: {
+		Tooltip: ""
+		DisplayName: Big Chill
+	}
+
+	BigChillWings: {
+		DisplayName: Big Chill Wings
+		Tooltip: ""
+	}
+
+	Ultimatrix: {
+		Tooltip: ""
+		DisplayName: Ultimatrix
+	}
+
+	UltimateBigChillWings: {
+		Tooltip: ""
+		DisplayName: Ultimate Big Chill Wings
 	}
 }
 
@@ -193,6 +293,7 @@ Keybinds: {
 	"Quinary Ability.DisplayName": Quinary  Ability
 	"Quaternary Ability.DisplayName": Quaternary  Ability
 	"Tertiary Ability.DisplayName": Tertiary  Ability
+	"Ultimate Ability.DisplayName": Ultimate  Ability
 }
 
 Buffs: {
@@ -246,59 +347,9 @@ Buffs: {
 		Description: Florauna
 	}
 
-	XLR8_Primary_Buff: {
-		DisplayName: XLR8 Speed Boost
-		Description: XLR8 Speed Boost
-	}
-
-	XLR8_Primary_Cooldown_Buff: {
-		DisplayName: XLR8 Speed Boost Cooldown
-		Description: XLR8 Speed Boost Cooldown
-	}
-
-	HeatBlast_Primary_Buff: {
-		DisplayName: Heatblast Flame Aura
-		Description: Heatblast Flame Aura
-	}
-
-	HeatBlast_Primary_Cooldown_Buff: {
-		DisplayName: Heatblast Flame Aura Cooldown
-		Description: Heatblast Flame Aura Cooldown
-	}
-
-	DiamondHead_Primary_Buff: {
-		DisplayName: Diamondhead Primary Ability
-		Description: Immune to damage but unable to move
-	}
-
-	DiamondHead_Primary_Cooldown_Buff: {
-		DisplayName: Diamondhead Primary Cooldown
-		Description: Cooldown for primary ability
-	}
-
-	ChromaStone_Primary_Buff: {
-		DisplayName: Chromastone Primary Ability
-		Description: Absorb and redirect incoming damage
-	}
-
-	ChromaStone_Primary_Cooldown_Buff: {
-		DisplayName: Chromastone Primary Cooldown
-		Description: Cooldown for primary ability
-	}
-
 	TransformationCooldown_Buff: {
 		Description: Timeout
 		DisplayName: Cannot transform while timed out
-	}
-
-	BuzzShock_Primary_Buff: {
-		DisplayName: Buzz Shock_ Primary_ Buff
-		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Buff.Description
-	}
-
-	BuzzShock_Primary_Cooldown_Buff: {
-		DisplayName: Buzz Shock_ Primary_ Cooldown_ Buff
-		Description: Mods.Ben10Mod.Buffs.BuzzShock_Primary_Cooldown_Buff.Description
 	}
 
 	EnemySlow: {
@@ -306,9 +357,49 @@ Buffs: {
 		DisplayName: Enemy Slow
 	}
 
-	GhostFreakPossesion: {
-		DisplayName: Ghost Freak Possesion
-		Description: Mods.Ben10Mod.Buffs.GhostFreakPossesion.Description
+	EyeGuy_Buff: {
+		Description: Mods.Ben10Mod.Buffs.EyeGuy_Buff.Description
+		DisplayName: Opticoid
+	}
+
+	UltimateAbility_Cooldown: {
+		DisplayName: Ultimate Ability Cooldown
+		Description: Ultimate Ability Cooldown
+	}
+
+	OmnitrixUpdating: {
+		Description: Omnitrix is undergoing updates
+		DisplayName: Omnitrix Updating
+	}
+
+	PrimaryAbility: {
+		DisplayName: Primary Ability
+		Description: Primary Ability Activated
+	}
+
+	PrimaryAbilityCooldown: {
+		DisplayName: Primary Ability Cooldown
+		Description: Primary Ability On Cooldown
+	}
+
+	BuzzShockMinionBuff: {
+		DisplayName: Buzz Shock Minion Buff
+		Description: Mods.Ben10Mod.Buffs.BuzzShockMinionBuff.Description
+	}
+
+	UltimateAbilityCooldown: {
+		Description: Mods.Ben10Mod.Buffs.UltimateAbilityCooldown.Description
+		DisplayName: Ultimate Ability Cooldown
+	}
+
+	UltimateAbility: {
+		Description: Mods.Ben10Mod.Buffs.UltimateAbility.Description
+		DisplayName: Ultimate Ability
+	}
+
+	BigChill_Buff: {
+		Description: Mods.Ben10Mod.Buffs.BigChill_Buff.Description
+		DisplayName: Big Chill_ Buff
 	}
 }
 
@@ -332,6 +423,16 @@ Projectiles: {
 	StinkFlySlowProjectile.DisplayName: Stink Fly Slow Projectile
 	StinkFlyPoisonProjectile.DisplayName: Stink Fly Poison Projectile
 	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
+	EyeGuyLaserbeam.DisplayName: Eye Guy Laserbeam
+	EyeGuyUltimateBeam.DisplayName: Eye Guy Ultimate Beam
+	GiantDiamondProjectile.DisplayName: Giant Diamond Projectile
+	HeatBlastUltimateProjectile.DisplayName: Heat Blast Ultimate Projectile
+	IcyFlames.DisplayName: Icy Flames
+	BuzzShockUltimateProjectile.DisplayName: Buzz Shock Ultimate Projectile
+	BigChillProjectile.DisplayName: Big Chill Projectile
+	BigChillFrostBreathProjectile.DisplayName: Big Chill Frost Breath Projectile
+	RipJawsBiteProjectile.DisplayName: Rip Jaws Bite Projectile
+	GhostFreakShadowProjectile.DisplayName: Ghost Freak Shadow Projectile
 }
 
 Tiles: {

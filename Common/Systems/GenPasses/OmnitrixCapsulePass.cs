@@ -5,138 +5,128 @@ using Terraria.WorldBuilding;
 using Ben10Mod.Content.Tiles;
 using Terraria.ID;
 
-namespace Ben10Mod.Common.Systems.GenPasses {
-    public class OmnitrixCapsulePass : GenPass {
+namespace Ben10Mod.Common.Systems.GenPasses
+{
+    public class OmnitrixCapsulePass : GenPass
+    {
         public OmnitrixCapsulePass(string name, float loadWeight)
             : base(name, loadWeight) { }
 
-        protected override void ApplyPass(GenerationProgress progress, GameConfiguration config) {
-            progress.Message = "Calling down a strange meteor...";
+        protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration)
+        {
+            progress.Message = "Calling down strange meteors...";
 
-            // Your custom tiles
-            int meteorRockTile = TileID.LunarOre; // "meteor rock"
-            int meteorOreTile  = ModContent.TileType<CongealedCodonOreTile>(); // special ore
-            int capsuleTile    = ModContent.TileType<PlumberCapsulePod>(); // 1x1 capsule
+            int meteorOreTile   = TileID.Silver;
+            int meteorRockTile  = ModContent.TileType<CongealedCodonOreTile>();
+            int capsuleTile     = ModContent.TileType<PlumberCapsulePod>();
 
-            // --- 1) Choose an impact X away from the very edges ---
-            int impactX = WorldGen.genRand.Next(250, Main.maxTilesX - 250);
+            var rand = WorldGen.genRand;
 
-            // --- 2) Call vanilla meteor generator once ---
-            // y argument is mostly ignored; vanilla picks its own vertical area.
-            bool spawned = WorldGen.meteor(impactX, 0);
-            if (!spawned)
-                return; // If vanilla couldn't place a meteor, we can't do anything
+            // === WORLD-SIZE BASED COUNT (exactly what you asked for) ===
+            int numMeteors;
+            if (Main.maxTilesX < 5000)       // Small world (4200 tiles)
+                numMeteors = rand.Next(1, 3);   // 1-2
+            else if (Main.maxTilesX < 7000)  // Medium world (6400 tiles)
+                numMeteors = rand.Next(3, 5);   // 3-4
+            else                             // Large world (8400 tiles)
+                numMeteors = rand.Next(5, 7);   // 5-6
 
-            // --- 3) Scan around impactX to find the meteorite area ---
-            int scanRadius = 80;
-            int minX       = impactX - scanRadius;
-            int maxX       = impactX + scanRadius;
+            int placed = 0;
+            int maxAttempts = numMeteors * 6;   // safety net (you'll never hit it)
 
-            if (minX < 10) minX                  = 10;
-            if (maxX > Main.maxTilesX - 10) maxX = Main.maxTilesX - 10;
+            for (int attempt = 0; attempt < maxAttempts && placed < numMeteors; attempt++)
+            {
+                // === 1) Pick random spot DEEP in the Cavern layer ===
+                int centerX = rand.Next(300, Main.maxTilesX - 300);
 
-            bool foundMeteor    = false;
-            int  highestMeteorY = Main.maxTilesY;
-            int  lowestMeteorY  = 0;
+                int cavernTop    = (int)Main.rockLayer + 60;   // well below surface, into caverns
+                int cavernBottom = Main.maxTilesY - 380;       // safe above Underworld
 
-            for (int x = minX; x <= maxX; x++) {
-                for (int y = 0; y < Main.maxTilesY - 200; y++) {
-                    Tile t = Main.tile[x, y];
-                    if (t == null || !t.HasTile)
-                        continue;
+                if (cavernTop >= cavernBottom) continue;
 
-                    if (t.TileType == TileID.Meteorite) {
-                        foundMeteor = true;
-                        if (y < highestMeteorY) highestMeteorY = y;
-                        if (y > lowestMeteorY) lowestMeteorY   = y;
-                    }
-                }
-            }
+                int centerY = rand.Next(cavernTop, cavernBottom);
 
-            if (!foundMeteor)
-                return; // Somehow no meteorite tiles were created, bail
+                // === 2) Build the lumpy meteor blob (slightly bigger & rounder than before) ===
+                int halfWidth  = 13;
+                int halfHeight = 8;
 
-            // --- 4) Convert Meteorite into your meteor rock / ore ---
-            for (int x = minX; x <= maxX; x++) {
-                for (int y = 0; y < Main.maxTilesY - 200; y++) {
-                    Tile t = Main.tile[x, y];
-                    if (t == null || !t.HasTile || t.TileType != TileID.Meteorite)
-                        continue;
+                bool meteorPlaced = false;
 
-                    // Random ore pockets inside the meteor
-                    if (WorldGen.genRand.Next(6) == 0) // ~1/6 chance
+                for (int x = centerX - halfWidth; x <= centerX + halfWidth; x++)
+                {
+                    for (int y = centerY - halfHeight; y <= centerY + halfHeight; y++)
                     {
-                        t.TileType = (ushort)meteorOreTile;
-                    }
-                    else {
-                        t.TileType = (ushort)meteorRockTile;
-                    }
-                }
-            }
+                        if (!WorldGen.InWorld(x, y, 20)) continue;
 
-            // --- 5) Fix framing for that region so it looks nice ---
-            for (int x = minX - 2; x <= maxX + 2; x++) {
-                if (x < 10 || x >= Main.maxTilesX - 10)
-                    continue;
+                        float dx = (x - centerX) / (float)halfWidth;
+                        float dy = (y - centerY) / (float)halfHeight;
+                        float distSq = dx * dx + dy * dy;
 
-                for (int y = highestMeteorY - 20; y <= lowestMeteorY + 20; y++) {
-                    if (y < 10 || y >= Main.maxTilesY - 10)
-                        continue;
+                        if (distSq > 1.25f) continue;
 
-                    WorldGen.SquareTileFrame(x, y, resetFrame: true);
-                }
-            }
+                        // Organic lumpy edges
+                        float noise = (float)(rand.NextDouble() * 0.42 - 0.19);
+                        if (distSq > 1.0f + noise) continue;
 
-            // --- 6) Find a top spot for the 1x1 capsule near impactX ---
+                        Tile t = Main.tile[x, y];
+                        if (t == null) continue;
 
-            int bestX = -1;
-            int bestY = -1;
+                        t.HasTile = true;
+                        t.TileType = rand.Next(6) == 0 ? (ushort)meteorOreTile : (ushort)meteorRockTile;
 
-            int searchHalfWidth             = 25;
-            int topSearchY                  = highestMeteorY - 5;
-            if (topSearchY < 10) topSearchY = 10;
-
-            int bottomSearchY                                      = lowestMeteorY + 10;
-            if (bottomSearchY > Main.maxTilesY - 10) bottomSearchY = Main.maxTilesY - 10;
-
-            for (int x = impactX - searchHalfWidth; x <= impactX + searchHalfWidth; x++) {
-                if (x < minX || x > maxX)
-                    continue;
-
-                // Scan from just above the meteor top downward
-                for (int y = topSearchY; y <= bottomSearchY; y++) {
-                    Tile t = Main.tile[x, y];
-                    if (t == null || !t.HasTile)
-                        continue;
-
-                    if (t.TileType == meteorRockTile || t.TileType == meteorOreTile) {
-                        Tile above = Main.tile[x, y - 1];
-                        if (above != null && !above.HasTile) {
-                            bestX = x;
-                            bestY = y - 1; // capsule goes in this empty tile
-                            break;
-                        }
+                        meteorPlaced = true;
                     }
                 }
 
-                if (bestX != -1)
-                    break;
+                if (!meteorPlaced) continue;
+
+                // === 3) Fix framing ===
+                for (int x = centerX - halfWidth - 4; x <= centerX + halfWidth + 4; x++)
+                    for (int y = centerY - halfHeight - 4; y <= centerY + halfHeight + 4; y++) {
+                        if (WorldGen.InWorld(x, y, 15))
+                            WorldGen.SquareTileFrame(x, y, true);
+                    }
+
+                // === 4) GUARANTEED capsule placement (no more missing capsules!) ===
+                // Try up to 40 columns on the meteor until we find a valid top spot
+                bool capsulePlaced = false;
+                for (int tries = 0; tries < 40 && !capsulePlaced; tries++) {
+                    int x = centerX + rand.Next(-halfWidth + 3, halfWidth - 2);
+
+                    // Scan this column from the top of the meteor downward
+                    for (int y = centerY - halfHeight - 12; y <= centerY + halfHeight; y++) {
+                        if (!WorldGen.InWorld(x, y)) continue;
+
+                        Tile t = Main.tile[x, y];
+                        if (t == null || !t.HasTile) continue;
+                        if (t.TileType != meteorRockTile && t.TileType != meteorOreTile) continue;
+
+                        // Found a meteor tile → place capsule directly above it
+                        int capY = y - 1;
+                        if (!WorldGen.InWorld(x, capY)) break;
+
+                        // Carve a clean 1-tile pocket (just in case something is there)
+                        WorldGen.KillTile(x, capY, noItem: true);
+
+                        Tile cap = Main.tile[x, capY];
+                        cap.HasTile  = true;
+                        cap.TileType = (ushort)capsuleTile;
+
+                        WorldGen.SquareTileFrame(x, capY, true);
+                        WorldGen.SquareTileFrame(x, y, true);
+
+                        if (Main.netMode == NetmodeID.Server)
+                            NetMessage.SendTileSquare(-1, x - 1, capY - 1, 3, 3);
+
+                        capsulePlaced = true;
+                        break;
+                    }
+                }
+
+                if (capsulePlaced)
+                    placed++;
             }
-
-            if (bestX == -1)
-                return; // meteor exists, but we couldn't find a clean top spot for the capsule
-
-            // --- 7) Place the 1x1 PlumberCapsulePod tile directly ---
-
-            Tile cap = Main.tile[bestX, bestY];
-            cap.HasTile  = true;
-            cap.TileType = (ushort)capsuleTile;
-
-            WorldGen.SquareTileFrame(bestX, bestY, resetFrame: true);
-
-            if (Main.netMode == NetmodeID.Server) {
-                NetMessage.SendTileSquare(-1, bestX, bestY, 1, 1);
-            }
+            ModContent.GetInstance<Ben10Mod>().Logger.Info($"OmnitrixCapsulePass: Placed {placed} meteors in cavern layer");
         }
     }
 }

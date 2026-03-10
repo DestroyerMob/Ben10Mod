@@ -21,7 +21,7 @@ namespace Ben10Mod.Content.Items.Armour {
             Item.width = 18;
             Item.height = 14;
 
-            Item.defense = 3;
+            Item.defense = 1;
 
             Item.value = 010000;
         }
@@ -35,9 +35,14 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+5 Hero damage";
+            player.setBonus = "+12% movement speed while transformed";
             
-            player.GetDamage(ModContent.GetInstance<HeroDamage>()).Flat       += 5;
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+
+            if (omp.isTransformed) {
+                player.moveSpeed   *= 1.12f;
+                player.accRunSpeed *= 1.12f;
+            }
         }
 
         public override void AddRecipes()

@@ -11,16 +11,19 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod {
     public class OmnitrixItem : GlobalItem {
-        public override void ModifyItemLoot(Item item, ItemLoot itemLoot) {
-            //if (item.type == ItemID.SkeletronBossBag) {
-            //    foreach (var rule in itemLoot.Get()) {
-            //        if (rule is OneFromOptionsNotScaledWithLuckDropRule oneFromOptionsDrop) {
-            //            var original = oneFromOptionsDrop.dropIds.ToList();
-            //            original.Add(ModContent.ItemType<PrototypeOmnitrix>());
-            //            oneFromOptionsDrop.dropIds = original.ToArray();
-            //        }
-            //    }
-            //}
+        public override void SetDefaults(Item entity) {
+            if (entity.type == ItemID.FrostCore) {
+                entity.accessory = true;
+            }
+        }
+
+        public override void UpdateAccessory(Item item, Player player, bool hideVisual) {
+            
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            
+            if (item.type == ItemID.FrostCore) {
+                omp.snowflake = true;
+            }
         }
     }
 }

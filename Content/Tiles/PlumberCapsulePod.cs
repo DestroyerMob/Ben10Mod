@@ -66,6 +66,6 @@ public class PlumberCapsulePod : ModTile {
             Player player = Main.LocalPlayer;
             player.noThrow               = 2;
             player.cursorItemIconEnabled = true;
-            player.cursorItemIconID      = ModContent.ItemType<PlumberHelperBadge>();
+            player.cursorItemIconID      = ModContent.ItemType<PlumberCadetBadge>();
         }
 }

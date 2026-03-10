@@ -22,7 +22,7 @@ namespace Ben10Mod.Content.Items.Armour {
 
             Item.value = 010000;
 
-            Item.defense = 4;
+            Item.defense = 2;
 
         }
 

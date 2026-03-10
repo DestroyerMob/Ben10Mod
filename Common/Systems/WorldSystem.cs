@@ -26,7 +26,7 @@ namespace Ben10Mod.Common.Systems {
             if (microBiomesIndex == -1)
                 microBiomesIndex = tasks.Count - 1;
 
-            tasks.Insert(microBiomesIndex + 1, new OmnitrixCapsulePass("Omnitrix Capsule Pass", 0.5f));
+            tasks.Insert(microBiomesIndex + 1, new OmnitrixCapsulePass("Omnitrix Capsule Pass", 200f));
         }
     }
 }

@@ -31,8 +31,8 @@ namespace Ben10Mod.Content.Projectiles {
         {
             int explosionRadius = (int)Projectile.ai[0]; // explosion size
             hitbox = new Rectangle(
-                (int)(Projectile.Center.X - explosionRadius / 2),
-                (int)(Projectile.Center.Y - explosionRadius / 2),
+                (int)(Projectile.Center.X - explosionRadius),
+                (int)(Projectile.Center.Y - explosionRadius),
                 explosionRadius,
                 explosionRadius
             );
@@ -42,9 +42,10 @@ namespace Ben10Mod.Content.Projectiles {
         {
             // Optional visuals
             SoundEngine.PlaySound(SoundID.Item14, Projectile.position);
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 30; i++) {
                 Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.Smoke,
                     Main.rand.NextFloat(-6, 6), Main.rand.NextFloat(-6, 6));
+            }
         }
     }
 }
