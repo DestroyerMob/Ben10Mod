@@ -40,7 +40,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             var state = player.GetModPlayer<BadgeUltimateState>();
             if (!state.ultimateStarted || player.channel) return;
 
-            int ultimateType = omp.CurrentTransformation?.UltimateProjectileType ?? 0;
+            int ultimateType = omp.CurrentTransformation?.UltimateAttack ?? 0;
             if (HasActiveOwnedProjectile(player, ultimateType))
                 return;
 

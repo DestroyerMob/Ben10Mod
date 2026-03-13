@@ -13,9 +13,6 @@ using Terraria.DataStructures;
 
 namespace Ben10Mod.Content.Transformations.HeatBlast {
     public class HeatBlastTransformation : Transformation {
-        // ──────────────────────────────────────────────────────────────
-        // Core Alien Info (used by UI, save/load, etc.)
-        // ──────────────────────────────────────────────────────────────
         public override string FullID             => "Ben10Mod:HeatBlast";
         public override string TransformationName => "Heatblast";
 
@@ -27,14 +24,13 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override List<string> Abilities => new List<string> {
             "Flamethrower blast",
-            "Flight via Propulsion",
-            "Heat Immunity",
-            "Explosive Fireballs"
+            "Flame bombs",
+            "Flame-boosted jump",
+            "Fire & lava immunity",
+            "Flame aura (inflicts hellflame debuff on nearby enemies)",
+            "Large fireball attack - ultimate charged attack"
         };
-
-        // ──────────────────────────────────────────────────────────────
-        // Passive Effects (called every frame while transformed)
-        // ──────────────────────────────────────────────────────────────
+        
         public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
             player.fireWalk   = true;
             player.lavaImmune = true;
@@ -70,10 +66,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 }
             }
         }
-
-        // ──────────────────────────────────────────────────────────────
-        // On-hit effects
-        // ──────────────────────────────────────────────────────────────
+        
         public void OnHitNPC(Player player, NPC target, NPC.HitInfo hit, int damageDone, OmnitrixPlayer omp) {
             if (target.life <= 0) return;
 
@@ -82,10 +75,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             else if (!omp.snowflake && !target.HasBuff(BuffID.OnFire3))
                 target.AddBuff(BuffID.OnFire3, 10 * 60);
         }
-
-        // ──────────────────────────────────────────────────────────────
-        // PlumbersBadge Attack System (completely modular)
-        // ──────────────────────────────────────────────────────────────
+        
         public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             bool alt = omp.altAttack;
             bool ult = omp.ultimateAttack;
@@ -101,37 +91,14 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             return omp.ultimateAttack ? 10 : 0;
         }
 
-        public override bool Shoot(Player player, OmnitrixPlayer omp,
-            EntitySource_ItemUse_WithAmmo source,
-            Vector2 position, Vector2 velocity,
-            int damage, float knockback) {
-            bool alt = omp.altAttack;
-            bool ult = omp.ultimateAttack;
+        public override int PrimaryAttack => ProjectileID.Flames;
+        public override int SecondaryAttack => ModContent.ProjectileType<HeatBlastBomb>();
+        public override bool HasSecondaryAttack => true;
 
-            int projType = ult
-                ? ModContent.ProjectileType<HeatBlastUltimateProjectile>()
-                : alt
-                    ? ModContent.ProjectileType<HeatBlastBomb>()
-                    : ProjectileID.Flames;
+        public override int UltimateAttack =>
+            ModContent.ProjectileType<HeatBlastUltimateProjectile>();
+        public override bool HasUltimateAttack => true;
 
-            int finalDamage = ult
-                ? (int)(damage * 3f)
-                : alt
-                    ? (int)(damage * 1.5f)
-                    : (int)(damage * 0.3f);
-
-            if (ult)
-                velocity = Vector2.Zero;
-
-            Projectile.NewProjectile(source, position, velocity, projType, finalDamage, knockback, player.whoAmI);
-            return true; // we handled the shot
-        }
-
-        public override int UltimateProjectileType => ModContent.ProjectileType<HeatBlastUltimateProjectile>();
-
-        // ──────────────────────────────────────────────────────────────
-        // Helper (moved from OmnitrixPlayer so it's self-contained)
-        // ──────────────────────────────────────────────────────────────
         private static Vector2[] GenerateCirclePoints(int numberOfPoints, float radius) {
             Vector2[] circlePoints   = new Vector2[numberOfPoints];
             float     angleIncrement = 360f / numberOfPoints;
