@@ -81,6 +81,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         public override void HoldItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            var state = player.GetModPlayer<BadgeUltimateState>();
             FinalizeUltimateIfEnded(player, omp);
 
             // Reset to safe defaults
@@ -93,7 +94,10 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.UseSound         = null;
             OmnitrixEnergyUse     = 0;
 
-            if (!omp.IsTransformed) return;
+            if (!omp.IsTransformed) {
+                state.ultimateStarted = false;
+                return;
+            }
 
             var trans = omp.CurrentTransformation;
             if (trans != null) {
@@ -117,16 +121,20 @@ namespace Ben10Mod.Content.Items.Weapons {
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int type, int damage, float knockback) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            var state = player.GetModPlayer<BadgeUltimateState>();
             if (!omp.IsTransformed || player.altFunctionUse == 2) return false;
 
             var trans = omp.CurrentTransformation;
             if (trans == null) return false;
 
-            bool ultimateInProgress = player.channel ||
-                                      player.GetModPlayer<BadgeUltimateState>().ultimateStarted;
+            bool ultimateInProgress = player.channel || state.ultimateStarted;
 
             if (ultimateInProgress && !omp.ultimateAttack) return false;
             if (omp.ultimateAttack && player.HasBuff<UltimateAbilityCooldown>()) return false;
+            if (omp.ultimateAttack && state.ultimateStarted) return false;
+
+            if (omp.ultimateAttack)
+                state.ultimateStarted = true;
 
             trans.Shoot(player, omp, source, position, velocity, damage, knockback);
 
@@ -137,7 +145,7 @@ namespace Ben10Mod.Content.Items.Weapons {
     public class BadgeUltimateState : ModPlayer {
         public bool ultimateStarted;
 
-        public override void ResetEffects() {
+        public override void Initialize() {
             ultimateStarted = false;
         }
     }
