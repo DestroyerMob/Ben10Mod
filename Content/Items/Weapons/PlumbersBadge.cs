@@ -35,19 +35,21 @@ namespace Ben10Mod.Content.Items.Weapons {
         }
 
         private void FinalizeUltimateIfEnded(Player player, OmnitrixPlayer omp) {
-            if (!omp.ultimateAttack) return;
-
             var state = player.GetModPlayer<BadgeUltimateState>();
-            if (!state.ultimateStarted || player.channel) return;
+            if (!state.ultimateStarted) return;
+            if (player.channel) return;
+
+            if (omp.ultimateAttack) {
+                omp.ultimateAttack = false;
+
+                if (!player.HasBuff<UltimateAbilityCooldown>())
+                    player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
+            }
 
             int ultimateType = omp.CurrentTransformation?.UltimateAttack ?? 0;
             if (HasActiveOwnedProjectile(player, ultimateType))
                 return;
 
-            if (!player.HasBuff<UltimateAbilityCooldown>())
-                player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
-
-            omp.ultimateAttack    = false;
             state.ultimateStarted = false;
         }
 
@@ -127,13 +129,12 @@ namespace Ben10Mod.Content.Items.Weapons {
             var trans = omp.CurrentTransformation;
             if (trans == null) return false;
 
-            bool ultimateInProgress = player.channel || state.ultimateStarted;
+            bool firingUltimate = omp.ultimateAttack;
 
-            if (ultimateInProgress && !omp.ultimateAttack) return false;
-            if (omp.ultimateAttack && player.HasBuff<UltimateAbilityCooldown>()) return false;
-            if (omp.ultimateAttack && state.ultimateStarted) return false;
+            if (firingUltimate && player.HasBuff<UltimateAbilityCooldown>()) return false;
+            if (firingUltimate && state.ultimateStarted) return false;
 
-            if (omp.ultimateAttack)
+            if (firingUltimate)
                 state.ultimateStarted = true;
 
             trans.Shoot(player, omp, source, position, velocity, damage, knockback);
