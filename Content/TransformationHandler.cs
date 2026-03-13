@@ -110,22 +110,7 @@ namespace Ben10Mod.Content
 
         public static void AddTransformation(Player player, string transformationId)
         {
-            var omp = player.GetModPlayer<OmnitrixPlayer>();
-            if (omp.unlockedTransformations.Contains(transformationId))
-                return;
-
-            omp.unlockedTransformations.Add(transformationId);
-            Main.NewText($"{TransformationLoader.Get(transformationId)?.TransformationName ?? "Unknown"} has been unlocked!", Color.LimeGreen);
-
-            // Network sync
-            if (Main.netMode == NetmodeID.Server)
-            {
-                ModPacket packet = ModContent.GetInstance<Ben10Mod>().GetPacket();
-                packet.Write((byte)Ben10Mod.MessageType.UnlockTransformation);
-                packet.Write((byte)player.whoAmI);
-                packet.Write(transformationId);
-                packet.Send();
-            }
+            player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId);
         }
 
         public static bool HasTransformation(Player player, string transformationId)

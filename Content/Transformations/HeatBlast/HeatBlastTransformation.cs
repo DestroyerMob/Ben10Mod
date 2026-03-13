@@ -67,7 +67,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             }
         }
         
-        public void OnHitNPC(Player player, NPC target, NPC.HitInfo hit, int damageDone, OmnitrixPlayer omp) {
+        public override void OnHitNPC(Player player, OmnitrixPlayer omp, NPC target, NPC.HitInfo hit, int damageDone) {
             if (target.life <= 0) return;
 
             if (omp.snowflake && !target.HasBuff(BuffID.Frostburn2))
@@ -76,28 +76,23 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 target.AddBuff(BuffID.OnFire3, 10 * 60);
         }
         
-        public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
-            bool alt = omp.altAttack;
-            bool ult = omp.ultimateAttack;
-
-            item.useTime    = item.useAnimation = alt ? 50 : 6;
-            item.shootSpeed = ult ? 0 : alt ? 10f : 3f;
-            item.useStyle = ult ? ItemUseStyleID.HoldUp :
-                alt ? ItemUseStyleID.Swing : ItemUseStyleID.Shoot;
-            item.channel = ult;
-        }
-
-        public override int GetEnergyCost(OmnitrixPlayer omp) {
-            return omp.ultimateAttack ? 10 : 0;
-        }
-
         public override int PrimaryAttack => ProjectileID.Flames;
+        public override int PrimaryAttackSpeed => 6;
+        public override int PrimaryShootSpeed => 3;
+        public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
+
         public override int SecondaryAttack => ModContent.ProjectileType<HeatBlastBomb>();
-        public override bool HasSecondaryAttack => true;
+        public override int SecondaryAttackSpeed => 50;
+        public override int SecondaryShootSpeed => 10;
+        public override int SecondaryUseStyle => ItemUseStyleID.Swing;
 
         public override int UltimateAttack =>
             ModContent.ProjectileType<HeatBlastUltimateProjectile>();
-        public override bool HasUltimateAttack => true;
+        public override int UltimateAttackSpeed => 6;
+        public override int UltimateShootSpeed => 0;
+        public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
+        public override bool UltimateChannel => true;
+        public override int UltimateEnergyCost => 10;
 
         private static Vector2[] GenerateCirclePoints(int numberOfPoints, float radius) {
             Vector2[] circlePoints   = new Vector2[numberOfPoints];

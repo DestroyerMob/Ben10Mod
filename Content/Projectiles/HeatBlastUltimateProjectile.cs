@@ -5,64 +5,20 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.GameContent;
+using Ben10Mod.Content.Projectiles.UltimateAttacks;
 
 namespace Ben10Mod.Content.Projectiles
 {
-    public class HeatBlastUltimateProjectile : ModProjectile
+    public class HeatBlastUltimateProjectile : ChargedThrownUltimateProjectile
     {
-        private bool launched = false;
+        protected override Vector2 ChargeOffset => new(0f, -78f);
+        protected override float InitialScale => 0.3f;
+        protected override float MaxChargeScale => 2.2f;
+        protected override float ChargeStep => 0.038f;
+        protected override float LaunchSpeed => 5f;
+        protected override int MaxLifetime => 600;
 
-        public override void SetDefaults()
-        {
-            Projectile.width       = 128;
-            Projectile.height      = 128;
-            Projectile.scale       = 0.3f;
-            Projectile.penetrate   = -1;
-            Projectile.tileCollide = false;
-            Projectile.ignoreWater = true;
-            Projectile.friendly    = true;
-            Projectile.timeLeft = 600;
-        }
-
-        public override void AI()
-        {
-            Player owner = Main.player[Projectile.owner];
-
-            if (!launched)
-            {
-                if (owner.channel && owner.active && !owner.dead)
-                {
-                    Projectile.Center   = owner.Center + new Vector2(0f, -78f); 
-                    Projectile.rotation = 0f;                                   
-
-                    // Grow while holding
-                    if (Projectile.scale < 2.2f)
-                    {
-                        Projectile.scale += 0.038f;
-                        Projectile.scale = Math.Min(2.2f, Projectile.scale);
-                    }
-                    else
-                    {
-                        owner.channel = false;
-                    }
-
-                    // Grow hitbox with scale
-                    Projectile.width  = (int)(128 * Projectile.scale);
-                    Projectile.height = (int)(128 * Projectile.scale);
-
-                    SpawnChargingDust();
-                    return;
-                } else {
-                    launched = true;
-
-                    Vector2 launchDir = (Main.MouseWorld - Projectile.Center).SafeNormalize(Vector2.Zero);
-                    Projectile.velocity = launchDir * 5f;
-                }
-            }
-            SpawnFlyingDust();
-        }
-
-        private void SpawnChargingDust() {
+        protected override void UpdateCharging(Player owner) {
             float radius = 58f * Projectile.scale;
             Lighting.AddLight(Projectile.Center, Color.Red.ToVector3());
             for (int i = 0; i < 35; i++) {
@@ -76,7 +32,7 @@ namespace Ben10Mod.Content.Projectiles
             }
         }
 
-        private void SpawnFlyingDust() {
+        protected override void UpdateReleased(Player owner) {
             float radius = 58f * Projectile.scale;
             Lighting.AddLight(Projectile.Center, Color.Red.ToVector3());
             for (int i = 0; i < 28; i++) {
