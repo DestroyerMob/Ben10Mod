@@ -44,7 +44,7 @@ Important files and folders:
 
 ## Quick Start For Developers
 
-If you are trying to understand the gameplay loop, read these in order:
+If you are trying to understand the gameplay loop, read these:
 
 1. [OmnitrixPlayer.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/OmnitrixPlayer.cs)
 2. [Transformation.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Transformations/Transformation.cs)
