@@ -596,7 +596,7 @@ namespace Ben10Mod {
         private void DashMovement() {
             if (CanUseDash() && DashDir != -1 && DashDelay == 0) {
                 var trans = CurrentTransformation;
-                if (trans?.TransformationName == "XLR8") {
+                if (trans?.FullID == "Ben10Mod:XLR8") {
                     Vector2 newVelocity = Player.velocity;
 
                     switch (DashDir) {

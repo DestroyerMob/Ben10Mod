@@ -25,8 +25,7 @@ public class XLR8Transformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
-
-        player.armorEffectDrawShadowEOCShield = true;
+        
         player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5f : 2.5f;
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4f : 2f;
         player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
@@ -38,20 +37,13 @@ public class XLR8Transformation : Transformation {
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-
-        
-        
         var costume = ModContent.GetInstance<XLR8>();
-        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.armorEffectDrawShadow = true;
+        player.head                  = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
         if (omp.PrimaryAbilityEnabled)
             player.head = EquipLoader.GetEquipSlot(Mod, "XLR8_alt", EquipType.Head);
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
         player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
-    }
-
-    public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {
-        base.ModifyDrawInfo(player, omp, ref drawInfo);
-        player.armorEffectDrawShadowEOCShield = true;
     }
 }
