@@ -44,7 +44,7 @@ Important files and folders:
 
 ## Quick Start For Developers
 
-If you are trying to understand the gameplay loop, read these in order:
+If you are trying to understand the gameplay loop, read these:
 
 1. [OmnitrixPlayer.cs](OmnitrixPlayer.cs)
 2. [Transformation.cs](Content/Transformations/Transformation.cs)
