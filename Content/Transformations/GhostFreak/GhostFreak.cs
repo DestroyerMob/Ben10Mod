@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.GhostFreak
 {
     public class GhostFreak : ModItem {
+        public static string TransformationDescription =>
+            "An eerie infiltrator built around intangibility and control. Ghostfreak slips through danger, phases through space, and can possess enemies for short bursts.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: intangibility and free phasing movement.",
+            "Main attack: ghostly projectile attack.",
+            "Passive: immunity to contact damage while phased and no fall damage.",
+            "Ultimate attack: possession projectile that lets you control an enemy temporarily.",
+            "Utility: excellent for repositioning, scouting, and survivability."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

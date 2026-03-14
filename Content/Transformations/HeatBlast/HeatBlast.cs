@@ -12,6 +12,18 @@ using Ben10Mod.Content.Items.Placeables;
 namespace Ben10Mod.Content.Transformations.HeatBlast
 {
     public class HeatBlast : ModItem {
+        public static string TransformationDescription =>
+            "A Pyronite built for constant pressure. Heat Blast controls fire, shrugs off lava, and uses rocket-like bursts to stay mobile while burning everything nearby.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: ignite a burning aura around yourself that scorches nearby enemies.",
+            "Main attack: rapid flamethrower stream.",
+            "Alt attack: explosive fire bomb.",
+            "Passive: lava immunity, fire walking, and fiery melee hits.",
+            "Mobility: gains a powerful flame-propelled extra jump while transformed.",
+            "Ultimate attack: sustained high-power fire blast."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

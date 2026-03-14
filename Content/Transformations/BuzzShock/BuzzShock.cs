@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.BuzzShock
 {
     public class BuzzShock : ModItem {
+        public static string TransformationDescription =>
+            "A living electric spark that mixes mobility, summoning, and projectile pressure. Buzzshock can blink across the arena, fire lightning, and call in support units.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: instant short-range teleport to the cursor.",
+            "Main attack: electric projectile bolt.",
+            "Alt attack: summon a Buzzshock minion to fight for you.",
+            "Ultimate attack: multi-shot lightning barrage.",
+            "Role: mobile caster-summoner hybrid with high utility."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

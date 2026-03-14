@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.RipJaws
 {
     public class RipJaws : ModItem {
+        public static string TransformationDescription =>
+            "An aquatic hunter with a sharp split between land and water combat. Ripjaws becomes terrifying underwater, but struggles badly if you stay dry for too long.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Main attack: aquatic projectile strike.",
+            "Alt attack: high-damage lunging bite.",
+            "Passive in water: faster movement, full breathing, brighter vision, and much higher damage.",
+            "Passive on land: rapidly loses breath and life if kept dry.",
+            "Ultimate attack: empowered offensive burst through the badge attack system."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

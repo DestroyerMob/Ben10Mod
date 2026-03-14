@@ -11,6 +11,15 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.EyeGuy
 {
     public class EyeGuy : ModItem {
+        public static string TransformationDescription =>
+            "A ranged specialist built around precision beams and overwhelming screen coverage. Eye Guy is simple to use, deadly at range, and devastating when channeling his ultimate.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Main attack: eye laser beam.",
+            "Ultimate attack: channeled mega-beam for sustained damage.",
+            "Role: dedicated long-range damage dealer with excellent boss pressure."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

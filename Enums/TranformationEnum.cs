@@ -127,26 +127,18 @@ namespace Ben10Mod.Enums
             return trans switch
             {
                 TransformationEnum.None => "No alien selected. Choose one from the Omnitrix!",
-
-                TransformationEnum.HeatBlast => "A fiery Pyronite from the blazing star Pyros. A living inferno of plasma wrapped in molten rock.",
-
-                TransformationEnum.DiamondHead => "A crystalline Petrosapien from the shattered planet Petropia. Body forged from unbreakable diamond-like crystal.",
-
-                TransformationEnum.XLR8 => "A lightning-fast Kineceleran from the planet Kinet. Built like a velociraptor and engineered for pure speed.",
-
-                TransformationEnum.ChromaStone => "A radiant Crystalsapien from Petropia. Living energy crystal that absorbs and unleashes raw power.",
-
-                TransformationEnum.FourArms => "A mighty Tetramand from the harsh desert world Khoros. Four powerful arms of raw, unstoppable strength.",
-
-                TransformationEnum.BuzzShock => "A hyper-charged Nosedeenian from the Nosideen Quasar. Electric plasma being that crackles with limitless energy.",
-
-                TransformationEnum.RipJaws => "A ferocious Piscciss Volann from the ocean planet Piscciss. Aquatic predator with razor-sharp jaws and gills.",
-
-                TransformationEnum.GhostFreak => "A terrifying Ectonurite from the nightmare dimension Anur Phaetos. Intangible phantom that haunts the darkness.",
-
-                TransformationEnum.WildVine => "A versatile Florauna from the lush planet Flors Verdance. Living plant with stretching vines and natural camouflage.",
-
-                TransformationEnum.StinkFly => "A winged Lepidopterran from the insect world Lepidopterra. Acid-spitting flyer with a signature pungent aroma.",
+                TransformationEnum.HeatBlast => Content.Transformations.HeatBlast.HeatBlast.TransformationDescription,
+                TransformationEnum.DiamondHead => Content.Transformations.DiamondHead.DiamondHead.TransformationDescription,
+                TransformationEnum.XLR8 => Content.Transformations.XLR8.XLR8.TransformationDescription,
+                TransformationEnum.ChromaStone => Content.Transformations.ChromaStone.ChromaStone.TransformationDescription,
+                TransformationEnum.FourArms => Content.Transformations.FourArms.FourArms.TransformationDescription,
+                TransformationEnum.BuzzShock => Content.Transformations.BuzzShock.BuzzShock.TransformationDescription,
+                TransformationEnum.RipJaws => Content.Transformations.RipJaws.RipJaws.TransformationDescription,
+                TransformationEnum.GhostFreak => Content.Transformations.GhostFreak.GhostFreak.TransformationDescription,
+                TransformationEnum.WildVine => Content.Transformations.WildVine.WildVine.TransformationDescription,
+                TransformationEnum.StinkFly => Content.Transformations.StinkFly.StinkFly.TransformationDescription,
+                TransformationEnum.EyeGuy => Content.Transformations.EyeGuy.EyeGuy.TransformationDescription,
+                TransformationEnum.BigChill => Content.Transformations.BigChill.BigChill.TransformationDescription,
 
                 _ => "A mysterious alien from the Omnitrix database."
             };
@@ -157,8 +149,18 @@ namespace Ben10Mod.Enums
             return trans switch
             {
                 TransformationEnum.None => new List<string> { "None" },
-                TransformationEnum.HeatBlast => new List<string> { "Flamethrower blast", "Flight via Propulsion", "Heat Immunity", "Explosive Fireballs" },
-                // ← Add real abilities for every alien (this is where the fun Ben 10 flavor goes!)
+                TransformationEnum.HeatBlast => new List<string>(Content.Transformations.HeatBlast.HeatBlast.TransformationAbilities),
+                TransformationEnum.DiamondHead => new List<string>(Content.Transformations.DiamondHead.DiamondHead.TransformationAbilities),
+                TransformationEnum.XLR8 => new List<string>(Content.Transformations.XLR8.XLR8.TransformationAbilities),
+                TransformationEnum.ChromaStone => new List<string>(Content.Transformations.ChromaStone.ChromaStone.TransformationAbilities),
+                TransformationEnum.FourArms => new List<string>(Content.Transformations.FourArms.FourArms.TransformationAbilities),
+                TransformationEnum.BuzzShock => new List<string>(Content.Transformations.BuzzShock.BuzzShock.TransformationAbilities),
+                TransformationEnum.RipJaws => new List<string>(Content.Transformations.RipJaws.RipJaws.TransformationAbilities),
+                TransformationEnum.GhostFreak => new List<string>(Content.Transformations.GhostFreak.GhostFreak.TransformationAbilities),
+                TransformationEnum.StinkFly => new List<string>(Content.Transformations.StinkFly.StinkFly.TransformationAbilities),
+                TransformationEnum.WildVine => new List<string>(Content.Transformations.WildVine.WildVine.TransformationAbilities),
+                TransformationEnum.EyeGuy => new List<string>(Content.Transformations.EyeGuy.EyeGuy.TransformationAbilities),
+                TransformationEnum.BigChill => new List<string>(Content.Transformations.BigChill.BigChill.TransformationAbilities),
                 _ => new List<string> { "Unknown abilities" }
             };
         }

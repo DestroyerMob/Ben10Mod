@@ -12,6 +12,17 @@ using Ben10Mod.Content.Items.Placeables;
 namespace Ben10Mod.Content.Transformations.DiamondHead
 {
     public class DiamondHead : ModItem {
+        public static string TransformationDescription =>
+            "A durable Petrosapien focused on defense and piercing crystal attacks. Diamondhead trades mobility for survivability, armor penetration, and hard-hitting crystal finishers.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: crystal bulwark stance with heavy defense, life regen, and reduced movement.",
+            "Main attack: fast crystal shard volleys with armor penetration.",
+            "Passive: large defense boost at all times.",
+            "Ultimate attack: summon a giant crystal strike at the cursor.",
+            "Role: tanky ranged bruiser that excels at standing ground."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

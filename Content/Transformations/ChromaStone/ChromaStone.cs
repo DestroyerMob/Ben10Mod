@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.ChromaStone
 {
     public class ChromaStone : ModItem {
+        public static string TransformationDescription =>
+            "A living crystal conduit that rewards smart timing. Chromastone stores punishment, converts it into stronger beam attacks, and glows with unstable energy while empowered.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: energy absorption state that stores damage taken as bonus attack power.",
+            "Main attack: focused crystal energy projectile.",
+            "Passive: absorbed damage increases projectile damage until the effect ends.",
+            "Visual effect: empowered form glows with shifting chromatic light.",
+            "Ultimate attack: stronger burst-focused crystal shot."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

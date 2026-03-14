@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.FourArms
 {
     public class FourArms : ModItem {
+        public static string TransformationDescription =>
+            "A straightforward Tetramand powerhouse. Four Arms leans into melee pressure with high crit, heavy hits, and shockwave-style crowd control.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Main attack: heavy melee punches.",
+            "Alt attack: thunderous clap attack for close-range impact.",
+            "Passive: increased melee speed, high crit chance, stronger jumps, and no fall damage.",
+            "Ultimate attack: overpowering melee finisher for burst damage.",
+            "Role: close-range bruiser built for smashing bosses and crowds."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

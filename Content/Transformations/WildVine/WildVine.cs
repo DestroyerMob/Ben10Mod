@@ -11,6 +11,16 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.WildVine
 {
     public class WildVine : ModItem {
+        public static string TransformationDescription =>
+            "A flexible plant-form fighter with strong utility. Wildvine mixes ranged thorn shots, grappling mobility, and battlefield control through explosive seeds.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Main attack: vine projectile attack.",
+            "Alt attack: grapple vine for mobility and positioning.",
+            "Ultimate attack: explosive plant-based finisher.",
+            "Role: control-focused hybrid that can poke, reposition, and lock down fights."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

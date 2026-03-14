@@ -11,6 +11,18 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.BigChill
 {
     public class BigChill : ModItem {
+        public static string TransformationDescription =>
+            "A spectral ice flier that combines ghost-like movement with cold control. Big Chill can phase like Ghostfreak, attack from the air, and evolve into an ultimate form with even stronger crowd control.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Primary ability: intangibility and free phasing movement.",
+            "Passive: built-in wings while transformed.",
+            "Main attack: icy projectile shot.",
+            "Alt attack: frost breath stream.",
+            "Ultimate form: available through the Ultimatrix evolution feature.",
+            "Ultimate ability: freezing field that slows nearby enemies."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)

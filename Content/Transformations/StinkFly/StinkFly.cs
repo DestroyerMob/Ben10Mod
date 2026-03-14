@@ -11,6 +11,17 @@ using Ben10Mod.Enums;
 namespace Ben10Mod.Content.Transformations.StinkFly
 {
     public class StinkFly : ModItem {
+        public static string TransformationDescription =>
+            "A flying harassment alien that controls space with status shots. Stinkfly stays airborne and peppers enemies with slowing and poisonous projectiles.";
+
+        public static IReadOnlyList<string> TransformationAbilities => new[] {
+            "Passive: built-in wings while transformed.",
+            "Main attack: slowing slime projectile.",
+            "Alt attack: poisonous projectile.",
+            "Ultimate attack: stronger badge-based projectile finisher.",
+            "Role: aerial control and safe ranged pressure."
+        };
+
         public override void Load() {
             // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)
