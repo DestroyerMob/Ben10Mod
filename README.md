@@ -14,10 +14,10 @@ The codebase is now structured so that those systems can be extended by addon mo
 
 Start here depending on what you are trying to do:
 
-- [Player Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/PLAYER_GUIDE.md)
-- [Architecture Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Architecture.md)
-- [Development Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Development.md)
-- [Addon API Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/AddonAPI.md)
+- [Player Guide](PLAYER_GUIDE.md)
+- [Architecture Guide](docs/Architecture.md)
+- [Development Guide](docs/Development.md)
+- [Addon API Guide](docs/AddonAPI.md)
 
 ## Repo Overview
 
@@ -46,19 +46,19 @@ Important files and folders:
 
 If you are trying to understand the gameplay loop, read these in order:
 
-1. [OmnitrixPlayer.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/OmnitrixPlayer.cs)
-2. [Transformation.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Transformations/Transformation.cs)
-3. [Omnitrix.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Accessories/Omnitrix.cs)
-4. [PlumbersBadge.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Weapons/PlumbersBadge.cs)
-5. [TransformationHandler.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/TransformationHandler.cs)
+1. [OmnitrixPlayer.cs](OmnitrixPlayer.cs)
+2. [Transformation.cs](Content/Transformations/Transformation.cs)
+3. [Omnitrix.cs](Content/Items/Accessories/Omnitrix.cs)
+4. [PlumbersBadge.cs](Content/Items/Weapons/PlumbersBadge.cs)
+5. [TransformationHandler.cs](Content/TransformationHandler.cs)
 
 If you are trying to build an addon, start with:
 
-1. [Addon API Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/AddonAPI.md)
+1. [Addon API Guide](docs/AddonAPI.md)
 2. one built-in transformation implementation such as:
-   [HeatBlastTransformation.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Transformations/HeatBlast/HeatBlastTransformation.cs)
+   [HeatBlastTransformation.cs](Content/Transformations/HeatBlast/HeatBlastTransformation.cs)
 3. one built-in Omnitrix implementation such as:
-   [PrototypeOmnitrix.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix.cs)
+   [PrototypeOmnitrix.cs](Content/Items/Accessories/PrototypeOmnitrix.cs)
 
 ## Current State
 
