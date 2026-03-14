@@ -67,6 +67,12 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
         public virtual string Description => "A mysterious alien from the Omnitrix database.";
         public virtual List<string> Abilities => new List<string> { "Unknown abilities" };
+        public virtual bool HasChildTransformation => ChildTransformation != null || ChildTransformations.Count > 0;
+        public virtual Transformation ChildTransformation => null;
+        public virtual IReadOnlyList<Transformation> ChildTransformations => System.Array.Empty<Transformation>();
+        public virtual Transformation ParentTransformation => null;
+        public virtual int ParentStepDownDelay => 45;
+        public virtual bool StepDownToParentOnRepeatedTransform => ParentTransformation != null;
 
         public virtual Asset<Texture2D> GetTransformationIcon()
             => ModContent.Request<Texture2D>(IconPath);
@@ -119,7 +125,32 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) => false;
-        public virtual bool TryHandleRepeatedTransformKey(Player player, OmnitrixPlayer omp, Omnitrix omnitrix) => false;
+        public virtual bool TryHandleTransformKeyWhileActive(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            string selectedTransformationId) {
+            if (omp.pendingEvolutionStepDownTime > 0 &&
+                omp.pendingEvolutionStepDownTransformationId == FullID)
+                return true;
+
+            if (TryActivateChildTransformation(player, omp, omnitrix, selectedTransformationId))
+                return true;
+
+            if (TryStepDownToParentTransformation(player, omp, omnitrix, selectedTransformationId))
+                return true;
+            return false;
+        }
+
+        public virtual string GetDisplayName(OmnitrixPlayer omp) => TransformationName;
+        public virtual string GetDescription(OmnitrixPlayer omp) => Description;
+        public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
+        public virtual bool HasPrimaryAbilityForState(OmnitrixPlayer omp) => HasPrimaryAbility;
+        public virtual bool HasUltimateAbilityForState(OmnitrixPlayer omp) => HasUltimateAbility;
+        public virtual int GetPrimaryAbilityDuration(OmnitrixPlayer omp) => PrimaryAbilityDuration;
+        public virtual int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) => PrimaryAbilityCooldown;
+        public virtual int GetUltimateAbilityCost(OmnitrixPlayer omp) => UltimateAbilityCost;
+        public virtual int GetUltimateAbilityDuration(OmnitrixPlayer omp) => UltimateAbilityDuration;
+        public virtual int GetUltimateAbilityCooldown(OmnitrixPlayer omp) => UltimateAbilityCooldown;
+        public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp) => UltimateAttack;
+
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             var profile = GetSelectedAttackProfile(omp);
             if (profile == null)
@@ -161,6 +192,102 @@ namespace Ben10Mod.Content.Transformations {
         protected virtual bool IsIntangibleWhilePrimaryAbilityActive(OmnitrixPlayer omp) {
             return omp.PrimaryAbilityEnabled &&
                    (TransformationName == "Ghostfreak" || TransformationName == "Bigchill");
+        }
+
+        protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {
+            if (ChildTransformation != null)
+                yield return ChildTransformation;
+
+            foreach (Transformation transformation in ChildTransformations) {
+                if (transformation != null &&
+                    (ChildTransformation == null || transformation.FullID != ChildTransformation.FullID))
+                    yield return transformation;
+            }
+        }
+
+        protected virtual bool TryActivateChildTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            string selectedTransformationId) {
+            foreach (Transformation childTransformation in EnumerateChildTransformations()) {
+                if (!CanUseChildTransformation(player, omp, omnitrix, childTransformation, selectedTransformationId))
+                    continue;
+
+                int energyCost = GetChildTransformationEnergyCost(player, omp, omnitrix, childTransformation,
+                    selectedTransformationId);
+                if (energyCost > 0 && omp.omnitrixEnergy < energyCost) {
+                    if (ShouldDetransformWhenChildTransformationFails(player, omp, omnitrix, childTransformation,
+                            selectedTransformationId))
+                        TransformationHandler.Detransform(player, 0, addCooldown: false);
+                    return true;
+                }
+
+                if (energyCost > 0)
+                    omp.omnitrixEnergy -= energyCost;
+
+                int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
+                TransformInto(player, omp, childTransformation, branchDuration);
+                OnChildTransformationActivated(player, omp, omnitrix, childTransformation, selectedTransformationId);
+                return true;
+            }
+
+            return false;
+        }
+
+        protected virtual bool CanUseChildTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            Transformation childTransformation, string selectedTransformationId) {
+            Transformation selectedTransformation = TransformationLoader.Get(selectedTransformationId);
+            return ChildTransformation != null &&
+                   childTransformation.FullID == ChildTransformation.FullID &&
+                   selectedTransformationId == FullID &&
+                   omnitrix.CanUseEvolutionFeature(player, omp, this) &&
+                   omnitrix.CanUseChildTransformation(player, omp, this, childTransformation, selectedTransformation);
+        }
+
+        protected virtual int GetChildTransformationEnergyCost(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            Transformation childTransformation, string selectedTransformationId) {
+            return ChildTransformation != null &&
+                   childTransformation.FullID == ChildTransformation.FullID &&
+                   selectedTransformationId == FullID
+                ? omnitrix.EvolutionCost
+                : 0;
+        }
+
+        protected virtual bool ShouldDetransformWhenChildTransformationFails(Player player, OmnitrixPlayer omp,
+            Omnitrix omnitrix, Transformation childTransformation, string selectedTransformationId) {
+            return ChildTransformation != null &&
+                   childTransformation.FullID == ChildTransformation.FullID &&
+                   selectedTransformationId == FullID;
+        }
+
+        protected virtual void OnChildTransformationActivated(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            Transformation childTransformation, string selectedTransformationId) { }
+
+        protected virtual bool TryStepDownToParentTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            string selectedTransformationId) {
+            if (!StepDownToParentOnRepeatedTransform || ParentTransformation == null)
+                return false;
+
+            if (selectedTransformationId != ParentTransformation.FullID)
+                return false;
+
+            int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
+            TransformInto(player, omp, ParentTransformation, branchDuration, playTransformEffects: false);
+            omp.pendingEvolutionStepDownTime = ParentStepDownDelay;
+            omp.pendingEvolutionStepDownTransformationId = ParentTransformation.FullID;
+            TransformationHandler.PlayDetransformEffects(player);
+            return true;
+        }
+
+        protected virtual void TransformInto(Player player, OmnitrixPlayer omp, Transformation targetTransformation,
+            int seconds, bool playTransformEffects = true) {
+            omp.pendingEvolutionStepDownTime = 0;
+            omp.pendingEvolutionStepDownTransformationId = "";
+            TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false, playSound: false);
+            TransformationHandler.Transform(player, targetTransformation.FullID, seconds, showParticles: playTransformEffects,
+                playSound: playTransformEffects);
+        }
+
+        public virtual void CompleteEvolutionStepDown(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false, playSound: false);
         }
 
         protected virtual TransformationAttackProfile CreatePrimaryAttackProfile() {
@@ -206,13 +333,13 @@ namespace Ben10Mod.Content.Transformations {
         }
 
         protected virtual TransformationAttackProfile GetSelectedAttackProfile(OmnitrixPlayer omp) {
-            if (HasUltimateAttack && omp.ultimateAttack)
+            if (GetUltimateAttackProjectileType(omp) > 0 && omp.ultimateAttack)
                 return CreateUltimateAttackProfile();
 
-            if (HasSecondaryAttack && omp.altAttack)
+            if (SecondaryAttack > 0 && omp.altAttack)
                 return CreateSecondaryAttackProfile();
 
-            if (HasPrimaryAttack)
+            if (PrimaryAttack > 0)
                 return CreatePrimaryAttackProfile();
 
             return null;

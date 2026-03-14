@@ -14,12 +14,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.BigChill;
 
 public class BigChillTransformation : Transformation {
-    private const int EvolutionStepDownDelay = 45;
-
     public override string FullID => "Ben10Mod:BigChill";
     public override string TransformationName => "Bigchill";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
     public override int TransformationBuffId => ModContent.BuffType<BigChill_Buff>();
+    public override Transformation ChildTransformation => ModContent.GetInstance<UltimateBigChillTransformation>();
 
     public override string Description =>
         "A spectral Necrofriggian that glides through the air, freezes enemies solid, and can evolve into an ultimate form.";
@@ -52,41 +51,11 @@ public class BigChillTransformation : Transformation {
     public override int UltimateAbilityDuration => 30 * 60;
     public override int UltimateAbilityCooldown => 60 * 60;
 
-    public override bool TryHandleRepeatedTransformKey(Player player, OmnitrixPlayer omp, Omnitrix omnitrix) {
-        if (omp.pendingEvolutionStepDownTime > 0 &&
-            omp.pendingEvolutionStepDownTransformationId == FullID)
-            return true;
-
-        if (!omnitrix.CanUseEvolutionFeature(player, omp, this))
-            return false;
-
-        if (omp.ultimateForm) {
-            omp.ultimateForm = false;
-            omp.pendingEvolutionStepDownTime = EvolutionStepDownDelay;
-            omp.pendingEvolutionStepDownTransformationId = FullID;
-            TransformationHandler.PlayDetransformEffects(player);
-            return true;
-        }
-
-        if (omp.omnitrixEnergy < omnitrix.EvolutionCost) {
-            TransformationHandler.Detransform(player, 0, addCooldown: false);
-            return true;
-        }
-
-        omp.omnitrixEnergy -= omnitrix.EvolutionCost;
-        omp.pendingEvolutionStepDownTime = 0;
-        omp.pendingEvolutionStepDownTransformationId = "";
-        TransformationHandler.GoUltimate(player);
-        return true;
-    }
-
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
         var abilitySlot = ModContent.GetInstance<AbilitySlot>();
-        abilitySlot.FunctionalItem = new Item(omp.ultimateForm
-            ? ModContent.ItemType<UltimateBigChillWings>()
-            : ModContent.ItemType<BigChillWings>());
+        abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BigChillWings>());
     }
 
     public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {
@@ -107,13 +76,11 @@ public class BigChillTransformation : Transformation {
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<BigChill>();
-        string bodyName = omp.ultimateForm ? "Ultimate" + costume.Name : costume.Name;
 
-        player.head = EquipLoader.GetEquipSlot(Mod, bodyName, EquipType.Head);
-        player.body = EquipLoader.GetEquipSlot(Mod, bodyName, EquipType.Body);
-        player.legs = EquipLoader.GetEquipSlot(Mod, bodyName, EquipType.Legs);
-        player.wings = EquipLoader.GetEquipSlot(Mod,
-            omp.ultimateForm ? "UltimateBigChillWings" : nameof(BigChillWings), EquipType.Wings);
+        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+        player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+        player.wings = EquipLoader.GetEquipSlot(Mod, nameof(BigChillWings), EquipType.Wings);
     }
 
     private static void ApplyPhaseMovement(Player player) {

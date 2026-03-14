@@ -25,7 +25,6 @@ namespace Ben10Mod.Content
             omp.isTransformed           = true;
             if (!isRefresh)
             {
-                omp.ultimateForm = false;
                 omp.activeTransformationDurationMultiplier = Math.Max(0f, omp.transformationDurationMultiplier);
                 omp.activeCooldownDurationMultiplier = Math.Max(0f, omp.cooldownDurationMultiplier);
             }
@@ -42,7 +41,7 @@ namespace Ben10Mod.Content
                 }
 
                 CombatText.NewText(player.getRect(), new Color(0, 255, 0),
-                    transformation.TransformationName + "!", dramatic: true);
+                    transformation.GetDisplayName(omp) + "!", dramatic: true);
             }
 
             if (playSound)
@@ -62,8 +61,9 @@ namespace Ben10Mod.Content
                 player.AddBuff(ModContent.BuffType<TransformationCooldown_Buff>(), 60 * cooldownSeconds);
 
             if (player.HasBuff(ModContent.BuffType<PrimaryAbility>()) && current != null &&
-                current.PrimaryAbilityCooldown > 0)
-                player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), current.PrimaryAbilityCooldown);
+                current.GetPrimaryAbilityCooldown(omp) > 0)
+                player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
+                    current.GetPrimaryAbilityCooldown(omp));
 
             if (showParticles)
             {
@@ -86,7 +86,6 @@ namespace Ben10Mod.Content
 
             omp.currentTransformationId = "";
             omp.isTransformed           = false;
-            omp.ultimateForm            = false;
             omp.ultimateAttack          = false;
             omp.activeTransformationDurationMultiplier = 1f;
             omp.activeCooldownDurationMultiplier = 1f;
@@ -109,31 +108,6 @@ namespace Ben10Mod.Content
 
             if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
-        }
-
-        public static void GoUltimate(Player player, bool showParticles = true, bool playSound = true)
-        {
-            var omp = player.GetModPlayer<OmnitrixPlayer>();
-            var current = omp.CurrentTransformation;
-            if (current == null) return;
-
-            omp.ultimateForm = true;
-
-            if (showParticles)
-            {
-                for (int i = 0; i < 25; i++)
-                {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
-                        DustID.GreenTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
-                    Main.dust[dustNum].noGravity = true;
-                }
-
-                CombatText.NewText(player.getRect(), new Color(0, 255, 0),
-                    "Ultimate " + current.TransformationName + "!", dramatic: true);
-            }
-
-            if (playSound)
-                SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
         }
 
         public static void AddTransformation(Player player, string transformationId)

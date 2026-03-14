@@ -88,7 +88,7 @@ Typical checklist:
 3. implement hands-on texture loading
 4. implement inventory drawing if you need visual state changes
 5. add recipes or unlock logic
-6. if it evolves, override the evolution hooks
+6. if it branches into child forms, override the child transformation hooks and Omnitrix capability hooks
 
 ### Adding a new badge
 

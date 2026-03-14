@@ -31,7 +31,6 @@ namespace Ben10Mod {
         public bool onCooldown = false;
         public bool altAttack = false;
         public bool ultimateAttack = false;
-        public bool ultimateForm = false;
 
         public int cooldownTime = 120;
         public int transformationTime = 300;
@@ -306,15 +305,14 @@ namespace Ben10Mod {
 
             if (pendingEvolutionStepDownTime > 0) {
                 bool sameTransformation = currentTransformationId == pendingEvolutionStepDownTransformationId;
-                if (!isTransformed || ultimateForm || !sameTransformation) {
+                if (!isTransformed || !sameTransformation) {
                     pendingEvolutionStepDownTime = 0;
                     pendingEvolutionStepDownTransformationId = "";
                 }
                 else if (--pendingEvolutionStepDownTime <= 0) {
                     pendingEvolutionStepDownTime = 0;
                     pendingEvolutionStepDownTransformationId = "";
-                    TransformationHandler.Detransform(Player, 0, showParticles: false, addCooldown: false,
-                        playSound: false);
+                    trans?.CompleteEvolutionStepDown(Player, this);
                 }
             }
 
@@ -353,7 +351,7 @@ namespace Ben10Mod {
 
             // Drop out of ultimate attack mode immediately when the Omnitrix can no longer sustain it.
             if (isTransformed && ultimateAttack &&
-                omnitrixEnergy < (CurrentTransformation?.UltimateAbilityCost ?? 50)) {
+                omnitrixEnergy < (CurrentTransformation?.GetUltimateAbilityCost(this) ?? 50)) {
                 for (int i = 0; i < 50; i++) {
                     Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
                         DustID.Firework_Yellow,
@@ -365,7 +363,8 @@ namespace Ben10Mod {
             }
 
             if (isTransformed) {
-                if (KeybindSystem.PrimaryAbility.JustPressed && CurrentTransformation?.HasPrimaryAbility == true)
+                if (KeybindSystem.PrimaryAbility.JustPressed &&
+                    CurrentTransformation?.HasPrimaryAbilityForState(this) == true)
                     ActivatePrimaryAbility();
 
                 if (KeybindSystem.UltimateAbility.JustPressed && CurrentTransformation != null)
@@ -373,16 +372,18 @@ namespace Ben10Mod {
             }
 
             if (PrimaryAbilityWasEnabled && !PrimaryAbilityEnabled) {
-                if (CurrentTransformation != null)
+                var abilityTransformation = TransformationLoader.Get(tranUsedAbilityId);
+                if (abilityTransformation != null)
                     Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
-                        CurrentTransformation.PrimaryAbilityCooldown);
+                        abilityTransformation.GetPrimaryAbilityCooldown(this));
             }
             PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
 
             if (UltimateAbilityWasEnabled && !UltimateAbilityEnabled) {
-                if (CurrentTransformation != null)
+                var abilityTransformation = TransformationLoader.Get(tranUsedAbilityId);
+                if (abilityTransformation != null)
                     Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(),
-                        CurrentTransformation.UltimateAbilityCooldown);
+                        abilityTransformation.GetUltimateAbilityCooldown(this));
             }
             UltimateAbilityWasEnabled = UltimateAbilityEnabled;
 
@@ -396,17 +397,19 @@ namespace Ben10Mod {
             if (trans.TryActivateUltimateAbility(Player, this))
                 return true;
 
-            if (trans.HasUltimateAbility && !Player.HasBuff<UltimateAbilityCooldown>() &&
+            if (trans.HasUltimateAbilityForState(this) && !Player.HasBuff<UltimateAbilityCooldown>() &&
                 !Player.HasBuff<UltimateAbility>()) {
-                if (omnitrixEnergy >= trans.UltimateAbilityCost) {
-                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), trans.UltimateAbilityDuration);
+                int ultimateAbilityCost = trans.GetUltimateAbilityCost(this);
+                if (omnitrixEnergy >= ultimateAbilityCost) {
+                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), trans.GetUltimateAbilityDuration(this));
                     tranUsedAbilityId = currentTransformationId;
-                    omnitrixEnergy -= trans.UltimateAbilityCost;
+                    omnitrixEnergy -= ultimateAbilityCost;
                     return true;
                 }
             }
             else {
-                if (omnitrixEnergy >= trans.UltimateAbilityCost && !ultimateAttack &&
+                int ultimateAttackCost = trans.GetUltimateAbilityCost(this);
+                if (omnitrixEnergy >= ultimateAttackCost && !ultimateAttack &&
                     !Player.HasBuff<UltimateAbilityCooldown>()) {
                     for (int i = 0; i < 50; i++) {
                         Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
@@ -439,14 +442,14 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
             if (trans == null) return false;
 
-            if (!trans.HasPrimaryAbility)
+            if (!trans.HasPrimaryAbilityForState(this))
                 return false;
 
             if (trans.TryActivatePrimaryAbility(Player, this))
                 return true;
 
             if (!Player.HasBuff<PrimaryAbilityCooldown>() && !Player.HasBuff<PrimaryAbility>()) {
-                Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), trans.PrimaryAbilityDuration);
+                Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), trans.GetPrimaryAbilityDuration(this));
                 tranUsedAbilityId = currentTransformationId;
                 return true;
             }

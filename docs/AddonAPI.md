@@ -6,9 +6,9 @@ It is written so you can build an addon from scratch using only this document an
 
 Related docs:
 
-- [README](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/README.md)
-- [Architecture Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Architecture.md)
-- [Development Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Development.md)
+- [README](../README.md)
+- [Architecture Guide](Architecture.md)
+- [Development Guide](Development.md)
 
 The intended addon use cases are:
 
@@ -49,6 +49,7 @@ An Omnitrix is an accessory accepted by the custom Omnitrix slot. The base class
 - detransform behavior
 - energy gained from damage
 - evolution hooks
+- child transformation capability hooks
 - hand visual hooks
 
 You extend this by subclassing `Omnitrix` and overriding the properties or virtual methods you want.
@@ -669,7 +670,7 @@ This gives you transformations that stay active while the Omnitrix has enough en
 
 ## Omnitrix Evolution
 
-The base API now supports generic evolution behavior.
+Ben10Mod still supports Omnitrix item evolution, such as one Omnitrix upgrading into another item.
 
 ### Built-In Example
 
@@ -696,6 +697,201 @@ If you need special effects or different timing:
 
 - override `StartEvolution`
 - override `CompleteEvolution`
+
+## Child Transformations And Branching Forms
+
+Transformation-to-transformation branching is now handled with child transformations.
+
+Use this system for:
+
+- ultimate forms that should behave as full transformations
+- alternate forms with different attacks or abilities
+- mixed forms that depend on both the active alien and the currently selected alien
+- future DNA splice forms
+
+The important design idea is:
+
+- the active transformation handles the transform key while already transformed
+- it can branch into one of its child transformations
+- the child is a real `Transformation` with its own buff, attacks, visuals, description, and abilities
+- a child can step back down into its parent and then fully detransform after a delay
+
+### Core Transformation Properties
+
+The main branching properties on `Transformation` are:
+
+- `HasChildTransformation`
+- `ChildTransformation`
+- `ChildTransformations`
+- `ParentTransformation`
+- `ParentStepDownDelay`
+- `StepDownToParentOnRepeatedTransform`
+
+Use `ChildTransformation` for the simple single-child case.
+
+Use `ChildTransformations` when you want multiple possible outcomes and will decide between them with conditions.
+
+Set `ParentTransformation` on the child if repeated transform should step back down into the parent first.
+
+### Simple Single-Child Example
+
+```csharp
+public class BigChillTransformation : Transformation {
+    public override string FullID => "MyAddon:BigChill";
+    public override string TransformationName => "Bigchill";
+    public override int TransformationBuffId => ModContent.BuffType<BigChillBuff>();
+
+    public override Transformation ChildTransformation
+        => ModContent.GetInstance<UltimateBigChillTransformation>();
+}
+
+public class UltimateBigChillTransformation : Transformation {
+    public override string FullID => "MyAddon:UltimateBigChill";
+    public override string TransformationName => "Ultimate Bigchill";
+    public override int TransformationBuffId => ModContent.BuffType<UltimateBigChillBuff>();
+
+    public override Transformation ParentTransformation
+        => ModContent.GetInstance<BigChillTransformation>();
+}
+```
+
+With the default implementation:
+
+- if Big Chill is active
+- and Big Chill is also the currently selected alien
+- and the Omnitrix allows evolution
+
+then pressing the transform key again will branch into `UltimateBigChillTransformation`.
+
+### Multiple Child Transformations
+
+If you want more than one possible child result:
+
+```csharp
+public override IReadOnlyList<Transformation> ChildTransformations => new Transformation[] {
+    ModContent.GetInstance<UltimateDiamondHeadTransformation>(),
+    ModContent.GetInstance<CrystalSpeedTransformation>()
+};
+```
+
+Then override `CanUseChildTransformation(...)` to decide which branch is valid.
+
+### Conditional Child Transformations
+
+The main condition hook is:
+
+```csharp
+protected override bool CanUseChildTransformation(
+    Player player,
+    OmnitrixPlayer omp,
+    Omnitrix omnitrix,
+    Transformation childTransformation,
+    string selectedTransformationId)
+```
+
+This gives you access to:
+
+- the player
+- Omnitrix runtime state
+- the equipped Omnitrix
+- the candidate child transformation
+- the currently selected roster transformation ID
+
+This is the hook to use for mixed forms.
+
+Example:
+
+```csharp
+protected override bool CanUseChildTransformation(
+    Player player,
+    OmnitrixPlayer omp,
+    Omnitrix omnitrix,
+    Transformation childTransformation,
+    string selectedTransformationId) {
+    if (childTransformation.FullID == "MyAddon:UltimateDiamondHead")
+        return selectedTransformationId == FullID &&
+               omnitrix.CanUseEvolutionFeature(player, omp, this);
+
+    if (childTransformation.FullID == "MyAddon:CrystalSpeed") {
+        return selectedTransformationId == "MyAddon:XLR8" &&
+               omnitrix.CanDNASplice(player, omp, this,
+                   TransformationLoader.Get(selectedTransformationId),
+                   childTransformation);
+    }
+
+    return false;
+}
+```
+
+### Energy Cost And Failure Rules
+
+The default child branch uses `EvolutionCost` only for the simple default child case.
+
+If you want custom branch costs or different failure behavior, override:
+
+- `GetChildTransformationEnergyCost(...)`
+- `ShouldDetransformWhenChildTransformationFails(...)`
+- `OnChildTransformationActivated(...)`
+
+This lets you support:
+
+- free branches
+- expensive DNA splice branches
+- branches that fail silently
+- branches that detransform on failure
+
+### Omnitrix Capability Hooks
+
+The Omnitrix now exposes capability hooks for branch logic:
+
+- `CanUseChildTransformation(...)`
+- `CanDNASplice(...)`
+- `CanUseEvolutionFeature(...)`
+
+Typical use:
+
+- keep transformation-specific branch rules in the transformation
+- keep Omnitrix-specific permission rules in the Omnitrix
+
+Example:
+
+```csharp
+public override bool CanDNASplice(Player player, OmnitrixPlayer omp,
+    Transformation current, Transformation selectedTransformation, Transformation child) {
+    return masterDNAFeatureUnlocked;
+}
+```
+
+### Step-Down Behavior
+
+If a child has `ParentTransformation` set, the default branch handling can step down first and then fully detransform after a delay.
+
+Useful properties and hooks:
+
+- `ParentTransformation`
+- `ParentStepDownDelay`
+- `StepDownToParentOnRepeatedTransform`
+- `CompleteEvolutionStepDown(...)`
+
+This is how forms like Ultimate Big Chill can:
+
+- repeated transform to return to normal Big Chill
+- play detransform visuals and sound
+- wait briefly
+- then fully detransform
+
+### Recommended Pattern
+
+When making branchable forms:
+
+1. create the base transformation as normal
+2. create each child form as its own full `Transformation`
+3. give every child its own buff
+4. set `ParentTransformation` on children that should step down
+5. use `CanUseChildTransformation(...)` for mixed-form conditions
+6. use Omnitrix capability hooks for feature gating such as evolution or DNA splicing
+
+This is the preferred replacement for the removed `Evolved*` property pattern.
 
 ## Connecting An Omnitrix To Your Addon Transformations
 

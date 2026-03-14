@@ -71,8 +71,8 @@ namespace Ben10Mod.Content.Items.Accessories
                 return;
             }
 
-            tooltips.Add(new TooltipLine(Mod, "CurrentForm", $"Current Form: {trans.TransformationName}"));
-            tooltips.Add(new TooltipLine(Mod, "Description", trans.Description));
+            tooltips.Add(new TooltipLine(Mod, "CurrentForm", $"Current Form: {trans.GetDisplayName(player)}"));
+            tooltips.Add(new TooltipLine(Mod, "Description", trans.GetDescription(player)));
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual)
@@ -203,6 +203,10 @@ namespace Ben10Mod.Content.Items.Accessories
             {
                 if (omp.currentTransformationId != desiredId)
                 {
+                    var currentTransformation = omp.CurrentTransformation;
+                    if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
+                        return;
+
                     if (omp.masterControl || (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost))
                     {
                         if (!omp.masterControl && UseEnergyForTransformation)
@@ -219,7 +223,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 else
                 {
                     var currentTransformation = omp.CurrentTransformation;
-                    if (currentTransformation?.TryHandleRepeatedTransformKey(player, omp, this) == true)
+                    if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
                         return;
 
                     if (UseEnergyForTransformation || omp.masterControl)
@@ -238,6 +242,12 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual int GetDetransformCooldownDuration(OmnitrixPlayer omp) {
             int baseDuration = UseEnergyForTransformation ? 0 : TimeoutDuration;
             return ApplyCooldownDurationModifiers(baseDuration, omp);
+        }
+
+        public virtual int GetBranchTransformationDuration(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation
+                ? GetTransformationDuration(omp)
+                : GetRemainingTransformationDurationSeconds(omp);
         }
 
         public virtual bool ShouldAddDetransformCooldown(OmnitrixPlayer omp) {
@@ -271,6 +281,16 @@ namespace Ben10Mod.Content.Items.Accessories
 
         public virtual bool CanUseEvolutionFeature(Player player, OmnitrixPlayer omp, Transformation transformation) {
             return EvolutionFeature;
+        }
+
+        public virtual bool CanUseChildTransformation(Player player, OmnitrixPlayer omp, Transformation current,
+            Transformation child, Transformation selectedTransformation) {
+            return true;
+        }
+
+        public virtual bool CanDNASplice(Player player, OmnitrixPlayer omp, Transformation current,
+            Transformation selectedTransformation, Transformation child) {
+            return false;
         }
 
         public virtual void StartEvolution(Player player, OmnitrixPlayer omp) {

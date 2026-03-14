@@ -46,7 +46,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                     player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
             }
 
-            int ultimateType = omp.CurrentTransformation?.UltimateAttack ?? 0;
+            int ultimateType = omp.CurrentTransformation?.GetUltimateAttackProjectileType(omp) ?? 0;
             if (HasActiveOwnedProjectile(player, ultimateType))
                 return;
 
