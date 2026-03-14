@@ -103,7 +103,8 @@ namespace Ben10Mod.Content.Items.Accessories
 
             if (omp.omnitrixEnergy > 0 && !string.IsNullOrEmpty(omp.currentTransformationId))
             {
-                TransformationHandler.Transform(player, omp.currentTransformationId, 2, showParticles: false, playSound: false);
+                TransformationHandler.Transform(player, omp.currentTransformationId, GetTransformationDuration(omp),
+                    showParticles: false, playSound: false);
             }
             else
             {
@@ -206,11 +207,15 @@ namespace Ben10Mod.Content.Items.Accessories
                     {
                         omp.omnitrixEnergy -= TranformationSwapCost;
                         TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
-                        TransformationHandler.Transform(player, desiredId, 2);
+                        TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
                     }
                 }
                 else
                 {
+                    var currentTransformation = omp.CurrentTransformation;
+                    if (currentTransformation?.TryHandleRepeatedTransformKey(player, omp, this) == true)
+                        return;
+
                     if (UseEnergyForTransformation || omp.masterControl)
                     {
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
@@ -220,11 +225,13 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public virtual int GetTransformationDuration(OmnitrixPlayer omp) {
-            return UseEnergyForTransformation ? 2 : TransformationDuration;
+            int baseDuration = UseEnergyForTransformation ? 2 : TransformationDuration;
+            return ApplyTransformationDurationModifiers(baseDuration, omp);
         }
 
         public virtual int GetDetransformCooldownDuration(OmnitrixPlayer omp) {
-            return UseEnergyForTransformation ? 0 : TimeoutDuration;
+            int baseDuration = UseEnergyForTransformation ? 0 : TimeoutDuration;
+            return ApplyCooldownDurationModifiers(baseDuration, omp);
         }
 
         public virtual bool ShouldAddDetransformCooldown(OmnitrixPlayer omp) {
@@ -237,11 +244,12 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public virtual void HandleUnequip(Player player, OmnitrixPlayer omp) {
-            TransformationHandler.Detransform(player, TimeoutDuration, showParticles: true, addCooldown: true);
+            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp), showParticles: true,
+                addCooldown: true);
         }
 
         public virtual void DetransformFromEnergyDepletion(Player player, OmnitrixPlayer omp) {
-            TransformationHandler.Detransform(player, TimeoutDuration);
+            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp));
         }
 
         public virtual int GetEnergyGainFromDamage(int damageDone) {
@@ -255,8 +263,12 @@ namespace Ben10Mod.Content.Items.Accessories
             return false;
         }
 
+        public virtual bool CanUseEvolutionFeature(Player player, OmnitrixPlayer omp, Transformation transformation) {
+            return EvolutionFeature;
+        }
+
         public virtual void StartEvolution(Player player, OmnitrixPlayer omp) {
-            TransformationHandler.Detransform(player, TimeoutDuration);
+            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp));
             player.AddBuff(ModContent.BuffType<Buffs.Abilities.OmnitrixUpdating>(), EvolutionAnimationDuration);
         }
 
@@ -291,6 +303,30 @@ namespace Ben10Mod.Content.Items.Accessories
                 return;
 
             player.handon = EquipLoader.GetEquipSlot(Mod, textureKey, EquipType.HandsOn);
+        }
+
+        protected virtual float GetTransformationDurationMultiplier(OmnitrixPlayer omp) {
+            return omp.transformationDurationMultiplier;
+        }
+
+        protected virtual float GetCooldownDurationMultiplier(OmnitrixPlayer omp) {
+            return omp.cooldownDurationMultiplier;
+        }
+
+        protected int ApplyTransformationDurationModifiers(int baseDuration, OmnitrixPlayer omp) {
+            return ApplyDurationMultiplier(baseDuration, GetTransformationDurationMultiplier(omp));
+        }
+
+        protected int ApplyCooldownDurationModifiers(int baseDuration, OmnitrixPlayer omp) {
+            return ApplyDurationMultiplier(baseDuration, GetCooldownDurationMultiplier(omp));
+        }
+
+        protected static int ApplyDurationMultiplier(int baseDuration, float multiplier) {
+            if (baseDuration <= 0)
+                return 0;
+
+            float safeMultiplier = Math.Max(0f, multiplier);
+            return Math.Max(1, (int)Math.Round(baseDuration * safeMultiplier));
         }
     }
 }

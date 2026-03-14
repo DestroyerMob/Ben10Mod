@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Ben10Mod.Content;
-using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Interface;
+using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
@@ -14,6 +14,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.BigChill;
 
 public class BigChillTransformation : Transformation {
+    private const int EvolutionStepDownDelay = 45;
+
     public override string FullID => "Ben10Mod:BigChill";
     public override string TransformationName => "Bigchill";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
@@ -50,17 +52,30 @@ public class BigChillTransformation : Transformation {
     public override int UltimateAbilityDuration => 30 * 60;
     public override int UltimateAbilityCooldown => 60 * 60;
 
-    public override bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) {
-        if (omp.ultimateForm ||
-            player.HasBuff<UltimateAbilityCooldown>() ||
-            player.HasBuff<UltimateAbility>() ||
-            omp.omnitrixEnergy < UltimateAbilityCost) {
+    public override bool TryHandleRepeatedTransformKey(Player player, OmnitrixPlayer omp, Omnitrix omnitrix) {
+        if (omp.pendingEvolutionStepDownTime > 0 &&
+            omp.pendingEvolutionStepDownTransformationId == FullID)
+            return true;
+
+        if (!omnitrix.CanUseEvolutionFeature(player, omp, this))
             return false;
+
+        if (omp.ultimateForm) {
+            omp.ultimateForm = false;
+            omp.pendingEvolutionStepDownTime = EvolutionStepDownDelay;
+            omp.pendingEvolutionStepDownTransformationId = FullID;
+            TransformationHandler.PlayDetransformEffects(player);
+            return true;
         }
 
-        player.AddBuff(ModContent.BuffType<UltimateAbility>(), UltimateAbilityDuration);
-        omp.tranUsedAbilityId = omp.currentTransformationId;
-        omp.omnitrixEnergy -= UltimateAbilityCost;
+        if (omp.omnitrixEnergy < omnitrix.EvolutionCost) {
+            TransformationHandler.Detransform(player, 0, addCooldown: false);
+            return true;
+        }
+
+        omp.omnitrixEnergy -= omnitrix.EvolutionCost;
+        omp.pendingEvolutionStepDownTime = 0;
+        omp.pendingEvolutionStepDownTransformationId = "";
         TransformationHandler.GoUltimate(player);
         return true;
     }
@@ -72,11 +87,6 @@ public class BigChillTransformation : Transformation {
         abilitySlot.FunctionalItem = new Item(omp.ultimateForm
             ? ModContent.ItemType<UltimateBigChillWings>()
             : ModContent.ItemType<BigChillWings>());
-    }
-
-    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
-        if (omp.ultimateForm && !omp.UltimateAbilityEnabled)
-            omp.ultimateForm = false;
     }
 
     public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {

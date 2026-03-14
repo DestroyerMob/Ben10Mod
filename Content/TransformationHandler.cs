@@ -19,10 +19,12 @@ namespace Ben10Mod.Content
                 return;
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            bool isRefresh = omp.isTransformed && omp.currentTransformationId == transformationId;
 
             omp.currentTransformationId = transformationId;
             omp.isTransformed           = true;
-            omp.ultimateForm            = false;
+            if (!isRefresh)
+                omp.ultimateForm = false;
 
             player.AddBuff(transformation.TransformationBuffId, 60 * seconds);
 
@@ -42,7 +44,8 @@ namespace Ben10Mod.Content
             if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
 
-            transformation.OnTransform(player, omp);
+            if (!isRefresh)
+                transformation.OnTransform(player, omp);
         }
 
         public static void Detransform(Player player, int cooldownSeconds = 120, 
@@ -84,6 +87,22 @@ namespace Ben10Mod.Content
 
             if (current != null)
                 current.OnDetransform(player, omp);
+        }
+
+        public static void PlayDetransformEffects(Player player, bool showParticles = true, bool playSound = true)
+        {
+            if (showParticles)
+            {
+                for (int i = 0; i < 25; i++)
+                {
+                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
+                        DustID.RedTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
+                    Main.dust[dustNum].noGravity = true;
+                }
+            }
+
+            if (playSound)
+                SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
         }
 
         public static void GoUltimate(Player player, bool showParticles = true, bool playSound = true)

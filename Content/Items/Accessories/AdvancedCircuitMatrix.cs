@@ -17,8 +17,8 @@ public class AdvancedCircuitMatrix : ModItem {
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.advancedCircuitMatrix =  true;
-        // This simply exists for my dev needs
-        // omp.omnitrixEnergyRegen   += 500;
+        omp.advancedCircuitMatrix = true;
+        omp.transformationDurationMultiplier *= 2f;
+        omp.cooldownDurationMultiplier *= 2f;
     }
 }

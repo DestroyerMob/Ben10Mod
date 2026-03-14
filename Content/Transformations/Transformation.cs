@@ -119,6 +119,7 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) => false;
+        public virtual bool TryHandleRepeatedTransformKey(Player player, OmnitrixPlayer omp, Omnitrix omnitrix) => false;
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             var profile = GetSelectedAttackProfile(omp);
             if (profile == null)

@@ -64,6 +64,10 @@ namespace Ben10Mod {
         public float omnitrixEnergy = 0f;
         public float omnitrixEnergyMax = 0f;
         public float omnitrixEnergyRegen = 0f;
+        public float transformationDurationMultiplier = 1f;
+        public float cooldownDurationMultiplier = 1f;
+        public int pendingEvolutionStepDownTime = 0;
+        public string pendingEvolutionStepDownTransformationId = "";
         public Omnitrix equippedOmnitrix = null;
 
         public bool inPossessionMode = false;
@@ -90,6 +94,14 @@ namespace Ben10Mod {
             => TransformationLoader.Get(currentTransformationId);
 
         public bool IsTransformed => !string.IsNullOrEmpty(currentTransformationId);
+
+        public Omnitrix GetActiveOmnitrix() {
+            if (equippedOmnitrix != null)
+                return equippedOmnitrix;
+
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+            return omnitrixSlot?.FunctionalItem?.ModItem as Omnitrix;
+        }
 
         public override void SaveData(TagCompound tag) {
             tag["masterControl"] = masterControl;
@@ -186,6 +198,8 @@ namespace Ben10Mod {
 
             omnitrixEnergyMax = 0;
             omnitrixEnergyRegen = 0;
+            transformationDurationMultiplier = 1f;
+            cooldownDurationMultiplier = 1f;
 
             isTransformed = false;
             onCooldown = false;
@@ -219,11 +233,15 @@ namespace Ben10Mod {
             if (wasTransformed && !isTransformed) {
                 var customSlot = ModContent.GetInstance<OmnitrixSlot>();
                 if (customSlot != null) {
+                    var activeOmnitrix = GetActiveOmnitrix();
                     if (masterControl) {
                         TransformationHandler.Detransform(Player, 0, true, false);
                     }
                     else {
-                        equippedOmnitrix?.HandleForcedDetransform(Player, this);
+                        if (activeOmnitrix != null)
+                            activeOmnitrix.HandleForcedDetransform(Player, this);
+                        else if (!string.IsNullOrEmpty(currentTransformationId))
+                            TransformationHandler.Detransform(Player, 0, showParticles: true, addCooldown: false);
                     }
                 }
             }
@@ -232,7 +250,8 @@ namespace Ben10Mod {
             // Play the update effect once when the Omnitrix enters its updating state, then let the
             // equipped Omnitrix decide what item it should become.
             if (omnitrixUpdating != omnitrixWasUpdating) {
-                if (omnitrixUpdating && equippedOmnitrix != null) {
+                var activeOmnitrix = GetActiveOmnitrix();
+                if (omnitrixUpdating && activeOmnitrix != null) {
                     Random random = new Random();
                     for (int i = 0; i < 25; i++) {
                         int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1,
@@ -241,7 +260,7 @@ namespace Ben10Mod {
                         Main.dust[dustNum].noGravity = true;
                     }
 
-                    equippedOmnitrix.CompleteEvolution(Player, this, omnitrixSlot.FunctionalItem);
+                    activeOmnitrix.CompleteEvolution(Player, this, omnitrixSlot.FunctionalItem);
                 }
 
                 omnitrixWasUpdating = omnitrixUpdating;
@@ -258,6 +277,8 @@ namespace Ben10Mod {
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
+                pendingEvolutionStepDownTime = 0;
+                pendingEvolutionStepDownTransformationId = "";
             }
 
             omnitrixEnergy += (omnitrixEnergyRegen / 120f);
@@ -280,6 +301,20 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
             if (trans != null)
                 trans.PostUpdate(Player, this);
+
+            if (pendingEvolutionStepDownTime > 0) {
+                bool sameTransformation = currentTransformationId == pendingEvolutionStepDownTransformationId;
+                if (!isTransformed || ultimateForm || !sameTransformation) {
+                    pendingEvolutionStepDownTime = 0;
+                    pendingEvolutionStepDownTransformationId = "";
+                }
+                else if (--pendingEvolutionStepDownTime <= 0) {
+                    pendingEvolutionStepDownTime = 0;
+                    pendingEvolutionStepDownTransformationId = "";
+                    TransformationHandler.Detransform(Player, 0, showParticles: false, addCooldown: false,
+                        playSound: false);
+                }
+            }
 
             if (inPossessionMode) {
                 if (possessedTargetIndex < 0 || possessedTargetIndex >= Main.maxNPCs) {
@@ -501,8 +536,7 @@ namespace Ben10Mod {
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a,
             ref bool fullBright) {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-
-            equippedOmnitrix?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
+            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
 
             var trans = CurrentTransformation;
             if (trans != null)
@@ -511,8 +545,7 @@ namespace Ben10Mod {
 
         public override void FrameEffects() {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-
-            equippedOmnitrix?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
+            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
 
             if (!customSlot.HideVisuals && isTransformed) {
                 Player.wings = -1;
@@ -603,8 +636,9 @@ namespace Ben10Mod {
 
             base.OnHitNPC(target, hit, damageDone);
 
-            if (isTransformed && !ultimateAttack && !UltimateAbilityEnabled && equippedOmnitrix != null)
-                omnitrixEnergy += equippedOmnitrix.GetEnergyGainFromDamage(hit.Damage);
+            var activeOmnitrix = GetActiveOmnitrix();
+            if (isTransformed && !ultimateAttack && !UltimateAbilityEnabled && activeOmnitrix != null)
+                omnitrixEnergy += activeOmnitrix.GetEnergyGainFromDamage(hit.Damage);
         }
 
         public override void PreUpdate() {
