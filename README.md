@@ -14,7 +14,7 @@ The codebase is now structured so that those systems can be extended by addon mo
 
 Start here depending on what you are trying to do:
 
-- [Player Guide](PLAYER_GUIDE.md)
+- [Player Guide](docs/PLAYER_GUIDE.md)
 - [Architecture Guide](docs/Architecture.md)
 - [Development Guide](docs/Development.md)
 - [Addon API Guide](docs/AddonAPI.md)
