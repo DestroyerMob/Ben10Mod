@@ -43,9 +43,9 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool PrimaryChannel => false;
         public virtual bool SecondaryChannel => false;
         public virtual bool UltimateChannel => false;
-        public virtual bool PrimaryNoMelee => false;
-        public virtual bool SecondaryNoMelee => false;
-        public virtual bool UltimateNoMelee => false;
+        public virtual bool PrimaryNoMelee => true;
+        public virtual bool SecondaryNoMelee => true;
+        public virtual bool UltimateNoMelee => true;
         public virtual int PrimaryArmorPenetration => 0;
         public virtual int SecondaryArmorPenetration => 0;
         public virtual int UltimateArmorPenetration => 0;

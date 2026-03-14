@@ -22,6 +22,7 @@ public class XLR8Transformation : Transformation {
 
         player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5f : 2.5f;
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4f : 2f;
+        player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
         if (Math.Abs(player.velocity.X) > 2) {
             Player.jumpSpeed *= omp.PrimaryAbilityEnabled ? 3.0f : 1.5f;
             player.waterWalk =  true;
