@@ -219,7 +219,7 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
 
             // Detransform handling
-            if (wasTransformed != isTransformed) {
+            if (wasTransformed && !isTransformed) {
                 var customSlot = ModContent.GetInstance<OmnitrixSlot>();
                 if (customSlot != null) {
                     if (masterControl) {
@@ -233,9 +233,8 @@ namespace Ben10Mod {
                             TransformationHandler.Detransform(Player, 0, addCooldown: false);
                     }
                 }
-
-                wasTransformed = isTransformed;
             }
+            wasTransformed = isTransformed;
 
             // Prototype → Recalibrated update effect
             if (omnitrixUpdating != omnitrixWasUpdating) {
@@ -347,21 +346,19 @@ namespace Ben10Mod {
             }
 
             // Cooldown buff application
-            if (PrimaryAbilityEnabled != PrimaryAbilityWasEnabled) {
+            if (PrimaryAbilityWasEnabled && !PrimaryAbilityEnabled) {
                 if (CurrentTransformation != null)
                     Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
                         CurrentTransformation.PrimaryAbilityCooldown);
-
-                PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
             }
+            PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
 
-            if (UltimateAbilityEnabled != UltimateAbilityWasEnabled) {
+            if (UltimateAbilityWasEnabled && !UltimateAbilityEnabled) {
                 if (CurrentTransformation != null)
                     Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(),
                         CurrentTransformation.UltimateAbilityCooldown);
-
-                UltimateAbilityWasEnabled = UltimateAbilityEnabled;
             }
+            UltimateAbilityWasEnabled = UltimateAbilityEnabled;
 
             UpdateEventTransformationUnlocks();
         }
