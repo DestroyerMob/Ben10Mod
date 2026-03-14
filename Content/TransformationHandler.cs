@@ -54,6 +54,10 @@ namespace Ben10Mod.Content
             if (addCooldown && cooldownSeconds > 0)
                 player.AddBuff(ModContent.BuffType<TransformationCooldown_Buff>(), 60 * cooldownSeconds);
 
+            if (player.HasBuff(ModContent.BuffType<PrimaryAbility>()) && current != null &&
+                current.PrimaryAbilityCooldown > 0)
+                player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), current.PrimaryAbilityCooldown);
+
             if (showParticles)
             {
                 for (int i = 0; i < 25; i++)
