@@ -55,12 +55,13 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool HasPrimaryAttack => PrimaryAttack > 0;
         public virtual bool HasSecondaryAttack => SecondaryAttack > 0;
         public virtual bool HasUltimateAttack => UltimateAttack > 0;
+        public virtual bool HasPrimaryAbility => PrimaryAbilityDuration > 0;
         public virtual bool HasUltimateAbility => false;
         public virtual int UltimateAbilityCost => 50;
         public virtual int UltimateAbilityDuration => 30;
         public virtual int UltimateAbilityCooldown => 30;
-        public virtual int PrimaryAbilityDuration => 30;
-        public virtual int PrimaryAbilityCooldown => 30;
+        public virtual int PrimaryAbilityDuration => 0;
+        public virtual int PrimaryAbilityCooldown => 0;
         public virtual int TransformationBuffId => -1;
         public virtual string TransformationName => "None";
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";

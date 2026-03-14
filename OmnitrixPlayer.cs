@@ -339,7 +339,7 @@ namespace Ben10Mod {
 
             // Ability keybinds
             if (isTransformed) {
-                if (KeybindSystem.PrimaryAbility.JustPressed && CurrentTransformation != null)
+                if (KeybindSystem.PrimaryAbility.JustPressed && CurrentTransformation?.HasPrimaryAbility == true)
                     ActivatePrimaryAbility();
 
                 if (KeybindSystem.UltimateAbility.JustPressed && CurrentTransformation != null)
@@ -413,6 +413,9 @@ namespace Ben10Mod {
         public bool ActivatePrimaryAbility() {
             var trans = CurrentTransformation;
             if (trans == null) return false;
+
+            if (!trans.HasPrimaryAbility)
+                return false;
 
             if (trans.TryActivatePrimaryAbility(Player, this))
                 return true;

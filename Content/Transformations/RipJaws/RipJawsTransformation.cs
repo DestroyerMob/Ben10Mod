@@ -1,0 +1,81 @@
+using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Projectiles;
+using Microsoft.Xna.Framework;
+using Terraria;
+using Terraria.DataStructures;
+using Terraria.ID;
+using Terraria.ModLoader;
+
+namespace Ben10Mod.Content.Transformations.RipJaws;
+
+public class RipJawsTransformation : Transformation {
+    public override string FullID => "Ben10Mod:RipJaws";
+    public override string TransformationName => "Ripjaws";
+    public override string IconPath => "Ben10Mod/Content/Interface/RipJawsSelect";
+    public override int TransformationBuffId => ModContent.BuffType<RipJaws_Buff>();
+
+    public override string Description =>
+        "An aquatic predator that dominates in water, suffers on land, and lunges with devastating bites.";
+
+    public override List<string> Abilities => new() {
+        "Aquatic rush",
+        "Heavy bite lunge",
+        "Water mobility",
+        "Amphibious survival pressure"
+    };
+
+    public override int PrimaryAttack => ModContent.ProjectileType<RipJawsProjectile>();
+    public override int PrimaryAttackSpeed => 28;
+    public override int PrimaryShootSpeed => 6;
+
+    public override int SecondaryAttack => ModContent.ProjectileType<RipJawsBiteProjectile>();
+    public override int SecondaryAttackSpeed => 75;
+    public override int SecondaryShootSpeed => 6;
+    public override int SecondaryUseStyle => ItemUseStyleID.HiddenAnimation;
+    public override float SecondaryAttackModifier => 3f;
+
+    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+        base.UpdateEffects(player, omp);
+
+        if (player.wet || Main.raining) {
+            player.merman = true;
+            player.breathCD = 0;
+            player.breath = player.breathMax;
+            player.GetDamage<HeroDamage>() *= 2f;
+            Lighting.AddLight(player.Center, Vector3.One);
+            player.maxFallSpeed *= 2f;
+            player.moveSpeed *= 4f;
+        }
+        else {
+            player.breath -= 4;
+            if (player.breath <= 1)
+                player.lifeRegen -= 60;
+        }
+
+        player.accFlipper = true;
+    }
+
+    public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
+        Vector2 velocity, int damage, float knockback) {
+        if (omp.altAttack)
+            player.velocity += velocity * 2f;
+
+        return base.Shoot(player, omp, source, position, velocity, damage, knockback);
+    }
+
+    public override void FrameEffects(Player player, OmnitrixPlayer omp) {
+        var costume = ModContent.GetInstance<RipJaws>();
+        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+
+        if (player.wet) {
+            player.legs = EquipLoader.GetEquipSlot(Mod, "RipJaws_alt", EquipType.Legs);
+            return;
+        }
+
+        player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+        player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
+    }
+}
