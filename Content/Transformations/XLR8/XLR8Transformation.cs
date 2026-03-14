@@ -14,6 +14,7 @@ public class XLR8Transformation : Transformation {
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override int    PrimaryAbilityDuration  => 10 * 60;
+    public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<FistProjectile>();
     public override int    PrimaryAttackSpeed      => 3;
     public override int    PrimaryShootSpeed       => 30;
@@ -28,6 +29,7 @@ public class XLR8Transformation : Transformation {
         player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5f : 2.5f;
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4f : 2f;
         player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
+        player.pickSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         if (Math.Abs(player.velocity.X) > 2) {
             Player.jumpSpeed *= omp.PrimaryAbilityEnabled ? 3.0f : 1.5f;
             player.waterWalk =  true;
