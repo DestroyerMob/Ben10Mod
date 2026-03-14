@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Enums;
 
 namespace Ben10Mod.Content.Transformations.BigChill
 {
@@ -24,11 +23,9 @@ namespace Ben10Mod.Content.Transformations.BigChill
         };
 
         public override void Load() {
-            // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)
                 return;
 
-            // Add equip textures
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
@@ -38,9 +35,7 @@ namespace Ben10Mod.Content.Transformations.BigChill
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Legs}", EquipType.Legs, name: "UltimateBigChill");
         }
 
-        // Called in SetStaticDefaults
         private void SetupDrawing() {
-            // Since the equipment textures weren't loaded on the server, we can't have this code running server-side
             if (Main.netMode == NetmodeID.Server)
                 return;
 
@@ -76,10 +71,12 @@ namespace Ben10Mod.Content.Transformations.BigChill
             Item.consumable = true;
         }
 
-        public override bool CanUseItem(Player player) => !TransformationHandler.HasTransformation(player, TransformationEnum.BigChill);
+        public override bool CanUseItem(Player player) {
+            return !TransformationHandler.HasTransformation(player, "Ben10Mod:BigChill");
+        }
 
         public override bool? UseItem(Player player) {
-            player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation.Add(TransformationEnum.BigChill);
+            TransformationHandler.AddTransformation(player, "Ben10Mod:BigChill");
             return true;
         }
     }

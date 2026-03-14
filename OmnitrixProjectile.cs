@@ -1,6 +1,5 @@
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Projectiles;
-using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
@@ -36,12 +35,12 @@ public class OmnitrixProjectile : GlobalProjectile {
         framesAlive++;
         if (projectile.owner == Main.LocalPlayer.whoAmI) {
             var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
-                projectile.velocity = initialVelocity * (1 - framesAlive / 60f);
-                if (framesAlive >= 60) projectile.velocity = initialVelocity.SafeNormalize(Vector2.Zero);
-                projectileSlowed    = true;
-            }
-            else if (projectileSlowed) projectile.velocity = initialVelocity * 2f;
+            // if (omp.UltimateAbilityEnabled && omp.currTransformation == TransformationEnum.XLR8) {
+            //     projectile.velocity = initialVelocity * (1 - framesAlive / 60f);
+            //     if (framesAlive >= 60) projectile.velocity = initialVelocity.SafeNormalize(Vector2.Zero);
+            //     projectileSlowed    = true;
+            // }
+            // else if (projectileSlowed) projectile.velocity = initialVelocity * 2f;
         }
     }
 

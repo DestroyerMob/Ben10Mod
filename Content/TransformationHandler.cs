@@ -1,160 +1,129 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Ben10Mod.Content.Buffs.Abilities;
-using Ben10Mod.Enums;
+using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.Audio;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Microsoft.Xna.Framework;
-using static Terraria.ModLoader.PlayerDrawLayer;
-using Terraria.Audio;
+using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Transformations;
 
-namespace Ben10Mod.Content {
-    public static class TransformationHandler {
-
-        public static void Transform(Player player, TransformationEnum transformation, int seconds, bool showParticles = true, bool playSound = true, bool stayUltimate = false) {
-            if (transformation.GetTransformation() == -1)
+namespace Ben10Mod.Content
+{
+    public static class TransformationHandler
+    {
+        public static void Transform(Player player, string transformationId, int seconds = 300, 
+            bool showParticles = true, bool playSound = true)
+        {
+            var transformation = TransformationLoader.Get(transformationId);
+            if (transformation == null || transformation.TransformationBuffId <= 0)
                 return;
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
-            omp.currTransformation = transformation;
-            omp.isTransformed      = true;
-            if (!stayUltimate)
-                omp.ultimateForm       = false;
 
-            if (showParticles) {
-                Random random = new Random();
-                for (int i = 0; i < 25; i++) {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1, DustID.GreenTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 4);
+            omp.currentTransformationId = transformationId;
+            omp.isTransformed           = true;
+            omp.ultimateForm            = false;
+
+            player.AddBuff(transformation.TransformationBuffId, 60 * seconds);
+
+            if (showParticles)
+            {
+                for (int i = 0; i < 25; i++)
+                {
+                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
+                        DustID.GreenTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
                     Main.dust[dustNum].noGravity = true;
                 }
 
-                CombatText.NewText(
-                    new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height),
-                    new Color(0, 255, 0),
-                    transformation.GetName() + "!",
-                    dramatic: true,
-                    dot: false
-                );
+                CombatText.NewText(player.getRect(), new Color(0, 255, 0),
+                    transformation.TransformationName + "!", dramatic: true);
             }
-            if (playSound) {
+
+            if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
-            }
-            player.AddBuff(transformation.GetTransformation(), 60 * seconds);
+
+            transformation.OnTransform(player, omp);
         }
 
-        public static void Detransform(Player player, int seconds, bool showParticles = true, bool addCooldown = true, bool playSound = true) {
-            if (addCooldown)
-                player.AddBuff(ModContent.BuffType<TransformationCooldown_Buff>(), 60 * seconds);
+        public static void Detransform(Player player, int cooldownSeconds = 120, 
+            bool showParticles = true, bool addCooldown = true, bool playSound = true)
+        {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            var current = omp.CurrentTransformation;
 
-            if (showParticles) {
-                Random random = new Random();
-                for (int i = 0; i < 25; i++) {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1, DustID.RedTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 4);
+            if (addCooldown && cooldownSeconds > 0)
+                player.AddBuff(ModContent.BuffType<TransformationCooldown_Buff>(), 60 * cooldownSeconds);
+
+            if (player.HasBuff(ModContent.BuffType<PrimaryAbility>()) && current != null &&
+                current.PrimaryAbilityCooldown > 0)
+                player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), current.PrimaryAbilityCooldown);
+
+            if (showParticles)
+            {
+                for (int i = 0; i < 25; i++)
+                {
+                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
+                        DustID.RedTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
                     Main.dust[dustNum].noGravity = true;
                 }
             }
 
-            if (playSound) {
+            if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
-            }
 
-            player.ClearBuff(ModContent.BuffType<HeatBlast_Buff>());
-            player.ClearBuff(ModContent.BuffType<XLR8_Buff>());
-            player.ClearBuff(ModContent.BuffType<DiamondHead_Buff>());
-            player.ClearBuff(ModContent.BuffType<FourArms_Buff>());
-            player.ClearBuff(ModContent.BuffType<BuzzShock_Buff>());
-            player.ClearBuff(ModContent.BuffType<GhostFreak_Buff>());
-            player.ClearBuff(ModContent.BuffType<RipJaws_Buff>());
-            player.ClearBuff(ModContent.BuffType<StinkFly_Buff>());
-            player.ClearBuff(ModContent.BuffType<WildVine_Buff>());
-            player.ClearBuff(ModContent.BuffType<ChromaStone_Buff>());
-            player.ClearBuff(ModContent.BuffType<EyeGuy_Buff>());
-            player.ClearBuff(ModContent.BuffType<BigChill_Buff>());
+            if (current?.TransformationBuffId > 0)
+                player.ClearBuff(current.TransformationBuffId);
 
             player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
             player.ClearBuff(ModContent.BuffType<UltimateAbility>());
 
-            player.GetModPlayer<OmnitrixPlayer>().currTransformation = TransformationEnum.None;
-            player.GetModPlayer<OmnitrixPlayer>().ultimateForm       = false;
+            omp.currentTransformationId = "";
+            omp.isTransformed           = false;
+            omp.ultimateForm            = false;
+            omp.ultimateAttack          = false;
 
+            if (current != null)
+                current.OnDetransform(player, omp);
         }
-        
-        public static void GoUltimate(Player player, TransformationEnum transformation, bool showParticles = true, bool playSound = true) {
-            if (transformation.GetTransformation() == -1)
-                return;
-            if (!transformation.HasUltimateForm() && !player.GetModPlayer<OmnitrixPlayer>().ultimateForm)
-                return;
-            if (showParticles) {
-                Random random = new Random();
-                for (int i = 0; i < 25; i++) {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1, DustID.GreenTorch, random.Next(-4, 5), random.Next(-4, 5), 1, Color.White, 4);
+
+        public static void GoUltimate(Player player, bool showParticles = true, bool playSound = true)
+        {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            var current = omp.CurrentTransformation;
+            if (current == null) return;
+
+            omp.ultimateForm = true;
+
+            if (showParticles)
+            {
+                for (int i = 0; i < 25; i++)
+                {
+                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
+                        DustID.GreenTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
                     Main.dust[dustNum].noGravity = true;
                 }
 
-                CombatText.NewText(
-                    new Rectangle((int)player.position.X, (int)player.position.Y, player.width, player.height),
-                    new Color(0, 255, 0),
-                    "Ultimate " + transformation.GetName() + "!",
-                    dramatic: true,
-                    dot: false
-                );
+                CombatText.NewText(player.getRect(), new Color(0, 255, 0),
+                    "Ultimate " + current.TransformationName + "!", dramatic: true);
             }
-            if (playSound) {
+
+            if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
-            }
-
-            player.GetModPlayer<OmnitrixPlayer>().ultimateForm = true;
         }
 
-        public static void NextTransformation(Player player, ref TransformationEnum transformation) {
-
-            int getTransNum = 0;
-
-            List<TransformationEnum> unlockedTransformation = player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation;
-
-            for (int i = 0; i < unlockedTransformation.Count; i++) {
-                if (transformation == unlockedTransformation[i]) {
-                    getTransNum = i + 1;
-                    if (getTransNum == unlockedTransformation.Count) {
-                        getTransNum = 0;
-                    }
-                }
-            }
-
-            transformation = unlockedTransformation[getTransNum];
+        public static void AddTransformation(Player player, string transformationId)
+        {
+            player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId);
         }
 
-        public static void PrevTransformation(Player player, ref TransformationEnum transformation) {
-
-            int getTransNum = 0;
-
-            List<TransformationEnum> unlockedTransformation = player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation;
-
-            for (int i = 0; i < unlockedTransformation.Count; i++) {
-                if (transformation == unlockedTransformation[i]) {
-                    getTransNum = i - 1;
-                    if (getTransNum < 0) {
-                        getTransNum = unlockedTransformation.Count - 1;
-                    }
-                }
-            }
-
-            transformation = unlockedTransformation[getTransNum];
+        public static bool HasTransformation(Player player, string transformationId)
+        {
+            return player.GetModPlayer<OmnitrixPlayer>().unlockedTransformations.Contains(transformationId);
         }
 
-        public static bool HasTransformation(Player player, TransformationEnum transformation) {
-            bool hasTransformation = false;
-            foreach (TransformationEnum t in player.GetModPlayer<OmnitrixPlayer>().unlockedTransformation) {
-                if (t == transformation) {
-                    hasTransformation = true;
-                }
-            }
-            return hasTransformation;
+        public static bool HasTransformation(Player player, Transformation transformation)
+        {
+            return HasTransformation(player, transformation.FullID);
         }
-
     }
 }

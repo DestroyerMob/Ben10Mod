@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Enums;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -15,7 +14,7 @@ public class DiamondHeadShimmerLayer : PlayerDrawLayer {
         Player player = drawInfo.drawPlayer;
         var    omp    = player.GetModPlayer<OmnitrixPlayer>();
 
-        return omp.currTransformation == TransformationEnum.DiamondHead && omp.PrimaryAbilityEnabled;
+        return omp.currentTransformationId == "Ben10Mod:DiamondHead" && omp.PrimaryAbilityEnabled;
     }
 
     // Position after armor/body

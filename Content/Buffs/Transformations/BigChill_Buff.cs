@@ -1,24 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Ben10Mod.Enums;
-using Terraria;
-using Terraria.ID;
+﻿using Terraria;
 using Terraria.ModLoader;
+using Ben10Mod.Content.Transformations;
 
-namespace Ben10Mod.Content.Buffs.Abilities {
-    public class BigChill_Buff : ModBuff {
+namespace Ben10Mod.Content.Buffs.Transformations
+{
+    public class BigChill_Buff : ModBuff
+    {
         public override string Texture => "Ben10Mod/Content/Buffs/Transformations/EmptyTransformation";
-        private OmnitrixPlayer p;
-        public override void Update(Player player, ref int buffIndex) {
-            p = player.GetModPlayer<OmnitrixPlayer>();
 
-            p.currTransformation = TransformationEnum.BigChill;
-            p.isTransformed      = true;
-            p.wasTransformed     = true;
+        public override void Update(Player player, ref int buffIndex)
+        {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+
+            // Keep the transformation active (sync with new string system)
+            omp.currentTransformationId = "Ben10Mod:BigChill";
+            omp.isTransformed = true;
         }
+
         public override bool RightClick(int buffIndex) => false;
     }
 }

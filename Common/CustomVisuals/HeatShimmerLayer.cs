@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Enums;
 using Microsoft.Build.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -16,7 +15,7 @@ public class HeatShimmerLayer : PlayerDrawLayer {
         Player player = drawInfo.drawPlayer;
         var    omp    = player.GetModPlayer<OmnitrixPlayer>();
 
-        return omp.currTransformation == TransformationEnum.HeatBlast;
+        return omp.currentTransformationId == "Ben10Mod:HeatBlast";
     }
 
     // Position after armor/body

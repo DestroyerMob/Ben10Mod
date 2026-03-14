@@ -1,31 +1,41 @@
+using System;
 using System.Collections.Generic;
 using Ben10Mod.Common.Command;
+using Ben10Mod.Content.Transformations;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
-using Ben10Mod.Enums;
 using Ben10Mod.Keybinds;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 
-namespace Ben10Mod.Content.Items.Accessories {
-    public abstract class Omnitrix : ModItem {
-
+namespace Ben10Mod.Content.Items.Accessories
+{
+    public abstract class Omnitrix : ModItem
+    {
         public virtual int  MaxOmnitrixEnergy          => 0;
         public virtual int  OmnitrixEnergyRegen        => 0;
         public virtual int  OmnitrixEnergyDrain        => 0;
+        public virtual int  EnergyPerDamageDivisor     => OmnitrixEnergyRegen == 0 ? 25 : 0;
+        public virtual int  MinimumEnergyGainPerHit    => 1;
         public virtual bool UseEnergyForTransformation => false;
         public virtual int  TranformationSwapCost      => 50;
         public virtual int  TimeoutDuration            => 120;
         public virtual int  TransformationDuration     => 300;
         public virtual bool EvolutionFeature           => false;
         public virtual int  EvolutionCost              => 150;
+        public virtual int  EvolutionResultItemType    => 0;
+        public virtual int  EvolutionAnimationDuration => 120 * 60;
+        public virtual bool HideWhileUpdating          => true;
+        public virtual string HandsOnTextureKey        => Name;
+        public virtual string CooldownHandsOnTextureKey => HandsOnTextureKey;
+        public virtual string UpdatingHandsOnTextureKey => HandsOnTextureKey;
 
-        public int                  transformationNum = 0;
-        public TransformationEnum[] transformations   = new TransformationEnum[5];
+        public int         transformationNum   = 0;
+        public string[]    transformationSlots = new string[5];
 
         public bool wasEquipedLastFrame = false;
         public bool showingUI           = false;
@@ -36,7 +46,8 @@ namespace Ben10Mod.Content.Items.Accessories {
 
         public override string Texture => $"Terraria/Images/Item_{ItemID.None}";
 
-        public override void SetDefaults() {
+        public override void SetDefaults()
+        {
             Item.maxStack   = 1;
             Item.width      = 22;
             Item.height     = 28;
@@ -46,125 +57,240 @@ namespace Ben10Mod.Content.Items.Accessories {
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
-            tooltips.Add(new TooltipLine(Mod, "AlienSelection",
-                "Alien " + (transformationNum + 1) + ": " + transformations[transformationNum].ToString()));
+            var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+
+            if (string.IsNullOrEmpty(player.currentTransformationId)) {
+                tooltips.Add(new TooltipLine(Mod, "Status", "Current Form: None - Transform to begin!"));
+                return;
+            }
+
+            var trans = TransformationLoader.Get(player.currentTransformationId);
+            if (trans == null) {
+                tooltips.Add(
+                    new TooltipLine(Mod, "Status", $"Current Form: Unknown ({player.currentTransformationId})"));
+                return;
+            }
+
+            tooltips.Add(new TooltipLine(Mod, "CurrentForm", $"Current Form: {trans.TransformationName}"));
+            tooltips.Add(new TooltipLine(Mod, "Description", trans.Description));
         }
 
-        public override void UpdateAccessory(Player player, bool hideVisual) {
-            if (player.whoAmI != Main.myPlayer) return;
-            this.player = player;
+        public override void UpdateAccessory(Player player, bool hideVisual)
+        {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
-            omp.omnitrixEquipped = true;
-            wasEquipedLastFrame  = true;
+
+            omp.omnitrixEquipped  = true;
+            omp.equippedOmnitrix  = this;
 
             omp.omnitrixEnergyMax += MaxOmnitrixEnergy;
 
-            omp.omnitrixEnergyRegen = omp.isTransformed ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain : omp.omnitrixEnergyRegen + OmnitrixEnergyRegen;
+            omp.omnitrixEnergyRegen = omp.isTransformed
+                ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain
+                : omp.omnitrixEnergyRegen + OmnitrixEnergyRegen;
 
-            transformations = omp.transformations;
-            
+            transformationSlots = omp.transformationSlots;
+
+            if (player.whoAmI != Main.myPlayer)
+                return;
+
+            this.player = player;
+            wasEquipedLastFrame = true;
+
             HandleAlienSelection(omp);
-            
             HandleTransformationKey(omp);
 
             if (!omp.isTransformed || !UseEnergyForTransformation) return;
-            if (omp.omnitrixEnergy > 0)
-                TransformationHandler.Transform(player, omp.currTransformation, 2, false, false, EvolutionFeature);
+
+            if (omp.omnitrixEnergy > 0 && !string.IsNullOrEmpty(omp.currentTransformationId))
+            {
+                TransformationHandler.Transform(player, omp.currentTransformationId, 2, showParticles: false, playSound: false);
+            }
             else
-                TransformationHandler.Detransform(player, TimeoutDuration);
+            {
+                DetransformFromEnergyDepletion(player, omp);
+            }
         }
 
-        public override void UpdateInventory(Player player) {
+        public override void UpdateInventory(Player player)
+        {
             base.UpdateInventory(player);
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-            if (wasEquipedLastFrame) {
+            if (wasEquipedLastFrame)
+            {
                 wasEquipedLastFrame = false;
                 ModContent.GetInstance<UISystem>().HideMyUI();
-                if (player.GetModPlayer<OmnitrixPlayer>().isTransformed) {
-                    TransformationHandler.Detransform(player, TimeoutDuration, true, true);
+
+                if (player.GetModPlayer<OmnitrixPlayer>().isTransformed)
+                {
+                    HandleUnequip(player, omp);
                 }
             }
         }
 
-        private void HandleAlienSelection(OmnitrixPlayer omp) {
+        private void HandleAlienSelection(OmnitrixPlayer omp)
+        {
             bool selectionChanged = false;
 
-            if (KeybindSystem.AlienOneKeybind.JustPressed) {
+            if (KeybindSystem.AlienOneKeybind.JustPressed)
+            {
                 transformationNum = 0;
                 selectionChanged  = true;
             }
-            else if (KeybindSystem.AlienTwoKeybind.JustPressed) {
+            else if (KeybindSystem.AlienTwoKeybind.JustPressed)
+            {
                 transformationNum = 1;
                 selectionChanged  = true;
             }
-            else if (KeybindSystem.AlienThreeKeybind.JustPressed) {
+            else if (KeybindSystem.AlienThreeKeybind.JustPressed)
+            {
                 transformationNum = 2;
                 selectionChanged  = true;
             }
-            else if (KeybindSystem.AlienFourKeybind.JustPressed) {
+            else if (KeybindSystem.AlienFourKeybind.JustPressed)
+            {
                 transformationNum = 3;
                 selectionChanged  = true;
             }
-            else if (KeybindSystem.AlienFiveKeybind.JustPressed) {
+            else if (KeybindSystem.AlienFiveKeybind.JustPressed)
+            {
                 transformationNum = 4;
                 selectionChanged  = true;
             }
-            else if (KeybindSystem.AlienNextKeybind.JustPressed) {
-                transformationNum = (transformationNum + 1) % transformations.Length;
+            else if (KeybindSystem.AlienNextKeybind.JustPressed)
+            {
+                transformationNum = (transformationNum + 1) % transformationSlots.Length;
                 selectionChanged  = true;
                 SoundEngine.PlaySound(SoundID.MenuTick, player.position);
             }
-            else if (KeybindSystem.AlienPrevKeybind.JustPressed) {
-                transformationNum = (transformationNum - 1 + transformations.Length) % transformations.Length;
+            else if (KeybindSystem.AlienPrevKeybind.JustPressed)
+            {
+                transformationNum = (transformationNum - 1 + transformationSlots.Length) % transformationSlots.Length;
                 selectionChanged  = true;
                 SoundEngine.PlaySound(SoundID.MenuTick, player.position);
             }
 
             if (selectionChanged)
-                Main.NewText($"Transformation {transformationNum + 1}: {transformations[transformationNum].GetName()}!",
-                    Color.Green);
+            {
+                string name = "Empty Slot";
+                if (transformationNum < transformationSlots.Length)
+                {
+                    var trans = TransformationLoader.Get(transformationSlots[transformationNum]);
+                    if (trans != null)
+                        name = trans.TransformationName;
+                }
+
+                Main.NewText($"Transformation {transformationNum + 1}: {name}!", Color.Green);
+            }
         }
 
-        private void HandleTransformationKey(OmnitrixPlayer omp) {
+        private void HandleTransformationKey(OmnitrixPlayer omp)
+        {
             if (!KeybindSystem.TransformationKeybind.JustPressed || omp.onCooldown)
                 return;
 
-            TransformationEnum desiredAlien = transformations[transformationNum];
+            if (transformationNum >= transformationSlots.Length) return;
 
-            if (!omp.isTransformed) {
-                // Normal transformation
-                if (UseEnergyForTransformation)
-                    TransformationHandler.Transform(player, desiredAlien, 2);
-                else
-                    TransformationHandler.Transform(player, desiredAlien, TransformationDuration);
+            string desiredId = transformationSlots[transformationNum];
+            if (string.IsNullOrEmpty(desiredId)) return;
+
+            if (!omp.isTransformed)
+            {
+                TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
             }
-            else {
-                // Already transformed
-                if (omp.currTransformation != desiredAlien) {
-                    // Swap to a different alien while transformed
-                    if (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost) {
+            else
+            {
+                if (omp.currentTransformationId != desiredId)
+                {
+                    if (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost)
+                    {
                         omp.omnitrixEnergy -= TranformationSwapCost;
-                        TransformationHandler.Detransform(player, 0, addCooldown: false);
-                        TransformationHandler.Transform(player, desiredAlien, 2);
+                        TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
+                        TransformationHandler.Transform(player, desiredId, 2);
                     }
                 }
-                else {
-                    // Same alien → Ultimate or Detransform
-                    if (EvolutionFeature && desiredAlien.HasUltimateForm() && omp.omnitrixEnergy >= EvolutionCost) {
-                        if (!omp.ultimateForm) {
-                            omp.omnitrixEnergy -= EvolutionCost;
-                            TransformationHandler.GoUltimate(player, desiredAlien);
-                        }
-                        else {
-                            TransformationHandler.Detransform(player, 0, addCooldown: false);
-                        }
-                    }
-                    else if (UseEnergyForTransformation || omp.masterControl) {
+                else
+                {
+                    if (UseEnergyForTransformation || omp.masterControl)
+                    {
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
                     }
                 }
             }
+        }
+
+        public virtual int GetTransformationDuration(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation ? 2 : TransformationDuration;
+        }
+
+        public virtual int GetDetransformCooldownDuration(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation ? 0 : TimeoutDuration;
+        }
+
+        public virtual bool ShouldAddDetransformCooldown(OmnitrixPlayer omp) {
+            return !UseEnergyForTransformation;
+        }
+
+        public virtual void HandleForcedDetransform(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp),
+                addCooldown: ShouldAddDetransformCooldown(omp));
+        }
+
+        public virtual void HandleUnequip(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration, showParticles: true, addCooldown: true);
+        }
+
+        public virtual void DetransformFromEnergyDepletion(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration);
+        }
+
+        public virtual int GetEnergyGainFromDamage(int damageDone) {
+            if (EnergyPerDamageDivisor <= 0 || damageDone <= 0)
+                return 0;
+
+            return Math.Max(damageDone / EnergyPerDamageDivisor, MinimumEnergyGainPerHit);
+        }
+
+        public virtual bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
+            return false;
+        }
+
+        public virtual void StartEvolution(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration);
+            player.AddBuff(ModContent.BuffType<Buffs.Abilities.OmnitrixUpdating>(), EvolutionAnimationDuration);
+        }
+
+        public virtual int GetEvolutionResultItemType(Player player, OmnitrixPlayer omp) {
+            return EvolutionResultItemType;
+        }
+
+        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
+            int resultType = GetEvolutionResultItemType(player, omp);
+            if (resultType <= 0 || equippedItem.type == resultType)
+                return;
+
+            equippedItem.SetDefaults(resultType);
+        }
+
+        public virtual string GetHandsOnTextureKey(Player player, OmnitrixPlayer omp) {
+            if (omp.omnitrixUpdating && !string.IsNullOrEmpty(UpdatingHandsOnTextureKey))
+                return UpdatingHandsOnTextureKey;
+
+            if (omp.onCooldown && !string.IsNullOrEmpty(CooldownHandsOnTextureKey))
+                return CooldownHandsOnTextureKey;
+
+            return HandsOnTextureKey;
+        }
+
+        public virtual void ApplyHandVisuals(Player player, OmnitrixPlayer omp, bool hideVisuals) {
+            if (hideVisuals || omp.isTransformed)
+                return;
+
+            string textureKey = GetHandsOnTextureKey(player, omp);
+            if (string.IsNullOrEmpty(textureKey))
+                return;
+
+            player.handon = EquipLoader.GetEquipSlot(Mod, textureKey, EquipType.HandsOn);
         }
     }
 }

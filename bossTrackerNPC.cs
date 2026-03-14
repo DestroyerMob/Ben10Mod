@@ -1,8 +1,5 @@
-﻿using System.Runtime.CompilerServices;
-using Ben10Mod.Content;
+﻿using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
-using Ben10Mod.Enums;
-using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -11,14 +8,10 @@ namespace Ben10Mod {
     public class bossTrackerNPC : GlobalNPC {
         public override bool InstancePerEntity => true;
 
-        // total damage dealt to THIS npc instance by each player
+        // Tracks per-player contribution on each boss instance so unlock rewards only go to participants.
         private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
 
-        // optional: track who last damaged it as a tie-breaker
-        private int _lastDamager = -1;
-
         private static bool CountsAsBoss(NPC npc) {
-            // npc.boss is true for most bosses, but this catches extra boss-like NPCs too
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
         }
 
@@ -30,27 +23,31 @@ namespace Ben10Mod {
             if (!p.active) return;
 
             _damageByPlayer[playerIndex] += damage;
-            _lastDamager                 =  playerIndex;
         }
 
 
 
         public override void OnHitByItem(NPC npc, Player player, Item item, NPC.HitInfo hit, int damageDone) {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
+
+            if (damageDone > 0)
+                player.GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
             if (!CountsAsBoss(npc)) return;
 
-            // IMPORTANT: use damageDone (actual applied damage)
             RecordDamage(player.whoAmI, damageDone);
         }
 
         public override void OnHitByProjectile(NPC npc, Projectile projectile, NPC.HitInfo hit, int damageDone) {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
-            if (!CountsAsBoss(npc)) return;
             if (damageDone <= 0) return;
 
-            // Credit only player-owned friendly projectiles (weapons/minions/whips/etc.)
             int owner = projectile.owner;
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
+                Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
+                if (!CountsAsBoss(npc)) return;
+
                 RecordDamage(owner, damageDone);
             }
         }
@@ -58,9 +55,6 @@ namespace Ben10Mod {
         public override void OnKill(NPC npc) {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
             if (!CountsAsBoss(npc)) return;
-
-            int credited = GetTopDamager(npc);
-            if (credited == -1) return;
 
             int eaterCount = 0;
 
@@ -94,116 +88,105 @@ namespace Ben10Mod {
             if (twinsCount > 1)
                 return;
 
-            string msg = $"{Main.player[credited].name} dealt the most damage!";
-            
-            var player = Main.player[credited];
-
-            // Show message in both SP and MP
-            if (Main.netMode == NetmodeID.SinglePlayer) {
-                Main.NewText(msg, Color.Cyan);
-            }
-            else if (Main.netMode == NetmodeID.Server) {
-                Terraria.Chat.ChatHelper.BroadcastChatMessage(
-                    Terraria.Localization.NetworkText.FromLiteral(msg),
-                    Color.Cyan
-                );
-            }
-
-            switch (npc.type) {
-                case NPCID.KingSlime: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.DiamondHead);
-                    break;
-                }
-                case NPCID.EyeofCthulhu: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.XLR8);
-                    break;
-                }
-                case NPCID.BrainofCthulhu: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.FourArms);
-                    break;
-                }
-                case NPCID.EaterofWorldsHead:
-                case NPCID.EaterofWorldsTail:
-                case NPCID.EaterofWorldsBody: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.FourArms);
-                    break;
-                }
-                case NPCID.QueenBee: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.StinkFly);
-                    break;
-                }
-                case NPCID.SkeletronHead: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.BuzzShock);
-                    break;
-                }
-                case NPCID.Deerclops: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.WildVine);
-                    break;
-                }
-                case NPCID.WallofFlesh: {
-                    if (player.GetModPlayer<OmnitrixPlayer>().prototypeOmnitrix) {
-                        TransformationHandler.Detransform(player, 120);
-                        player.AddBuff(ModContent.BuffType<OmnitrixUpdating>(), 120 * 60);
-                    }
-                    break;
-                }
-                case NPCID.QueenSlimeBoss: {
-                    player.GetModPlayer<OmnitrixPlayer>()
-                        .AddTransformation(TransformationEnum.ChromaStone);
-                    break;
-                }
-                case NPCID.Retinazer:
-                case NPCID.Spazmatism: 
-                    player.GetModPlayer<OmnitrixPlayer>().AddTransformation(TransformationEnum.EyeGuy);
-                    break;
-                case NPCID.IceQueen:
-                    player.GetModPlayer<OmnitrixPlayer>().AddTransformation(TransformationEnum.BigChill);
-                    break;
-                default: break;
-            }
-            
-            // === SYNC THE UNLOCK TO THE CLIENT ===
-            if (Main.netMode == NetmodeID.Server && credited >= 0 && credited < Main.maxPlayers)
-            {
-                NetMessage.SendData(MessageID.SyncPlayer, credited, -1, null, credited);
-            }
-
-            // TODO: store the kill credit here
-            // Main.player[credited].GetModPlayer<YourBossKillStatsPlayer>().RegisterBossKill(npc.type);
-        }
-
-        private int GetTopDamager(NPC npc) {
-            int bestPlayer = -1;
-            int bestDamage = 0;
+            string transformationId = GetTransformationIdForBoss(npc.type);
 
             for (int i = 0; i < Main.maxPlayers; i++) {
-                if (!Main.player[i].active) continue;
+                if (_damageByPlayer[i] <= 0) continue;
 
-                int dmg = _damageByPlayer[i];
-                if (dmg > bestDamage) {
-                    bestDamage = dmg;
-                    bestPlayer = i;
-                }
+                Player player = Main.player[i];
+                if (!player.active) continue;
+
+                var omp = player.GetModPlayer<OmnitrixPlayer>();
+
+                if (!string.IsNullOrEmpty(transformationId))
+                    TransformationHandler.AddTransformation(player, transformationId);
+
+                if (omp.equippedOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
+                    omp.equippedOmnitrix.StartEvolution(player, omp);
             }
+        }
 
-            // If nobody recorded (weird edge case), fallback:
-            if (bestPlayer == -1) {
-                if (npc.lastInteraction >= 0 && npc.lastInteraction < Main.maxPlayers &&
-                    Main.player[npc.lastInteraction].active)
-                    return npc.lastInteraction;
+        private static string GetTransformationIdForBoss(int npcType) {
+            switch (npcType) {
+                // Pre-hardmode bosses
+                case NPCID.KingSlime:
+                    return "Ben10Mod:DiamondHead";
+                case NPCID.EyeofCthulhu:
+                    return "Ben10Mod:XLR8";
+                case NPCID.BrainofCthulhu:
+                case NPCID.EaterofWorldsHead:
+                case NPCID.EaterofWorldsTail:
+                case NPCID.EaterofWorldsBody:
+                    return "Ben10Mod:FourArms";
+                case NPCID.QueenBee:
+                    return "Ben10Mod:StinkFly";
+                case NPCID.SkeletronHead:
+                    return "Ben10Mod:BuzzShock";
+                case NPCID.Deerclops:
+                    return "Ben10Mod:WildVine";
+                case NPCID.WallofFlesh:
+                    return string.Empty;
 
-                if (_lastDamager >= 0 && _lastDamager < Main.maxPlayers && Main.player[_lastDamager].active)
-                    return _lastDamager;
+                // Early hardmode bosses
+                case NPCID.QueenSlimeBoss:
+                    return "Ben10Mod:ChromaStone";
+                case NPCID.TheDestroyer:
+                case NPCID.TheDestroyerBody:
+                case NPCID.TheDestroyerTail:
+                    return string.Empty;
+                case NPCID.Retinazer:
+                case NPCID.Spazmatism:
+                    return "Ben10Mod:EyeGuy";
+                case NPCID.SkeletronPrime:
+                    return string.Empty;
+
+                // Mid / late hardmode bosses
+                case NPCID.Plantera:
+                    return string.Empty;
+                case NPCID.Golem:
+                case NPCID.GolemHead:
+                case NPCID.GolemFistLeft:
+                case NPCID.GolemFistRight:
+                    return string.Empty;
+                case NPCID.DukeFishron:
+                    return string.Empty;
+                case NPCID.HallowBoss:
+                    return string.Empty;
+                case NPCID.CultistBoss:
+                    return string.Empty;
+                case NPCID.MoonLordCore:
+                case NPCID.MoonLordHead:
+                case NPCID.MoonLordHand:
+                case NPCID.MoonLordFreeEye:
+                    return string.Empty;
+
+                // Old One's Army bosses / minibosses
+                case NPCID.DD2DarkMageT1:
+                case NPCID.DD2DarkMageT3:
+                    return string.Empty;
+                case NPCID.DD2OgreT2:
+                case NPCID.DD2OgreT3:
+                    return string.Empty;
+                case NPCID.DD2Betsy:
+                    return string.Empty;
+
+                // Pumpkin Moon minibosses
+                case NPCID.MourningWood:
+                    return string.Empty;
+                case NPCID.Pumpking:
+                    return string.Empty;
+
+                // Frost Moon minibosses
+                case NPCID.Everscream:
+                    return string.Empty;
+                case NPCID.SantaNK1:
+                    return string.Empty;
+                case NPCID.IceQueen:
+                    return "Ben10Mod:BigChill";
+
+                default:
+                    return string.Empty;
             }
-
-            return bestPlayer;
         }
     }
 }

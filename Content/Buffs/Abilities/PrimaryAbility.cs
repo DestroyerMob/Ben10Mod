@@ -7,8 +7,7 @@ public class PrimaryAbility : ModBuff {
     public override void Update(Player player, ref int buffIndex) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-        omp.PrimaryAbilityEnabled    = true;
-        omp.PrimaryAbilityWasEnabled = true;
+        omp.PrimaryAbilityEnabled = true;
     }
     
     public override bool RightClick(int buffIndex) => false;

@@ -5,20 +5,24 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Ben10Mod.Enums;
-using System.Collections.Generic;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Placeables;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 
-namespace Ben10Mod.Content.Items.Accessories {
-    public class PrototypeOmnitrix : Omnitrix {
+namespace Ben10Mod.Content.Items.Accessories
+{
+    public class PrototypeOmnitrix : Omnitrix
+    {
         public override int MaxOmnitrixEnergy => 300;
+        public override string CooldownHandsOnTextureKey => "PrototypeOmnitrixAlt";
+        public override string UpdatingHandsOnTextureKey => "PrototypeOmnitrixUpdating";
+        public override int EvolutionResultItemType => ModContent.ItemType<RecalibratedOmnitrix>();
 
         public override string Texture => $"Ben10Mod/Content/Items/Accessories/{this.Name}";
 
-        public override void Load() {
+        public override void Load()
+        {
             if (Main.netMode == NetmodeID.Server)
                 return;
 
@@ -28,39 +32,53 @@ namespace Ben10Mod.Content.Items.Accessories {
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Updating_{EquipType.HandsOn}", EquipType.HandsOn,
                 name: "PrototypeOmnitrixUpdating");
         }
-        public override ModItem Clone(Item item) {
+
+        public override ModItem Clone(Item item)
+        {
             PrototypeOmnitrix clone = (PrototypeOmnitrix)base.Clone(item);
-            clone.transformationNum = transformationNum;
-            clone.transformations   = (TransformationEnum[])transformations?.Clone();
+            clone.transformationNum     = transformationNum;
+            clone.transformationSlots   = (string[])transformationSlots?.Clone();
             return clone;
         }
-        public override void SaveData(TagCompound tag) {
+
+        public override void SaveData(TagCompound tag)
+        {
             tag["selectedAlien"] = transformationNum;
         }
-        public override void LoadData(TagCompound tag) {
+
+        public override void LoadData(TagCompound tag)
+        {
             tag.TryGet("selectedAlien", out transformationNum);
         }
-        public override void OnCreated(ItemCreationContext context) {
+
+        public override void OnCreated(ItemCreationContext context)
+        {
             transformationNum = 0;
         }
-        public override void SetStaticDefaults() {
+
+        public override void SetStaticDefaults()
+        {
             dynamicTexture = ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix")
                 .Value;
         }
 
-        public override void UpdateAccessory(Player player, bool hideVisual) {
+        public override void UpdateAccessory(Player player, bool hideVisual)
+        {
             base.UpdateAccessory(player, hideVisual);
         }
 
-        public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame,
-            Color drawColor, Color itemColor, Vector2 origin, float scale) {
+        public override bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
+            return defeatedNpcType == NPCID.WallofFlesh;
+        }
 
+        public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame,
+            Color drawColor, Color itemColor, Vector2 origin, float scale)
+        {
             if (player == null)
                 return true;
 
             dynamicTexture = player.GetModPlayer<OmnitrixPlayer>().omnitrixUpdating
-                ?
-                ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixUpdating").Value
+                ? ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixUpdating").Value
                 : player.GetModPlayer<OmnitrixPlayer>().onCooldown
                     ? ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrixAlt").Value
                     : ModContent.Request<Texture2D>("Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix").Value;
@@ -69,7 +87,9 @@ namespace Ben10Mod.Content.Items.Accessories {
 
             return false;
         }
-        public override void AddRecipes() {
+
+        public override void AddRecipes()
+        {
             base.AddRecipes();
 
             CreateRecipe()
@@ -78,6 +98,5 @@ namespace Ben10Mod.Content.Items.Accessories {
                 .AddIngredient(ItemID.Emerald, 3)
                 .AddTile(TileID.Anvils).Register();
         }
-
     }
 }

@@ -1,8 +1,8 @@
-This mod is still in the early stages, art is still being developed and the hard-mode progression has yet to be added (Besides the recalibrated omnitrix)
+This mod is still in active development. Art is still being developed, and hardmode progression is only partially implemented so far.
 
-Beat bosses and events (prehardmode) to unlock new transformations
+Beat pre-hardmode bosses and events to unlock new transformations.
 
-Join the discord for any updates
+For updates and community discussion:
 
 Spriter: Eye of Rage - https://www.youtube.com/@TerraHulk
 Discord: https://discord.gg/XD7qN7DbdD
