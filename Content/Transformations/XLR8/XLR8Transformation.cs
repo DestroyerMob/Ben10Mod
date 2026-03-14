@@ -26,6 +26,7 @@ public class XLR8Transformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
+        player.armorEffectDrawShadowEOCShield = true;
         player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5f : 2.5f;
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4f : 2f;
         player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
