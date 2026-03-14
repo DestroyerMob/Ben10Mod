@@ -203,11 +203,17 @@ namespace Ben10Mod.Content.Items.Accessories
             {
                 if (omp.currentTransformationId != desiredId)
                 {
-                    if (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost)
+                    if (omp.masterControl || (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost))
                     {
-                        omp.omnitrixEnergy -= TranformationSwapCost;
+                        if (!omp.masterControl && UseEnergyForTransformation)
+                            omp.omnitrixEnergy -= TranformationSwapCost;
+
+                        int nextDuration = UseEnergyForTransformation
+                            ? GetTransformationDuration(omp)
+                            : GetRemainingTransformationDurationSeconds(omp);
+
                         TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
-                        TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
+                        TransformationHandler.Transform(player, desiredId, nextDuration);
                     }
                 }
                 else
@@ -310,6 +316,9 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         protected virtual float GetCooldownDurationMultiplier(OmnitrixPlayer omp) {
+            if (!string.IsNullOrEmpty(omp.currentTransformationId))
+                return omp.activeCooldownDurationMultiplier;
+
             return omp.cooldownDurationMultiplier;
         }
 
@@ -327,6 +336,18 @@ namespace Ben10Mod.Content.Items.Accessories
 
             float safeMultiplier = Math.Max(0f, multiplier);
             return Math.Max(1, (int)Math.Round(baseDuration * safeMultiplier));
+        }
+
+        private int GetRemainingTransformationDurationSeconds(OmnitrixPlayer omp) {
+            var currentTransformation = omp.CurrentTransformation;
+            if (currentTransformation?.TransformationBuffId > 0) {
+                for (int i = 0; i < player.buffType.Length; i++) {
+                    if (player.buffType[i] == currentTransformation.TransformationBuffId)
+                        return Math.Max(1, (int)Math.Ceiling(player.buffTime[i] / 60f));
+                }
+            }
+
+            return GetTransformationDuration(omp);
         }
     }
 }

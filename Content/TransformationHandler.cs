@@ -24,7 +24,11 @@ namespace Ben10Mod.Content
             omp.currentTransformationId = transformationId;
             omp.isTransformed           = true;
             if (!isRefresh)
+            {
                 omp.ultimateForm = false;
+                omp.activeTransformationDurationMultiplier = Math.Max(0f, omp.transformationDurationMultiplier);
+                omp.activeCooldownDurationMultiplier = Math.Max(0f, omp.cooldownDurationMultiplier);
+            }
 
             player.AddBuff(transformation.TransformationBuffId, 60 * seconds);
 
@@ -84,6 +88,8 @@ namespace Ben10Mod.Content
             omp.isTransformed           = false;
             omp.ultimateForm            = false;
             omp.ultimateAttack          = false;
+            omp.activeTransformationDurationMultiplier = 1f;
+            omp.activeCooldownDurationMultiplier = 1f;
 
             if (current != null)
                 current.OnDetransform(player, omp);

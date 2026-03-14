@@ -66,6 +66,8 @@ namespace Ben10Mod {
         public float omnitrixEnergyRegen = 0f;
         public float transformationDurationMultiplier = 1f;
         public float cooldownDurationMultiplier = 1f;
+        public float activeTransformationDurationMultiplier = 1f;
+        public float activeCooldownDurationMultiplier = 1f;
         public int pendingEvolutionStepDownTime = 0;
         public string pendingEvolutionStepDownTransformationId = "";
         public Omnitrix equippedOmnitrix = null;
