@@ -217,7 +217,7 @@ namespace Ben10Mod.Content.Items.Accessories
                     // Same alien → Detransform (or Ultimate if you re-enable that later)
                     if (UseEnergyForTransformation || omp.masterControl)
                     {
-                        TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
+                        TransformationHandler.Detransform(player, 0, addCooldown: false);
                     }
                 }
             }
