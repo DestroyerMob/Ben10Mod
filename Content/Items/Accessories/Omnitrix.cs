@@ -57,29 +57,22 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
-            // Keep any existing tooltip lines you already added here
-
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
 
-            // Safety net - no transformation active yet
-            if (string.IsNullOrEmpty(player
-                    .currentTransformationId)) // ← change variable name if yours is different (e.g. CurrentForm, ActiveAlien, etc.)
-            {
+            if (string.IsNullOrEmpty(player.currentTransformationId)) {
                 tooltips.Add(new TooltipLine(Mod, "Status", "Current Form: None - Transform to begin!"));
                 return;
             }
 
-            var trans = TransformationLoader.Get(player.currentTransformationId); // ← your loader's Get method
+            var trans = TransformationLoader.Get(player.currentTransformationId);
             if (trans == null) {
                 tooltips.Add(
                     new TooltipLine(Mod, "Status", $"Current Form: Unknown ({player.currentTransformationId})"));
                 return;
             }
 
-            // Safe data usage now that we know it exists
             tooltips.Add(new TooltipLine(Mod, "CurrentForm", $"Current Form: {trans.TransformationName}"));
             tooltips.Add(new TooltipLine(Mod, "Description", trans.Description));
-            // Add any other lines you had (attacks, cooldowns, etc.) using trans.XXX
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual)
@@ -95,7 +88,6 @@ namespace Ben10Mod.Content.Items.Accessories
                 ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain
                 : omp.omnitrixEnergyRegen + OmnitrixEnergyRegen;
 
-            // Sync the current roster from the player
             transformationSlots = omp.transformationSlots;
 
             if (player.whoAmI != Main.myPlayer)
@@ -107,7 +99,6 @@ namespace Ben10Mod.Content.Items.Accessories
             HandleAlienSelection(omp);
             HandleTransformationKey(omp);
 
-            // Energy-based transformation maintenance (for Recalibrated Omnitrix etc.)
             if (!omp.isTransformed || !UseEnergyForTransformation) return;
 
             if (omp.omnitrixEnergy > 0 && !string.IsNullOrEmpty(omp.currentTransformationId))
@@ -201,19 +192,16 @@ namespace Ben10Mod.Content.Items.Accessories
             if (transformationNum >= transformationSlots.Length) return;
 
             string desiredId = transformationSlots[transformationNum];
-            if (string.IsNullOrEmpty(desiredId)) return; // empty slot
+            if (string.IsNullOrEmpty(desiredId)) return;
 
             if (!omp.isTransformed)
             {
-                // Normal transformation
                 TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
             }
             else
             {
-                // Already transformed
                 if (omp.currentTransformationId != desiredId)
                 {
-                    // Swap to a different alien while transformed
                     if (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost)
                     {
                         omp.omnitrixEnergy -= TranformationSwapCost;
@@ -223,7 +211,6 @@ namespace Ben10Mod.Content.Items.Accessories
                 }
                 else
                 {
-                    // Same alien -> Detransform (or Ultimate if you re-enable that later)
                     if (UseEnergyForTransformation || omp.masterControl)
                     {
                         TransformationHandler.Detransform(player, 0, addCooldown: false);

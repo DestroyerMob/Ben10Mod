@@ -12,22 +12,18 @@ namespace Ben10Mod.Content.Transformations.XLR8
 {
     public class XLR8 : ModItem {
         public override void Load() {
-            // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)
                 return;
 
-            // Add equip textures
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head()); // XLR8 default head
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}_alt", EquipType.Head, this, "XLR8_alt", equipTexture: new XLR8Head()); // XLR8 alt head
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this); // XLR8 default body
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this); // XLR8 default legs
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}_Tail", EquipType.Back, this); // XLR8 default tail
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}_alt", EquipType.Head, this, "XLR8_alt", equipTexture: new XLR8Head());
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_Tail", EquipType.Back, this);
             
         }
 
-        // Called in SetStaticDefaults
         private void SetupDrawing() {
-            // Since the equipment textures weren't loaded on the server, we can't have this code running server-side
             if (Main.netMode == NetmodeID.Server)
                 return;
             int equipSlotHeadAlt = EquipLoader.GetEquipSlot(Mod, "XLR8_alt", EquipType.Head);
@@ -36,16 +32,16 @@ namespace Ben10Mod.Content.Transformations.XLR8
             int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
             int equipSlotBack = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Back);
 
-            ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false; // Hide player head under head
-            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt] = false; // Hide player head under head
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt] = false;
             
-            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true; // Hide body skin under body
+            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
             
-            ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true; // Hide arms under body
+            ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true;
             
-            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true; // Hide skin under legs
+            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true;
             
-            ArmorIDs.Back.Sets.DrawInTailLayer[equipSlotBack] = true; // Render tail as a tail
+            ArmorIDs.Back.Sets.DrawInTailLayer[equipSlotBack] = true;
         }
 
         public override void SetStaticDefaults() {

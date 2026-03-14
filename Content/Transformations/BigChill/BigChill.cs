@@ -11,11 +11,9 @@ namespace Ben10Mod.Content.Transformations.BigChill
 {
     public class BigChill : ModItem {
         public override void Load() {
-            // The code below runs only if we're not loading on a server
             if (Main.netMode == NetmodeID.Server)
                 return;
 
-            // Add equip textures
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
@@ -25,9 +23,7 @@ namespace Ben10Mod.Content.Transformations.BigChill
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Legs}", EquipType.Legs, name: "UltimateBigChill");
         }
 
-        // Called in SetStaticDefaults
         private void SetupDrawing() {
-            // Since the equipment textures weren't loaded on the server, we can't have this code running server-side
             if (Main.netMode == NetmodeID.Server)
                 return;
 

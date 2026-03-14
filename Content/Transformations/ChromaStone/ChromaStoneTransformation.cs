@@ -34,12 +34,6 @@ public class ChromaStoneTransformation : Transformation {
             _chromastoneAbsobtion += Math.Max(info.Damage / 5, 0);
     }
 
-    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
-        if (!omp.PrimaryAbilityEnabled) {
-            // _chromastoneAbsobtion = 0;
-        }
-    }
-
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<ChromaStone>();
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);

@@ -71,7 +71,6 @@ namespace Ben10Mod.Content
             if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);
 
-            // Clear current alien buff
             if (current?.TransformationBuffId > 0)
                 player.ClearBuff(current.TransformationBuffId);
 

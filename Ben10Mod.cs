@@ -26,8 +26,6 @@ namespace Ben10Mod {
 				Filters.Scene["Ben10Mod:Bluescale"] = new Filter(new ScreenShaderData(filterShader, "Bluescale"), EffectPriority.Medium);
 			}
 		}
-
-		// Add this enum anywhere in the class (or in a separate file)
 		public enum MessageType : byte {
 			UnlockTransformation
 		}

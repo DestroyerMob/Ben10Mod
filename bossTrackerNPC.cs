@@ -8,11 +8,10 @@ namespace Ben10Mod {
     public class bossTrackerNPC : GlobalNPC {
         public override bool InstancePerEntity => true;
 
-        // total damage dealt to THIS npc instance by each player
+        // Tracks per-player contribution on each boss instance so unlock rewards only go to participants.
         private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
 
         private static bool CountsAsBoss(NPC npc) {
-            // npc.boss is true for most bosses, but this catches extra boss-like NPCs too
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
         }
 
@@ -36,7 +35,6 @@ namespace Ben10Mod {
 
             if (!CountsAsBoss(npc)) return;
 
-            // IMPORTANT: use damageDone (actual applied damage)
             RecordDamage(player.whoAmI, damageDone);
         }
 
@@ -44,7 +42,6 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
             if (damageDone <= 0) return;
 
-            // Credit only player-owned friendly projectiles (weapons/minions/whips/etc.)
             int owner = projectile.owner;
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
                 Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);

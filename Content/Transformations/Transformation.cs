@@ -71,7 +71,6 @@ namespace Ben10Mod.Content.Transformations {
         public virtual Asset<Texture2D> GetTransformationIcon()
             => ModContent.Request<Texture2D>(IconPath);
 
-        // Lifecycle
         public virtual void ResetEffects(Player player, OmnitrixPlayer omp) { }
         public virtual void OnEnterWorld(Player player, OmnitrixPlayer omp) { }
         public virtual void OnTransform(Player player, OmnitrixPlayer omp) { }
@@ -86,7 +85,6 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void PostUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp) { }
 
-        // Combat and damage hooks
         public virtual bool? CanUseItem(Player player, OmnitrixPlayer omp, Item item) {
             return IsIntangibleWhilePrimaryAbilityActive(omp) ? false : null;
         }
@@ -119,7 +117,6 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void OnHitNPC(Player player, OmnitrixPlayer omp, NPC target, NPC.HitInfo hit, int damageDone) { }
         public virtual void OnHitAnything(Player player, OmnitrixPlayer omp, Entity victim, float x, float y) { }
 
-        // Ability and weapon hooks
         public virtual bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -221,7 +218,7 @@ namespace Ben10Mod.Content.Transformations {
         }
 
         protected sealed override void Register() {
-            TransformationLoader.Register(this); // ← This line makes EVERY alien auto-register
+            TransformationLoader.Register(this);
             Mod.Logger.Info($"[Ben10Mod] Registered transformation: {FullID}");
         }
 

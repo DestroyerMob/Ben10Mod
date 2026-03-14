@@ -86,7 +86,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             var state = player.GetModPlayer<BadgeUltimateState>();
             FinalizeUltimateIfEnded(player, omp);
 
-            // Reset to safe defaults
+            // Start from a neutral badge state before the active transformation applies its attack profile.
             Item.useTime          = Item.useAnimation = 25;
             Item.shootSpeed       = 10f;
             Item.useStyle         = ItemUseStyleID.Swing;

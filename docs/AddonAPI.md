@@ -4,6 +4,12 @@ This guide explains how to build a separate tModLoader addon mod that extends `B
 
 It is written so you can build an addon from scratch using only this document and the Ben10Mod source.
 
+Related docs:
+
+- [README](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/README.md)
+- [Architecture Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Architecture.md)
+- [Development Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Development.md)
+
 The intended addon use cases are:
 
 - add a new Omnitrix
@@ -24,6 +30,8 @@ The important design idea is:
 - transformations register themselves automatically
 - Omnitrix items drive Omnitrix-specific behavior through overridable properties and hooks
 - badges are generic weapon shells and let the current transformation decide attack behavior
+
+If you are new to the internal runtime flow, read the architecture guide first and then come back here.
 
 ## High-Level Architecture
 
@@ -158,6 +166,19 @@ Example `Ben10Addon.csproj`:
 ```
 
 If you are not building against source and only have the built mod assembly, you can instead reference the Ben10Mod DLL manually. The exact path depends on your tModLoader install, so the project-reference approach is the recommended dev workflow.
+
+### Editor Note For Rider And Other IDEs
+
+If your addon builds successfully but the editor still shows missing-type errors for Ben10Mod symbols, that is usually an IDE design-time restore or indexing problem rather than a real code problem.
+
+Typical fixes:
+
+1. run `dotnet restore YourAddon.csproj`
+2. reload all projects in the editor
+3. invalidate editor caches if needed
+4. delete `bin` and `obj` and let the editor reindex
+
+If command-line build works but the editor still shows red squiggles, treat that as an IDE problem until proven otherwise.
 
 ### Optional: Guard Against Missing Ben10Mod
 
@@ -750,6 +771,18 @@ Avoid renaming:
 - item internal class names when texture naming depends on `Name`
 - hands-on texture keys if existing content relies on them
 
+### 8. Editor Shows Errors But Build Works
+
+This is especially common with project references in Rider.
+
+If:
+
+- `dotnet build` works
+- tModLoader can build the mod
+- but the editor still says Ben10Mod types are missing
+
+then your project setup is probably fine and the editor needs a restore/reload cycle.
+
 ## Recommended Addon Workflow
 
 If you want the smoothest experience, build in this order:
@@ -823,4 +856,3 @@ If you want to mirror Ben10Mod's style, use the base systems as intended:
 - let transformations own combat behavior
 - let badges stay generic
 - let Omnitrixes own Omnitrix-specific resource and lifecycle rules
-

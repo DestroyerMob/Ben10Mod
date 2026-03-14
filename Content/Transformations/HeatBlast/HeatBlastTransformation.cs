@@ -37,18 +37,15 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             player.fireWalk   = true;
             player.lavaImmune = true;
 
-            // Ability slot extra jump
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
             abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastExtraJumpAccessory>());
 
-            // Passive dust aura (normal form)
-            var rand = Main.rand; // better than new Random()
+            var rand = Main.rand;
             int dustNum = Dust.NewDust(player.position, player.width, player.height,
                 omp.snowflake ? DustID.IceTorch : DustID.Flare,
                 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
             Main.dust[dustNum].noGravity = true;
 
-            // Primary Ability Aura (circle of fire/ice + DoT on nearby enemies)
             if (omp.PrimaryAbilityEnabled) {
                 Vector2[] points = GenerateCirclePoints(250, 7 * 16);
                 for (int i = 0; i < points.Length; i++) {

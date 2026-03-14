@@ -73,12 +73,6 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void AddRecipes()
         {
             base.AddRecipes();
-
-            // Recipe recipeAlt = CreateRecipe()
-            //     .AddIngredient(ModContent.ItemType<RecalibratedOmnitrix>())
-            //     .AddIngredient(ItemID.SoulofNight, 8)
-            //     .AddIngredient(ItemID.SoulofLight, 8)
-            //     .AddTile(TileID.MythrilAnvil).Register();
         }
     }
 }

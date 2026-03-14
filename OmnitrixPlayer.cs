@@ -40,9 +40,8 @@ namespace Ben10Mod {
         public bool PrimaryAbilityWasEnabled = false;
         public bool UltimateAbilityEnabled = false;
         public bool UltimateAbilityWasEnabled = false;
-        public string tranUsedAbilityId = ""; // changed to string for modularity
+        public string tranUsedAbilityId = "";
 
-        // Dashing
         public int DashDir = -1;
         public const int DashDown = 0;
         public const int DashUp = 1;
@@ -87,7 +86,6 @@ namespace Ben10Mod {
         private const int EventFrostMoon = -5;
         private const int EventOldOnesArmy = -6;
 
-        // Helper properties (used everywhere now)
         public Transformation CurrentTransformation
             => TransformationLoader.Get(currentTransformationId);
 
@@ -199,7 +197,6 @@ namespace Ben10Mod {
             PrimaryAbilityEnabled = false;
             UltimateAbilityEnabled = false;
 
-            // Handle dashing
             if (Player.controlDown && Player.releaseDown && Player.doubleTapCardinalTimer[DashDown] < 15)
                 DashDir = DashDown;
             else if (Player.controlUp && Player.releaseUp && Player.doubleTapCardinalTimer[DashUp] < 15)
@@ -219,7 +216,6 @@ namespace Ben10Mod {
             var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
             var trans = CurrentTransformation;
 
-            // Detransform handling
             if (wasTransformed && !isTransformed) {
                 var customSlot = ModContent.GetInstance<OmnitrixSlot>();
                 if (customSlot != null) {
@@ -233,7 +229,8 @@ namespace Ben10Mod {
             }
             wasTransformed = isTransformed;
 
-            // Prototype → Recalibrated update effect
+            // Play the update effect once when the Omnitrix enters its updating state, then let the
+            // equipped Omnitrix decide what item it should become.
             if (omnitrixUpdating != omnitrixWasUpdating) {
                 if (omnitrixUpdating && equippedOmnitrix != null) {
                     Random random = new Random();
@@ -250,7 +247,6 @@ namespace Ben10Mod {
                 omnitrixWasUpdating = omnitrixUpdating;
             }
 
-            // Let the current alien handle ALL passive effects
             if (trans != null)
                 trans.UpdateEffects(Player, this);
 
@@ -281,12 +277,10 @@ namespace Ben10Mod {
             if (Main.mouseRight && Main.mouseRightRelease && Player.HeldItem.ModItem is PlumbersBadge)
                 altAttack = !altAttack;
 
-            // Let the current alien handle PostUpdate logic (wings, dust, teleport, etc.)
             var trans = CurrentTransformation;
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
-            // Possession mode
             if (inPossessionMode) {
                 if (possessedTargetIndex < 0 || possessedTargetIndex >= Main.maxNPCs) {
                     EndPossession();
@@ -320,7 +314,7 @@ namespace Ben10Mod {
                 }
             }
 
-            // Ultimate energy check
+            // Drop out of ultimate attack mode immediately when the Omnitrix can no longer sustain it.
             if (isTransformed && ultimateAttack &&
                 omnitrixEnergy < (CurrentTransformation?.UltimateAbilityCost ?? 50)) {
                 for (int i = 0; i < 50; i++) {
@@ -333,7 +327,6 @@ namespace Ben10Mod {
                 ultimateAttack = false;
             }
 
-            // Ability keybinds
             if (isTransformed) {
                 if (KeybindSystem.PrimaryAbility.JustPressed && CurrentTransformation?.HasPrimaryAbility == true)
                     ActivatePrimaryAbility();
@@ -342,7 +335,6 @@ namespace Ben10Mod {
                     ActivateUltimateAbility();
             }
 
-            // Cooldown buff application
             if (PrimaryAbilityWasEnabled && !PrimaryAbilityEnabled) {
                 if (CurrentTransformation != null)
                     Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
@@ -532,7 +524,6 @@ namespace Ben10Mod {
                 Player.shield = -1;
             }
 
-            // All alien costume logic is now handled inside each Transformation class via FrameEffects hook if needed
             CurrentTransformation?.FrameEffects(Player, this);
         }
 
