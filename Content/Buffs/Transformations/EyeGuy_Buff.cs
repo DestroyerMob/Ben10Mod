@@ -15,8 +15,7 @@ namespace Ben10Mod.Content.Buffs.Abilities {
             p = player.GetModPlayer<OmnitrixPlayer>();
 
             p.currentTransformationId = "Ben10Mod:EyeGuy";
-            p.isTransformed      = true;
-            p.wasTransformed     = true;
+            p.isTransformed = true;
         }
         public override bool RightClick(int buffIndex) => false;
     }

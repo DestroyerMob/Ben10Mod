@@ -14,8 +14,7 @@ namespace Ben10Mod.Content.Buffs.Transformations
 
             // Keep the transformation active (sync with new string system)
             omp.currentTransformationId = "Ben10Mod:BigChill";
-            omp.isTransformed           = true;
-            omp.wasTransformed          = true;
+            omp.isTransformed = true;
         }
 
         public override bool RightClick(int buffIndex) => false;

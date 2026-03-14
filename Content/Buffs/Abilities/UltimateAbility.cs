@@ -10,8 +10,7 @@ public class UltimateAbility : ModBuff {
     public override void Update(Player player, ref int buffIndex) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-        omp.UltimateAbilityEnabled    = true;
-        omp.UltimateAbilityWasEnabled = true;
+        omp.UltimateAbilityEnabled = true;
     }
     
     public override bool RightClick(int buffIndex) => false;
