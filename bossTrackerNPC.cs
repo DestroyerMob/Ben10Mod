@@ -99,13 +99,13 @@ namespace Ben10Mod {
                 Player player = Main.player[i];
                 if (!player.active) continue;
 
+                var omp = player.GetModPlayer<OmnitrixPlayer>();
+
                 if (!string.IsNullOrEmpty(transformationId))
                     TransformationHandler.AddTransformation(player, transformationId);
 
-                if (npc.type == NPCID.WallofFlesh && player.GetModPlayer<OmnitrixPlayer>().prototypeOmnitrix) {
-                    TransformationHandler.Detransform(player, 120);
-                    player.AddBuff(ModContent.BuffType<OmnitrixUpdating>(), 120 * 60);
-                }
+                if (omp.equippedOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
+                    omp.equippedOmnitrix.StartEvolution(player, omp);
             }
         }
 

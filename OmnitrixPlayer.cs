@@ -26,7 +26,6 @@ namespace Ben10Mod {
         public bool masterControl = false;
 
         public bool omnitrixEquipped = false;
-        public bool prototypeOmnitrix = false;
         public bool isTransformed = false;
         public bool wasTransformed = false;
         public bool onCooldown = false;
@@ -66,6 +65,7 @@ namespace Ben10Mod {
         public float omnitrixEnergy = 0f;
         public float omnitrixEnergyMax = 0f;
         public float omnitrixEnergyRegen = 0f;
+        public Omnitrix equippedOmnitrix = null;
 
         public bool inPossessionMode = false;
         public Vector2 prePossessionPosition = Vector2.Zero;
@@ -192,7 +192,7 @@ namespace Ben10Mod {
             isTransformed = false;
             onCooldown = false;
             omnitrixEquipped = false;
-            prototypeOmnitrix = false;
+            equippedOmnitrix = null;
 
             omnitrixUpdating = false;
 
@@ -227,11 +227,7 @@ namespace Ben10Mod {
                         TransformationHandler.Detransform(Player, 0, true, false);
                     }
                     else {
-                        if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>())
-                            TransformationHandler.Detransform(Player,
-                                ModContent.GetInstance<PrototypeOmnitrix>().TimeoutDuration);
-                        if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>())
-                            TransformationHandler.Detransform(Player, 0, addCooldown: false);
+                        equippedOmnitrix?.HandleForcedDetransform(Player, this);
                     }
                 }
             }
@@ -239,7 +235,7 @@ namespace Ben10Mod {
 
             // Prototype → Recalibrated update effect
             if (omnitrixUpdating != omnitrixWasUpdating) {
-                if (omnitrixSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>()) {
+                if (omnitrixUpdating && equippedOmnitrix != null) {
                     Random random = new Random();
                     for (int i = 0; i < 25; i++) {
                         int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1,
@@ -248,7 +244,7 @@ namespace Ben10Mod {
                         Main.dust[dustNum].noGravity = true;
                     }
 
-                    omnitrixSlot.FunctionalItem = new Item(ModContent.ItemType<RecalibratedOmnitrix>());
+                    equippedOmnitrix.CompleteEvolution(Player, this, omnitrixSlot.FunctionalItem);
                 }
 
                 omnitrixWasUpdating = omnitrixUpdating;
@@ -514,29 +510,7 @@ namespace Ben10Mod {
             ref bool fullBright) {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
-            if (omnitrixEquipped) {
-                if (customSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>()) {
-                    var costume = ModContent.GetInstance<PrototypeOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (omnitrixUpdating)
-                            Player.handon =
-                                EquipLoader.GetEquipSlot(Mod, "PrototypeOmnitrixUpdating", EquipType.HandsOn);
-                        else if (onCooldown)
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "PrototypeOmnitrixAlt", EquipType.HandsOn);
-                        else
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.HandsOn);
-                    }
-                }
-                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (onCooldown)
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                        else
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                    }
-                }
-            }
+            equippedOmnitrix?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
 
             var trans = CurrentTransformation;
             if (trans != null)
@@ -546,30 +520,7 @@ namespace Ben10Mod {
         public override void FrameEffects() {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
 
-            if (omnitrixEquipped) {
-                // Omnitrix hand visuals (unchanged)
-                if (customSlot.FunctionalItem.type == ModContent.ItemType<PrototypeOmnitrix>()) {
-                    var costume = ModContent.GetInstance<PrototypeOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (omnitrixUpdating)
-                            Player.handon =
-                                EquipLoader.GetEquipSlot(Mod, "PrototypeOmnitrixUpdating", EquipType.HandsOn);
-                        else if (onCooldown)
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "PrototypeOmnitrixAlt", EquipType.HandsOn);
-                        else
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.HandsOn);
-                    }
-                }
-                else if (customSlot.FunctionalItem.type == ModContent.ItemType<RecalibratedOmnitrix>()) {
-                    var costume = ModContent.GetInstance<RecalibratedOmnitrix>();
-                    if (!customSlot.HideVisuals && !isTransformed) {
-                        if (onCooldown)
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrixAlt", EquipType.HandsOn);
-                        else
-                            Player.handon = EquipLoader.GetEquipSlot(Mod, "RecalibratedOmnitrix", EquipType.HandsOn);
-                    }
-                }
-            }
+            equippedOmnitrix?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
 
             if (!customSlot.HideVisuals && isTransformed) {
                 Player.wings = -1;
@@ -661,8 +612,8 @@ namespace Ben10Mod {
 
             base.OnHitNPC(target, hit, damageDone);
 
-            if (isTransformed && !ultimateAttack && omnitrixEnergyRegen == 0 && !UltimateAbilityEnabled)
-                omnitrixEnergy += Math.Max(hit.Damage / 25, 1);
+            if (isTransformed && !ultimateAttack && !UltimateAbilityEnabled && equippedOmnitrix != null)
+                omnitrixEnergy += equippedOmnitrix.GetEnergyGainFromDamage(hit.Damage);
         }
 
         public override void PreUpdate() {

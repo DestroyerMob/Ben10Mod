@@ -15,6 +15,9 @@ namespace Ben10Mod.Content.Items.Accessories
     public class PrototypeOmnitrix : Omnitrix
     {
         public override int MaxOmnitrixEnergy => 300;
+        public override string CooldownHandsOnTextureKey => "PrototypeOmnitrixAlt";
+        public override string UpdatingHandsOnTextureKey => "PrototypeOmnitrixUpdating";
+        public override int EvolutionResultItemType => ModContent.ItemType<RecalibratedOmnitrix>();
 
         public override string Texture => $"Ben10Mod/Content/Items/Accessories/{this.Name}";
 
@@ -62,6 +65,10 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
             base.UpdateAccessory(player, hideVisual);
+        }
+
+        public override bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
+            return defeatedNpcType == NPCID.WallofFlesh;
         }
 
         public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ben10Mod.Common.Command;
 using Ben10Mod.Content.Transformations;
@@ -18,12 +19,20 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual int  MaxOmnitrixEnergy          => 0;
         public virtual int  OmnitrixEnergyRegen        => 0;
         public virtual int  OmnitrixEnergyDrain        => 0;
+        public virtual int  EnergyPerDamageDivisor     => OmnitrixEnergyRegen == 0 ? 25 : 0;
+        public virtual int  MinimumEnergyGainPerHit    => 1;
         public virtual bool UseEnergyForTransformation => false;
         public virtual int  TranformationSwapCost      => 50;
         public virtual int  TimeoutDuration            => 120;
         public virtual int  TransformationDuration     => 300;
         public virtual bool EvolutionFeature           => false;
         public virtual int  EvolutionCost              => 150;
+        public virtual int  EvolutionResultItemType    => 0;
+        public virtual int  EvolutionAnimationDuration => 120 * 60;
+        public virtual bool HideWhileUpdating          => true;
+        public virtual string HandsOnTextureKey        => Name;
+        public virtual string CooldownHandsOnTextureKey => HandsOnTextureKey;
+        public virtual string UpdatingHandsOnTextureKey => HandsOnTextureKey;
 
         public int         transformationNum   = 0;
         public string[]    transformationSlots = new string[5];
@@ -75,13 +84,10 @@ namespace Ben10Mod.Content.Items.Accessories
 
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
-            if (player.whoAmI != Main.myPlayer) return;
-
-            this.player = player;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-            omp.omnitrixEquipped = true;
-            wasEquipedLastFrame  = true;
+            omp.omnitrixEquipped  = true;
+            omp.equippedOmnitrix  = this;
 
             omp.omnitrixEnergyMax += MaxOmnitrixEnergy;
 
@@ -91,6 +97,12 @@ namespace Ben10Mod.Content.Items.Accessories
 
             // Sync the current roster from the player
             transformationSlots = omp.transformationSlots;
+
+            if (player.whoAmI != Main.myPlayer)
+                return;
+
+            this.player = player;
+            wasEquipedLastFrame = true;
 
             HandleAlienSelection(omp);
             HandleTransformationKey(omp);
@@ -104,7 +116,7 @@ namespace Ben10Mod.Content.Items.Accessories
             }
             else
             {
-                TransformationHandler.Detransform(player, TimeoutDuration);
+                DetransformFromEnergyDepletion(player, omp);
             }
         }
 
@@ -120,7 +132,7 @@ namespace Ben10Mod.Content.Items.Accessories
 
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed)
                 {
-                    TransformationHandler.Detransform(player, TimeoutDuration, showParticles: true, addCooldown: true);
+                    HandleUnequip(player, omp);
                 }
             }
         }
@@ -194,10 +206,7 @@ namespace Ben10Mod.Content.Items.Accessories
             if (!omp.isTransformed)
             {
                 // Normal transformation
-                if (UseEnergyForTransformation)
-                    TransformationHandler.Transform(player, desiredId, 2);
-                else
-                    TransformationHandler.Transform(player, desiredId, TransformationDuration);
+                TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
             }
             else
             {
@@ -214,13 +223,87 @@ namespace Ben10Mod.Content.Items.Accessories
                 }
                 else
                 {
-                    // Same alien → Detransform (or Ultimate if you re-enable that later)
+                    // Same alien -> Detransform (or Ultimate if you re-enable that later)
                     if (UseEnergyForTransformation || omp.masterControl)
                     {
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
                     }
                 }
             }
+        }
+
+        public virtual int GetTransformationDuration(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation ? 2 : TransformationDuration;
+        }
+
+        public virtual int GetDetransformCooldownDuration(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation ? 0 : TimeoutDuration;
+        }
+
+        public virtual bool ShouldAddDetransformCooldown(OmnitrixPlayer omp) {
+            return !UseEnergyForTransformation;
+        }
+
+        public virtual void HandleForcedDetransform(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp),
+                addCooldown: ShouldAddDetransformCooldown(omp));
+        }
+
+        public virtual void HandleUnequip(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration, showParticles: true, addCooldown: true);
+        }
+
+        public virtual void DetransformFromEnergyDepletion(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration);
+        }
+
+        public virtual int GetEnergyGainFromDamage(int damageDone) {
+            if (EnergyPerDamageDivisor <= 0 || damageDone <= 0)
+                return 0;
+
+            return Math.Max(damageDone / EnergyPerDamageDivisor, MinimumEnergyGainPerHit);
+        }
+
+        public virtual bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
+            return false;
+        }
+
+        public virtual void StartEvolution(Player player, OmnitrixPlayer omp) {
+            TransformationHandler.Detransform(player, TimeoutDuration);
+            player.AddBuff(ModContent.BuffType<Buffs.Abilities.OmnitrixUpdating>(), EvolutionAnimationDuration);
+        }
+
+        public virtual int GetEvolutionResultItemType(Player player, OmnitrixPlayer omp) {
+            return EvolutionResultItemType;
+        }
+
+        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
+            int resultType = GetEvolutionResultItemType(player, omp);
+            if (resultType <= 0 || equippedItem.type == resultType)
+                return;
+
+            equippedItem.SetDefaults(resultType);
+        }
+
+        public virtual string GetHandsOnTextureKey(Player player, OmnitrixPlayer omp) {
+            if (omp.omnitrixUpdating && !string.IsNullOrEmpty(UpdatingHandsOnTextureKey))
+                return UpdatingHandsOnTextureKey;
+
+            if (omp.onCooldown && !string.IsNullOrEmpty(CooldownHandsOnTextureKey))
+                return CooldownHandsOnTextureKey;
+
+            return HandsOnTextureKey;
+        }
+
+        public virtual void ApplyHandVisuals(Player player, OmnitrixPlayer omp, bool hideVisuals) {
+            if (hideVisuals || omp.isTransformed)
+                return;
+
+            string textureKey = GetHandsOnTextureKey(player, omp);
+            if (string.IsNullOrEmpty(textureKey))
+                return;
+
+            player.handon = EquipLoader.GetEquipSlot(Mod, textureKey, EquipType.HandsOn);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public override int  OmnitrixEnergyDrain        => 1;
         public override int  OmnitrixEnergyRegen        => 3;
         public override bool UseEnergyForTransformation => true;
+        public override string CooldownHandsOnTextureKey => "RecalibratedOmnitrixAlt";
 
         public override string Texture => $"Ben10Mod/Content/Items/Accessories/{this.Name}";
 
