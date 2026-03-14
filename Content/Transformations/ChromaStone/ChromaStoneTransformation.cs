@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Ben10Mod.Content.Projectiles;
@@ -15,6 +16,16 @@ public class ChromaStoneTransformation : Transformation {
     public override string TransformationName => "Chromastone";
     public override string IconPath => "Ben10Mod/Content/Interface/ChromaStoneSelect";
     public override int TransformationBuffId => ModContent.BuffType<ChromaStone_Buff>();
+    public override string Description =>
+        "A living crystal conduit that absorbs punishment, turns it into extra firepower, and shines brighter as the pressure rises.";
+
+    public override List<string> Abilities => new() {
+        "Focused crystal projectile",
+        "Energy absorption stance",
+        "Stored damage amplification",
+        "Chromatic empowered glow"
+    };
+
     public override int PrimaryAttack => ModContent.ProjectileType<ChromaStoneProjectile>();
 
     public override int PrimaryAbilityDuration => 60 * 60;

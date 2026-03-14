@@ -14,6 +14,7 @@ The codebase is now structured so that those systems can be extended by addon mo
 
 Start here depending on what you are trying to do:
 
+- [Player Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/PLAYER_GUIDE.md)
 - [Architecture Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Architecture.md)
 - [Development Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/Development.md)
 - [Addon API Guide](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/docs/AddonAPI.md)

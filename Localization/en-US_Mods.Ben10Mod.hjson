@@ -273,27 +273,20 @@ Items: {
 }
 
 Keybinds: {
-	Transorm.DisplayName: Transorm
-	"Prev Alien.DisplayName": Prev  Alien
-	"Next Alien.DisplayName": Next  Alien
-	"Alien Ten.DisplayName": Alien  Ten
-	"Alien Nine.DisplayName": Alien  Nine
-	"Alien Eight.DisplayName": Alien  Eight
-	"Alien Seven.DisplayName": Alien  Seven
-	"Alien Six.DisplayName": Alien  Six
+	"Prev Alien.DisplayName": Prev Alien
+	"Next Alien.DisplayName": Next Alien
 	"Alien Five.DisplayName": Alien  Five
 	"Alien Four.DisplayName": Alien  Four
 	"Alien Three.DisplayName": Alien  Three
 	"Alien Two.DisplayName": Alien  Two
 	"Alien One.DisplayName": Alien  One
 	Transform.DisplayName: Transform
-	"Primary Ability.DisplayName": Primary  Ability
-	"Secondary Ability.DisplayName": Secondary  Ability
-	"Open Menu.DisplayName": Open  Menu
-	"Quinary Ability.DisplayName": Quinary  Ability
-	"Quaternary Ability.DisplayName": Quaternary  Ability
-	"Tertiary Ability.DisplayName": Tertiary  Ability
-	"Ultimate Ability.DisplayName": Ultimate  Ability
+	"Primary Ability.DisplayName": Primary Ability
+	"Secondary Ability.DisplayName": Secondary Ability
+	"Open Menu.DisplayName": Open Menu
+	"Quaternary Ability.DisplayName": Quaternary Ability
+	"Tertiary Ability.DisplayName": Tertiary Ability
+	"Ultimate Ability.DisplayName": Ultimate Ability
 }
 
 Buffs: {
@@ -353,18 +346,13 @@ Buffs: {
 	}
 
 	EnemySlow: {
-		Description: Mods.Ben10Mod.Buffs.EnemySlow.Description
+		Description: Movement speed reduced by extreme cold
 		DisplayName: Enemy Slow
 	}
 
 	EyeGuy_Buff: {
-		Description: Mods.Ben10Mod.Buffs.EyeGuy_Buff.Description
+		Description: Opticoid
 		DisplayName: Opticoid
-	}
-
-	UltimateAbility_Cooldown: {
-		DisplayName: Ultimate Ability Cooldown
-		Description: Ultimate Ability Cooldown
 	}
 
 	OmnitrixUpdating: {
@@ -384,22 +372,22 @@ Buffs: {
 
 	BuzzShockMinionBuff: {
 		DisplayName: Buzz Shock Minion Buff
-		Description: Mods.Ben10Mod.Buffs.BuzzShockMinionBuff.Description
+		Description: A Buzzshock minion fights at your side
 	}
 
 	UltimateAbilityCooldown: {
-		Description: Mods.Ben10Mod.Buffs.UltimateAbilityCooldown.Description
+		Description: Ultimate ability on cooldown
 		DisplayName: Ultimate Ability Cooldown
 	}
 
 	UltimateAbility: {
-		Description: Mods.Ben10Mod.Buffs.UltimateAbility.Description
+		Description: Ultimate ability activated
 		DisplayName: Ultimate Ability
 	}
 
 	BigChill_Buff: {
-		Description: Mods.Ben10Mod.Buffs.BigChill_Buff.Description
-		DisplayName: Big Chill_ Buff
+		Description: Necrofriggian
+		DisplayName: Big Chill
 	}
 }
 

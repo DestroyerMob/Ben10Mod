@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
@@ -13,6 +14,17 @@ public class XLR8Transformation : Transformation {
     public override string TransformationName      => "XLR8";
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
+    public override string Description =>
+        "A Kineceleran speedster built to blur across the battlefield, chain rapid strikes, and distort the pace of combat.";
+
+    public override List<string> Abilities => new() {
+        "Rapid strike rush",
+        "Extreme speed boost",
+        "Dash mobility",
+        "Water running at speed",
+        "Time-slowing ultimate field"
+    };
+
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<FistProjectile>();

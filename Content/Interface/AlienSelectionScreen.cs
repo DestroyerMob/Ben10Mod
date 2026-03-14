@@ -1,8 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ReLogic.Content;
 using System;
 using System.Collections.Generic;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI.Elements;
@@ -11,6 +13,30 @@ using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Content.Interface
 {
+    public class HoverOutlineImage : UIImage
+    {
+        public HoverOutlineImage(Asset<Texture2D> texture) : base(texture) { }
+
+        protected override void DrawSelf(SpriteBatch spriteBatch)
+        {
+            base.DrawSelf(spriteBatch);
+
+            if (!ContainsPoint(Main.MouseScreen))
+                return;
+
+            var dims = GetDimensions();
+            Rectangle rect = new Rectangle((int)dims.X, (int)dims.Y, (int)dims.Width, (int)dims.Height);
+            Texture2D pixel = TextureAssets.MagicPixel.Value;
+            rect.Width = Math.Max(1, rect.Width);
+            rect.Height = Math.Max(1, rect.Height);
+
+            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Y, rect.Width, 1), Color.White);
+            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Bottom - 1, rect.Width, 1), Color.White);
+            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Y, 1, rect.Height), Color.White);
+            spriteBatch.Draw(pixel, new Rectangle(rect.Right - 1, rect.Y, 1, rect.Height), Color.White);
+        }
+    }
+
     public class UISystem : ModSystem
     {
         internal UserInterface MyInterface;
@@ -144,13 +170,13 @@ namespace Ben10Mod.Content.Interface
     public class AlienSelectionScreen : UIState
     {
         private UIPanel mainPanel;
-        private readonly List<UIImage> rosterSlots = new();
+        private readonly List<HoverOutlineImage> rosterSlots = new();
         private UIGrid unlockedGrid;
         private UIPanel infoPanel;
-        private UIImage previewImage;
         private UIText nameText;
         private UIText descriptionText;
         private UIList abilityList;
+        private UIText abilitiesHeader;
 
         private string currentlySelectedId = "";
 
@@ -178,7 +204,7 @@ namespace Ben10Mod.Content.Interface
 
             for (int i = 0; i < 5; i++)
             {
-                var slot = new UIImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
+                var slot = new HoverOutlineImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
                 slot.Width.Set(slotSize, 0f);
                 slot.Height.Set(slotSize, 0f);
                 slot.Left.Set(rosterStartX + i * (slotSize + 26f), 0f);
@@ -186,6 +212,11 @@ namespace Ben10Mod.Content.Interface
                 int index = i;
                 slot.OnLeftClick += (_, _) => AssignToSlot(index);
                 slot.OnRightClick += (_, _) => ClearSlot(index);
+                slot.OnMouseOver += (_, _) =>
+                {
+                    var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+                    UpdateInfoPanelFromTransformationId(player.transformationSlots[index]);
+                };
 
                 mainPanel.Append(slot);
                 rosterSlots.Add(slot);
@@ -205,16 +236,16 @@ namespace Ben10Mod.Content.Interface
             mainPanel.Append(unlockedHeader);
 
             unlockedGrid = new UIGrid();
-            unlockedGrid.Width.Set(610f, 0f);
+            unlockedGrid.Width.Set(564f, 0f);
             unlockedGrid.Height.Set(315f, 0f);
             unlockedGrid.Left.Set(65f, 0f);
             unlockedGrid.Top.Set(rosterY + slotSize + 85f, 0f);
-            unlockedGrid.ListPadding = 10f;
+            unlockedGrid.ListPadding = 26f;
             mainPanel.Append(unlockedGrid);
 
             var gridScrollbar = new UIScrollbar();
             gridScrollbar.Height.Set(315f, 0f);
-            gridScrollbar.Left.Set(685f, 0f);
+            gridScrollbar.Left.Set(641f, 0f);
             gridScrollbar.Top.Set(rosterY + slotSize + 85f, 0f);
             mainPanel.Append(gridScrollbar);
             unlockedGrid.SetScrollbar(gridScrollbar);
@@ -226,40 +257,35 @@ namespace Ben10Mod.Content.Interface
             infoPanel.Top.Set(92f, 0f);
             mainPanel.Append(infoPanel);
 
-            previewImage = new UIImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
-            previewImage.Width.Set(158f, 0f);
-            previewImage.Height.Set(158f, 0f);
-            previewImage.HAlign = 0.5f;
-            previewImage.Top.Set(28f, 0f);
-            infoPanel.Append(previewImage);
-
             nameText = new UIText("Select an alien", 1.3f);
-            nameText.HAlign = 0.5f;
-            nameText.Top.Set(205f, 0f);
+            nameText.HAlign = 0f;
+            nameText.Left.Set(32f, 0f);
+            nameText.Top.Set(28f, 0f);
             infoPanel.Append(nameText);
 
             descriptionText = new UIText("Click any unlocked alien", 0.95f);
-            descriptionText.HAlign = 0.5f;
-            descriptionText.Top.Set(240f, 0f);
+            descriptionText.HAlign = 0f;
+            descriptionText.Left.Set(32f, 0f);
+            descriptionText.Top.Set(72f, 0f);
             descriptionText.Width.Set(400f, 0f);
             descriptionText.IsWrapped = true;
             infoPanel.Append(descriptionText);
 
-            var abilitiesHeader = new UIText("Abilities:", 1.15f);
+            abilitiesHeader = new UIText("Abilities:", 1.15f);
             abilitiesHeader.Left.Set(32f, 0f);
-            abilitiesHeader.Top.Set(295f, 0f);
+            abilitiesHeader.Top.Set(180f, 0f);
             infoPanel.Append(abilitiesHeader);
 
             abilityList = new UIList();
             abilityList.Width.Set(400f, 0f);
-            abilityList.Height.Set(190f, 0f);
+            abilityList.Height.Set(300f, 0f);
             abilityList.Left.Set(32f, 0f);
-            abilityList.Top.Set(325f, 0f);
+            abilityList.Top.Set(210f, 0f);
             infoPanel.Append(abilityList);
 
             var closeBtn = new UITextPanel<string>("Close Roster");
             closeBtn.HAlign = 0.5f;
-            closeBtn.Top.Set(-58f, 1f);
+            closeBtn.Top.Set(-34f, 1f);
             closeBtn.OnLeftClick += (_, _) =>
             {
                 ModContent.GetInstance<UISystem>().HideMyUI();
@@ -274,7 +300,10 @@ namespace Ben10Mod.Content.Interface
 
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
             if (player.unlockedTransformations.Contains(currentlySelectedId))
+            {
                 player.transformationSlots[slotIndex] = currentlySelectedId;
+                currentlySelectedId = "";
+            }
         }
 
         private void ClearSlot(int slotIndex)
@@ -304,9 +333,16 @@ namespace Ben10Mod.Content.Interface
                 var trans = TransformationLoader.Get(id);
                 if (trans == null) continue;
 
-                var btn = new UIImage(trans.GetTransformationIcon());
-                btn.Width.Set(80f, 0f);
-                btn.Height.Set(80f, 0f);
+                var icon = trans.GetTransformationIcon();
+                var slot = new UIElement();
+                slot.Width.Set(92f, 0f);
+                slot.Height.Set(92f, 0f);
+
+                var btn = new HoverOutlineImage(icon);
+                btn.Width.Set(icon.Width(), 0f);
+                btn.Height.Set(icon.Height(), 0f);
+                btn.Left.Set(0f, 0f);
+                btn.VAlign = 0.5f;
 
                 btn.OnLeftClick += (_, _) =>
                 {
@@ -316,7 +352,8 @@ namespace Ben10Mod.Content.Interface
 
                 btn.OnMouseOver += (_, _) => UpdateInfoPanel(trans);
 
-                unlockedGrid.Add(btn);
+                slot.Append(btn);
+                unlockedGrid.Add(slot);
             }
 
             unlockedGrid.Recalculate();
@@ -330,21 +367,32 @@ namespace Ben10Mod.Content.Interface
         {
             if (trans == null)
             {
-                previewImage.SetImage(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
                 nameText.SetText("Select an alien");
                 descriptionText.SetText("Click any unlocked alien");
+                abilitiesHeader.Top.Set(180f, 0f);
+                abilityList.Top.Set(210f, 0f);
                 abilityList.Clear();
                 return;
             }
 
-            previewImage.SetImage(trans.GetTransformationIcon());
             nameText.SetText(trans.TransformationName);
             descriptionText.SetText(trans.Description);
+
+            // Give wrapped descriptions enough room before the abilities section starts.
+            var descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 72f;
+            float abilitiesTop = Math.Max(180f, descriptionText.Top.Pixels + descriptionHeight + 26f);
+            abilitiesHeader.Top.Set(abilitiesTop, 0f);
+            abilityList.Top.Set(abilitiesTop + 30f, 0f);
 
             abilityList.Clear();
             var abilities = trans.Abilities;
             foreach (var ability in abilities)
                 abilityList.Add(new UIText("• " + ability, 0.95f));
+        }
+
+        private void UpdateInfoPanelFromTransformationId(string transformationId)
+        {
+            UpdateInfoPanel(TransformationLoader.Get(transformationId));
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)

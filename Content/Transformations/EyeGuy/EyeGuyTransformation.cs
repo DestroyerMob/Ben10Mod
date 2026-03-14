@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
@@ -11,6 +12,15 @@ public class EyeGuyTransformation : Transformation {
     public override string TransformationName => "Eye Guy";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
     public override int TransformationBuffId => ModContent.BuffType<EyeGuy_Buff>();
+    public override string Description =>
+        "A precision Opticoid that overwhelms targets with relentless beam fire and an enormous channeled eye blast.";
+
+    public override List<string> Abilities => new() {
+        "Rapid eye laser",
+        "Long-range beam pressure",
+        "Channeled ultimate eye beam"
+    };
+
     public override int PrimaryAttack => ModContent.ProjectileType<EyeGuyLaserbeam>();
     public override int UltimateAttack => ModContent.ProjectileType<EyeGuyUltimateBeam>();
     public override int UltimateAttackSpeed => 10;
