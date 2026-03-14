@@ -16,6 +16,7 @@ using Ben10Mod.Content.Items.Accessories;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Weapons;
+using Ben10Mod.Common.CustomVisuals;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
 using Terraria.GameContent.Events;
@@ -693,26 +694,7 @@ namespace Ben10Mod {
                 Player.fallStart = (int)(Player.position.Y / 16f);
             }
 
-            // Shader effects (kept here because they are global)
-            if (UltimateAbilityEnabled && Main.netMode != NetmodeID.Server) {
-                if (trans?.TransformationName == "Bigchill") {
-                    if (!Filters.Scene["Ben10Mod:Bluescale"].IsActive())
-                        Filters.Scene.Activate("Ben10Mod:Bluescale");
-                }
-                else if (Filters.Scene["Ben10Mod:Bluescale"].IsActive())
-                    Filters.Scene.Deactivate("Ben10Mod:Bluescale");
-
-                if (trans?.TransformationName == "XLR8") {
-                    if (!Filters.Scene["Ben10Mod:Grayscale"].IsActive()) {
-                        Filters.Scene.Activate("Ben10Mod:Grayscale");
-                        Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(1f);
-                    }
-                }
-                else if (Filters.Scene["Ben10Mod:Grayscale"].IsActive()) {
-                    Filters.Scene["Ben10Mod:Grayscale"].GetShader().Shader.Parameters["strength"]?.SetValue(0f);
-                    Filters.Scene.Deactivate("Ben10Mod:Grayscale");
-                }
-            }
+            ScreenShaderController.UpdateForLocalPlayer(Player);
         }
 
         public void RecordEventParticipation(NPC npc) {
