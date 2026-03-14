@@ -506,7 +506,7 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
             if (trans == null) return;
 
-            trans.ModifyDrawInfo(ref drawInfo);
+            trans.ModifyDrawInfo(Player, this, ref drawInfo);
         }
 
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a,
@@ -581,11 +581,7 @@ namespace Ben10Mod {
             }
 
             // All alien costume logic is now handled inside each Transformation class via FrameEffects hook if needed
-            var trans = CurrentTransformation;
-            if (trans != null) {
-                // Future: trans.FrameEffects(Player); – you can add this hook later if you want per-alien FrameEffects
-                trans.FrameEffects(Player, this);
-            }
+            CurrentTransformation?.FrameEffects(Player, this);
         }
 
         public override void PreUpdateMovement() {

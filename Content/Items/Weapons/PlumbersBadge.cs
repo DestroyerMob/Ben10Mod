@@ -91,7 +91,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.shootSpeed       = 10f;
             Item.useStyle         = ItemUseStyleID.Swing;
             Item.channel          = false;
-            Item.noMelee          = false;
+            Item.noMelee          = true;
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
             OmnitrixEnergyUse     = 0;

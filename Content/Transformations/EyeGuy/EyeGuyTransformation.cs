@@ -19,6 +19,8 @@ public class EyeGuyTransformation : Transformation {
     public override bool UltimateChannel => true;
     public override bool UltimateNoMelee => true;
     public override int UltimateEnergyCost => 10;
+    public override int PrimaryShootSpeed => 30;
+    public override int PrimaryAttackSpeed => 15;
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<EyeGuy>();

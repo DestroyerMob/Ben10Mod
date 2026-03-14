@@ -21,6 +21,8 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override string IconPath             => "Ben10Mod/Content/Interface/HeatBlastSelect";
         public override int    TransformationBuffId => ModContent.BuffType<HeatBlast_Buff>();
+        public override int PrimaryAbilityDuration => 60 * 120;
+        public override int PrimaryAbilityCooldown => 60 * 60;
 
         public override List<string> Abilities => new List<string> {
             "Flamethrower blast",
@@ -80,10 +82,12 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override int PrimaryAttackSpeed => 6;
         public override int PrimaryShootSpeed => 3;
         public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
+        public override float PrimaryAttackModifier => 0.3f;
 
         public override int SecondaryAttack => ModContent.ProjectileType<HeatBlastBomb>();
         public override int SecondaryAttackSpeed => 50;
         public override int SecondaryShootSpeed => 10;
+        public override float SecondaryAttackModifier => 1.5f;
         public override int SecondaryUseStyle => ItemUseStyleID.Swing;
 
         public override int UltimateAttack =>

@@ -2,6 +2,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System.Collections.Generic;
+using Ben10Mod.Content.Interface;
+using Ben10Mod.Content.Items.Accessories;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
@@ -26,8 +28,8 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int PrimaryAttack => -1;
         public virtual int SecondaryAttack => -1;
         public virtual int UltimateAttack => -1;
-        public virtual float PrimaryAttackModifier => 0.3f;
-        public virtual float SecondaryAttackModifier => 1.5f;
+        public virtual float PrimaryAttackModifier => 1f;
+        public virtual float SecondaryAttackModifier => 1f;
         public virtual float UltimateAttackModifier => 1f;
         public virtual int PrimaryAttackSpeed => -1;
         public virtual int PrimaryShootSpeed => -1;
@@ -75,7 +77,11 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void OnDetransform(Player player, OmnitrixPlayer omp) { }
         public virtual void PreUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PostUpdateBuffs(Player player, OmnitrixPlayer omp) { }
-        public virtual void UpdateEffects(Player player, OmnitrixPlayer omp) { }
+
+        public virtual void UpdateEffects(Player player, OmnitrixPlayer omp) {
+            var abilitySlot = ModContent.GetInstance<AbilitySlot>();
+            abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
+        }
         public virtual void PostUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp) { }
 
@@ -94,7 +100,7 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual void ModifyHurt(Player player, OmnitrixPlayer omp, ref Player.HurtModifiers modifiers) { }
         public virtual bool FreeDodge(Player player, OmnitrixPlayer omp, Player.HurtInfo info) => false;
-        public virtual void ModifyDrawInfo(ref PlayerDrawSet drawInfo) { }
+        public virtual void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) { }
         public virtual void DrawEffects(ref PlayerDrawSet drawInfo) { }
         public virtual void OnHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }
         public virtual void PostHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }
