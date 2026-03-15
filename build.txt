@@ -1,6 +1,6 @@
 displayName = Terraria 10 (Ben 10 mod)
 author = DestroyerMob
-version = 0.076
+version = 0.077
 buildIgnore = .vs\*, Properties\*, *.csproj, *.user, obj\*, bin\*, *.config, .git\*, .github\*, LICENSE, README.md, .editorconfig, .gitignore, .gitattributes, Effects\Compiler\*
 hideCode = false
 hideResources = true
