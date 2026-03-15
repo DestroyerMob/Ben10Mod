@@ -776,6 +776,37 @@ public override IReadOnlyList<Transformation> ChildTransformations => new Transf
 
 Then override `CanUseChildTransformation(...)` to decide which branch is valid.
 
+### Registering A Child For A Base-Mod Transformation
+
+Addons can now attach child branches to transformations they do not own by using
+`TransformationBranchRegistry`.
+
+This is the API to use if you want something like:
+
+- `Ben10Mod:BigChill -> MyAddon:UltimateBigChill`
+- `Ben10Mod:DiamondHead -> MyAddon:CrystalSpeed`
+
+Example:
+
+```csharp
+using Ben10Mod.Content.Transformations;
+
+public override void Load() {
+    TransformationBranchRegistry.RegisterChildBranch(
+        parentTransformationId: "Ben10Mod:BigChill",
+        childTransformationId: "MyAddon:UltimateBigChill",
+        condition: (player, omp, omnitrix, parent, child, selected) =>
+            selected?.FullID == "Ben10Mod:BigChill" &&
+            omnitrix.CanUseEvolutionFeature(player, omp, parent),
+        energyCost: (player, omp, omnitrix, parent, child, selected) =>
+            omnitrix.EvolutionCost,
+        shouldDetransformOnFailure: (player, omp, omnitrix, parent, child, selected) => true
+    );
+}
+```
+
+The registry is global at runtime, so the base transformation does not need to know your addon child exists.
+
 ### Conditional Child Transformations
 
 The main condition hook is:
@@ -847,6 +878,8 @@ The Omnitrix now exposes capability hooks for branch logic:
 - `CanUseChildTransformation(...)`
 - `CanDNASplice(...)`
 - `CanUseEvolutionFeature(...)`
+
+These can be used both by transformation overrides and by addon branch-registry conditions.
 
 Typical use:
 

@@ -207,6 +207,8 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual bool TryActivateChildTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
             string selectedTransformationId) {
+            Transformation selectedTransformation = TransformationLoader.Get(selectedTransformationId);
+
             foreach (Transformation childTransformation in EnumerateChildTransformations()) {
                 if (!CanUseChildTransformation(player, omp, omnitrix, childTransformation, selectedTransformationId))
                     continue;
@@ -216,6 +218,28 @@ namespace Ben10Mod.Content.Transformations {
                 if (energyCost > 0 && omp.omnitrixEnergy < energyCost) {
                     if (ShouldDetransformWhenChildTransformationFails(player, omp, omnitrix, childTransformation,
                             selectedTransformationId))
+                        TransformationHandler.Detransform(player, 0, addCooldown: false);
+                    return true;
+                }
+
+                if (energyCost > 0)
+                    omp.omnitrixEnergy -= energyCost;
+
+                int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
+                TransformInto(player, omp, childTransformation, branchDuration);
+                OnChildTransformationActivated(player, omp, omnitrix, childTransformation, selectedTransformationId);
+                return true;
+            }
+
+            foreach (RegisteredTransformationBranch registeredBranch in
+                     TransformationBranchRegistry.GetChildBranches(FullID)) {
+                Transformation childTransformation = registeredBranch.ResolveChild();
+                if (childTransformation == null || !registeredBranch.CanUse(player, omp, omnitrix, selectedTransformation))
+                    continue;
+
+                int energyCost = registeredBranch.ResolveEnergyCost(player, omp, omnitrix, selectedTransformation);
+                if (energyCost > 0 && omp.omnitrixEnergy < energyCost) {
+                    if (registeredBranch.ShouldDetransform(player, omp, omnitrix, selectedTransformation))
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
                     return true;
                 }

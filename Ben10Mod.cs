@@ -1,5 +1,6 @@
 using System.IO;
 using Ben10Mod.Content.Items.Accessories;
+using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
@@ -26,6 +27,11 @@ namespace Ben10Mod {
 				Filters.Scene["Ben10Mod:Bluescale"] = new Filter(new ScreenShaderData(filterShader, "Bluescale"), EffectPriority.Medium);
 			}
 		}
+
+		public override void Unload() {
+			TransformationBranchRegistry.Clear();
+		}
+
 		public enum MessageType : byte {
 			UnlockTransformation
 		}
