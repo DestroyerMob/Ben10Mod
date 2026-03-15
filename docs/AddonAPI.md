@@ -417,20 +417,33 @@ public class ShockRockDNA : ModItem {
         Item.useAnimation = 20;
         Item.useTime = 20;
         Item.useStyle = ItemUseStyleID.HoldUp;
+        Item.useTurn = true;
+        Item.UseSound = SoundID.Item4;
         Item.consumable = true;
         Item.maxStack = 99;
     }
 
     public override bool CanUseItem(Player player) {
+        // Prevent wasting the consumable after the player has already unlocked the form.
         return !TransformationHandler.HasTransformation(player, "Ben10Addon:ShockRock");
     }
 
     public override bool? UseItem(Player player) {
+        // Actually unlock the transformation on successful use.
         TransformationHandler.AddTransformation(player, "Ben10Addon:ShockRock");
+
+        // Returning true completes the use. Because Item.consumable is true,
+        // tModLoader will consume one item from the stack.
         return true;
     }
 }
 ```
+
+What actually makes this an unlock consumable:
+
+- `Item.consumable = true` makes the item consume on successful use
+- `TransformationHandler.AddTransformation(...)` performs the unlock
+- `CanUseItem(...)` prevents the player from consuming it after the unlock already exists
 
 ## Building A New Plumber's Badge
 
