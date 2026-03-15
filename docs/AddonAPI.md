@@ -803,22 +803,35 @@ Example:
 
 ```csharp
 using Ben10Mod.Content.Transformations;
+using Terraria.ModLoader;
 
-public override void Load() {
-    TransformationBranchRegistry.RegisterChildBranch(
-        parentTransformationId: "Ben10Mod:BigChill",
-        childTransformationId: "MyAddon:UltimateBigChill",
-        condition: (player, omp, omnitrix, parent, child, selected) =>
-            selected?.FullID == "Ben10Mod:BigChill" &&
-            omnitrix.CanUseEvolutionFeature(player, omp, parent),
-        energyCost: (player, omp, omnitrix, parent, child, selected) =>
-            omnitrix.EvolutionCost,
-        shouldDetransformOnFailure: (player, omp, omnitrix, parent, child, selected) => true
-    );
+namespace MyAddon;
+
+// Put branch registration in your addon Mod class or a ModSystem Load() method.
+public class MyAddonSystem : ModSystem {
+    public override void Load() {
+        TransformationBranchRegistry.RegisterChildBranch(
+            parentTransformationId: "Ben10Mod:BigChill",
+            childTransformationId: "MyAddon:UltimateBigChill",
+            condition: (player, omp, omnitrix, parent, child, selected) =>
+                selected?.FullID == "Ben10Mod:BigChill" &&
+                omnitrix.CanUseEvolutionFeature(player, omp, parent),
+            energyCost: (player, omp, omnitrix, parent, child, selected) =>
+                omnitrix.EvolutionCost,
+            shouldDetransformOnFailure: (player, omp, omnitrix, parent, child, selected) => true
+        );
+    }
 }
 ```
 
 The registry is global at runtime, so the base transformation does not need to know your addon child exists.
+
+Where this `Load()` goes:
+
+- `public override void Load()` inside your addon's `Mod` class, or
+- `public override void Load()` inside a `ModSystem`
+
+Using a `ModSystem` is usually the cleanest option for registration-only code like this.
 
 ### Conditional Child Transformations
 

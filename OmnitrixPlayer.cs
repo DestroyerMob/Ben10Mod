@@ -119,9 +119,21 @@ namespace Ben10Mod {
 
             tag.TryGet("currentTransformationId", out currentTransformationId);
             int[] oldUnlockedRoster;
+            int[] oldTransformationRoster;
+            int oldCurrentTransformation;
 
             if (tag.TryGet("transformationRoster", out string[] rosterArray))
                 transformationSlots = rosterArray;
+            else if (tag.TryGet("transformationRoster", out oldTransformationRoster)) {
+                transformationSlots = new string[oldTransformationRoster.Length];
+                for (int i = 0; i < oldTransformationRoster.Length; i++)
+                    transformationSlots[i] = MapOldTransformationId((TransformationEnumOld)oldTransformationRoster[i]);
+            }
+
+            if (string.IsNullOrEmpty(currentTransformationId) &&
+                tag.TryGet("currentTransformation", out oldCurrentTransformation)) {
+                currentTransformationId = MapOldTransformationId((TransformationEnumOld)oldCurrentTransformation);
+            }
 
             unlockedTransformations.Clear();
             if (tag.TryGet("unlockedTransformationRoster", out string[] unlockedArray))
@@ -129,66 +141,33 @@ namespace Ben10Mod {
 
             if (tag.TryGet("unlockedRoster", out oldUnlockedRoster)) {
                 for (int i = 0; i < oldUnlockedRoster.Length; i++) {
-                    switch ((TransformationEnumOld)oldUnlockedRoster[i]) {
-                        case TransformationEnumOld.Arctiguana:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:Arctiguana");
-                            break;
-                        case TransformationEnumOld.BigChill:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:BigChill");
-                            break;
-                        case TransformationEnumOld.BuzzShock:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:BuzzShock");
-                            break;
-                        case TransformationEnumOld.ChromaStone:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:ChromaStone");
-                            break;
-                        case TransformationEnumOld.DiamondHead:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:DiamondHead");
-                            break;
-                        case TransformationEnumOld.EyeGuy:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:EyeGuy");
-                            break;
-                        case TransformationEnumOld.FourArms:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:FourArms");
-                            break;
-                        case TransformationEnumOld.GhostFreak:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:GhostFreak");
-                            break;
-                        case TransformationEnumOld.HeatBlast:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:HeatBlast");
-                            break;
-                        case TransformationEnumOld.WildVine:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:WildVine");
-                            break;
-                        case TransformationEnumOld.RipJaws:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:RipJaws");
-                            break;
-                        case TransformationEnumOld.XLR8:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:XLR8");
-                            break;
-                        case TransformationEnumOld.StinkFly:
-                            unlockedTransformations.Insert(i,
-                                "Ben10Mod:StinkFly");
-                            break;
-                        default: break;
-                    }
+                    string migratedId = MapOldTransformationId((TransformationEnumOld)oldUnlockedRoster[i]);
+                    if (!string.IsNullOrEmpty(migratedId) && !unlockedTransformations.Contains(migratedId))
+                        unlockedTransformations.Insert(Math.Min(i, unlockedTransformations.Count), migratedId);
                 }
             }
 
             if (!unlockedTransformations.Contains("Ben10Mod:HeatBlast"))
                 unlockedTransformations.Insert(0, "Ben10Mod:HeatBlast");
+        }
+
+        private static string MapOldTransformationId(TransformationEnumOld transformation) {
+            return transformation switch {
+                TransformationEnumOld.Arctiguana => "Ben10Mod:Arctiguana",
+                TransformationEnumOld.BigChill => "Ben10Mod:BigChill",
+                TransformationEnumOld.BuzzShock => "Ben10Mod:BuzzShock",
+                TransformationEnumOld.ChromaStone => "Ben10Mod:ChromaStone",
+                TransformationEnumOld.DiamondHead => "Ben10Mod:DiamondHead",
+                TransformationEnumOld.EyeGuy => "Ben10Mod:EyeGuy",
+                TransformationEnumOld.FourArms => "Ben10Mod:FourArms",
+                TransformationEnumOld.GhostFreak => "Ben10Mod:GhostFreak",
+                TransformationEnumOld.HeatBlast => "Ben10Mod:HeatBlast",
+                TransformationEnumOld.WildVine => "Ben10Mod:WildVine",
+                TransformationEnumOld.RipJaws => "Ben10Mod:RipJaws",
+                TransformationEnumOld.XLR8 => "Ben10Mod:XLR8",
+                TransformationEnumOld.StinkFly => "Ben10Mod:StinkFly",
+                _ => string.Empty
+            };
         }
 
         public override void ResetEffects() {
