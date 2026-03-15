@@ -237,7 +237,7 @@ namespace Ben10Mod.Content.Transformations {
             Transformation selectedTransformation = TransformationLoader.Get(selectedTransformationId);
             return ChildTransformation != null &&
                    childTransformation.FullID == ChildTransformation.FullID &&
-                   selectedTransformationId == FullID &&
+                   MatchesSelfOrAncestorSelection(selectedTransformationId) &&
                    omnitrix.CanUseEvolutionFeature(player, omp, this) &&
                    omnitrix.CanUseChildTransformation(player, omp, this, childTransformation, selectedTransformation);
         }
@@ -246,7 +246,7 @@ namespace Ben10Mod.Content.Transformations {
             Transformation childTransformation, string selectedTransformationId) {
             return ChildTransformation != null &&
                    childTransformation.FullID == ChildTransformation.FullID &&
-                   selectedTransformationId == FullID
+                   MatchesSelfOrAncestorSelection(selectedTransformationId)
                 ? omnitrix.EvolutionCost
                 : 0;
         }
@@ -255,7 +255,7 @@ namespace Ben10Mod.Content.Transformations {
             Omnitrix omnitrix, Transformation childTransformation, string selectedTransformationId) {
             return ChildTransformation != null &&
                    childTransformation.FullID == ChildTransformation.FullID &&
-                   selectedTransformationId == FullID;
+                   MatchesSelfOrAncestorSelection(selectedTransformationId);
         }
 
         protected virtual void OnChildTransformationActivated(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
@@ -266,7 +266,7 @@ namespace Ben10Mod.Content.Transformations {
             if (!StepDownToParentOnRepeatedTransform || ParentTransformation == null)
                 return false;
 
-            if (selectedTransformationId != ParentTransformation.FullID)
+            if (!MatchesAncestorSelection(selectedTransformationId))
                 return false;
 
             int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
@@ -275,6 +275,31 @@ namespace Ben10Mod.Content.Transformations {
             omp.pendingEvolutionStepDownTransformationId = ParentTransformation.FullID;
             TransformationHandler.PlayDetransformEffects(player);
             return true;
+        }
+
+        protected virtual bool MatchesSelfOrAncestorSelection(string selectedTransformationId) {
+            if (string.IsNullOrEmpty(selectedTransformationId))
+                return false;
+
+            if (selectedTransformationId == FullID)
+                return true;
+
+            return MatchesAncestorSelection(selectedTransformationId);
+        }
+
+        protected virtual bool MatchesAncestorSelection(string selectedTransformationId) {
+            if (string.IsNullOrEmpty(selectedTransformationId))
+                return false;
+
+            Transformation ancestor = ParentTransformation;
+            while (ancestor != null) {
+                if (ancestor.FullID == selectedTransformationId)
+                    return true;
+
+                ancestor = ancestor.ParentTransformation;
+            }
+
+            return false;
         }
 
         protected virtual void TransformInto(Player player, OmnitrixPlayer omp, Transformation targetTransformation,

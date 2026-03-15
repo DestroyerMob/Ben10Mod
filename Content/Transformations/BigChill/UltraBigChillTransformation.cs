@@ -9,11 +9,12 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.BigChill;
 
-public class UltimateBigChillTransformation : BigChillTransformation {
-    public override string FullID => "Ben10Mod:UltimateBigChill";
-    public override string TransformationName => "Ultimate Bigchill";
-    public override int TransformationBuffId => ModContent.BuffType<UltimateBigChill_Buff>();
-    public override Transformation ParentTransformation => ModContent.GetInstance<BigChillTransformation>();
+public class UltraBigChillTransformation : UltimateBigChillTransformation {
+    public override string FullID => "Ben10Mod:UltraBigChill";
+    public override string TransformationName => "Ultra Bigchill";
+    public override int TransformationBuffId => ModContent.BuffType<UltraBigChill_Buff>();
+    public override Transformation ChildTransformation => null;
+    public override Transformation ParentTransformation => ModContent.GetInstance<UltimateBigChillTransformation>();
 
     public override string Description =>
         "An evolved Necrofriggian form with denser ice power, improved aerial control, and all of Big Chill's spectral mobility.";
@@ -38,9 +39,9 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-        player.head = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Head);
-        player.body = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Body);
-        player.legs = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Legs);
+        player.head = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Head);
+        player.body = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Body);
+        player.legs = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Legs);
         player.wings = EquipLoader.GetEquipSlot(Mod, nameof(UltimateBigChillWings), EquipType.Wings);
     }
 }

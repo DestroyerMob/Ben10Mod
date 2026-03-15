@@ -389,6 +389,16 @@ Buffs: {
 		Description: Necrofriggian
 		DisplayName: Big Chill
 	}
+
+	UltimateBigChill_Buff: {
+		Description: Mods.Ben10Mod.Buffs.UltimateBigChill_Buff.Description
+		DisplayName: Ultimate Big Chill_ Buff
+	}
+
+	UltraBigChill_Buff: {
+		DisplayName: Ultra Big Chill_ Buff
+		Description: Mods.Ben10Mod.Buffs.UltraBigChill_Buff.Description
+	}
 }
 
 Projectiles: {

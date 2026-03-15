@@ -33,6 +33,10 @@ namespace Ben10Mod.Content.Transformations.BigChill
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Head}", EquipType.Head, name: "UltimateBigChill", equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Body}", EquipType.Body, name: "UltimateBigChill");
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Legs}", EquipType.Legs, name: "UltimateBigChill");
+            
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Head}", EquipType.Head, name: "UltraBigChill", equipTexture: new XLR8Head());
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Body}", EquipType.Body, name: "UltraBigChill");
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Legs}", EquipType.Legs, name: "UltraBigChill");
         }
 
         private void SetupDrawing() {
@@ -43,19 +47,28 @@ namespace Ben10Mod.Content.Transformations.BigChill
             int equipSlotBody = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
             int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
 
-            int equipSlotHeadAlt = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Head);
-            int equipSlotBodyAlt = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Body);
-            int equipSlotLegsAlt = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Legs);
+            int equipSlotHeadUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Head);
+            int equipSlotBodyUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Body);
+            int equipSlotLegsUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Legs);
+            
+            int equipSlotHeadUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Head);
+            int equipSlotBodyUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Body);
+            int equipSlotLegsUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Legs);
 
             ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
             ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true;
             ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true;
             
-            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadAlt]        = false;
-            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyAlt]    = true;
-            ArmorIDs.Body.Sets.HidesArms[equipSlotBodyAlt]       = true;
-            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsAlt] = true;
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadUltimate]        = false;
+            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyUltimate]    = true;
+            ArmorIDs.Body.Sets.HidesArms[equipSlotBodyUltimate]       = true;
+            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsUltimate] = true;
+            
+            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadUltra]        = false;
+            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyUltra]    = true;
+            ArmorIDs.Body.Sets.HidesArms[equipSlotBodyUltra]       = true;
+            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsUltra] = true;
         }
 
         public override void SetStaticDefaults() {
