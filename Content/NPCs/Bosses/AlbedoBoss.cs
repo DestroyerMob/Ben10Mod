@@ -31,6 +31,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private ref float DialogueShown => ref NPC.localAI[1];
         private ref float IntroStage => ref NPC.localAI[2];
         private ref float RocketBurstShotsRemaining => ref NPC.localAI[3];
+        private float MovementSeed => NPC.whoAmI * 0.73f;
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
 
@@ -102,7 +103,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             SetMovementProfile(canFly: false);
             NPC.damage = 0;
             NPC.defense = 24;
-            MoveGroundedTowards(target, -120f * NPC.direction, 5.5f, 0.08f);
+            MoveGroundedTowards(target, 120f, 5.5f, 0.08f);
             PhaseTimer++;
 
             if (IntroStage == 0f) {
@@ -141,7 +142,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             NPC.defense = 30;
             AttackTimer++;
 
-            MoveGroundedTowards(target, -220f * NPC.direction, 7.5f, 0.08f);
+            MoveGroundedTowards(target, 220f, 7.5f, 0.08f);
 
             if (RocketBurstShotsRemaining > 0f && AttackTimer % 10f == 0f) {
                 FireSingleRocket(target, 9.5f, 28);
@@ -161,8 +162,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             NPC.defense = 22;
             AttackTimer++;
 
-            Vector2 desiredPosition = target.Center + new Vector2(0f, -360f);
-            MoveTowards(desiredPosition, 8.5f, 0.07f);
+            MoveAirbornePattern(target, 330f, 190f, 7.75f, 0.055f, 0.03f);
 
             if (AttackTimer % 75f == 0f)
                 SpawnSpeaker(target, 24);
@@ -190,7 +190,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             if ((SwapForm)CurrentSwapForm == SwapForm.Humungousaur) {
                 SetMovementProfile(canFly: false);
                 NPC.damage = 110;
-                MoveGroundedTowards(target, -240f * NPC.direction, 8f, 0.08f);
+                MoveGroundedTowards(target, 240f, 8f, 0.08f);
 
                 if (RocketBurstShotsRemaining > 0f && AttackTimer % 9f == 0f) {
                     FireSingleRocket(target, 10f, 30);
@@ -206,7 +206,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             else {
                 SetMovementProfile(canFly: true);
                 NPC.damage = 80;
-                MoveTowards(target.Center + new Vector2(0f, -360f), 8.75f, 0.07f);
+                MoveAirbornePattern(target, 340f, 210f, 8f, 0.055f, 0.035f);
 
                 if (AttackTimer % 60f == 0f)
                     SpawnSpeaker(target, 26);
@@ -262,7 +262,9 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             NPC.velocity = Vector2.Lerp(NPC.velocity, desiredVelocity, inertia);
         }
 
-        private void MoveGroundedTowards(Player target, float desiredHorizontalOffset, float maxSpeed, float acceleration) {
+        private void MoveGroundedTowards(Player target, float orbitDistance, float maxSpeed, float acceleration) {
+            float phase = AttackTimer * 0.045f + MovementSeed;
+            float desiredHorizontalOffset = MathF.Sin(phase) * orbitDistance;
             float targetX = target.Center.X + desiredHorizontalOffset;
             float horizontalDistance = targetX - NPC.Center.X;
             float desiredVelocityX = MathHelper.Clamp(horizontalDistance * 0.04f, -maxSpeed, maxSpeed);
@@ -272,8 +274,19 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             if (Math.Abs(horizontalDistance) < 36f)
                 NPC.velocity.X *= 0.85f;
 
-            if ((NPC.collideX || target.Center.Y < NPC.Center.Y - 32f) && NPC.velocity.Y == 0f)
+            bool shouldHop = (NPC.collideX || Math.Abs(horizontalDistance) < 80f || target.Center.Y < NPC.Center.Y - 32f) &&
+                             NPC.velocity.Y == 0f &&
+                             AttackTimer % 75f < 2f;
+            if (shouldHop)
                 NPC.velocity.Y = -9.5f;
+        }
+
+        private void MoveAirbornePattern(Player target, float horizontalRadius, float verticalRadius, float maxSpeed, float inertia, float bobSpeed) {
+            float time = AttackTimer * bobSpeed + MovementSeed;
+            Vector2 desiredPosition = target.Center + new Vector2(
+                MathF.Sin(time) * horizontalRadius,
+                -260f + MathF.Cos(time * 1.35f) * verticalRadius);
+            MoveTowards(desiredPosition, maxSpeed, inertia);
         }
 
         private void SetMovementProfile(bool canFly) {
