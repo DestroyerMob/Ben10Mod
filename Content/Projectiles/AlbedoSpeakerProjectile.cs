@@ -20,7 +20,14 @@ namespace Ben10Mod.Content.Projectiles {
         public override void AI() {
             if (Projectile.localAI[0] == 0f) {
                 Player target = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
-                Vector2 offset = new Vector2(Main.rand.NextFloat(-180f, 180f), Main.rand.NextFloat(-120f, -40f));
+                Vector2[] offsets = {
+                    new(-220f, -150f),
+                    new(-110f, -80f),
+                    new(0f, -190f),
+                    new(110f, -80f),
+                    new(220f, -150f)
+                };
+                Vector2 offset = offsets[Projectile.identity % offsets.Length];
                 Projectile.ai[0] = target.Center.X + offset.X;
                 Projectile.ai[1] = target.Center.Y + offset.Y;
                 Projectile.localAI[0] = 1f;
@@ -31,11 +38,13 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.Center = Vector2.Lerp(Projectile.Center, targetPosition, 0.08f);
             Projectile.rotation += 0.08f;
 
-            if (++Projectile.localAI[1] % 45f == 0f && Main.netMode != NetmodeID.MultiplayerClient) {
+            if (++Projectile.localAI[1] % 40f == 0f && Main.netMode != NetmodeID.MultiplayerClient) {
                 Player target = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
-                Vector2 velocity = Projectile.DirectionTo(target.Center) * 10f;
-                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                    ModContent.ProjectileType<AlbedoSonicBlastProjectile>(), Projectile.damage, 0f, Main.myPlayer);
+                for (int i = -1; i <= 1; i++) {
+                    Vector2 velocity = Projectile.DirectionTo(target.Center).RotatedBy(MathHelper.ToRadians(8f * i)) * 10f;
+                    Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
+                        ModContent.ProjectileType<AlbedoSonicBlastProjectile>(), Projectile.damage, 0f, Main.myPlayer);
+                }
             }
         }
     }
