@@ -176,8 +176,8 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             AttackTimer++;
             AuxTimer++;
 
-            if (AuxTimer == 1f || AuxTimer >= 120f) {
-                AuxTimer = 1f;
+            if (AuxTimer >= 120f) {
+                AuxTimer = 0f;
                 CurrentSwapForm = CurrentSwapForm == (float)SwapForm.Humungousaur
                     ? (float)SwapForm.EchoEcho
                     : (float)SwapForm.Humungousaur;
@@ -242,6 +242,12 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             DialogueShown = 1f;
             IntroStage = 4f;
             RocketBurstShotsRemaining = 0f;
+
+            if (nextPhase == AlbedoPhase.UltimatrixSwap) {
+                CurrentSwapForm = (float)SwapForm.Humungousaur;
+                ShowActionText("Ultimate Humungousaur!");
+            }
+
             NPC.netUpdate = true;
             PlayTransformationEffect();
         }

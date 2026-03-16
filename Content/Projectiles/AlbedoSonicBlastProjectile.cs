@@ -5,7 +5,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles {
     public class AlbedoSonicBlastProjectile : ModProjectile {
-        public override string Texture => "Ben10Mod/Content/Projectiles/EyeGuyLaserbeam";
+        public override string Texture => "Ben10Mod/Content/Projectiles/EyeGuyUltimateBeam";
 
         public override void SetDefaults() {
             Projectile.width = 18;
