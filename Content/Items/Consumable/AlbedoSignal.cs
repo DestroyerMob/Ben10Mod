@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Items.Placeables;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -33,7 +34,7 @@ namespace Ben10Mod.Content.Items.Consumable {
             if (player.whoAmI != Main.myPlayer)
                 return false;
 
-            NPC.SpawnBoss((int)player.Center.X, (int)player.Center.Y, ModContent.NPCType<AlbedoBoss>(), player.whoAmI);
+            NPC.SpawnBoss((int)player.Center.X + (player.direction * 80), (int)player.Center.Y, ModContent.NPCType<AlbedoBoss>(), player.whoAmI);
             Item.stack--;
 
             return true;
@@ -48,7 +49,7 @@ namespace Ben10Mod.Content.Items.Consumable {
                 .AddIngredient(ItemID.SoulofFright)
                 .AddIngredient(ItemID.SoulofMight)
                 .AddIngredient(ItemID.SoulofSight)
-                .AddIngredient(ModContent.ItemType<Items.Materials.HeroFragment>(), 8)
+                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
                 .AddTile(TileID.MythrilAnvil)
                 .Register();
         }

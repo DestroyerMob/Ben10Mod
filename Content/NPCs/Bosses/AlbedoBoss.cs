@@ -107,7 +107,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             SetMovementProfile(canFly: false);
             NPC.damage = 0;
             NPC.defense = 24;
-            MoveGroundedTowards(target, 120f, 5.5f, 0.08f);
             PhaseTimer++;
 
             if (IntroStage == 0f) {
@@ -136,7 +135,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 NPC.netUpdate = true;
             }
 
-            if (PhaseTimer >= 260f)
+            if (PhaseTimer >= 215f)
                 TransitionToPhase(AlbedoPhase.UltimateHumungousaur);
         }
 
