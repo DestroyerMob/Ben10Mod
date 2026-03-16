@@ -2,11 +2,9 @@ using System;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Audio;
-using Terraria.Chat;
 using Terraria.DataStructures;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
-using Terraria.Localization;
 using Terraria.ModLoader;
 using Ben10Mod.Content.Items.Consumable;
 using Ben10Mod.Content.Projectiles;
@@ -15,7 +13,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
     public class AlbedoBoss : ModNPC {
         private enum AlbedoPhase {
             IntroHuman,
-            BaseHumungousaur,
             UltimateHumungousaur,
             UltimateEchoEcho,
             UltimatrixSwap
@@ -31,6 +28,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private ref float AuxTimer => ref NPC.ai[2];
         private ref float CurrentSwapForm => ref NPC.ai[3];
         private ref float DialogueShown => ref NPC.localAI[1];
+        private ref float IntroStage => ref NPC.localAI[2];
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
 
@@ -65,6 +63,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             AuxTimer = 0f;
             CurrentSwapForm = (float)SwapForm.Humungousaur;
             DialogueShown = 0f;
+            IntroStage = 0f;
         }
 
         public override void AI() {
@@ -82,9 +81,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             switch (phase) {
                 case AlbedoPhase.IntroHuman:
                     RunIntroPhase(target);
-                    break;
-                case AlbedoPhase.BaseHumungousaur:
-                    RunBaseHumungousaurPhase(target);
                     break;
                 case AlbedoPhase.UltimateHumungousaur:
                     RunUltimateHumungousaurPhase(target);
@@ -105,26 +101,34 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             MoveGroundedTowards(target, -120f * NPC.direction, 5.5f, 0.08f);
             PhaseTimer++;
 
-            if (DialogueShown == 0f) {
-                BroadcastDialogue("You think you deserve the Ultimatrix? Then prove it.");
-                DialogueShown = 1f;
+            if (IntroStage == 0f) {
+                ShowActionText("Behold the Ultimatrix!");
+                IntroStage = 1f;
                 NPC.netUpdate = true;
             }
 
-            if (PhaseTimer >= 120f)
-                TransitionToPhase(AlbedoPhase.BaseHumungousaur);
-        }
+            if (IntroStage == 1f && PhaseTimer >= 75f) {
+                ShowActionText("Humungousaur!");
+                PlayTransformationEffect();
+                IntroStage = 2f;
+                NPC.netUpdate = true;
+            }
 
-        private void RunBaseHumungousaurPhase(Player target) {
-            SetMovementProfile(canFly: false);
-            NPC.damage = 90;
-            NPC.defense = 26;
-            AttackTimer++;
+            if (IntroStage == 2f && PhaseTimer >= 145f) {
+                ShowActionText("I can go ultimate!");
+                IntroStage = 3f;
+                NPC.netUpdate = true;
+            }
 
-            MoveGroundedTowards(target, -150f * NPC.direction, 6.5f, 0.09f);
+            if (IntroStage == 3f && PhaseTimer >= 215f) {
+                ShowActionText("Ultimate Humungousaur!");
+                PlayTransformationEffect();
+                IntroStage = 4f;
+                NPC.netUpdate = true;
+            }
 
-            if (AttackTimer % 120f == 60f)
-                PerformSlam(target, projectileDamage: 32, shockwaveCount: 3, speed: 7f);
+            if (PhaseTimer >= 260f)
+                TransitionToPhase(AlbedoPhase.UltimateHumungousaur);
         }
 
         private void RunUltimateHumungousaurPhase(Player target) {
@@ -205,9 +209,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             else if (lifeRatio <= 0.45f && currentPhase == AlbedoPhase.UltimateHumungousaur) {
                 TransitionToPhase(AlbedoPhase.UltimateEchoEcho);
             }
-            else if (lifeRatio <= 0.72f && currentPhase == AlbedoPhase.BaseHumungousaur) {
-                TransitionToPhase(AlbedoPhase.UltimateHumungousaur);
-            }
         }
 
         private AlbedoPhase GetCurrentPhase() {
@@ -220,6 +221,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             AttackTimer = 0f;
             AuxTimer = 0f;
             DialogueShown = 1f;
+            IntroStage = 4f;
             NPC.netUpdate = true;
             PlayTransformationEffect();
         }
@@ -313,16 +315,11 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), NPC.Center);
         }
 
-        private void BroadcastDialogue(string text) {
-            if (Main.netMode == NetmodeID.MultiplayerClient)
+        private void ShowActionText(string text) {
+            if (Main.netMode == NetmodeID.Server)
                 return;
 
-            if (Main.netMode == NetmodeID.SinglePlayer) {
-                Main.NewText(text, 255, 80, 80);
-            }
-            else if (Main.netMode == NetmodeID.Server) {
-                ChatHelper.BroadcastChatMessage(NetworkText.FromLiteral(text), new Color(255, 80, 80));
-            }
+            CombatText.NewText(NPC.Hitbox, new Color(255, 80, 80), text, dramatic: true);
         }
 
         private bool TryGetTarget(out Player target) {

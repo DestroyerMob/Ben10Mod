@@ -36,10 +36,11 @@ namespace Ben10Mod.Content.Projectiles {
 
             Vector2 targetPosition = new(Projectile.ai[0], Projectile.ai[1]);
             Projectile.Center = Vector2.Lerp(Projectile.Center, targetPosition, 0.08f);
-            Projectile.rotation += 0.08f;
+            Player currentTarget = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
+            Projectile.rotation = Projectile.DirectionTo(currentTarget.Center).ToRotation() + MathHelper.PiOver2;
 
             if (++Projectile.localAI[1] % 40f == 0f && Main.netMode != NetmodeID.MultiplayerClient) {
-                Player target = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
+                Player target = currentTarget;
                 for (int i = -1; i <= 1; i++) {
                     Vector2 velocity = Projectile.DirectionTo(target.Center).RotatedBy(MathHelper.ToRadians(8f * i)) * 10f;
                     Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,

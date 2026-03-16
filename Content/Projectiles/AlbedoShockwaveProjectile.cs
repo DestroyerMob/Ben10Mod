@@ -5,7 +5,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles {
     public class AlbedoShockwaveProjectile : ModProjectile {
-        public override string Texture => "Ben10Mod/Content/Projectiles/Projectile_464";
+        public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.DD2OgreSmash}";
 
         public override void SetDefaults() {
             Projectile.width = 40;

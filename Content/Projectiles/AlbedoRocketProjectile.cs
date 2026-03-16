@@ -5,11 +5,11 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles {
     public class AlbedoRocketProjectile : ModProjectile {
-        public override string Texture => "Ben10Mod/Content/Projectiles/HeatBlastUltimateProjectile";
+        public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.RocketI}";
 
         public override void SetDefaults() {
-            Projectile.width = 16;
-            Projectile.height = 16;
+            Projectile.width = 10;
+            Projectile.height = 10;
             Projectile.hostile = true;
             Projectile.friendly = false;
             Projectile.penetrate = 1;
@@ -19,10 +19,12 @@ namespace Ben10Mod.Content.Projectiles {
 
         public override void AI() {
             Player target = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
-            bool shouldHome = Projectile.ai[0] < 45f || Vector2.Distance(Projectile.Center, target.Center) <= 220f;
+            bool initialHomingWindow = Projectile.ai[0] < 24f;
+            bool closeRangeReacquire = Projectile.ai[0] < 90f && Vector2.Distance(Projectile.Center, target.Center) <= 110f;
+            bool shouldHome = initialHomingWindow || closeRangeReacquire;
             if (target.active && !target.dead && shouldHome) {
-                Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * 10f;
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.06f);
+                Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * 8.5f;
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.025f);
             }
 
             Projectile.ai[0]++;
