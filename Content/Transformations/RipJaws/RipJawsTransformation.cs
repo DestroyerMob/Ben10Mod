@@ -11,6 +11,17 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.RipJaws;
 
 public class RipJawsTransformation : Transformation {
+    private const float WaterDamageMultiplier = 1.5f;
+    private const float RainDamageMultiplier = 1.2f;
+    private const float WaterMoveSpeedMultiplier = 2.25f;
+    private const float RainMoveSpeedMultiplier = 1.35f;
+    private const float WaterFallSpeedMultiplier = 1.5f;
+    private const float RainFallSpeedMultiplier = 1.15f;
+    private const int LandBreathDrainInterval = 18;
+    private const int UnderworldBreathDrainInterval = 8;
+    private const int LandBreathDrainAmount = 1;
+    private const int UnderworldBreathDrainAmount = 2;
+
     public override string FullID => "Ben10Mod:RipJaws";
     public override string TransformationName => "Ripjaws";
     public override string IconPath => "Ben10Mod/Content/Interface/RipJawsSelect";
@@ -39,17 +50,32 @@ public class RipJawsTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
-        if (player.wet || Main.raining) {
+        bool inWater = player.wet;
+        bool inRain = Main.raining && player.ZoneRain && !inWater;
+        bool inUnderworld = player.ZoneUnderworldHeight;
+
+        if (inWater) {
             player.merman = true;
             player.breathCD = 0;
             player.breath = player.breathMax;
-            player.GetDamage<HeroDamage>() *= 2f;
+            player.GetDamage<HeroDamage>() *= WaterDamageMultiplier;
             Lighting.AddLight(player.Center, Vector3.One);
-            player.maxFallSpeed *= 2f;
-            player.moveSpeed *= 4f;
+            player.maxFallSpeed *= WaterFallSpeedMultiplier;
+            player.moveSpeed *= WaterMoveSpeedMultiplier;
+        }
+        else if (inRain) {
+            player.GetDamage<HeroDamage>() *= RainDamageMultiplier;
+            Lighting.AddLight(player.Center, Vector3.One * 0.65f);
+            player.maxFallSpeed *= RainFallSpeedMultiplier;
+            player.moveSpeed *= RainMoveSpeedMultiplier;
         }
         else {
-            player.breath -= 4;
+            int drainInterval = inUnderworld ? UnderworldBreathDrainInterval : LandBreathDrainInterval;
+            int drainAmount = inUnderworld ? UnderworldBreathDrainAmount : LandBreathDrainAmount;
+
+            if (Main.GameUpdateCount % drainInterval == 0)
+                player.breath = System.Math.Max(0, player.breath - drainAmount);
+
             if (player.breath <= 1)
                 player.lifeRegen -= 60;
         }
