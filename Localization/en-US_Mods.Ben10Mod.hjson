@@ -270,6 +270,16 @@ Items: {
 		Tooltip: ""
 		DisplayName: Ultimate Big Chill Wings
 	}
+
+	UltimatrixCore: {
+		Tooltip: ""
+		DisplayName: Ultimatrix Core
+	}
+
+	AlbedoSignal: {
+		Tooltip: ""
+		DisplayName: Albedo Signal
+	}
 }
 
 Keybinds: {
@@ -431,6 +441,10 @@ Projectiles: {
 	BigChillFrostBreathProjectile.DisplayName: Big Chill Frost Breath Projectile
 	RipJawsBiteProjectile.DisplayName: Rip Jaws Bite Projectile
 	GhostFreakShadowProjectile.DisplayName: Ghost Freak Shadow Projectile
+	AlbedoSpeakerProjectile.DisplayName: Albedo Speaker Projectile
+	AlbedoSonicBlastProjectile.DisplayName: Albedo Sonic Blast Projectile
+	AlbedoShockwaveProjectile.DisplayName: Albedo Shockwave Projectile
+	AlbedoRocketProjectile.DisplayName: Albedo Rocket Projectile
 }
 
 Tiles: {
@@ -439,3 +453,4 @@ Tiles: {
 }
 
 DamageClasses.HeroDamage.DisplayName: Hero Damage
+NPCs.AlbedoBoss.DisplayName: Albedo Boss
