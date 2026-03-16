@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
@@ -29,6 +30,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private ref float CurrentSwapForm => ref NPC.ai[3];
         private ref float DialogueShown => ref NPC.localAI[1];
         private ref float IntroStage => ref NPC.localAI[2];
+        private ref float RocketBurstShotsRemaining => ref NPC.localAI[3];
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
 
@@ -64,6 +66,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             CurrentSwapForm = (float)SwapForm.Humungousaur;
             DialogueShown = 0f;
             IntroStage = 0f;
+            RocketBurstShotsRemaining = 0f;
         }
 
         public override void AI() {
@@ -139,8 +142,13 @@ namespace Ben10Mod.Content.NPCs.Bosses {
 
             MoveGroundedTowards(target, -220f * NPC.direction, 7.5f, 0.08f);
 
-            if (AttackTimer % 90f == 0f)
-                FireRocketVolley(target, 5, 10f, 28, 42f);
+            if (RocketBurstShotsRemaining > 0f && AttackTimer % 10f == 0f) {
+                FireSingleRocket(target, 9.5f, 28);
+                RocketBurstShotsRemaining--;
+            }
+            else if (RocketBurstShotsRemaining <= 0f && AttackTimer % 120f == 0f) {
+                RocketBurstShotsRemaining = 6f;
+            }
 
             if (AttackTimer % 150f == 75f)
                 PerformSlam(target, projectileDamage: 36, shockwaveCount: 4, speed: 8f);
@@ -172,6 +180,9 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 CurrentSwapForm = CurrentSwapForm == (float)SwapForm.Humungousaur
                     ? (float)SwapForm.EchoEcho
                     : (float)SwapForm.Humungousaur;
+                ShowActionText((SwapForm)CurrentSwapForm == SwapForm.Humungousaur
+                    ? "Ultimate Humungousaur!"
+                    : "Ultimate Echo Echo!");
                 PlayTransformationEffect();
             }
 
@@ -180,8 +191,13 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 NPC.damage = 110;
                 MoveGroundedTowards(target, -240f * NPC.direction, 8f, 0.08f);
 
-                if (AttackTimer % 70f == 0f)
-                    FireRocketVolley(target, 4, 10f, 30, 36f);
+                if (RocketBurstShotsRemaining > 0f && AttackTimer % 9f == 0f) {
+                    FireSingleRocket(target, 10f, 30);
+                    RocketBurstShotsRemaining--;
+                }
+                else if (RocketBurstShotsRemaining <= 0f && AttackTimer % 110f == 0f) {
+                    RocketBurstShotsRemaining = 5f;
+                }
 
                 if (AttackTimer % 140f == 35f)
                     PerformSlam(target, projectileDamage: 38, shockwaveCount: 4, speed: 8f);
@@ -204,9 +220,11 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 return;
 
             if (lifeRatio <= 0.20f && currentPhase != AlbedoPhase.UltimatrixSwap) {
+                ShowActionText("Ultimatrix swap!");
                 TransitionToPhase(AlbedoPhase.UltimatrixSwap);
             }
             else if (lifeRatio <= 0.45f && currentPhase == AlbedoPhase.UltimateHumungousaur) {
+                ShowActionText("Ultimate Echo Echo!");
                 TransitionToPhase(AlbedoPhase.UltimateEchoEcho);
             }
         }
@@ -222,6 +240,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             AuxTimer = 0f;
             DialogueShown = 1f;
             IntroStage = 4f;
+            RocketBurstShotsRemaining = 0f;
             NPC.netUpdate = true;
             PlayTransformationEffect();
         }
@@ -278,18 +297,13 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             SoundEngine.PlaySound(SoundID.Item14, NPC.Center);
         }
 
-        private void FireRocketVolley(Player target, int rocketCount, float speed, int damage, float spreadDegrees) {
+        private void FireSingleRocket(Player target, float speed, int damage) {
             if (Main.netMode == NetmodeID.MultiplayerClient)
                 return;
 
-            for (int i = 0; i < rocketCount; i++) {
-                float progress = rocketCount == 1 ? 0.5f : i / (float)(rocketCount - 1);
-                float rotation = MathHelper.Lerp(-MathHelper.ToRadians(spreadDegrees) * 0.5f,
-                    MathHelper.ToRadians(spreadDegrees) * 0.5f, progress);
-                Vector2 velocity = NPC.DirectionTo(target.Center).RotatedBy(rotation) * speed;
-                Projectile.NewProjectile(NPC.GetSource_FromAI(), NPC.Center, velocity,
-                    ModContent.ProjectileType<AlbedoRocketProjectile>(), damage, 0f, Main.myPlayer);
-            }
+            Vector2 velocity = NPC.DirectionTo(target.Center) * speed;
+            Projectile.NewProjectile(NPC.GetSource_FromAI(), NPC.Center, velocity,
+                ModContent.ProjectileType<AlbedoRocketProjectile>(), damage, 0f, Main.myPlayer);
 
             SoundEngine.PlaySound(SoundID.Item62, NPC.Center);
         }
@@ -320,6 +334,34 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 return;
 
             CombatText.NewText(NPC.Hitbox, new Color(255, 80, 80), text, dramatic: true);
+        }
+
+        public override bool PreDraw(SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor) {
+            int npcId = GetCurrentDisplayNpcId();
+            Texture2D texture = Main.Assets.Request<Texture2D>($"Images/NPC_{npcId}").Value;
+            int frameCount = Main.npcFrameCount[npcId];
+            if (frameCount <= 0)
+                frameCount = 1;
+
+            Rectangle frame = new(0, 0, texture.Width, texture.Height / frameCount);
+            Vector2 drawPosition = NPC.Center - screenPos;
+            SpriteEffects effects = NPC.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            spriteBatch.Draw(texture, drawPosition, frame, drawColor, 0f, frame.Size() * 0.5f, 1f, effects, 0f);
+            return false;
+        }
+
+        private int GetCurrentDisplayNpcId() {
+            AlbedoPhase phase = GetCurrentPhase();
+            if (phase == AlbedoPhase.IntroHuman)
+                return NPCID.Guide;
+
+            if (phase == AlbedoPhase.UltimateEchoEcho)
+                return NPCID.Probe;
+
+            if (phase == AlbedoPhase.UltimatrixSwap && (SwapForm)CurrentSwapForm == SwapForm.EchoEcho)
+                return NPCID.Probe;
+
+            return NPCID.Golem;
         }
 
         private bool TryGetTarget(out Player target) {

@@ -18,16 +18,6 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void AI() {
-            Player target = Main.player[Player.FindClosest(Projectile.Center, 1, 1)];
-            bool initialHomingWindow = Projectile.ai[0] < 24f;
-            bool closeRangeReacquire = Projectile.ai[0] < 90f && Vector2.Distance(Projectile.Center, target.Center) <= 110f;
-            bool shouldHome = initialHomingWindow || closeRangeReacquire;
-            if (target.active && !target.dead && shouldHome) {
-                Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * 8.5f;
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.025f);
-            }
-
-            Projectile.ai[0]++;
             Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
             Lighting.AddLight(Projectile.Center, 0.8f, 0.15f, 0.15f);
         }
