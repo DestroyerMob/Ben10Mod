@@ -79,6 +79,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             NPC.direction = NPC.spriteDirection = target.Center.X >= NPC.Center.X ? 1 : -1;
 
             AlbedoPhase phase = GetCurrentPhase();
+            ApplyCurrentFormDimensions(phase);
             UpdatePhaseThresholds();
 
             switch (phase) {
@@ -356,12 +357,39 @@ namespace Ben10Mod.Content.NPCs.Bosses {
                 return NPCID.Guide;
 
             if (phase == AlbedoPhase.UltimateEchoEcho)
-                return NPCID.Probe;
+                return NPCID.Cyborg;
 
             if (phase == AlbedoPhase.UltimatrixSwap && (SwapForm)CurrentSwapForm == SwapForm.EchoEcho)
-                return NPCID.Probe;
+                return NPCID.Cyborg;
 
             return NPCID.Golem;
+        }
+
+        private void ApplyCurrentFormDimensions(AlbedoPhase phase) {
+            int targetWidth;
+            int targetHeight;
+
+            if (phase == AlbedoPhase.IntroHuman) {
+                targetWidth = 34;
+                targetHeight = 48;
+            }
+            else if (phase == AlbedoPhase.UltimateEchoEcho ||
+                     (phase == AlbedoPhase.UltimatrixSwap && (SwapForm)CurrentSwapForm == SwapForm.EchoEcho)) {
+                targetWidth = 44;
+                targetHeight = 72;
+            }
+            else {
+                targetWidth = 92;
+                targetHeight = 110;
+            }
+
+            if (NPC.width == targetWidth && NPC.height == targetHeight)
+                return;
+
+            Vector2 bottom = NPC.Bottom;
+            NPC.width = targetWidth;
+            NPC.height = targetHeight;
+            NPC.position = bottom - new Vector2(NPC.width * 0.5f, NPC.height);
         }
 
         private bool TryGetTarget(out Player target) {

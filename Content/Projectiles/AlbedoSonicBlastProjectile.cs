@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -18,7 +19,7 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void AI() {
-            Projectile.rotation += 0.3f;
+            Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
             Lighting.AddLight(Projectile.Center, 0.6f, 0.2f, 0.2f);
         }
     }
