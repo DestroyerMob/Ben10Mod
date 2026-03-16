@@ -32,6 +32,9 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private ref float IntroStage => ref NPC.localAI[2];
         private ref float RocketBurstShotsRemaining => ref NPC.localAI[3];
         private float MovementSeed => NPC.whoAmI * 0.73f;
+        private Vector2 _moveTarget;
+        private int _moveTargetCooldown;
+        private bool _hasMoveTarget;
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
 
@@ -68,6 +71,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             DialogueShown = 0f;
             IntroStage = 0f;
             RocketBurstShotsRemaining = 0f;
+            ResetMovementTarget();
         }
 
         public override void AI() {
@@ -242,6 +246,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             DialogueShown = 1f;
             IntroStage = 4f;
             RocketBurstShotsRemaining = 0f;
+            ResetMovementTarget();
 
             if (nextPhase == AlbedoPhase.UltimatrixSwap) {
                 CurrentSwapForm = (float)SwapForm.Humungousaur;
@@ -263,10 +268,17 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         }
 
         private void MoveGroundedTowards(Player target, float orbitDistance, float maxSpeed, float acceleration) {
-            float phase = AttackTimer * 0.045f + MovementSeed;
-            float desiredHorizontalOffset = MathF.Sin(phase) * orbitDistance;
-            float targetX = target.Center.X + desiredHorizontalOffset;
-            float horizontalDistance = targetX - NPC.Center.X;
+            if (!_hasMoveTarget || _moveTargetCooldown <= 0 || Math.Abs(_moveTarget.X - NPC.Center.X) < 28f) {
+                float phase = Main.GameUpdateCount * 0.045f + MovementSeed;
+                float desiredHorizontalOffset = MathF.Sin(phase) * orbitDistance;
+                _moveTarget = new Vector2(target.Center.X + desiredHorizontalOffset, NPC.Center.Y);
+                _moveTargetCooldown = 40;
+                _hasMoveTarget = true;
+            }
+
+            _moveTargetCooldown--;
+
+            float horizontalDistance = _moveTarget.X - NPC.Center.X;
             float desiredVelocityX = MathHelper.Clamp(horizontalDistance * 0.04f, -maxSpeed, maxSpeed);
 
             NPC.velocity.X = MathHelper.Lerp(NPC.velocity.X, desiredVelocityX, acceleration);
@@ -282,11 +294,23 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         }
 
         private void MoveAirbornePattern(Player target, float horizontalRadius, float verticalRadius, float maxSpeed, float inertia, float bobSpeed) {
-            float time = AttackTimer * bobSpeed + MovementSeed;
-            Vector2 desiredPosition = target.Center + new Vector2(
-                MathF.Sin(time) * horizontalRadius,
-                -260f + MathF.Cos(time * 1.35f) * verticalRadius);
-            MoveTowards(desiredPosition, maxSpeed, inertia);
+            if (!_hasMoveTarget || _moveTargetCooldown <= 0 || Vector2.Distance(NPC.Center, _moveTarget) < 36f) {
+                float time = Main.GameUpdateCount * bobSpeed + MovementSeed;
+                _moveTarget = target.Center + new Vector2(
+                    MathF.Sin(time) * horizontalRadius,
+                    -260f + MathF.Cos(time * 1.35f) * verticalRadius);
+                _moveTargetCooldown = 55;
+                _hasMoveTarget = true;
+            }
+
+            _moveTargetCooldown--;
+            MoveTowards(_moveTarget, maxSpeed, inertia);
+        }
+
+        private void ResetMovementTarget() {
+            _moveTarget = NPC.Center;
+            _moveTargetCooldown = 0;
+            _hasMoveTarget = false;
         }
 
         private void SetMovementProfile(bool canFly) {
