@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Audio;
@@ -98,9 +99,10 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         }
 
         private void RunIntroPhase(Player target) {
+            SetMovementProfile(canFly: false);
             NPC.damage = 0;
             NPC.defense = 24;
-            MoveTowards(target.Center + new Vector2(0f, -200f), 9f, 0.07f);
+            MoveGroundedTowards(target, -120f * NPC.direction, 5.5f, 0.08f);
             PhaseTimer++;
 
             if (DialogueShown == 0f) {
@@ -114,42 +116,40 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         }
 
         private void RunBaseHumungousaurPhase(Player target) {
+            SetMovementProfile(canFly: false);
             NPC.damage = 90;
             NPC.defense = 26;
             AttackTimer++;
 
-            Vector2 desiredPosition = target.Center + new Vector2(target.direction * -260f, -100f);
-            MoveTowards(desiredPosition, 11f, 0.11f);
-
-            if (AttackTimer % 150f == 0f)
-                FireRocketVolley(target, 3, 9f, 24, 26f);
+            MoveGroundedTowards(target, -150f * NPC.direction, 6.5f, 0.09f);
 
             if (AttackTimer % 120f == 60f)
-                PerformSlam(target, projectileDamage: 32, shockwaveCount: 6, speed: 8f, spreadDegrees: 55f);
+                PerformSlam(target, projectileDamage: 32, shockwaveCount: 3, speed: 7f);
         }
 
         private void RunUltimateHumungousaurPhase(Player target) {
+            SetMovementProfile(canFly: false);
             NPC.damage = 100;
             NPC.defense = 30;
             AttackTimer++;
 
-            Vector2 desiredPosition = target.Center + new Vector2(target.direction * -320f, -130f);
-            MoveTowards(desiredPosition, 12.5f, 0.1f);
+            MoveGroundedTowards(target, -220f * NPC.direction, 7.5f, 0.08f);
 
             if (AttackTimer % 90f == 0f)
                 FireRocketVolley(target, 5, 10f, 28, 42f);
 
             if (AttackTimer % 150f == 75f)
-                PerformSlam(target, projectileDamage: 36, shockwaveCount: 8, speed: 9f, spreadDegrees: 70f);
+                PerformSlam(target, projectileDamage: 36, shockwaveCount: 4, speed: 8f);
         }
 
         private void RunUltimateEchoEchoPhase(Player target) {
+            SetMovementProfile(canFly: true);
             NPC.damage = 75;
             NPC.defense = 22;
             AttackTimer++;
 
-            Vector2 desiredPosition = target.Center + new Vector2(0f, -320f);
-            MoveTowards(desiredPosition, 10f, 0.08f);
+            Vector2 desiredPosition = target.Center + new Vector2(0f, -360f);
+            MoveTowards(desiredPosition, 8.5f, 0.07f);
 
             if (AttackTimer % 75f == 0f)
                 SpawnSpeaker(target, 24);
@@ -172,18 +172,20 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             }
 
             if ((SwapForm)CurrentSwapForm == SwapForm.Humungousaur) {
+                SetMovementProfile(canFly: false);
                 NPC.damage = 110;
-                MoveTowards(target.Center + new Vector2(target.direction * -300f, -120f), 13f, 0.11f);
+                MoveGroundedTowards(target, -240f * NPC.direction, 8f, 0.08f);
 
                 if (AttackTimer % 70f == 0f)
                     FireRocketVolley(target, 4, 10f, 30, 36f);
 
                 if (AttackTimer % 140f == 35f)
-                    PerformSlam(target, projectileDamage: 38, shockwaveCount: 7, speed: 9f, spreadDegrees: 65f);
+                    PerformSlam(target, projectileDamage: 38, shockwaveCount: 4, speed: 8f);
             }
             else {
+                SetMovementProfile(canFly: true);
                 NPC.damage = 80;
-                MoveTowards(target.Center + new Vector2(0f, -330f), 10.5f, 0.08f);
+                MoveTowards(target.Center + new Vector2(0f, -360f), 8.75f, 0.07f);
 
                 if (AttackTimer % 60f == 0f)
                     SpawnSpeaker(target, 26);
@@ -223,23 +225,51 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         }
 
         private void MoveTowards(Vector2 targetPosition, float maxSpeed, float inertia) {
+            if (Vector2.Distance(NPC.Center, targetPosition) < 48f) {
+                NPC.velocity *= 0.92f;
+                return;
+            }
+
             Vector2 desiredVelocity = NPC.DirectionTo(targetPosition) * maxSpeed;
             NPC.velocity = Vector2.Lerp(NPC.velocity, desiredVelocity, inertia);
         }
 
-        private void PerformSlam(Player target, int projectileDamage, int shockwaveCount, float speed, float spreadDegrees) {
+        private void MoveGroundedTowards(Player target, float desiredHorizontalOffset, float maxSpeed, float acceleration) {
+            float targetX = target.Center.X + desiredHorizontalOffset;
+            float horizontalDistance = targetX - NPC.Center.X;
+            float desiredVelocityX = MathHelper.Clamp(horizontalDistance * 0.04f, -maxSpeed, maxSpeed);
+
+            NPC.velocity.X = MathHelper.Lerp(NPC.velocity.X, desiredVelocityX, acceleration);
+
+            if (Math.Abs(horizontalDistance) < 36f)
+                NPC.velocity.X *= 0.85f;
+
+            if ((NPC.collideX || target.Center.Y < NPC.Center.Y - 32f) && NPC.velocity.Y == 0f)
+                NPC.velocity.Y = -9.5f;
+        }
+
+        private void SetMovementProfile(bool canFly) {
+            NPC.noGravity = canFly;
+            NPC.noTileCollide = canFly;
+        }
+
+        private void PerformSlam(Player target, int projectileDamage, int shockwaveCount, float speed) {
             if (Main.netMode == NetmodeID.MultiplayerClient)
                 return;
 
-            Vector2 targetCenter = target.Center;
-            NPC.velocity = NPC.DirectionTo(targetCenter) * 18f;
+            float direction = Math.Sign(target.Center.X - NPC.Center.X);
+            if (direction == 0f)
+                direction = NPC.direction == 0 ? 1f : NPC.direction;
+
+            NPC.velocity.X = -direction * 4f;
+            if (NPC.velocity.Y == 0f)
+                NPC.velocity.Y = -6f;
 
             for (int i = 0; i < shockwaveCount; i++) {
-                float progress = shockwaveCount == 1 ? 0.5f : i / (float)(shockwaveCount - 1);
-                float rotation = MathHelper.Lerp(-MathHelper.ToRadians(spreadDegrees) * 0.5f,
-                    MathHelper.ToRadians(spreadDegrees) * 0.5f, progress);
-                Vector2 velocity = NPC.DirectionTo(targetCenter).RotatedBy(rotation) * speed;
-                Projectile.NewProjectile(NPC.GetSource_FromAI(), NPC.Center, velocity,
+                float projectileSpeed = speed + i * 0.8f;
+                Vector2 spawnPosition = NPC.Bottom + new Vector2(direction * 12f, -10f);
+                Vector2 velocity = new(direction * projectileSpeed, 0f);
+                Projectile.NewProjectile(NPC.GetSource_FromAI(), spawnPosition, velocity,
                     ModContent.ProjectileType<AlbedoShockwaveProjectile>(), projectileDamage, 0f, Main.myPlayer);
             }
 
