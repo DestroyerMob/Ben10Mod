@@ -448,7 +448,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
 
         public override void ModifyNPCLoot(NPCLoot npcLoot) {
             npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<UltimatrixCore>()));
-            npcLoot.Add(ItemDropRule.Common(ModContent.ItemType<Items.Materials.HeroFragment>(), 1, 10, 16));
         }
     }
 }

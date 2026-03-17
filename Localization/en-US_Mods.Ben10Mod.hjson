@@ -280,6 +280,36 @@ Items: {
 		Tooltip: ""
 		DisplayName: Albedo Signal
 	}
+
+	ManaThread: {
+		Tooltip: ""
+		DisplayName: Mana Thread
+	}
+
+	HexCircle: {
+		Tooltip: ""
+		DisplayName: Hex Circle
+	}
+
+	AnoditeLance: {
+		Tooltip: ""
+		DisplayName: Anodite Lance
+	}
+
+	AegisCharm: {
+		Tooltip: ""
+		DisplayName: Aegis Charm
+	}
+
+	AnoditeOrb: {
+		DisplayName: Anodite Orb
+		Tooltip: ""
+	}
+
+	ManaBarrier: {
+		DisplayName: Mana Barrier
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -445,6 +475,14 @@ Projectiles: {
 	AlbedoSonicBlastProjectile.DisplayName: Albedo Sonic Blast Projectile
 	AlbedoShockwaveProjectile.DisplayName: Albedo Shockwave Projectile
 	AlbedoRocketProjectile.DisplayName: Albedo Rocket Projectile
+	ManaThreadProjectile.DisplayName: Mana Thread Projectile
+	HexCircleProjectile.DisplayName: Hex Circle Projectile
+	AnoditeLanceProjectile.DisplayName: Anodite Lance Projectile
+	AegisCharmWardProjectile.DisplayName: Aegis Charm Ward Projectile
+	AegisCharmBoltProjectile.DisplayName: Aegis Charm Bolt Projectile
+	AnoditeSparkProjectile.DisplayName: Anodite Spark Projectile
+	AnoditeOrbProjectile.DisplayName: Anodite Orb Projectile
+	ManaBarrierProjectile.DisplayName: Mana Barrier Projectile
 }
 
 Tiles: {
