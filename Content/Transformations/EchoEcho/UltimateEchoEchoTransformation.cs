@@ -26,11 +26,10 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     };
 
     public override float PrimaryAttackModifier => 1.15f;
+    public override int SecondaryAttack => ModContent.ProjectileType<EchoEchoSonicBlastProjectile>();
     public override float SecondaryAttackModifier => 0.9f;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
-        base.UpdateEffects(player, omp);
-
         if (!omp.PrimaryAbilityEnabled || Main.myPlayer != player.whoAmI)
             return;
 

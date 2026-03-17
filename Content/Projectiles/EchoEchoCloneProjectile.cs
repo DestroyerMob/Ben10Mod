@@ -34,13 +34,24 @@ public class EchoEchoCloneProjectile : ModProjectile {
             return;
         }
 
-        Projectile.timeLeft = 2;
-        Projectile.ai[1]++;
+        int totalClones = System.Math.Max(2, (int)Projectile.ai[1]);
+        int cloneIndex = (int)Projectile.ai[0];
+        if (cloneIndex < 0 || cloneIndex >= totalClones) {
+            Projectile.Kill();
+            return;
+        }
 
-        float angle = Main.GlobalTimeWrappedHourly * 2.1f + Projectile.ai[0];
-        Vector2 targetCenter = owner.Center + angle.ToRotationVector2() * 54f;
+        Projectile.timeLeft = 2;
+        if (Projectile.localAI[1] == 0f && Projectile.ai[1] > 0f)
+            Projectile.localAI[1] = Projectile.ai[1];
+
+        float slot = GetCloneSlot(cloneIndex);
+        float bob = (float)System.Math.Sin(Main.GlobalTimeWrappedHourly * 5.2f + cloneIndex * 0.75f) * 8f;
+        float horizontalOffset = slot * 38f;
+        float rowOffset = System.Math.Abs(slot) > 2f ? -14f : 0f;
+        Vector2 targetCenter = owner.Center + new Vector2(horizontalOffset, rowOffset + bob);
         Projectile.Center = Vector2.Lerp(Projectile.Center, targetCenter, 0.22f);
-        Projectile.rotation += 0.15f;
+        Projectile.rotation = MathHelper.Clamp(slot * 0.04f, -0.16f, 0.16f);
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.Firework_Red,
@@ -48,7 +59,8 @@ public class EchoEchoCloneProjectile : ModProjectile {
             dust.noGravity = true;
         }
 
-        if (Projectile.ai[1] % 36f == 0f && Main.myPlayer == Projectile.owner) {
+        if ((int)Projectile.localAI[1] != omp.transformationAttackSerial && Main.myPlayer == Projectile.owner) {
+            Projectile.localAI[1] = omp.transformationAttackSerial;
             NPC target = FindClosestNPC(420f);
             if (target != null) {
                 Vector2 velocity = Projectile.Center.DirectionTo(target.Center) * 11f;
@@ -78,14 +90,26 @@ public class EchoEchoCloneProjectile : ModProjectile {
         return closestTarget;
     }
 
+    private static float GetCloneSlot(int cloneIndex) {
+        int ring = cloneIndex / 2 + 1;
+        bool leftSide = cloneIndex % 2 == 0;
+        return leftSide ? -ring : ring;
+    }
+
     public override bool PreDraw(ref Color lightColor) {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 center = Projectile.Center - Main.screenPosition;
+        float slot = GetCloneSlot((int)Projectile.ai[0]);
+        SpriteEffects effects = slot < 0f ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
 
-        Main.EntitySpriteDraw(pixel, center, null, new Color(255, 90, 90, 90), Projectile.rotation,
-            Vector2.One * 0.5f, new Vector2(10f, 18f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(255, 220, 220, 150), -Projectile.rotation,
-            Vector2.One * 0.5f, new Vector2(6f, 10f), SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(pixel, center + new Vector2(0f, -10f), null, new Color(255, 120, 120, 110), 0f,
+            Vector2.One * 0.5f, new Vector2(7f, 7f), effects, 0);
+        Main.EntitySpriteDraw(pixel, center + new Vector2(0f, 3f), null, new Color(255, 90, 90, 95), Projectile.rotation,
+            Vector2.One * 0.5f, new Vector2(11f, 14f), effects, 0);
+        Main.EntitySpriteDraw(pixel, center + new Vector2(-4f, 15f), null, new Color(255, 90, 90, 90), 0f,
+            Vector2.One * 0.5f, new Vector2(3f, 10f), effects, 0);
+        Main.EntitySpriteDraw(pixel, center + new Vector2(4f, 15f), null, new Color(255, 90, 90, 90), 0f,
+            Vector2.One * 0.5f, new Vector2(3f, 10f), effects, 0);
         return false;
     }
 }

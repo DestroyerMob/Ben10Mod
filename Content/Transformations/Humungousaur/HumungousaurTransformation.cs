@@ -20,15 +20,19 @@ public class HumungousaurTransformation : Transformation {
         "A towering Vaxasaurian bruiser that can grow stronger mid-battle and smash enemies apart with raw force.";
 
     public override List<string> Abilities => new() {
-        "Heavy punch",
-        "Ground shockwave",
-        "Growth surge",
+        "Close-range power punch",
+        "Forward shockwave slam",
+        "Growth surge that boosts strength and toughness",
         "Ultimate evolution"
     };
 
+    public override int PrimaryAttack => ModContent.ProjectileType<HumungousaurPunchProjectile>();
     public override int PrimaryAttackSpeed => 24;
+    public override int PrimaryShootSpeed => 10;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
+    public override int SecondaryAttack => ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>();
     public override int SecondaryAttackSpeed => 34;
+    public override int SecondaryShootSpeed => 8;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 18 * 60;
@@ -46,6 +50,10 @@ public class HumungousaurTransformation : Transformation {
         player.GetDamage(DamageClass.Generic) += 0.2f;
         player.GetKnockback(DamageClass.Generic) += 0.5f;
         player.moveSpeed *= 0.9f;
+    }
+
+    public override string GetDisplayName(OmnitrixPlayer omp) {
+        return omp.PrimaryAbilityEnabled ? "Humungousaur (Grown)" : base.GetDisplayName(omp);
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
@@ -71,5 +79,18 @@ public class HumungousaurTransformation : Transformation {
         player.head = ArmorIDs.Head.MoltenHelmet;
         player.body = ArmorIDs.Body.MoltenBreastplate;
         player.legs = ArmorIDs.Legs.MoltenGreaves;
+    }
+
+    public override void DrawEffects(ref PlayerDrawSet drawInfo) {
+        Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.PrimaryAbilityEnabled)
+            return;
+
+        if (Main.rand.NextBool(3)) {
+            Dust dust = Dust.NewDustDirect(player.position, player.width, player.height, DustID.Torch, Scale: 1.2f);
+            dust.velocity *= 0.2f;
+            dust.noGravity = true;
+        }
     }
 }

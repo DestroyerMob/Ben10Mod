@@ -30,6 +30,7 @@ public class EchoEchoTransformation : Transformation {
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 14;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
+    public override int SecondaryAttack => ModContent.ProjectileType<EchoEchoSonicBlastProjectile>();
     public override int SecondaryAttackSpeed => 26;
     public override int SecondaryShootSpeed => 12;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
@@ -40,22 +41,46 @@ public class EchoEchoTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+    }
 
+    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
         if (!omp.PrimaryAbilityEnabled || Main.myPlayer != player.whoAmI)
             return;
 
-        if (player.ownedProjectileCounts[ModContent.ProjectileType<EchoEchoCloneProjectile>()] >= 2)
+        int cloneType = ModContent.ProjectileType<EchoEchoCloneProjectile>();
+        int desiredClones = System.Math.Max(2, 1 + (int)player.maxMinions);
+        int activeClones = 0;
+        bool[] occupiedSlots = new bool[desiredClones];
+
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile projectile = Main.projectile[i];
+            if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != cloneType)
+                continue;
+
+            projectile.ai[1] = desiredClones;
+            int cloneIndex = (int)projectile.ai[0];
+            if (cloneIndex >= 0 && cloneIndex < desiredClones)
+                occupiedSlots[cloneIndex] = true;
+
+            activeClones++;
+        }
+
+        if (activeClones >= desiredClones)
             return;
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < desiredClones; i++) {
+            if (occupiedSlots[i])
+                continue;
+
             Projectile.NewProjectile(player.GetSource_FromThis(), player.Center, Vector2.Zero,
-                ModContent.ProjectileType<EchoEchoCloneProjectile>(), 18, 0f, player.whoAmI,
-                MathHelper.TwoPi * i / 2f);
+                cloneType, 18, 0f, player.whoAmI, i, omp.transformationAttackSerial);
         }
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        omp.transformationAttackSerial++;
+
         if (!omp.altAttack)
             return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 

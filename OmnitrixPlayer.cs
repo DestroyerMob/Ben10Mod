@@ -31,6 +31,7 @@ namespace Ben10Mod {
         public bool onCooldown = false;
         public bool altAttack = false;
         public bool ultimateAttack = false;
+        public int transformationAttackSerial = 0;
 
         public int cooldownTime = 120;
         public int transformationTime = 300;

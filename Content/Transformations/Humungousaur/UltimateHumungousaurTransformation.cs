@@ -26,6 +26,13 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         "Heavy durability"
     };
 
+    public override int PrimaryAttack => ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>();
+    public override int PrimaryAttackSpeed => 20;
+    public override int PrimaryShootSpeed => 14;
+    public override int SecondaryAttack => ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>();
+    public override int SecondaryAttackSpeed => 30;
+    public override int SecondaryShootSpeed => 13;
+
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.statDefense += 18;
         player.GetDamage(DamageClass.Generic) += 0.22f;
