@@ -8,16 +8,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/EchoEchoCloneProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/EchoEchoCloneProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/EchoEchoSonicBlastProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/EchoEchoSonicBlastProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/UltimateHumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/UltimateHumungousaurTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-    </list>
+    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -144,7 +135,7 @@
       <workItem from="1773704447825" duration="44000" />
       <workItem from="1773711350881" duration="65000" />
       <workItem from="1773711444956" duration="3717000" />
-      <workItem from="1773748397393" duration="7375000" />
+      <workItem from="1773748397393" duration="8015000" />
     </task>
     <servers />
   </component>
