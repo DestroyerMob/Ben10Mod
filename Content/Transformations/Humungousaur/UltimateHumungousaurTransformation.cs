@@ -26,10 +26,10 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         "Heavy durability"
     };
 
-    public override int PrimaryAttack => ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>();
+    public override int PrimaryAttack => ProjectileID.RocketIII;
     public override int PrimaryAttackSpeed => 20;
     public override int PrimaryShootSpeed => 14;
-    public override int SecondaryAttack => ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>();
+    public override int SecondaryAttack => ProjectileID.RocketIII;
     public override int SecondaryAttackSpeed => 30;
     public override int SecondaryShootSpeed => 13;
 
@@ -49,7 +49,7 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
             float offsetIndex = i - (rocketCount - 1) / 2f;
             Vector2 rocketVelocity = velocity.RotatedBy(MathHelper.ToRadians(spread * offsetIndex));
             Projectile.NewProjectile(source, position, rocketVelocity,
-                ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>(),
+                omp.altAttack ? SecondaryAttack : PrimaryAttack,
                 (int)(damage * damageMult), knockback, player.whoAmI);
         }
 
