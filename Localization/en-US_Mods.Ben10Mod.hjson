@@ -310,6 +310,11 @@ Items: {
 		DisplayName: Mana Barrier
 		Tooltip: ""
 	}
+
+	AlbedoTransformationCache: {
+		Tooltip: ""
+		DisplayName: Albedo Transformation Cache
+	}
 }
 
 Keybinds: {
@@ -439,6 +444,26 @@ Buffs: {
 		DisplayName: Ultra Big Chill_ Buff
 		Description: Mods.Ben10Mod.Buffs.UltraBigChill_Buff.Description
 	}
+
+	UltimateHumungousaur_Buff: {
+		Description: Mods.Ben10Mod.Buffs.UltimateHumungousaur_Buff.Description
+		DisplayName: Ultimate Humungousaur_ Buff
+	}
+
+	UltimateEchoEcho_Buff: {
+		Description: Mods.Ben10Mod.Buffs.UltimateEchoEcho_Buff.Description
+		DisplayName: Ultimate Echo Echo_ Buff
+	}
+
+	Humungousaur_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Humungousaur_Buff.Description
+		DisplayName: Humungousaur_ Buff
+	}
+
+	EchoEcho_Buff: {
+		Description: Mods.Ben10Mod.Buffs.EchoEcho_Buff.Description
+		DisplayName: Echo Echo_ Buff
+	}
 }
 
 Projectiles: {
@@ -483,6 +508,12 @@ Projectiles: {
 	AnoditeSparkProjectile.DisplayName: Anodite Spark Projectile
 	AnoditeOrbProjectile.DisplayName: Anodite Orb Projectile
 	ManaBarrierProjectile.DisplayName: Mana Barrier Projectile
+	UltimateHumungousaurRocketPlayerProjectile.DisplayName: Ultimate Humungousaur Rocket Player Projectile
+	UltimateEchoEchoSpeakerProjectile.DisplayName: Ultimate Echo Echo Speaker Projectile
+	HumungousaurShockwavePlayerProjectile.DisplayName: Humungousaur Shockwave Player Projectile
+	HumungousaurPunchProjectile.DisplayName: Humungousaur Punch Projectile
+	EchoEchoSonicBlastProjectile.DisplayName: Echo Echo Sonic Blast Projectile
+	EchoEchoCloneProjectile.DisplayName: Echo Echo Clone Projectile
 }
 
 Tiles: {
