@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Terraria;
 using Terraria.ID;
@@ -32,7 +31,7 @@ public class ManaThread : ModItem {
         CreateRecipe()
             .AddIngredient(ItemID.FallenStar, 5)
             .AddIngredient(ItemID.Amethyst, 8)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 4)
+            .AddIngredient(ItemID.Feather, 2)
             .AddTile(TileID.Anvils)
             .Register();
     }

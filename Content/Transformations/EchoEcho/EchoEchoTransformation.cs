@@ -80,6 +80,7 @@ public class EchoEchoTransformation : Transformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         omp.transformationAttackSerial++;
+        omp.transformationAttackDamage = damage;
 
         if (!omp.altAttack)
             return base.Shoot(player, omp, source, position, velocity, damage, knockback);

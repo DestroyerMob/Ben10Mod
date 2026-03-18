@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -60,7 +59,7 @@ public class AegisCharm : ModItem {
             .AddIngredient(ItemID.CrystalShard, 10)
             .AddIngredient(ItemID.SoulofLight, 8)
             .AddIngredient(ItemID.PixieDust, 15)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 10)
+            .AddIngredient(ItemID.UnicornHorn, 2)
             .AddTile(TileID.MythrilAnvil)
             .Register();
     }

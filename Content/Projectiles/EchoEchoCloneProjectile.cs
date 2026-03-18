@@ -64,8 +64,9 @@ public class EchoEchoCloneProjectile : ModProjectile {
             NPC target = FindClosestNPC(420f);
             if (target != null) {
                 Vector2 velocity = Projectile.Center.DirectionTo(target.Center) * 11f;
+                int attackDamage = omp.transformationAttackDamage > 0 ? omp.transformationAttackDamage : Projectile.damage;
                 Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                    ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), Projectile.damage, 0f, Projectile.owner);
+                    ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), attackDamage, 0f, Projectile.owner);
             }
         }
     }

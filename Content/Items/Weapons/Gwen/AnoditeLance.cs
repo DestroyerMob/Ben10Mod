@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Terraria;
 using Terraria.ID;
@@ -36,7 +35,7 @@ public class AnoditeLance : ModItem {
             .AddIngredient(ItemID.SoulofFright, 5)
             .AddIngredient(ItemID.SoulofMight, 5)
             .AddIngredient(ItemID.SoulofSight, 5)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 16)
+            .AddIngredient(ItemID.SoulofLight, 12)
             .AddTile(TileID.MythrilAnvil)
             .Register();
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Ben10Mod.Content.Buffs.Debuffs;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,10 @@ namespace Ben10Mod.Content.Projectiles {
                 int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.UltraBrightTorch, random.Next(-2, 3), random.Next(-2, 3), 1, Color.White, 1);
                 Main.dust[dustNum].noGravity = true;
             }
+        }
+
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            target.AddBuff(ModContent.BuffType<BuzzShockTagBuff>(), 180);
         }
     }
 }

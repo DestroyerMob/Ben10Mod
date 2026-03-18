@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -43,7 +42,7 @@ public class HexCircle : ModItem {
             .AddIngredient(ItemID.FallenStar, 8)
             .AddIngredient(ItemID.Ruby, 6)
             .AddIngredient(ItemID.MeteoriteBar, 12)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 6)
+            .AddIngredient(ItemID.JungleSpores, 10)
             .AddTile(TileID.Bookcases)
             .Register();
     }

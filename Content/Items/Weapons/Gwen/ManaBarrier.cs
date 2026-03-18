@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Terraria;
 using Terraria.DataStructures;
@@ -47,7 +46,7 @@ public class ManaBarrier : ModItem {
             .AddIngredient(ItemID.Bone, 20)
             .AddIngredient(ItemID.Silk, 8)
             .AddIngredient(ItemID.DemoniteBar, 10)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 8)
+            .AddIngredient(ItemID.ShadowScale, 6)
             .AddTile(TileID.Bookcases)
             .Register();
 
@@ -57,7 +56,7 @@ public class ManaBarrier : ModItem {
             .AddIngredient(ItemID.Bone, 20)
             .AddIngredient(ItemID.Silk, 8)
             .AddIngredient(ItemID.CrimtaneBar, 10)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 8)
+            .AddIngredient(ItemID.TissueSample, 6)
             .AddTile(TileID.Bookcases)
             .Register();
     }

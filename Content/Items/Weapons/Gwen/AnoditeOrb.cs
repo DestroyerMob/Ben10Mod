@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Items.Materials;
 using Ben10Mod.Content.Projectiles.Gwen;
 using Terraria;
 using Terraria.ID;
@@ -34,7 +33,7 @@ public class AnoditeOrb : ModItem {
             .AddIngredient(ItemID.HallowedBar, 8)
             .AddIngredient(ItemID.SoulofLight, 10)
             .AddIngredient(ItemID.CrystalShard, 16)
-            .AddIngredient(ModContent.ItemType<HeroFragment>(), 12)
+            .AddIngredient(ItemID.PixieDust, 20)
             .AddTile(TileID.MythrilAnvil)
             .Register();
     }
