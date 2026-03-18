@@ -237,11 +237,11 @@ namespace Ben10Mod {
             }
             wasTransformed = isTransformed;
 
-            // Play the update effect once when the Omnitrix enters its updating state, then let the
-            // equipped Omnitrix decide what item it should become.
+            // Play the update effect once when the Omnitrix enters its updating state, and complete
+            // the item replacement when the updating buff falls off.
             if (omnitrixUpdating != omnitrixWasUpdating) {
                 var activeOmnitrix = GetActiveOmnitrix();
-                if (omnitrixUpdating && activeOmnitrix != null) {
+                if (omnitrixUpdating) {
                     Random random = new Random();
                     for (int i = 0; i < 25; i++) {
                         int dustNum = Dust.NewDust(Player.position - new Vector2(1, 1), Player.width + 1,
@@ -249,7 +249,8 @@ namespace Ben10Mod {
                             4);
                         Main.dust[dustNum].noGravity = true;
                     }
-
+                }
+                else if (omnitrixWasUpdating && activeOmnitrix != null) {
                     activeOmnitrix.CompleteEvolution(Player, this, omnitrixSlot.FunctionalItem);
                 }
 

@@ -15,6 +15,13 @@ namespace Ben10Mod {
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
         }
 
+        private static bool CountsAsTrackedEncounter(NPC npc) {
+            if (CountsAsBoss(npc))
+                return true;
+
+            return !string.IsNullOrEmpty(GetTransformationIdForBoss(npc.type));
+        }
+
         private void RecordDamage(int playerIndex, int damage) {
             if (damage <= 0) return;
             if (playerIndex < 0 || playerIndex >= Main.maxPlayers) return;
@@ -33,7 +40,7 @@ namespace Ben10Mod {
             if (damageDone > 0)
                 player.GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
 
-            if (!CountsAsBoss(npc)) return;
+            if (!CountsAsTrackedEncounter(npc)) return;
 
             RecordDamage(player.whoAmI, damageDone);
         }
@@ -46,7 +53,7 @@ namespace Ben10Mod {
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
                 Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
 
-                if (!CountsAsBoss(npc)) return;
+                if (!CountsAsTrackedEncounter(npc)) return;
 
                 RecordDamage(owner, damageDone);
             }
@@ -54,7 +61,7 @@ namespace Ben10Mod {
 
         public override void OnKill(NPC npc) {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
-            if (!CountsAsBoss(npc)) return;
+            if (!CountsAsTrackedEncounter(npc)) return;
 
             int eaterCount = 0;
 

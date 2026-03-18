@@ -14,8 +14,7 @@ namespace Ben10Mod.Content.Buffs.Abilities {
         public override void Update(Player player, ref int buffIndex) {
             p = player.GetModPlayer<OmnitrixPlayer>();
 
-            p.omnitrixUpdating    = true;
-            p.omnitrixWasUpdating = true;
+            p.omnitrixUpdating = true;
         }
         public override bool RightClick(int buffIndex) => false;
     }

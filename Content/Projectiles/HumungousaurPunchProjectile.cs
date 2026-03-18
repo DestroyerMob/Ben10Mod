@@ -10,11 +10,11 @@ namespace Ben10Mod.Content.Projectiles;
 public class HumungousaurPunchProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
 
-    private const int PunchLifetime = 16;
+    private const int PunchLifetime = 12;
 
     public override void SetDefaults() {
-        Projectile.width = 82;
-        Projectile.height = 82;
+        Projectile.width = 58;
+        Projectile.height = 58;
         Projectile.friendly = true;
         Projectile.DamageType = DamageClass.Generic;
         Projectile.penetrate = 1;
@@ -35,16 +35,18 @@ public class HumungousaurPunchProjectile : ModProjectile {
 
         Projectile.scale = Projectile.ai[0] <= 0f ? 1f : Projectile.ai[0];
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        if (direction.X != 0f)
+            owner.direction = direction.X > 0f ? 1 : -1;
+
         float progress = 1f - Projectile.timeLeft / (float)PunchLifetime;
         float extensionCurve = progress < 0.38f ? progress / 0.38f : 1f - (progress - 0.38f) / 0.62f * 0.55f;
-        float extension = MathHelper.Lerp(26f, 96f * Projectile.scale, MathHelper.Clamp(extensionCurve, 0f, 1f));
-        Vector2 shoulderOffset = new(owner.direction * 12f, -6f);
+        float extension = MathHelper.Lerp(12f, 34f * Projectile.scale, MathHelper.Clamp(extensionCurve, 0f, 1f));
+        Vector2 shoulderOffset = new(owner.direction * 8f, -4f);
 
         Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
         Projectile.Center = owner.MountedCenter + shoulderOffset + direction * extension;
         owner.heldProj = Projectile.whoAmI;
-        owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, direction.ToRotation() - MathHelper.PiOver2);
-        owner.itemRotation = direction.ToRotation();
+        owner.itemRotation = direction.ToRotation() * owner.direction;
         owner.itemTime = 2;
         owner.itemAnimation = 2;
 
@@ -70,16 +72,15 @@ public class HumungousaurPunchProjectile : ModProjectile {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 center = Projectile.Center - Main.screenPosition;
         Vector2 direction = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
-        Vector2 fistCenter = center;
-        Vector2 forearmCenter = center - direction * (20f * Projectile.scale);
+        Vector2 fistCenter = center - direction * (8f * Projectile.scale);
         float rotation = Projectile.rotation - MathHelper.PiOver2;
+        Vector2 outerScale = new(20f * Projectile.scale, 13f * Projectile.scale);
+        Vector2 innerScale = new(9f * Projectile.scale, 5f * Projectile.scale);
 
-        Main.EntitySpriteDraw(pixel, forearmCenter, null, new Color(163, 96, 54, 210), rotation, Vector2.One * 0.5f,
-            new Vector2(18f * Projectile.scale, 42f * Projectile.scale), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, fistCenter, null, new Color(196, 116, 67, 235), rotation, Vector2.One * 0.5f,
-            new Vector2(30f * Projectile.scale, 30f * Projectile.scale), SpriteEffects.None, 0);
+            outerScale, SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, fistCenter, null, new Color(255, 214, 170, 175), rotation, Vector2.One * 0.5f,
-            new Vector2(13f * Projectile.scale, 13f * Projectile.scale), SpriteEffects.None, 0);
+            innerScale, SpriteEffects.None, 0);
         return false;
     }
 
