@@ -33,7 +33,7 @@ public class BuzzShockTransformation : Transformation {
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 1;
-    public override int PrimaryAbilityCooldown => 60 * 60;
+    public override int PrimaryAbilityCooldown => 10 * 60;
 
     public override int UltimateAttack => ModContent.ProjectileType<BuzzShockUltimateProjectile>();
     public override int UltimateAttackSpeed => 20;

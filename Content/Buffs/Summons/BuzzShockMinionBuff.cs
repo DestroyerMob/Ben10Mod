@@ -12,7 +12,7 @@ public class BuzzShockMinionBuff : ModBuff {
 
     public override void Update(Player player, ref int buffIndex)
     {
-        if (player.ownedProjectileCounts[ModContent.ProjectileType<BuzzShockMinionProjectile>()] > 0)
+        if (player.ownedProjectileCounts[ModContent.ProjectileType<BuzzShockMinionProjectile>()] > 0 && player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == "Ben10Mod:BuzzShock")
         {
             player.buffTime[buffIndex] = 18000;
         }

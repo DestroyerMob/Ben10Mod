@@ -469,6 +469,16 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.BuzzShockTagBuff.Description
 		DisplayName: Buzz Shock Tag Buff
 	}
+
+	Swampfire_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Swampfire_Buff.Description
+		DisplayName: Swampfire_ Buff
+	}
+
+	Rath_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Rath_Buff.Description
+		DisplayName: Rath_ Buff
+	}
 }
 
 Projectiles: {
@@ -519,6 +529,10 @@ Projectiles: {
 	HumungousaurPunchProjectile.DisplayName: Humungousaur Punch Projectile
 	EchoEchoSonicBlastProjectile.DisplayName: Echo Echo Sonic Blast Projectile
 	EchoEchoCloneProjectile.DisplayName: Echo Echo Clone Projectile
+	SwampfireSeedProjectile.DisplayName: Swampfire Seed Projectile
+	SwampfireBoltProjectile.DisplayName: Swampfire Bolt Projectile
+	RathPounceProjectile.DisplayName: Rath Pounce Projectile
+	RathClawProjectile.DisplayName: Rath Claw Projectile
 }
 
 Tiles: {
