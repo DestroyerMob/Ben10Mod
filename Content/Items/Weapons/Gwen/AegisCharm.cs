@@ -55,12 +55,12 @@ public class AegisCharm : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.SpellTome)
-            .AddIngredient(ItemID.CrystalShard, 10)
-            .AddIngredient(ItemID.SoulofLight, 8)
-            .AddIngredient(ItemID.PixieDust, 15)
-            .AddIngredient(ItemID.UnicornHorn, 2)
-            .AddTile(TileID.MythrilAnvil)
+            .AddIngredient(ItemID.Book)
+            .AddIngredient(ItemID.FallenStar, 10)
+            .AddIngredient(ItemID.Bone, 16)
+            .AddIngredient(ItemID.Silk, 8)
+            .AddIngredient(ItemID.Diamond, 6)
+            .AddTile(TileID.Bookcases)
             .Register();
     }
 }

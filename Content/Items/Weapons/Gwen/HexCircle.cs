@@ -38,12 +38,12 @@ public class HexCircle : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.Book, 1)
-            .AddIngredient(ItemID.FallenStar, 8)
-            .AddIngredient(ItemID.Ruby, 6)
-            .AddIngredient(ItemID.MeteoriteBar, 12)
-            .AddIngredient(ItemID.JungleSpores, 10)
-            .AddTile(TileID.Bookcases)
+            .AddIngredient(ItemID.SpellTome)
+            .AddIngredient(ItemID.CrystalShard, 12)
+            .AddIngredient(ItemID.SoulofLight, 8)
+            .AddIngredient(ItemID.PixieDust, 15)
+            .AddIngredient(ItemID.HallowedBar, 8)
+            .AddTile(TileID.MythrilAnvil)
             .Register();
     }
 }

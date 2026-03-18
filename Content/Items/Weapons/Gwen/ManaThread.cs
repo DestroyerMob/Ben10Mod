@@ -29,10 +29,12 @@ public class ManaThread : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.FallenStar, 5)
-            .AddIngredient(ItemID.Amethyst, 8)
-            .AddIngredient(ItemID.Feather, 2)
-            .AddTile(TileID.Anvils)
+            .AddIngredient(ItemID.Book, 1)
+            .AddIngredient(ItemID.CrystalShard, 8)
+            .AddIngredient(ItemID.SoulofLight, 6)
+            .AddIngredient(ItemID.PixieDust, 12)
+            .AddIngredient(ItemID.UnicornHorn, 1)
+            .AddTile(TileID.MythrilAnvil)
             .Register();
     }
 }
