@@ -11,8 +11,8 @@ public class RathPounceProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
 
     public override void SetDefaults() {
-        Projectile.width = 52;
-        Projectile.height = 34;
+        Projectile.width = 60;
+        Projectile.height = 40;
         Projectile.friendly = true;
         Projectile.DamageType = DamageClass.MeleeNoSpeed;
         Projectile.penetrate = 1;
@@ -20,11 +20,23 @@ public class RathPounceProjectile : ModProjectile {
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.hide = true;
+        Projectile.ownerHitCheck = true;
     }
 
     public override void AI() {
-        Projectile.rotation = Projectile.velocity.ToRotation();
-        Projectile.velocity *= 0.93f;
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead) {
+            Projectile.Kill();
+            return;
+        }
+
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Projectile.velocity = direction;
+        Projectile.rotation = direction.ToRotation();
+        owner.direction = direction.X >= 0f ? 1 : -1;
+
+        Vector2 desiredCenter = owner.Center + direction * 34f;
+        Projectile.Center = desiredCenter;
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.Smoke, -Projectile.velocity * 0.2f,
@@ -38,9 +50,9 @@ public class RathPounceProjectile : ModProjectile {
         Vector2 center = Projectile.Center - Main.screenPosition;
 
         Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(210, 120, 70, 220),
-            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(32f, 16f), SpriteEffects.None, 0f);
+            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(24f, 18f), SpriteEffects.None, 0f);
         Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(255, 220, 165, 180),
-            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(14f, 6f), SpriteEffects.None, 0f);
+            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(10f, 8f), SpriteEffects.None, 0f);
         return false;
     }
 

@@ -25,12 +25,18 @@ public class SwampfireSeedProjectile : ModProjectile {
     public override void AI() {
         Projectile.rotation += 0.22f * Projectile.direction;
         Projectile.velocity.Y += 0.18f;
-        Lighting.AddLight(Projectile.Center, new Vector3(0.45f, 0.9f, 0.2f) * 0.45f);
+        Lighting.AddLight(Projectile.Center, new Vector3(0.52f, 0.95f, 0.22f) * 0.7f);
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.Grass,
                 -Projectile.velocity * 0.06f, 120, new Color(130, 220, 90), 1f);
             dust.noGravity = true;
+        }
+
+        if (Main.rand.NextBool(3)) {
+            Dust ember = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f), DustID.Torch,
+                Main.rand.NextVector2Circular(0.8f, 0.8f), 100, new Color(255, 155, 75), 0.95f);
+            ember.noGravity = true;
         }
     }
 
@@ -51,11 +57,17 @@ public class SwampfireSeedProjectile : ModProjectile {
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
+        if (Projectile.owner == Main.myPlayer || Main.netMode != NetmodeID.MultiplayerClient) {
+            Vector2 vineCenter = Projectile.Center + new Vector2(0f, -Projectile.height * 1.8f);
+            Projectile.NewProjectile(Projectile.GetSource_FromThis(), vineCenter, Vector2.Zero,
+                ModContent.ProjectileType<SwampfireVineProjectile>(), Projectile.damage, 0f, Projectile.owner);
+        }
+
         Projectile.Kill();
         return false;
     }
 
-    public override void Kill(int timeLeft) {
+    public override void OnKill(int timeLeft) {
         for (int i = 0; i < 16; i++) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Torch : DustID.Grass,
                 Main.rand.NextVector2Circular(2.2f, 2.2f), 120, Color.White, 1.1f);
