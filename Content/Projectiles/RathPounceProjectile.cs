@@ -58,5 +58,12 @@ public class RathPounceProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(BuffID.Bleeding, 180);
+
+        for (int i = 0; i < 18; i++) {
+            Vector2 burstVelocity = Projectile.rotation.ToRotationVector2().RotatedByRandom(0.55f) * Main.rand.NextFloat(1.2f, 4f);
+            Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 3 == 0 ? DustID.Smoke : DustID.Blood, burstVelocity, 90,
+                new Color(255, 185, 120), 1.25f);
+            dust.noGravity = true;
+        }
     }
 }

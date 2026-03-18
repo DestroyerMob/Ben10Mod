@@ -39,12 +39,19 @@ public class SwampfireVineProjectile : ModProjectile {
 
         Lighting.AddLight(Projectile.Center, new Vector3(0.34f, 0.85f, 0.18f) * 0.75f);
 
-        if (Main.rand.NextBool(2)) {
+        if (Main.rand.NextBool()) {
             Vector2 dustPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-18f, 18f), Main.rand.NextFloat(-Projectile.height + 12f, 0f));
             Dust dust = Dust.NewDustPerfect(dustPos, Main.rand.NextBool() ? DustID.Grass : DustID.JunglePlants,
                 new Vector2(Main.rand.NextFloat(-0.4f, 0.4f), Main.rand.NextFloat(-0.8f, -0.15f)), 120,
                 new Color(130, 230, 90), 1f);
             dust.noGravity = true;
+        }
+
+        if (Main.rand.NextBool(3)) {
+            Vector2 emberPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-12f, 12f), Main.rand.NextFloat(-40f, 0f));
+            Dust ember = Dust.NewDustPerfect(emberPos, DustID.Torch, Main.rand.NextVector2Circular(0.5f, 0.5f), 120,
+                new Color(255, 150, 70), 0.9f);
+            ember.noGravity = true;
         }
     }
 
@@ -59,13 +66,13 @@ public class SwampfireVineProjectile : ModProjectile {
         float fade = Utils.GetLerpValue(0f, 30f, Projectile.timeLeft, true);
         float opacity = growth * fade;
 
-        for (int i = -2; i <= 2; i++) {
+        for (int i = -3; i <= 3; i++) {
             float bend = i * 10f;
-            float width = i == 0 ? 14f : 9f;
-            float height = i == 0 ? 112f : 98f;
+            float width = i == 0 ? 16f : 11f;
+            float height = i == 0 ? 114f : 104f;
             Vector2 center = basePos + new Vector2(bend, -height * 0.5f);
-            Color outerColor = new Color(50, 140, 35, 210) * opacity;
-            Color innerColor = new Color(145, 255, 120, 190) * opacity;
+            Color outerColor = new Color(40, 120, 28, 225) * opacity;
+            Color innerColor = new Color(145, 255, 120, 205) * opacity;
 
             Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), outerColor,
                 0.08f * i, new Vector2(0.5f, 0.5f), new Vector2(width, height), SpriteEffects.None, 0f);
@@ -73,8 +80,14 @@ public class SwampfireVineProjectile : ModProjectile {
                 0.08f * i, new Vector2(0.5f, 0.5f), new Vector2(width * 0.42f, height * 0.82f), SpriteEffects.None, 0f);
         }
 
+        for (int i = -2; i <= 2; i++) {
+            Vector2 leafCenter = basePos + new Vector2(i * 14f, -58f - System.Math.Abs(i) * 8f);
+            Main.spriteBatch.Draw(pixel, leafCenter, new Rectangle(0, 0, 1, 1), new Color(90, 200, 70, 180) * opacity,
+                0.65f * i, new Vector2(0.5f, 0.5f), new Vector2(8f, 22f), SpriteEffects.None, 0f);
+        }
+
         Main.spriteBatch.Draw(pixel, basePos + new Vector2(0f, -10f), new Rectangle(0, 0, 1, 1), new Color(255, 135, 50, 170) * opacity,
-            0f, new Vector2(0.5f, 0.5f), new Vector2(32f, 12f), SpriteEffects.None, 0f);
+            0f, new Vector2(0.5f, 0.5f), new Vector2(38f, 14f), SpriteEffects.None, 0f);
         return false;
     }
 
