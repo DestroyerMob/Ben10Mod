@@ -114,7 +114,7 @@ namespace Ben10Mod.Content.Projectiles {
                 Main.dust[dustNum].noGravity = true;
             }
 
-            SoundEngine.PlaySound(SoundID.Thunder, Projectile.position);
+            SoundEngine.PlaySound(SoundID.DD2_LightningAuraZap, Projectile.position);
         }
 
         private Vector2 GetIdlePosition(Player player) {
