@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
+using Terraria.GameContent.UI.BigProgressBar;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -11,7 +12,6 @@ using Ben10Mod.Content.Items.Consumable;
 using Ben10Mod.Content.Projectiles;
 
 namespace Ben10Mod.Content.NPCs.Bosses {
-    [AutoloadBossHead]
     public class AlbedoBoss : ModNPC {
         private enum AlbedoPhase {
             IntroHuman,
@@ -38,7 +38,6 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private bool _hasMoveTarget;
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
-        public override string BossHeadTexture => "Terraria/Images/NPCHeadBoss_10";
 
         public override void SetStaticDefaults() {
             Main.npcFrameCount[Type] = 1;
@@ -62,6 +61,9 @@ namespace Ben10Mod.Content.NPCs.Bosses {
             NPC.npcSlots = 15f;
             NPC.aiStyle = -1;
             Music = MusicID.Boss3;
+
+            if (Main.BigBossProgressBar.TryGetSpecialVanillaBossBar(NPCID.EyeofCthulhu, out IBigProgressBar bossBar))
+                NPC.BossBar = bossBar;
         }
 
         public override void OnSpawn(IEntitySource source) {
