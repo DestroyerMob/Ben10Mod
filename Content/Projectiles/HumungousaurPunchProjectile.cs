@@ -74,13 +74,13 @@ public class HumungousaurPunchProjectile : ModProjectile {
         Vector2 direction = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
         Vector2 fistCenter = center - direction * (8f * Projectile.scale);
         float rotation = Projectile.rotation - MathHelper.PiOver2;
-        Vector2 outerScale = new(20f * Projectile.scale, 13f * Projectile.scale);
-        Vector2 innerScale = new(9f * Projectile.scale, 5f * Projectile.scale);
+        Rectangle outerRect = new(0, 0, (int)(20f * Projectile.scale), (int)(13f * Projectile.scale));
+        Rectangle innerRect = new(0, 0, (int)(9f * Projectile.scale), (int)(5f * Projectile.scale));
 
-        Main.EntitySpriteDraw(pixel, fistCenter, null, new Color(196, 116, 67, 235), rotation, Vector2.One * 0.5f,
-            outerScale, SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, fistCenter, null, new Color(255, 214, 170, 175), rotation, Vector2.One * 0.5f,
-            innerScale, SpriteEffects.None, 0);
+        Main.spriteBatch.Draw(pixel, fistCenter, outerRect, new Color(196, 116, 67, 235), rotation,
+            new Vector2(outerRect.Width * 0.5f, outerRect.Height * 0.5f), 1f, SpriteEffects.None, 0f);
+        Main.spriteBatch.Draw(pixel, fistCenter, innerRect, new Color(255, 214, 170, 175), rotation,
+            new Vector2(innerRect.Width * 0.5f, innerRect.Height * 0.5f), 1f, SpriteEffects.None, 0f);
         return false;
     }
 
