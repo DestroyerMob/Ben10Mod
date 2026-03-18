@@ -11,6 +11,7 @@ using Ben10Mod.Content.Items.Consumable;
 using Ben10Mod.Content.Projectiles;
 
 namespace Ben10Mod.Content.NPCs.Bosses {
+    [AutoloadBossHead]
     public class AlbedoBoss : ModNPC {
         private enum AlbedoPhase {
             IntroHuman,
@@ -37,6 +38,7 @@ namespace Ben10Mod.Content.NPCs.Bosses {
         private bool _hasMoveTarget;
 
         public override string Texture => "Ben10Mod/Content/Items/Vanity/Ben10Shirt";
+        public override string BossHeadTexture => "Terraria/Images/NPCHeadBoss_10";
 
         public override void SetStaticDefaults() {
             Main.npcFrameCount[Type] = 1;
