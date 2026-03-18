@@ -20,17 +20,19 @@ public class TransformationCommand : ModCommand {
 
         string mode = args[0].ToLowerInvariant();
         string transformationId = args[1];
-        var transformation = TransformationLoader.Get(transformationId);
+        var transformation = TransformationLoader.Resolve(transformationId);
 
         if (transformation == null) {
             Main.NewText($"Unknown transformation id: {transformationId}", Color.Red);
             return;
         }
 
+        string canonicalTransformationId = transformation.FullID;
+
         var omp = caller.Player.GetModPlayer<OmnitrixPlayer>();
         bool changed = mode switch {
-            "add" => omp.UnlockTransformation(transformationId),
-            "remove" => omp.RemoveTransformation(transformationId),
+            "add" => omp.UnlockTransformation(canonicalTransformationId),
+            "remove" => omp.RemoveTransformation(canonicalTransformationId),
             _ => false
         };
 
@@ -41,7 +43,7 @@ public class TransformationCommand : ModCommand {
 
         if (!changed) {
             string status = mode == "add" ? "already unlocked" : "not unlocked";
-            Main.NewText($"{transformationId} is {status}.", Color.Yellow);
+            Main.NewText($"{canonicalTransformationId} is {status}.", Color.Yellow);
         }
     }
 }
