@@ -140,12 +140,12 @@ namespace Ben10Mod {
                 case NPCID.TheDestroyer:
                 case NPCID.TheDestroyerBody:
                 case NPCID.TheDestroyerTail:
-                    return string.Empty;
+                    return "Ben10Mod:Humungousaur";
                 case NPCID.Retinazer:
                 case NPCID.Spazmatism:
                     return "Ben10Mod:EyeGuy";
                 case NPCID.SkeletronPrime:
-                    return string.Empty;
+                    return "Ben10Mod:EchoEcho";
 
                 // Mid / late hardmode bosses
                 case NPCID.Plantera:
