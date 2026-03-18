@@ -33,7 +33,8 @@ namespace Ben10Mod {
 		}
 
 		public enum MessageType : byte {
-			UnlockTransformation
+			UnlockTransformation,
+			RemoveTransformation
 		}
 
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
@@ -55,6 +56,23 @@ namespace Ben10Mod {
 						return;
 
 					player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId, sync: false, showEffects: playerIndex == Main.myPlayer);
+					break;
+				}
+				case MessageType.RemoveTransformation: {
+					int playerIndex = reader.ReadByte();
+					string transformationId = reader.ReadString();
+
+					if (Main.netMode != NetmodeID.MultiplayerClient)
+						return;
+
+					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[playerIndex];
+					if (!player.active)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>().RemoveTransformation(transformationId, sync: false, showEffects: playerIndex == Main.myPlayer);
 					break;
 				}
 			}

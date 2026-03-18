@@ -705,6 +705,36 @@ namespace Ben10Mod {
             return true;
         }
 
+        public bool RemoveTransformation(string transformationId, bool sync = true, bool showEffects = true) {
+            if (!unlockedTransformations.Contains(transformationId))
+                return false;
+
+            unlockedTransformations.Remove(transformationId);
+
+            for (int i = 0; i < transformationSlots.Length; i++) {
+                if (transformationSlots[i] == transformationId)
+                    transformationSlots[i] = "";
+            }
+
+            if (currentTransformationId == transformationId)
+                TransformationHandler.Detransform(Player, 0, showParticles: showEffects, addCooldown: false, playSound: showEffects);
+
+            if (showEffects && Main.netMode != NetmodeID.Server && Player.whoAmI == Main.myPlayer) {
+                string name = TransformationLoader.Get(transformationId)?.TransformationName ?? transformationId;
+                Main.NewText($"{name} has been removed.", Color.OrangeRed);
+            }
+
+            if (sync && Main.netMode == NetmodeID.Server) {
+                ModPacket packet = Mod.GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.RemoveTransformation);
+                packet.Write((byte)Player.whoAmI);
+                packet.Write(transformationId);
+                packet.Send(toClient: Player.whoAmI);
+            }
+
+            return true;
+        }
+
         private void UpdateEventTransformationUnlocks() {
             if (Main.netMode == NetmodeID.MultiplayerClient)
                 return;
