@@ -22,8 +22,6 @@ public class HumungousaurPunchProjectile : ModProjectile {
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.hide = true;
-        Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 12;
     }
 
     public override void AI() {
@@ -47,8 +45,6 @@ public class HumungousaurPunchProjectile : ModProjectile {
         Projectile.Center = owner.MountedCenter + shoulderOffset + direction * extension;
         owner.heldProj = Projectile.whoAmI;
         owner.itemRotation = direction.ToRotation() * owner.direction;
-        owner.itemTime = 2;
-        owner.itemAnimation = 2;
 
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
@@ -90,5 +86,7 @@ public class HumungousaurPunchProjectile : ModProjectile {
                 Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2f, 5.5f), 130, new Color(220, 155, 100), 1.2f);
             dust.noGravity = true;
         }
+
+        Projectile.Kill();
     }
 }

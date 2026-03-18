@@ -27,7 +27,7 @@ public class HumungousaurTransformation : Transformation {
     };
 
     public override int PrimaryAttack => ModContent.ProjectileType<HumungousaurPunchProjectile>();
-    public override int PrimaryAttackSpeed => 24;
+    public override int PrimaryAttackSpeed => 34;
     public override int PrimaryShootSpeed => 10;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override int SecondaryAttack => ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>();
