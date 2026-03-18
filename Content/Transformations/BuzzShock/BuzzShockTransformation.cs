@@ -65,7 +65,7 @@ public class BuzzShockTransformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
-        if (omp.altAttack) {
+        if (omp.altAttack && !omp.ultimateAttack) {
             SoundEngine.PlaySound(SoundID.AbigailSummon, player.position);
             player.AddBuff(ModContent.BuffType<BuzzShockMinionBuff>(), 2);
             player.SpawnMinionOnCursor(source, player.whoAmI, ModContent.ProjectileType<BuzzShockMinionProjectile>(),

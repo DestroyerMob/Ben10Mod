@@ -464,6 +464,11 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.EchoEcho_Buff.Description
 		DisplayName: Echo Echo_ Buff
 	}
+
+	BuzzShockTagBuff: {
+		Description: Mods.Ben10Mod.Buffs.BuzzShockTagBuff.Description
+		DisplayName: Buzz Shock Tag Buff
+	}
 }
 
 Projectiles: {
