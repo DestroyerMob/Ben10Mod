@@ -132,7 +132,7 @@ namespace Ben10Mod {
                 case NPCID.Deerclops:
                     return "Ben10Mod:WildVine";
                 case NPCID.WallofFlesh:
-                    return string.Empty;
+                    return "Ben10Mod:Rath";
 
                 // Early hardmode bosses
                 case NPCID.QueenSlimeBoss:
@@ -149,7 +149,7 @@ namespace Ben10Mod {
 
                 // Mid / late hardmode bosses
                 case NPCID.Plantera:
-                    return string.Empty;
+                    return "Ben10Mod:Swampfire";
                 case NPCID.Golem:
                 case NPCID.GolemHead:
                 case NPCID.GolemFistLeft:
