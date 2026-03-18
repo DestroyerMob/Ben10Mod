@@ -33,29 +33,28 @@ public class RathClawProjectile : ModProjectile {
 
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
-            Projectile.ai[0] = Main.rand.NextFloat(-0.85f, 0.85f);
+            Projectile.ai[0] = Main.rand.NextFloat(-0.28f, 0.28f);
         }
 
-        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        float progress = 1f - Projectile.timeLeft / (float)SlashLifetime;
-        float swingAngle = Projectile.ai[0];
-        Vector2 swingDirection = direction.RotatedBy(swingAngle);
-        Vector2 handOffset = swingDirection * 16f + new Vector2(owner.direction * 4f, -6f);
-        Projectile.rotation = swingDirection.ToRotation();
+        float slashRotation = -MathHelper.PiOver2 + Projectile.ai[0];
+        Vector2 swingDirection = slashRotation.ToRotationVector2();
+        Vector2 handOffset = new Vector2(owner.direction * 12f, -4f);
+        Projectile.rotation = slashRotation;
         Projectile.Center = owner.MountedCenter + handOffset;
-        owner.direction = swingDirection.X >= 0f ? 1 : -1;
         owner.itemRotation = Projectile.rotation;
         owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, Projectile.rotation - MathHelper.PiOver2);
 
         if (Main.rand.NextBool()) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(10f, 30f), DustID.Smoke,
-                swingDirection.RotatedByRandom(0.22f) * Main.rand.NextFloat(0.8f, 2.8f), 110, new Color(240, 240, 240), 1.08f);
+            Vector2 lineOffset = swingDirection * Main.rand.NextFloat(-24f, 24f);
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + lineOffset, DustID.Smoke,
+                swingDirection.RotatedByRandom(0.2f) * Main.rand.NextFloat(0.5f, 1.6f), 110, new Color(240, 240, 240), 1.08f);
             dust.noGravity = true;
         }
 
         if (Main.rand.NextBool(2)) {
-            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(12f, 36f), DustID.SilverCoin,
-                swingDirection.RotatedByRandom(0.18f) * Main.rand.NextFloat(0.5f, 1.6f), 110, new Color(255, 255, 255), 1f);
+            Vector2 lineOffset = swingDirection * Main.rand.NextFloat(-28f, 28f);
+            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + lineOffset, DustID.SilverCoin,
+                swingDirection.RotatedByRandom(0.14f) * Main.rand.NextFloat(0.4f, 1.2f), 110, new Color(255, 255, 255), 1f);
             slashDust.noGravity = true;
         }
     }
@@ -65,12 +64,12 @@ public class RathClawProjectile : ModProjectile {
         Vector2 swingDirection = Projectile.rotation.ToRotationVector2();
         float lifeProgress = 1f - Projectile.timeLeft / (float)SlashLifetime;
         float opacity = Utils.GetLerpValue(0f, 0.18f, lifeProgress, true) * Utils.GetLerpValue(1f, 0.45f, lifeProgress, true);
-        Vector2 center = Projectile.Center - Main.screenPosition + swingDirection * 18f;
+        Vector2 center = Projectile.Center - Main.screenPosition;
 
         Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(210, 220, 235, 210) * opacity,
-            Projectile.rotation, new Vector2(0.02f, 0.5f), new Vector2(62f, 8f), SpriteEffects.None, 0f);
+            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(8f, 62f), SpriteEffects.None, 0f);
         Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 235) * opacity,
-            Projectile.rotation, new Vector2(0.02f, 0.5f), new Vector2(46f, 3f), SpriteEffects.None, 0f);
+            Projectile.rotation, new Vector2(0.5f, 0.5f), new Vector2(3f, 46f), SpriteEffects.None, 0f);
         Main.spriteBatch.Draw(pixel, Projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 145) * opacity,
             0f, new Vector2(0.5f, 0.5f), new Vector2(10f, 10f), SpriteEffects.None, 0f);
         return false;
