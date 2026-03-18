@@ -38,7 +38,7 @@ public class RathClawProjectile : ModProjectile {
 
         float slashRotation = -MathHelper.PiOver2 + Projectile.ai[0];
         Vector2 swingDirection = slashRotation.ToRotationVector2();
-        Vector2 handOffset = new Vector2(owner.direction * 12f, -4f);
+        Vector2 handOffset = new Vector2(owner.direction * 20f, -4f);
         Projectile.rotation = slashRotation;
         Projectile.Center = owner.MountedCenter + handOffset;
         owner.itemRotation = Projectile.rotation;
