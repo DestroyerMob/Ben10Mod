@@ -39,14 +39,14 @@ public class RathClawProjectile : ModProjectile {
         Projectile.Center = owner.MountedCenter + swingDirection * 34f;
 
         if (Main.rand.NextBool()) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(6f, 16f), DustID.Blood,
-                swingDirection.RotatedByRandom(0.22f) * Main.rand.NextFloat(0.8f, 2.8f), 110, new Color(255, 180, 120), 1.08f);
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(6f, 16f), DustID.Smoke,
+                swingDirection.RotatedByRandom(0.22f) * Main.rand.NextFloat(0.8f, 2.8f), 110, new Color(240, 240, 240), 1.08f);
             dust.noGravity = true;
         }
 
         if (Main.rand.NextBool(2)) {
-            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(10f, 20f), DustID.Torch,
-                swingDirection.RotatedByRandom(0.18f) * Main.rand.NextFloat(0.5f, 1.6f), 110, new Color(255, 225, 170), 0.95f);
+            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(10f, 20f), DustID.SilverCoin,
+                swingDirection.RotatedByRandom(0.18f) * Main.rand.NextFloat(0.5f, 1.6f), 110, new Color(255, 255, 255), 1f);
             slashDust.noGravity = true;
         }
     }
@@ -67,23 +67,23 @@ public class RathClawProjectile : ModProjectile {
             Vector2 outerRect = new(MathHelper.Lerp(22f, 36f, t), MathHelper.Lerp(14f, 8f, t));
             Vector2 innerRect = outerRect * new Vector2(0.62f, 0.42f);
 
-            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(255, 120, 45, 210) * opacity,
+            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(210, 220, 235, 210) * opacity,
                 rotation, new Vector2(0.5f, 0.5f), outerRect, SpriteEffects.None, 0f);
-            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(255, 220, 170, 235) * opacity,
+            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 235) * opacity,
                 rotation, new Vector2(0.5f, 0.5f), innerRect, SpriteEffects.None, 0f);
         }
 
         Vector2 flashCenter = Projectile.Center - Main.screenPosition + swingDirection * 10f;
-        Main.spriteBatch.Draw(pixel, flashCenter, new Rectangle(0, 0, 1, 1), new Color(255, 245, 215, 150) * opacity,
+        Main.spriteBatch.Draw(pixel, flashCenter, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 165) * opacity,
             swingDirection.ToRotation(), new Vector2(0.5f, 0.5f), new Vector2(18f, 18f), SpriteEffects.None, 0f);
         return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         for (int i = 0; i < 14; i++) {
-            Dust dust = Dust.NewDustPerfect(target.Center, i % 2 == 0 ? DustID.Blood : DustID.Torch,
+            Dust dust = Dust.NewDustPerfect(target.Center, i % 2 == 0 ? DustID.Smoke : DustID.SilverCoin,
                 Projectile.velocity.SafeNormalize(Vector2.UnitX).RotatedByRandom(0.45f) * Main.rand.NextFloat(1f, 3.4f), 90,
-                new Color(255, 200, 145), 1.15f);
+                new Color(255, 255, 255), 1.15f);
             dust.noGravity = true;
         }
     }

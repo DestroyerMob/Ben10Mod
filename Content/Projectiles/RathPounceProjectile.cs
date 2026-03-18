@@ -34,6 +34,10 @@ public class RathPounceProjectile : ModProjectile {
         Projectile.velocity = direction;
         Projectile.rotation = direction.ToRotation();
         owner.direction = direction.X >= 0f ? 1 : -1;
+        owner.immune = true;
+        owner.immuneNoBlink = true;
+        owner.immuneTime = 6;
+        owner.noKnockback = true;
 
         Vector2 desiredCenter = owner.Center + direction * 34f;
         Projectile.Center = desiredCenter;
