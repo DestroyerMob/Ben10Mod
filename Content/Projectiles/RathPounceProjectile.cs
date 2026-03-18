@@ -15,7 +15,7 @@ public class RathPounceProjectile : ModProjectile {
         Projectile.height = 40;
         Projectile.friendly = true;
         Projectile.DamageType = DamageClass.MeleeNoSpeed;
-        Projectile.penetrate = 1;
+        Projectile.penetrate = -1;
         Projectile.timeLeft = 16;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
@@ -77,7 +77,6 @@ public class RathPounceProjectile : ModProjectile {
         if (!owner.active)
             return;
 
-        owner.velocity *= 0.18f;
         owner.noKnockback = false;
     }
 }
