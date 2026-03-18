@@ -33,19 +33,23 @@ public class RathClawProjectile : ModProjectile {
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         float progress = 1f - Projectile.timeLeft / (float)SlashLifetime;
-        float arc = MathHelper.Lerp(-0.7f, 0.75f, progress) * owner.direction;
-        Vector2 swingDirection = direction.RotatedBy(arc);
-        Projectile.rotation = swingDirection.ToRotation() + MathHelper.PiOver2;
-        Projectile.Center = owner.MountedCenter + swingDirection * 34f;
+        float swingAngle = MathHelper.Lerp(-1.05f, 0.35f, progress) * owner.direction;
+        Vector2 swingDirection = direction.RotatedBy(swingAngle * 0.45f);
+        Vector2 handOffset = swingDirection * 18f + new Vector2(owner.direction * 6f, -6f);
+        Projectile.rotation = swingDirection.ToRotation();
+        Projectile.Center = owner.MountedCenter + handOffset;
+        owner.direction = swingDirection.X >= 0f ? 1 : -1;
+        owner.itemRotation = Projectile.rotation;
+        owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, Projectile.rotation - MathHelper.PiOver2);
 
         if (Main.rand.NextBool()) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(6f, 16f), DustID.Smoke,
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(10f, 30f), DustID.Smoke,
                 swingDirection.RotatedByRandom(0.22f) * Main.rand.NextFloat(0.8f, 2.8f), 110, new Color(240, 240, 240), 1.08f);
             dust.noGravity = true;
         }
 
         if (Main.rand.NextBool(2)) {
-            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(10f, 20f), DustID.SilverCoin,
+            Dust slashDust = Dust.NewDustPerfect(Projectile.Center + swingDirection * Main.rand.NextFloat(12f, 36f), DustID.SilverCoin,
                 swingDirection.RotatedByRandom(0.18f) * Main.rand.NextFloat(0.5f, 1.6f), 110, new Color(255, 255, 255), 1f);
             slashDust.noGravity = true;
         }
@@ -53,29 +57,17 @@ public class RathClawProjectile : ModProjectile {
 
     public override bool PreDraw(ref Color lightColor) {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Vector2 swingDirection = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
-        Vector2 normal = swingDirection.RotatedBy(MathHelper.PiOver2);
+        Vector2 swingDirection = Projectile.rotation.ToRotationVector2();
         float lifeProgress = 1f - Projectile.timeLeft / (float)SlashLifetime;
         float opacity = Utils.GetLerpValue(0f, 0.18f, lifeProgress, true) * Utils.GetLerpValue(1f, 0.45f, lifeProgress, true);
+        Vector2 center = Projectile.Center - Main.screenPosition + swingDirection * 14f;
 
-        for (int i = 0; i < 6; i++) {
-            float t = i / 5f;
-            Vector2 segmentCenter = Projectile.Center - Main.screenPosition
-                + swingDirection * MathHelper.Lerp(-12f, 22f, t)
-                + normal * MathHelper.Lerp(-18f, 18f, t) * 0.65f;
-            float rotation = swingDirection.ToRotation() + MathHelper.Lerp(-0.4f, 0.5f, t);
-            Vector2 outerRect = new(MathHelper.Lerp(22f, 36f, t), MathHelper.Lerp(14f, 8f, t));
-            Vector2 innerRect = outerRect * new Vector2(0.62f, 0.42f);
-
-            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(210, 220, 235, 210) * opacity,
-                rotation, new Vector2(0.5f, 0.5f), outerRect, SpriteEffects.None, 0f);
-            Main.spriteBatch.Draw(pixel, segmentCenter, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 235) * opacity,
-                rotation, new Vector2(0.5f, 0.5f), innerRect, SpriteEffects.None, 0f);
-        }
-
-        Vector2 flashCenter = Projectile.Center - Main.screenPosition + swingDirection * 10f;
-        Main.spriteBatch.Draw(pixel, flashCenter, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 165) * opacity,
-            swingDirection.ToRotation(), new Vector2(0.5f, 0.5f), new Vector2(18f, 18f), SpriteEffects.None, 0f);
+        Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(210, 220, 235, 210) * opacity,
+            Projectile.rotation, new Vector2(0.08f, 0.5f), new Vector2(54f, 10f), SpriteEffects.None, 0f);
+        Main.spriteBatch.Draw(pixel, center, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 235) * opacity,
+            Projectile.rotation, new Vector2(0.08f, 0.5f), new Vector2(38f, 4f), SpriteEffects.None, 0f);
+        Main.spriteBatch.Draw(pixel, Projectile.Center - Main.screenPosition, new Rectangle(0, 0, 1, 1), new Color(255, 255, 255, 145) * opacity,
+            0f, new Vector2(0.5f, 0.5f), new Vector2(14f, 14f), SpriteEffects.None, 0f);
         return false;
     }
 

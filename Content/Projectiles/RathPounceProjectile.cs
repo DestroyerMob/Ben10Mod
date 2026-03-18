@@ -38,6 +38,7 @@ public class RathPounceProjectile : ModProjectile {
         owner.immuneNoBlink = true;
         owner.immuneTime = 6;
         owner.noKnockback = true;
+        owner.velocity = direction * 13f + new Vector2(0f, -1.2f);
 
         Vector2 desiredCenter = owner.Center + direction * 34f;
         Projectile.Center = desiredCenter;
@@ -69,5 +70,14 @@ public class RathPounceProjectile : ModProjectile {
                 new Color(255, 185, 120), 1.25f);
             dust.noGravity = true;
         }
+    }
+
+    public override void OnKill(int timeLeft) {
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active)
+            return;
+
+        owner.velocity *= 0.18f;
+        owner.noKnockback = false;
     }
 }
