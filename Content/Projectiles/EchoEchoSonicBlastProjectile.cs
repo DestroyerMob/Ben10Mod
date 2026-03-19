@@ -14,7 +14,7 @@ public class EchoEchoSonicBlastProjectile : ModProjectile {
         Projectile.width = 16;
         Projectile.height = 16;
         Projectile.friendly = true;
-        Projectile.DamageType = DamageClass.Magic;
+        Projectile.DamageType = DamageClass.Generic;
         Projectile.penetrate = 1;
         Projectile.timeLeft = MaxLifetime;
         Projectile.tileCollide = false;

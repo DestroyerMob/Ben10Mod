@@ -952,6 +952,196 @@ When making branchable forms:
 
 This is the preferred replacement for the removed `Evolved*` property pattern.
 
+## Osmosian Material Absorption API
+
+Ben10Mod now exposes Kevin's material absorption system to addons.
+
+This system is registry-driven. Ben10Mod does not care whether your source item is
+literally a bar. If the item is registered as absorbable, Kevin can use it.
+
+The intended addon use cases are:
+
+- registering a new absorbable vanilla-style material
+- registering a custom modded bar or crafted material
+- overriding the default absorption cost or duration
+- adding on-hit debuff effects to an absorbed material
+
+### What Addons Can Register
+
+An absorbable material profile is built from:
+
+- a source item
+- a sword item
+- a helmet item
+- a body item
+- a leg item
+
+Ben10Mod uses those linked items to build the Kevin absorption profile dynamically.
+
+That profile currently supplies:
+
+- generic damage bonus
+- defense bonus
+- endurance bonus
+- melee knockback bonus
+- tint color
+- consume cost
+- duration
+- optional on-hit debuff effects
+
+### `Mod.Call` Commands
+
+Ben10Mod exposes the following calls:
+
+- `RegisterAbsorbableMaterial`
+- `IsAbsorbableMaterialRegistered`
+- `GetAbsorbableMaterialProfile`
+
+### Registering A Material
+
+Signature:
+
+```csharp
+ben10Mod.Call(
+    "RegisterAbsorbableMaterial",
+    sourceItemType,
+    swordItemType,
+    helmetItemType,
+    bodyItemType,
+    legItemType
+);
+```
+
+Required arguments:
+
+- `sourceItemType`
+- `swordItemType`
+- `helmetItemType`
+- `bodyItemType`
+- `legItemType`
+
+All five item IDs must be `int`.
+
+### Optional Registration Configuration
+
+You can also pass a configuration delegate as the seventh argument:
+
+```csharp
+ben10Mod.Call(
+    "RegisterAbsorbableMaterial",
+    sourceItemType,
+    swordItemType,
+    helmetItemType,
+    bodyItemType,
+    legItemType,
+    (Action<MaterialAbsorptionRegistration>)(registration => {
+        registration.ConsumeAmountOverride = 4;
+        registration.DurationTicksOverride = 60 * 20;
+        registration.GenericDamageBonusOverride = 0.12f;
+        registration.DefenseBonusOverride = 8;
+        registration.EnduranceBonusOverride = 0.04f;
+        registration.MeleeKnockbackBonusOverride = 0.6f;
+        registration.AddHitBuff(BuffID.OnFire, 180);
+    })
+);
+```
+
+The configuration object is
+`Ben10Mod.Common.Absorption.MaterialAbsorptionRegistration`.
+
+Available override fields are:
+
+- `ConsumeAmountOverride`
+- `DurationTicksOverride`
+- `GenericDamageBonusOverride`
+- `DefenseBonusOverride`
+- `EnduranceBonusOverride`
+- `MeleeKnockbackBonusOverride`
+
+For on-hit effects, use:
+
+- `AddHitBuff(int buffType, int buffTime)`
+
+### Full Example
+
+```csharp
+using System;
+using Ben10Mod.Common.Absorption;
+using Terraria.ID;
+using Terraria.ModLoader;
+
+namespace MyAddon;
+
+public class MyAddonSystem : ModSystem {
+    public override void PostSetupContent() {
+        Mod ben10Mod = ModLoader.GetMod("Ben10Mod");
+        if (ben10Mod is null)
+            return;
+
+        ben10Mod.Call(
+            "RegisterAbsorbableMaterial",
+            ModContent.ItemType<MyAlloyBar>(),
+            ModContent.ItemType<MyAlloyBlade>(),
+            ModContent.ItemType<MyAlloyHelmet>(),
+            ModContent.ItemType<MyAlloyChestplate>(),
+            ModContent.ItemType<MyAlloyGreaves>(),
+            (Action<MaterialAbsorptionRegistration>)(registration => {
+                registration.DurationTicksOverride = 60 * 18;
+                registration.DefenseBonusOverride = 10;
+                registration.AddHitBuff(BuffID.Electrified, 180);
+            })
+        );
+    }
+}
+```
+
+`PostSetupContent()` is the safest place for this registration, because all item
+types from both mods are available by then.
+
+### Checking Whether A Material Is Registered
+
+```csharp
+bool registered = (bool)ben10Mod.Call(
+    "IsAbsorbableMaterialRegistered",
+    ModContent.ItemType<MyAlloyBar>()
+);
+```
+
+### Reading The Built Profile
+
+```csharp
+MaterialAbsorptionProfile profile =
+    ben10Mod.Call("GetAbsorbableMaterialProfile", ModContent.ItemType<MyAlloyBar>())
+    as MaterialAbsorptionProfile;
+```
+
+The returned type is `Ben10Mod.Common.Absorption.MaterialAbsorptionProfile`.
+
+Useful properties include:
+
+- `SourceItemType`
+- `DisplayName`
+- `TintColor`
+- `ConsumeAmount`
+- `DurationTicks`
+- `GenericDamageBonus`
+- `DefenseBonus`
+- `EnduranceBonus`
+- `MeleeKnockbackBonus`
+- `HitEffects`
+
+### Multiplayer Notes For Absorption
+
+Kevin's absorption activation is server-authoritative.
+
+Addon materials do not need special multiplayer code as long as:
+
+- the source item is registered on both client and server
+- the item types are stable
+- the registration runs during normal mod loading
+
+Do not register absorbable materials conditionally based on local-only client state.
+
 ## Connecting An Omnitrix To Your Addon Transformations
 
 You do not need to hardcode your Omnitrix to specific transformations.

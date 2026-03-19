@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Summons;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -21,42 +23,43 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
 
     public override List<string> Abilities => new() {
         "Enhanced sonic bursts",
-        "Detached speaker barrage",
-        "Ultimate evolution attacks"
+        "Detached speaker deployment",
+        "Resonance overclock"
     };
 
     public override float PrimaryAttackModifier => 1.15f;
-    public override int SecondaryAttack => ModContent.ProjectileType<EchoEchoSonicBlastProjectile>();
-    public override float SecondaryAttackModifier => 0.9f;
+    public override int SecondaryAttack => ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
+    public override int SecondaryAttackSpeed => 22;
+    public override int SecondaryShootSpeed => 0;
+    public override float SecondaryAttackModifier => 0.85f;
 
-    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
-        if (!omp.PrimaryAbilityEnabled || Main.myPlayer != player.whoAmI)
-            return;
+    public override void ResetEffects(Player player, OmnitrixPlayer omp) {
+        player.GetDamage<HeroDamage>() += 0.12f;
 
-        if (player.ownedProjectileCounts[ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>()] >= 3)
-            return;
-
-        for (int i = 0; i < 3; i++) {
-            Projectile.NewProjectile(player.GetSource_FromThis(), player.Center, Vector2.Zero,
-                ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>(), 24, 0f, player.whoAmI,
-                MathHelper.TwoPi * i / 3f);
-        }
+        if (omp.PrimaryAbilityEnabled)
+            player.GetAttackSpeed<HeroDamage>() += 0.4f;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
-        int spreadCount = omp.altAttack ? 5 : 3;
-        float spreadStep = omp.altAttack ? 7f : 10f;
-        float damageMult = omp.altAttack ? 0.6f : 0.85f;
+        if (omp.altAttack) {
+            if (player.ownedProjectileCounts[ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>()] >= 3)
+                return false;
 
-        int mid = spreadCount / 2;
-        for (int i = 0; i < spreadCount; i++) {
-            int offsetIndex = i - mid;
-            Vector2 spreadVelocity = velocity.RotatedBy(MathHelper.ToRadians(spreadStep * offsetIndex));
-            Projectile.NewProjectile(source, position, spreadVelocity, ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(),
-                (int)(damage * damageMult), knockback, player.whoAmI);
+            player.AddBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>(), 2);
+            player.SpawnMinionOnCursor(source, player.whoAmI, ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>(),
+                (int)(damage * SecondaryAttackModifier), knockback);
+            return false;
         }
 
+        omp.transformationAttackSerial++;
+        omp.transformationAttackDamage = (int)(damage * PrimaryAttackModifier);
+
+        for (int i = -1; i <= 1; i++) {
+            Vector2 spreadVelocity = velocity.RotatedBy(MathHelper.ToRadians(7f * i));
+            Projectile.NewProjectile(source, position, spreadVelocity, ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(),
+                (int)(damage * (i == 0 ? PrimaryAttackModifier : 0.82f)), knockback, player.whoAmI);
+        }
         return false;
     }
 

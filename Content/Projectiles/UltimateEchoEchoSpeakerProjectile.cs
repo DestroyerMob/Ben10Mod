@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Ben10Mod.Content.Buffs.Summons;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
@@ -10,48 +11,76 @@ namespace Ben10Mod.Content.Projectiles;
 public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
 
+    public override void SetStaticDefaults() {
+        ProjectileID.Sets.MinionTargettingFeature[Type] = true;
+        ProjectileID.Sets.MinionSacrificable[Type] = true;
+    }
+
     public override void SetDefaults() {
         Projectile.width = 26;
         Projectile.height = 26;
         Projectile.friendly = false;
+        Projectile.minion = true;
+        Projectile.minionSlots = 0f;
+        Projectile.netImportant = true;
         Projectile.penetrate = -1;
-        Projectile.timeLeft = 2;
+        Projectile.timeLeft = 18000;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.hide = true;
+        Projectile.DamageType = DamageClass.Summon;
     }
 
     public override void AI() {
         Player owner = Main.player[Projectile.owner];
         if (!owner.active || owner.dead) {
+            owner.ClearBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>());
             Projectile.Kill();
             return;
         }
 
         OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
-        if (omp.currentTransformationId != "Ben10Mod:UltimateEchoEcho" || !omp.PrimaryAbilityEnabled) {
+        if (omp.currentTransformationId != "Ben10Mod:UltimateEchoEcho") {
             Projectile.Kill();
             return;
         }
 
-        Projectile.timeLeft = 2;
-        Projectile.ai[1]++;
+        if (owner.HasBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>()))
+            Projectile.timeLeft = 2;
 
-        float angle = Main.GlobalTimeWrappedHourly * 1.8f + Projectile.ai[0];
+        int speakerIndex = GetSpeakerIndex();
+        float angle = Main.GlobalTimeWrappedHourly * 1.8f + MathHelper.TwoPi * speakerIndex / 3f;
         Vector2 targetCenter = owner.Center + angle.ToRotationVector2() * 66f;
         Projectile.Center = Vector2.Lerp(Projectile.Center, targetCenter, 0.18f);
-        Projectile.rotation = Projectile.DirectionTo(Main.MouseWorld).ToRotation();
+        NPC target = FindClosestNPC(460f);
+        Projectile.rotation = target != null
+            ? Projectile.DirectionTo(target.Center).ToRotation()
+            : Projectile.DirectionTo(owner.Center + owner.velocity).ToRotation();
 
-        if (Projectile.ai[1] % 42f == 0f && Main.myPlayer == Projectile.owner) {
-            NPC target = FindClosestNPC(460f);
+        if ((int)Projectile.localAI[1] != omp.transformationAttackSerial && Main.myPlayer == Projectile.owner) {
+            Projectile.localAI[1] = omp.transformationAttackSerial;
             if (target != null) {
-                for (int i = -1; i <= 1; i++) {
-                    Vector2 velocity = Projectile.DirectionTo(target.Center).RotatedBy(MathHelper.ToRadians(8f * i)) * 12f;
-                    Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                        ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), Projectile.damage, 0f, Projectile.owner);
-                }
+                Vector2 velocity = Projectile.DirectionTo(target.Center) * 12f;
+                int attackDamage = omp.transformationAttackDamage > 0 ? omp.transformationAttackDamage : Projectile.damage;
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
+                    ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), attackDamage, 0f, Projectile.owner);
             }
         }
+    }
+
+    private int GetSpeakerIndex() {
+        int index = 0;
+
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile other = Main.projectile[i];
+            if (!other.active || other.owner != Projectile.owner || other.type != Projectile.type || other.whoAmI == Projectile.whoAmI)
+                continue;
+
+            if (other.whoAmI < Projectile.whoAmI)
+                index++;
+        }
+
+        return index % 3;
     }
 
     private NPC FindClosestNPC(float maxDistance) {

@@ -70,6 +70,7 @@ The main extension APIs are intentionally stable:
 - transformations auto-register into the shared loader
 - badges are transformation-driven
 - Omnitrixes now use a shared base API instead of player-side hardcoding
+- Osmosian material absorption can be extended through the addon API and `Mod.Call`
 
 ## Credits
 
