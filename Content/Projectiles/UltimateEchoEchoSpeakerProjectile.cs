@@ -48,15 +48,20 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
         if (owner.HasBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>()))
             Projectile.timeLeft = 2;
 
-        int speakerIndex = GetSpeakerIndex();
-        float angle = Main.GlobalTimeWrappedHourly * 1.8f + MathHelper.TwoPi * speakerIndex / 3f;
-        Vector2 targetCenter = owner.Center + angle.ToRotationVector2() * 66f;
-        Projectile.Center = Vector2.Lerp(Projectile.Center, targetCenter, 0.18f);
+        if (Projectile.localAI[1] == 0f) {
+            Projectile.ai[0] = Projectile.Center.X;
+            Projectile.ai[1] = Projectile.Center.Y;
+            Projectile.localAI[1] = 1f;
+            Projectile.netUpdate = true;
+        }
+
+        Vector2 sentryCenter = new Vector2(Projectile.ai[0], Projectile.ai[1]);
+        Projectile.Center = Vector2.Lerp(Projectile.Center, sentryCenter, 0.28f);
         NPC target = FindClosestNPC(460f);
         Projectile.localAI[0]++;
         Projectile.rotation = target != null
             ? Projectile.DirectionTo(target.Center).ToRotation()
-            : Projectile.DirectionTo(owner.Center + owner.velocity).ToRotation();
+            : Projectile.rotation;
 
         if (Main.rand.NextBool(2)) {
             Vector2 dustVelocity = Main.rand.NextVector2Circular(0.8f, 0.8f);
@@ -67,7 +72,7 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
 
         int fireRate = omp.PrimaryAbilityEnabled ? 22 : 34;
         if (target != null && Projectile.localAI[0] >= fireRate && Main.myPlayer == Projectile.owner) {
-            Projectile.localAI[0] = speakerIndex * 6f;
+            Projectile.localAI[0] = 0f;
 
             for (int i = 0; i < 8; i++) {
                 Vector2 burstVelocity = Main.rand.NextVector2CircularEdge(2.2f, 2.2f);
@@ -81,21 +86,6 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
             Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
                 ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), attackDamage, 0f, Projectile.owner);
         }
-    }
-
-    private int GetSpeakerIndex() {
-        int index = 0;
-
-        for (int i = 0; i < Main.maxProjectiles; i++) {
-            Projectile other = Main.projectile[i];
-            if (!other.active || other.owner != Projectile.owner || other.type != Projectile.type || other.whoAmI == Projectile.whoAmI)
-                continue;
-
-            if (other.whoAmI < Projectile.whoAmI)
-                index++;
-        }
-
-        return index % 3;
     }
 
     private NPC FindClosestNPC(float maxDistance) {

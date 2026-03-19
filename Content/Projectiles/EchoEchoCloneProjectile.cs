@@ -83,12 +83,6 @@ public class EchoEchoCloneProjectile : ModProjectile {
         Projectile.rotation = Projectile.velocity.X * 0.02f;
         Projectile.spriteDirection = Projectile.velocity.X >= 0f ? 1 : -1;
 
-        if (Main.rand.NextBool(2)) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.Firework_Red,
-                Main.rand.NextVector2Circular(1f, 1f), 120, new Color(255, 140, 140), 0.9f);
-            dust.noGravity = true;
-        }
-
         int attackRate = omp.PrimaryAbilityEnabled ? 22 : 34;
         AttackTimer++;
 
@@ -156,6 +150,15 @@ public class EchoEchoCloneProjectile : ModProjectile {
         }
 
         bool grounded = IsGrounded();
+        bool blockedForward = Collision.SolidCollision(
+            new Vector2(Projectile.position.X + Math.Sign(Projectile.velocity.X) * 8f, Projectile.position.Y),
+            Projectile.width, Projectile.height);
+        if (grounded && blockedForward && Math.Abs(Projectile.velocity.X) > 0.2f) {
+            Projectile.position.Y -= 14f;
+            Projectile.velocity.Y = -5f;
+            Projectile.netUpdate = true;
+        }
+
         if (grounded && targetCenter.Y + 18f < Projectile.Center.Y && Math.Abs(horizontalDistance) < 28f) {
             Projectile.velocity.Y = -7f;
         }
