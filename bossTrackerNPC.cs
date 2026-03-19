@@ -154,9 +154,9 @@ namespace Ben10Mod {
                 case NPCID.GolemHead:
                 case NPCID.GolemFistLeft:
                 case NPCID.GolemFistRight:
-                    return string.Empty;
+                    return "Ben10Mod:Armodrillo";
                 case NPCID.DukeFishron:
-                    return string.Empty;
+                    return "Ben10Mod:Jetray";
                 case NPCID.HallowBoss:
                     return string.Empty;
                 case NPCID.CultistBoss:
@@ -187,7 +187,7 @@ namespace Ben10Mod {
                 case NPCID.Everscream:
                     return string.Empty;
                 case NPCID.SantaNK1:
-                    return string.Empty;
+                    return "Ben10Mod:NRG";
                 case NPCID.IceQueen:
                     return "Ben10Mod:BigChill";
 
