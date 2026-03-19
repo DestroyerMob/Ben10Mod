@@ -43,11 +43,20 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         if (omp.altAttack) {
-            if (player.ownedProjectileCounts[ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>()] >= 3)
-                return false;
+            int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
+            if (player.ownedProjectileCounts[speakerType] >= 3) {
+                for (int i = 0; i < Main.maxProjectiles; i++) {
+                    Projectile projectile = Main.projectile[i];
+                    if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != speakerType)
+                        continue;
+
+                    projectile.Kill();
+                    break;
+                }
+            }
 
             player.AddBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>(), 2);
-            player.SpawnMinionOnCursor(source, player.whoAmI, ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>(),
+            player.SpawnMinionOnCursor(source, player.whoAmI, speakerType,
                 (int)(damage * SecondaryAttackModifier), knockback);
             return false;
         }
