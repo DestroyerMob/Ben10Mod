@@ -87,7 +87,7 @@ namespace Ben10Mod.Content.Items.Accessories
             omp.omnitrixEnergyMax += MaxOmnitrixEnergy + omp.omnitrixEnergyMaxBonus;
 
             omp.omnitrixEnergyRegen = omp.isTransformed
-                ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain + omp.omnitrixEnergyRegenBonus
+                ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain
                 : omp.omnitrixEnergyRegen + OmnitrixEnergyRegen + omp.omnitrixEnergyRegenBonus;
 
             transformationSlots = omp.transformationSlots;
