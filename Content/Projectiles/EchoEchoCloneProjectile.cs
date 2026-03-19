@@ -1,28 +1,35 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using Ben10Mod.Content.Buffs.Summons;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class EchoEchoCloneProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => "Ben10Mod/Content/Projectiles/BuzzShockMinionProjectile";
 
     private ref float AttackTimer => ref Projectile.ai[0];
-    private ref float VisualSeed => ref Projectile.ai[1];
+    private ref float State => ref Projectile.localAI[0];
+    private ref float StateTimer => ref Projectile.localAI[1];
+
+    private const int StateIdle = 0;
+    private const int StateAttack = 1;
+    private const float IdleInertia = 30f;
+    private const float IdleSpeed = 8f;
+    private const float AttackInertia = 14f;
+    private const float AttackSpeed = 12f;
 
     public override void SetStaticDefaults() {
         ProjectileID.Sets.MinionTargettingFeature[Type] = true;
         ProjectileID.Sets.MinionSacrificable[Type] = true;
+        Main.projFrames[Type] = 1;
     }
 
     public override void SetDefaults() {
-        Projectile.width = 28;
-        Projectile.height = 28;
+        Projectile.width = 40;
+        Projectile.height = 52;
         Projectile.friendly = false;
         Projectile.minion = true;
         Projectile.minionSlots = 1f;
@@ -31,7 +38,6 @@ public class EchoEchoCloneProjectile : ModProjectile {
         Projectile.timeLeft = 18000;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
-        Projectile.hide = true;
         Projectile.DamageType = DamageClass.Summon;
     }
 
@@ -53,19 +59,22 @@ public class EchoEchoCloneProjectile : ModProjectile {
             Projectile.timeLeft = 2;
 
         int cloneIndex = GetCloneIndex();
-        float angle = MathHelper.TwoPi * cloneIndex / Math.Max(1f, owner.ownedProjectileCounts[Type]);
         float bob = (float)Math.Sin(Main.GlobalTimeWrappedHourly * 4.2f + cloneIndex * 0.65f) * 7f;
-        Vector2 idleOffset = new Vector2(54f + 10f * cloneIndex, -42f + bob).RotatedBy(angle * 0.32f);
         NPC target = FindTarget(owner, 620f);
-        Vector2 targetCenter = owner.Center + idleOffset;
+        Vector2 idleCenter = GetIdlePosition(owner, cloneIndex) + new Vector2(0f, bob);
 
-        if (target != null) {
-            Vector2 attackOffset = target.DirectionFrom(owner.Center) * 76f;
-            targetCenter = target.Center - attackOffset + new Vector2(0f, -18f + bob);
+        if (target == null) {
+            State = StateIdle;
+            DoIdleMovement(idleCenter);
+        }
+        else {
+            State = StateAttack;
+            Vector2 screamCenter = target.Center + new Vector2(target.direction * 54f, -18f + bob);
+            DoAttackMovement(screamCenter);
         }
 
-        Projectile.Center = Vector2.Lerp(Projectile.Center, targetCenter, 0.22f);
         Projectile.rotation = Projectile.velocity.X * 0.02f;
+        Projectile.spriteDirection = Projectile.velocity.X >= 0f ? 1 : -1;
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.Firework_Red,
@@ -80,11 +89,15 @@ public class EchoEchoCloneProjectile : ModProjectile {
             AttackTimer = Main.rand.Next(4);
             Vector2 direction = Projectile.Center.DirectionTo(target.Center);
             if (direction != Vector2.Zero) {
+                StateTimer = 10f;
                 Vector2 velocity = direction * 11f;
                 Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
                     ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), Projectile.damage, 0f, Projectile.owner);
             }
         }
+
+        if (StateTimer > 0f)
+            StateTimer--;
     }
 
     private int GetCloneIndex() {
@@ -100,6 +113,49 @@ public class EchoEchoCloneProjectile : ModProjectile {
         }
 
         return index;
+    }
+
+    private Vector2 GetIdlePosition(Player owner, int cloneIndex) {
+        float spacing = 30f;
+        float start = -(owner.ownedProjectileCounts[Type] - 1) * 0.5f;
+        float slot = start + cloneIndex;
+        float behindDirection = -owner.direction;
+        return owner.Center + new Vector2(slot * spacing, -14f) + new Vector2(behindDirection * 44f, 0f);
+    }
+
+    private void DoIdleMovement(Vector2 idleCenter) {
+        Vector2 toIdle = idleCenter - Projectile.Center;
+        float distance = toIdle.Length();
+
+        if (distance > 1600f) {
+            Projectile.Center = idleCenter;
+            Projectile.velocity *= 0.1f;
+            Projectile.netUpdate = true;
+            return;
+        }
+
+        if (distance > 14f) {
+            toIdle.Normalize();
+            toIdle *= IdleSpeed;
+            Projectile.velocity = (Projectile.velocity * (IdleInertia - 1f) + toIdle) / IdleInertia;
+        }
+        else if (Projectile.velocity.Length() > 1f) {
+            Projectile.velocity *= 0.92f;
+        }
+    }
+
+    private void DoAttackMovement(Vector2 attackCenter) {
+        Vector2 toAttack = attackCenter - Projectile.Center;
+        float distance = toAttack.Length();
+
+        if (distance > 8f) {
+            toAttack.Normalize();
+            toAttack *= AttackSpeed;
+            Projectile.velocity = (Projectile.velocity * (AttackInertia - 1f) + toAttack) / AttackInertia;
+        }
+        else if (Projectile.velocity.Length() > 1f) {
+            Projectile.velocity *= 0.88f;
+        }
     }
 
     private NPC FindTarget(Player owner, float maxDistance) {
@@ -126,21 +182,5 @@ public class EchoEchoCloneProjectile : ModProjectile {
         }
 
         return closestTarget;
-    }
-
-    public override bool PreDraw(ref Color lightColor) {
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Vector2 center = Projectile.Center - Main.screenPosition;
-        SpriteEffects effects = Projectile.velocity.X < 0f ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-
-        Main.EntitySpriteDraw(pixel, center + new Vector2(0f, -10f), null, new Color(255, 120, 120, 110), 0f,
-            Vector2.One * 0.5f, new Vector2(7f, 7f), effects, 0);
-        Main.EntitySpriteDraw(pixel, center + new Vector2(0f, 3f), null, new Color(255, 90, 90, 95), Projectile.rotation,
-            Vector2.One * 0.5f, new Vector2(11f, 14f), effects, 0);
-        Main.EntitySpriteDraw(pixel, center + new Vector2(-4f, 15f), null, new Color(255, 90, 90, 90), 0f,
-            Vector2.One * 0.5f, new Vector2(3f, 10f), effects, 0);
-        Main.EntitySpriteDraw(pixel, center + new Vector2(4f, 15f), null, new Color(255, 90, 90, 90), 0f,
-            Vector2.One * 0.5f, new Vector2(3f, 10f), effects, 0);
-        return false;
     }
 }

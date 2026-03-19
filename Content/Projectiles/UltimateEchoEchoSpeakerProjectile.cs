@@ -57,9 +57,23 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
             ? Projectile.DirectionTo(target.Center).ToRotation()
             : Projectile.DirectionTo(owner.Center + owner.velocity).ToRotation();
 
+        if (Main.rand.NextBool(2)) {
+            Vector2 dustVelocity = Main.rand.NextVector2Circular(0.8f, 0.8f);
+            Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.BlueCrystalShard, dustVelocity, 130,
+                new Color(90, 190, 255), 1.1f);
+            dust.noGravity = true;
+        }
+
         if ((int)Projectile.localAI[1] != omp.transformationAttackSerial && Main.myPlayer == Projectile.owner) {
             Projectile.localAI[1] = omp.transformationAttackSerial;
             if (target != null) {
+                for (int i = 0; i < 8; i++) {
+                    Vector2 burstVelocity = Main.rand.NextVector2CircularEdge(2.2f, 2.2f);
+                    Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.BlueCrystalShard, burstVelocity, 100,
+                        new Color(120, 210, 255), 1.25f);
+                    dust.noGravity = true;
+                }
+
                 Vector2 velocity = Projectile.DirectionTo(target.Center) * 12f;
                 int attackDamage = omp.transformationAttackDamage > 0 ? omp.transformationAttackDamage : Projectile.damage;
                 Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
