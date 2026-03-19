@@ -13,6 +13,7 @@ namespace Ben10Mod.Keybinds {
         public static ModKeybind QuaternaryAbility { get; private set; }
         public static ModKeybind UltimateAbility { get; private set; }
         public static ModKeybind TransformationKeybind { get; private set; }
+        public static ModKeybind AbsorbMaterial { get; private set; }
         public static ModKeybind OpenTransformationScreen { get; private set; }
         public static ModKeybind AlienOneKeybind { get; private set; }
         public static ModKeybind AlienTwoKeybind { get; private set; }
@@ -29,6 +30,7 @@ namespace Ben10Mod.Keybinds {
             QuaternaryAbility = KeybindLoader.RegisterKeybind(Mod, "Quaternary Ability", "J");
             UltimateAbility = KeybindLoader.RegisterKeybind(Mod, "Ultimate Ability", "U");
             TransformationKeybind = KeybindLoader.RegisterKeybind(Mod, "Transform", "P");
+            AbsorbMaterial = KeybindLoader.RegisterKeybind(Mod, "Absorb Material", "K");
             OpenTransformationScreen = KeybindLoader.RegisterKeybind(Mod, "Open Menu", "L");
             AlienOneKeybind = KeybindLoader.RegisterKeybind(Mod, "Alien One", "NumPad1");
             AlienTwoKeybind = KeybindLoader.RegisterKeybind(Mod, "Alien Two", "NumPad2");
@@ -41,6 +43,7 @@ namespace Ben10Mod.Keybinds {
 
         public override void Unload() {
             TransformationKeybind = null;
+            AbsorbMaterial = null;
         }
     }
 }
