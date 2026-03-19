@@ -12,6 +12,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.EchoEcho;
 
 public class UltimateEchoEchoTransformation : EchoEchoTransformation {
+    private const int SpeakersPerSentrySlot = 3;
+
     public override string FullID => "Ben10Mod:UltimateEchoEcho";
     public override string TransformationName => "Ultimate Echo Echo";
     public override int TransformationBuffId => ModContent.BuffType<UltimateEchoEcho_Buff>();
@@ -43,12 +45,40 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         if (omp.altAttack) {
-            if (player.ownedProjectileCounts[ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>()] >= 3)
-                return false;
+            int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
+            int maxSpeakers = Math.Max(1, player.maxTurrets) * SpeakersPerSentrySlot;
+            int activeSpeakerCount = 0;
+            int oldestSpeakerIndex = -1;
+            float oldestSpawnOrder = float.MaxValue;
+
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != speakerType)
+                    continue;
+
+                activeSpeakerCount++;
+                float spawnOrder = projectile.localAI[1] <= 0f ? projectile.identity : projectile.localAI[1];
+                if (spawnOrder < oldestSpawnOrder) {
+                    oldestSpawnOrder = spawnOrder;
+                    oldestSpeakerIndex = i;
+                }
+            }
+
+            if (activeSpeakerCount >= maxSpeakers && oldestSpeakerIndex != -1) {
+                Main.projectile[oldestSpeakerIndex].Kill();
+            }
 
             player.AddBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>(), 2);
-            player.SpawnMinionOnCursor(source, player.whoAmI, ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>(),
-                (int)(damage * SecondaryAttackModifier), knockback);
+            Vector2 anchorPosition = Main.MouseWorld;
+            Vector2 spawnVelocity = player.Center.DirectionTo(anchorPosition) * 14f;
+            int projectileIndex = Projectile.NewProjectile(source, player.Center, spawnVelocity, speakerType,
+                (int)(damage * SecondaryAttackModifier), knockback, player.whoAmI, anchorPosition.X, anchorPosition.Y);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+                omp.ultimateEchoEchoSpeakerSpawnSerial++;
+                Main.projectile[projectileIndex].originalDamage = (int)(damage * SecondaryAttackModifier);
+                Main.projectile[projectileIndex].localAI[1] = omp.ultimateEchoEchoSpeakerSpawnSerial;
+                Main.projectile[projectileIndex].netUpdate = true;
+            }
             return false;
         }
 

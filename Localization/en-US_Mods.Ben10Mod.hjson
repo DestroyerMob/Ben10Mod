@@ -581,6 +581,16 @@ Buffs: {
 		DisplayName: Echo Echo_ Buff
 	}
 
+	EchoEchoCloneBuff: {
+		DisplayName: Echo Echo Duplicates
+		Description: Echo Echo duplicates are active
+	}
+
+	UltimateEchoEchoSpeakerBuff: {
+		DisplayName: Detached Speakers
+		Description: Detached speakers are deployed
+	}
+
 	BuzzShockTagBuff: {
 		Description: Mods.Ben10Mod.Buffs.BuzzShockTagBuff.Description
 		DisplayName: Buzz Shock Tag Buff
@@ -665,11 +675,11 @@ Projectiles: {
 	AnoditeOrbProjectile.DisplayName: Anodite Orb Projectile
 	ManaBarrierProjectile.DisplayName: Mana Barrier Projectile
 	UltimateHumungousaurRocketPlayerProjectile.DisplayName: Ultimate Humungousaur Rocket Player Projectile
-	UltimateEchoEchoSpeakerProjectile.DisplayName: Ultimate Echo Echo Speaker Projectile
+	UltimateEchoEchoSpeakerProjectile.DisplayName: Detached Speaker
 	HumungousaurShockwavePlayerProjectile.DisplayName: Humungousaur Shockwave Player Projectile
 	HumungousaurPunchProjectile.DisplayName: Humungousaur Punch Projectile
 	EchoEchoSonicBlastProjectile.DisplayName: Echo Echo Sonic Blast Projectile
-	EchoEchoCloneProjectile.DisplayName: Echo Echo Clone Projectile
+	EchoEchoCloneProjectile.DisplayName: Echo Echo Duplicate
 	SwampfireSeedProjectile.DisplayName: Swampfire Seed Projectile
 	SwampfireBoltProjectile.DisplayName: Swampfire Bolt Projectile
 	RathPounceProjectile.DisplayName: Rath Pounce Projectile

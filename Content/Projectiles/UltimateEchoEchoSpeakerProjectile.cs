@@ -48,15 +48,15 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
         if (owner.HasBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>()))
             Projectile.timeLeft = 2;
 
-        if (Projectile.localAI[1] == 0f) {
-            Projectile.ai[0] = Projectile.Center.X;
-            Projectile.ai[1] = Projectile.Center.Y;
-            Projectile.localAI[1] = 1f;
-            Projectile.netUpdate = true;
-        }
-
         Vector2 sentryCenter = new Vector2(Projectile.ai[0], Projectile.ai[1]);
-        Projectile.Center = Vector2.Lerp(Projectile.Center, sentryCenter, 0.28f);
+        if (sentryCenter == Vector2.Zero)
+            sentryCenter = Projectile.Center;
+
+        Projectile.Center = Vector2.Lerp(Projectile.Center, sentryCenter, 0.22f);
+        if (Projectile.Center.Distance(sentryCenter) < 10f) {
+            Projectile.Center = sentryCenter;
+            Projectile.velocity = Vector2.Zero;
+        }
         NPC target = FindClosestNPC(460f);
         Projectile.localAI[0]++;
         Projectile.rotation = target != null
