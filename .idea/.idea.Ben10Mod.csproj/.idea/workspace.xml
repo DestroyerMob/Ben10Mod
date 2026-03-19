@@ -10,10 +10,12 @@
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Buffs/Transformations/OmnitrixUpdating.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Buffs/Transformations/OmnitrixUpdating.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HumungousaurPunchProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HumungousaurPunchProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Ben10Mod.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Ben10Mod.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionProfile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionProfile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionRegistry.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionRegistry.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/Absorption/VanillaMaterialAbsorptionSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/VanillaMaterialAbsorptionSystem.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bossTrackerNPC.cs" beforeDir="false" afterPath="$PROJECT_DIR$/bossTrackerNPC.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,12 +36,12 @@
     &quot;assignee&quot;: &quot;DestroyerMob&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/DestroyerMob/Ben10Mod.git&quot;,
-    &quot;accountId&quot;: &quot;382bbb65-71d2-43e4-bad1-48d2c381f381&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/DestroyerMob/Ben10Mod.git",
+    "accountId": "e10becbb-c5ff-41c4-b480-d3cf4848be98"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" root0="FORCE_HIGHLIGHTING" />
@@ -147,6 +149,7 @@
       <workItem from="1773853355477" duration="59000" />
       <workItem from="1773853451275" duration="85000" />
       <workItem from="1773853644958" duration="583000" />
+      <workItem from="1773880617383" duration="2031000" />
     </task>
     <servers />
   </component>

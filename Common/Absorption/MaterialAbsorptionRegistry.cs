@@ -8,34 +8,31 @@ using Terraria.GameContent;
 namespace Ben10Mod.Common.Absorption;
 
 public static class MaterialAbsorptionRegistry {
-    private sealed class Definition {
-        public int SourceItemType { get; init; }
-        public int SwordItemType { get; init; }
-        public int HelmetItemType { get; init; }
-        public int BodyItemType { get; init; }
-        public int LegItemType { get; init; }
-    }
-
-    private static readonly Dictionary<int, Definition> Definitions = new();
+    private static readonly Dictionary<int, MaterialAbsorptionRegistration> Definitions = new();
     private static readonly Dictionary<int, MaterialAbsorptionProfile> Profiles = new();
 
     public static void Register(int sourceItemType, int swordItemType, int helmetItemType, int bodyItemType, int legItemType) {
-        Definitions[sourceItemType] = new Definition {
-            SourceItemType = sourceItemType,
-            SwordItemType = swordItemType,
-            HelmetItemType = helmetItemType,
-            BodyItemType = bodyItemType,
-            LegItemType = legItemType
-        };
+        Register(new MaterialAbsorptionRegistration(sourceItemType, swordItemType, helmetItemType, bodyItemType, legItemType));
+    }
 
-        Profiles.Remove(sourceItemType);
+    public static void Register(MaterialAbsorptionRegistration registration) {
+        Definitions[registration.SourceItemType] = registration;
+        Profiles.Remove(registration.SourceItemType);
+    }
+
+    public static MaterialAbsorptionRegistration CreateRegistration(int sourceItemType, int swordItemType, int helmetItemType, int bodyItemType, int legItemType) {
+        return new MaterialAbsorptionRegistration(sourceItemType, swordItemType, helmetItemType, bodyItemType, legItemType);
+    }
+
+    public static bool TryGetRegistration(int sourceItemType, out MaterialAbsorptionRegistration registration) {
+        return Definitions.TryGetValue(sourceItemType, out registration);
     }
 
     public static bool TryGetProfile(int sourceItemType, out MaterialAbsorptionProfile profile) {
         if (Profiles.TryGetValue(sourceItemType, out profile))
             return true;
 
-        if (!Definitions.TryGetValue(sourceItemType, out Definition definition)) {
+        if (!Definitions.TryGetValue(sourceItemType, out MaterialAbsorptionRegistration definition)) {
             profile = null;
             return false;
         }
@@ -52,7 +49,7 @@ public static class MaterialAbsorptionRegistry {
         Profiles.Clear();
     }
 
-    private static MaterialAbsorptionProfile BuildProfile(Definition definition) {
+    private static MaterialAbsorptionProfile BuildProfile(MaterialAbsorptionRegistration definition) {
         Item source = CreateItem(definition.SourceItemType);
         Item sword = CreateItem(definition.SwordItemType);
         Item helmet = CreateItem(definition.HelmetItemType);
@@ -67,12 +64,13 @@ public static class MaterialAbsorptionRegistry {
             SourceItemType = definition.SourceItemType,
             DisplayName = source.Name,
             TintColor = GetAverageItemColor(definition.SourceItemType),
-            ConsumeAmount = Math.Clamp((int)Math.Round(swordDamage / 12f), 3, 10),
-            DurationTicks = 60 * 90,
-            GenericDamageBonus = Math.Clamp(swordDamage / 220f, 0.04f, 0.34f),
-            DefenseBonus = Math.Max(2, (int)Math.Round(armorDefense * 0.45f)),
-            EnduranceBonus = Math.Clamp(armorDefense / 300f, 0.02f, 0.12f),
-            MeleeKnockbackBonus = Math.Clamp(swordKnockback * 0.1f, 0.35f, 1.8f)
+            ConsumeAmount = definition.ConsumeAmountOverride ?? Math.Clamp((int)Math.Round(swordDamage / 12f), 3, 10),
+            DurationTicks = definition.DurationTicksOverride ?? 60 * 90,
+            GenericDamageBonus = definition.GenericDamageBonusOverride ?? Math.Clamp(swordDamage / 220f, 0.04f, 0.34f),
+            DefenseBonus = definition.DefenseBonusOverride ?? Math.Max(2, (int)Math.Round(armorDefense * 0.45f)),
+            EnduranceBonus = definition.EnduranceBonusOverride ?? Math.Clamp(armorDefense / 300f, 0.02f, 0.12f),
+            MeleeKnockbackBonus = definition.MeleeKnockbackBonusOverride ?? Math.Clamp(swordKnockback * 0.1f, 0.35f, 1.8f),
+            HitEffects = definition.HitEffects.ToArray()
         };
     }
 

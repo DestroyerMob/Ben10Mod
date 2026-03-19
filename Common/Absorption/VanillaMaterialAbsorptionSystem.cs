@@ -21,15 +21,35 @@ public class VanillaMaterialAbsorptionSystem : ModSystem {
         MaterialAbsorptionRegistry.Register(ItemID.TungstenBar, ItemID.TungstenBroadsword, ItemID.TungstenHelmet, ItemID.TungstenChainmail, ItemID.TungstenGreaves);
         MaterialAbsorptionRegistry.Register(ItemID.GoldBar, ItemID.GoldBroadsword, ItemID.GoldHelmet, ItemID.GoldChainmail, ItemID.GoldGreaves);
         MaterialAbsorptionRegistry.Register(ItemID.PlatinumBar, ItemID.PlatinumBroadsword, ItemID.PlatinumHelmet, ItemID.PlatinumChainmail, ItemID.PlatinumGreaves);
-        MaterialAbsorptionRegistry.Register(ItemID.DemoniteBar, ItemID.LightsBane, ItemID.ShadowHelmet, ItemID.ShadowScalemail, ItemID.ShadowGreaves);
-        MaterialAbsorptionRegistry.Register(ItemID.CrimtaneBar, ItemID.BloodButcherer, ItemID.CrimsonHelmet, ItemID.CrimsonScalemail, ItemID.CrimsonGreaves);
-        MaterialAbsorptionRegistry.Register(ItemID.HellstoneBar, ItemID.FieryGreatsword, ItemID.MoltenHelmet, ItemID.MoltenBreastplate, ItemID.MoltenGreaves);
-        MaterialAbsorptionRegistry.Register(ItemID.CobaltBar, ItemID.CobaltSword, ItemID.CobaltHelmet, ItemID.CobaltBreastplate, ItemID.CobaltLeggings);
-        MaterialAbsorptionRegistry.Register(ItemID.PalladiumBar, ItemID.PalladiumSword, ItemID.PalladiumHelmet, ItemID.PalladiumBreastplate, ItemID.PalladiumLeggings);
-        MaterialAbsorptionRegistry.Register(ItemID.MythrilBar, ItemID.MythrilSword, ItemID.MythrilHelmet, ItemID.MythrilChainmail, ItemID.MythrilGreaves);
-        MaterialAbsorptionRegistry.Register(ItemID.OrichalcumBar, ItemID.OrichalcumSword, ItemID.OrichalcumHelmet, ItemID.OrichalcumBreastplate, ItemID.OrichalcumLeggings);
-        MaterialAbsorptionRegistry.Register(ItemID.AdamantiteBar, ItemID.AdamantiteSword, ItemID.AdamantiteHelmet, ItemID.AdamantiteBreastplate, ItemID.AdamantiteLeggings);
-        MaterialAbsorptionRegistry.Register(ItemID.TitaniumBar, ItemID.TitaniumSword, ItemID.TitaniumHelmet, ItemID.TitaniumBreastplate, ItemID.TitaniumLeggings);
-        MaterialAbsorptionRegistry.Register(ItemID.ChlorophyteBar, ItemID.ChlorophyteClaymore, ItemID.ChlorophyteHelmet, ItemID.ChlorophytePlateMail, ItemID.ChlorophyteGreaves);
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.DemoniteBar, ItemID.LightsBane, ItemID.ShadowHelmet, ItemID.ShadowScalemail, ItemID.ShadowGreaves)
+                .AddHitBuff(BuffID.CursedInferno, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.CrimtaneBar, ItemID.BloodButcherer, ItemID.CrimsonHelmet, ItemID.CrimsonScalemail, ItemID.CrimsonGreaves)
+                .AddHitBuff(BuffID.Bleeding, 300));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.HellstoneBar, ItemID.FieryGreatsword, ItemID.MoltenHelmet, ItemID.MoltenBreastplate, ItemID.MoltenGreaves)
+                .AddHitBuff(BuffID.OnFire, 300));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.CobaltBar, ItemID.CobaltSword, ItemID.CobaltHelmet, ItemID.CobaltBreastplate, ItemID.CobaltLeggings)
+                .AddHitBuff(BuffID.Electrified, 120));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.PalladiumBar, ItemID.PalladiumSword, ItemID.PalladiumHelmet, ItemID.PalladiumBreastplate, ItemID.PalladiumLeggings)
+                .AddHitBuff(BuffID.Weak, 240));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.MythrilBar, ItemID.MythrilSword, ItemID.MythrilHelmet, ItemID.MythrilChainmail, ItemID.MythrilGreaves)
+                .AddHitBuff(BuffID.Confused, 90));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.OrichalcumBar, ItemID.OrichalcumSword, ItemID.OrichalcumHelmet, ItemID.OrichalcumBreastplate, ItemID.OrichalcumLeggings)
+                .AddHitBuff(BuffID.Venom, 120));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.AdamantiteBar, ItemID.AdamantiteSword, ItemID.AdamantiteHelmet, ItemID.AdamantiteBreastplate, ItemID.AdamantiteLeggings)
+                .AddHitBuff(BuffID.BrokenArmor, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.TitaniumBar, ItemID.TitaniumSword, ItemID.TitaniumHelmet, ItemID.TitaniumBreastplate, ItemID.TitaniumLeggings)
+                .AddHitBuff(BuffID.Frostburn2, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.ChlorophyteBar, ItemID.ChlorophyteClaymore, ItemID.ChlorophyteHelmet, ItemID.ChlorophytePlateMail, ItemID.ChlorophyteGreaves)
+                .AddHitBuff(BuffID.Poisoned, 180));
     }
 }

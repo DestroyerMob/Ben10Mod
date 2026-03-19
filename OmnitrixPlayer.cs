@@ -312,11 +312,10 @@ namespace Ben10Mod {
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
+            bool authoritativeBuffTracking = Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer;
             if (absorbedMaterialTime > 0) {
-                if (!Player.HasBuff(materialBuffType)) {
-                    absorbedMaterialItemType = 0;
-                    absorbedMaterialTime = 0;
-                }
+                if (authoritativeBuffTracking && !Player.HasBuff(materialBuffType))
+                    ClearAbsorbedMaterial(showEffects: false);
             }
             else if (absorbedMaterialItemType != 0) {
                 absorbedMaterialItemType = 0;
@@ -531,6 +530,7 @@ namespace Ben10Mod {
         public override void OnHitNPCWithItem(Item item, NPC target, NPC.HitInfo hit, int damageDone) {
             var trans = CurrentTransformation;
             trans?.OnHitNPCWithItem(Player, this, item, target, hit, damageDone);
+            ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithItem(item, target, hit, damageDone);
         }
 
@@ -547,6 +547,7 @@ namespace Ben10Mod {
         public override void OnHitNPCWithProj(Projectile proj, NPC target, NPC.HitInfo hit, int damageDone) {
             var trans = CurrentTransformation;
             trans?.OnHitNPCWithProjectile(Player, this, proj, target, hit, damageDone);
+            ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithProj(proj, target, hit, damageDone);
         }
 
@@ -672,6 +673,7 @@ namespace Ben10Mod {
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
             var trans = CurrentTransformation;
             trans?.OnHitNPC(Player, this, target, hit, damageDone);
+            ApplyAbsorptionHitEffects(target);
 
             base.OnHitNPC(target, hit, damageDone);
 
@@ -726,7 +728,37 @@ namespace Ben10Mod {
             return false;
         }
 
+        private void ApplyAbsorptionHitEffects(NPC target) {
+            if (target == null || !target.active || target.life <= 0)
+                return;
+
+            if (!TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile))
+                return;
+
+            foreach (MaterialAbsorptionHitEffect effect in profile.HitEffects) {
+                if (effect.BuffType <= 0 || effect.BuffTime <= 0)
+                    continue;
+
+                target.AddBuff(effect.BuffType, effect.BuffTime);
+            }
+        }
+
         private void TryAbsorbHeldMaterial() {
+            if (Main.netMode == NetmodeID.MultiplayerClient) {
+                ModPacket packet = Mod.GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.RequestAbsorbMaterial);
+                packet.Send();
+                return;
+            }
+
+            TryAbsorbHeldMaterialDirect();
+        }
+
+        public void HandleAbsorbMaterialRequest() {
+            TryAbsorbHeldMaterialDirect();
+        }
+
+        private void TryAbsorbHeldMaterialDirect() {
             Item heldItem = Player.HeldItem;
             if (heldItem == null || heldItem.IsAir) {
                 if (absorbedMaterialTime > 0)
@@ -756,35 +788,89 @@ namespace Ben10Mod {
             if (heldItem.stack <= 0)
                 heldItem.TurnToAir();
 
-            absorbedMaterialItemType = profile.SourceItemType;
-            absorbedMaterialTime = profile.DurationTicks;
-            Player.AddBuff(ModContent.BuffType<MaterialAbsorptionBuff>(), profile.DurationTicks);
+            if (Main.netMode == NetmodeID.Server)
+                NetMessage.SendData(MessageID.SyncEquipment, -1, -1, null, Player.whoAmI, Player.selectedItem);
 
-            Main.NewText($"Absorbed {profile.DisplayName}.", profile.TintColor);
-            CombatText.NewText(Player.getRect(), profile.TintColor, profile.DisplayName, dramatic: true);
-
-            for (int i = 0; i < 20; i++) {
-                Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 26f), DustID.Smoke,
-                    Main.rand.NextVector2Circular(2f, 2f), 120, profile.TintColor, 1.1f);
-                dust.noGravity = true;
-            }
+            SetAbsorbedMaterial(profile.SourceItemType, profile.DurationTicks, showEffects: true);
         }
 
-        private void ClearAbsorbedMaterial() {
-            if (!TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile))
+        private void ClearAbsorbedMaterial(bool showEffects = true) {
+            if (!TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile)) {
+                absorbedMaterialItemType = 0;
+                absorbedMaterialTime = 0;
+                Player.ClearBuff(ModContent.BuffType<MaterialAbsorptionBuff>());
+
+                if (Main.netMode == NetmodeID.Server)
+                    SyncAbsorbedMaterial(showEffects);
                 return;
-
-            absorbedMaterialItemType = 0;
-            absorbedMaterialTime = 0;
-            Player.ClearBuff(ModContent.BuffType<MaterialAbsorptionBuff>());
-
-            Main.NewText($"{profile.DisplayName} absorption cleared.", new Color(220, 220, 220));
-
-            for (int i = 0; i < 14; i++) {
-                Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(18f, 22f), DustID.Smoke,
-                    Main.rand.NextVector2Circular(1.6f, 1.6f), 120, profile.TintColor, 0.95f);
-                dust.noGravity = true;
             }
+
+            SetAbsorbedMaterial(0, 0, showEffects, profile);
+        }
+
+        public void ApplyAbsorbedMaterialSync(int itemType, int timeLeft, bool showEffects) {
+            MaterialAbsorptionProfile previousProfile = null;
+            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile currentProfile))
+                previousProfile = currentProfile;
+
+            SetAbsorbedMaterial(itemType, timeLeft, showEffects, previousProfile, shouldSync: false);
+        }
+
+        public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
+            if (Main.netMode == NetmodeID.Server)
+                SyncAbsorbedMaterial(showEffects: false, toWho: toWho, ignoreClient: fromWho);
+        }
+
+        private void SetAbsorbedMaterial(int itemType, int timeLeft, bool showEffects, MaterialAbsorptionProfile previousProfile = null,
+            bool shouldSync = true) {
+            if (previousProfile == null && TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile activeProfile))
+                previousProfile = activeProfile;
+
+            absorbedMaterialItemType = itemType;
+            absorbedMaterialTime = timeLeft;
+
+            int buffType = ModContent.BuffType<MaterialAbsorptionBuff>();
+            Player.ClearBuff(buffType);
+            if (itemType > 0 && timeLeft > 0)
+                Player.AddBuff(buffType, timeLeft);
+
+            if (showEffects && Main.netMode != NetmodeID.Server) {
+                if (itemType > 0 && MaterialAbsorptionRegistry.TryGetProfile(itemType, out MaterialAbsorptionProfile newProfile)) {
+                    if (Player.whoAmI == Main.myPlayer) {
+                        Main.NewText($"Absorbed {newProfile.DisplayName}.", newProfile.TintColor);
+                        CombatText.NewText(Player.getRect(), newProfile.TintColor, newProfile.DisplayName, dramatic: true);
+                    }
+
+                    for (int i = 0; i < 20; i++) {
+                        Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 26f), DustID.Smoke,
+                            Main.rand.NextVector2Circular(2f, 2f), 120, newProfile.TintColor, 1.1f);
+                        dust.noGravity = true;
+                    }
+                }
+                else if (previousProfile != null) {
+                    if (Player.whoAmI == Main.myPlayer)
+                        Main.NewText($"{previousProfile.DisplayName} absorption cleared.", new Color(220, 220, 220));
+
+                    for (int i = 0; i < 14; i++) {
+                        Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(18f, 22f), DustID.Smoke,
+                            Main.rand.NextVector2Circular(1.6f, 1.6f), 120, previousProfile.TintColor, 0.95f);
+                        dust.noGravity = true;
+                    }
+                }
+            }
+
+            if (shouldSync && Main.netMode == NetmodeID.Server)
+                SyncAbsorbedMaterial(showEffects);
+        }
+
+        private void SyncAbsorbedMaterial(bool showEffects, int toWho = -1, int ignoreClient = -1) {
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.SyncAbsorbedMaterial);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write(absorbedMaterialItemType);
+            packet.Write(absorbedMaterialTime);
+            packet.Write(showEffects);
+            packet.Send(toWho, ignoreClient);
         }
 
         public void RecordEventParticipation(NPC npc) {
