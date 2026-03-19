@@ -315,6 +315,116 @@ Items: {
 		Tooltip: ""
 		DisplayName: Albedo Transformation Cache
 	}
+
+	OsmosianHarness: {
+		Tooltip: ""
+		DisplayName: Osmosian Harness
+	}
+
+	OsmosianAmplifier: {
+		DisplayName: Osmosian Amplifier
+		Tooltip: ""
+	}
+
+	OsmosianRegulator: {
+		DisplayName: Osmosian Regulator
+		Tooltip: ""
+	}
+
+	OsmosianInjector: {
+		Tooltip: ""
+		DisplayName: Osmosian Injector
+	}
+
+	OsmosianDynamo: {
+		Tooltip: ""
+		DisplayName: Osmosian Dynamo
+	}
+
+	OsmosianCapacitor: {
+		Tooltip: ""
+		DisplayName: Osmosian Capacitor
+	}
+
+	OsmosianBreacher: {
+		Tooltip: ""
+		DisplayName: Osmosian Breacher
+	}
+
+	OsmosianLens: {
+		DisplayName: Osmosian Lens
+		Tooltip: ""
+	}
+
+	OsmosianPlating: {
+		DisplayName: Osmosian Plating
+		Tooltip: ""
+	}
+
+	OsmosianRecycler: {
+		DisplayName: Osmosian Recycler
+		Tooltip: ""
+	}
+
+	OsmosianTalons: {
+		DisplayName: Osmosian Talons
+		Tooltip: ""
+	}
+
+	OsmosianTreads: {
+		DisplayName: Osmosian Treads
+		Tooltip: ""
+	}
+
+	AdaptivePlating: {
+		DisplayName: Adaptive Plating
+		Tooltip: ""
+	}
+
+	BurstGreaves: {
+		DisplayName: Burst Greaves
+		Tooltip: ""
+	}
+
+	CooldownAccelerator: {
+		DisplayName: Cooldown Accelerator
+		Tooltip: ""
+	}
+
+	EnergyRecycler: {
+		DisplayName: Energy Recycler
+		Tooltip: ""
+	}
+
+	HeroVisor: {
+		DisplayName: Hero Visor
+		Tooltip: ""
+	}
+
+	ImpactHarness: {
+		DisplayName: Impact Harness
+		Tooltip: ""
+	}
+
+	KineticServos: {
+		DisplayName: Kinetic Servos
+		Tooltip: ""
+	}
+
+	PrimaryConduit: {
+		DisplayName: Primary Conduit
+		Tooltip: ""
+	}
+
+	TransformationStabilizer: {
+		DisplayName: Transformation Stabilizer
+		Tooltip: ""
+	}
+
+	UltimateRelay: {
+		DisplayName: Ultimate Relay
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -485,6 +595,31 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.Rath_Buff.Description
 		DisplayName: Rath_ Buff
 	}
+
+	Armodrillo_Buff: {
+		DisplayName: Armodrillo_ Buff
+		Description: Mods.Ben10Mod.Buffs.Armodrillo_Buff.Description
+	}
+
+	Jetray_Buff: {
+		DisplayName: Jetray_ Buff
+		Description: Mods.Ben10Mod.Buffs.Jetray_Buff.Description
+	}
+
+	NRG_Buff: {
+		DisplayName: N R G_ Buff
+		Description: Mods.Ben10Mod.Buffs.NRG_Buff.Description
+	}
+
+	EchoEchoCloneBuff: {
+		DisplayName: Echo Echo Clone Buff
+		Description: Mods.Ben10Mod.Buffs.EchoEchoCloneBuff.Description
+	}
+
+	UltimateEchoEchoSpeakerBuff: {
+		DisplayName: Ultimate Echo Echo Speaker Buff
+		Description: Mods.Ben10Mod.Buffs.UltimateEchoEchoSpeakerBuff.Description
+	}
 }
 
 Projectiles: {
@@ -540,6 +675,12 @@ Projectiles: {
 	RathPounceProjectile.DisplayName: Rath Pounce Projectile
 	RathClawProjectile.DisplayName: Rath Claw Projectile
 	SwampfireVineProjectile.DisplayName: Swampfire Vine Projectile
+	ArmodrilloDrillProjectile.DisplayName: Armodrillo Drill Projectile
+	ArmodrilloQuakeProjectile.DisplayName: Armodrillo Quake Projectile
+	JetrayBoltProjectile.DisplayName: Jetray Bolt Projectile
+	JetrayDiveProjectile.DisplayName: Jetray Dive Projectile
+	NRGBurstProjectile.DisplayName: N R G Burst Projectile
+	NRGRadiationProjectile.DisplayName: N R G Radiation Projectile
 }
 
 Tiles: {
