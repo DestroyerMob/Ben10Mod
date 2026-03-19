@@ -135,6 +135,27 @@ namespace Ben10Mod {
             return omnitrixSlot?.FunctionalItem?.ModItem as Omnitrix;
         }
 
+        public bool HasEquippedOsmosianHarness() {
+            for (int i = 0; i < Player.armor.Length; i++) {
+                if (Player.armor[i]?.ModItem is OsmosianHarness)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool HasAnyEquippedOmnitrix() {
+            if (GetActiveOmnitrix() != null)
+                return true;
+
+            for (int i = 0; i < Player.armor.Length; i++) {
+                if (Player.armor[i]?.ModItem is Omnitrix)
+                    return true;
+            }
+
+            return false;
+        }
+
         public override void SaveData(TagCompound tag) {
             tag["masterControl"] = masterControl;
             tag["currentTransformationId"] = currentTransformationId;

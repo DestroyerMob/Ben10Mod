@@ -19,7 +19,7 @@ namespace Ben10Mod.Content.Interface
 
         public override bool CanAcceptItem(Item checkItem, AccessorySlotType context) {
             var omp = Player.GetModPlayer<OmnitrixPlayer>();
-            if (omp.osmosianEquipped)
+            if (omp.osmosianEquipped || omp.HasEquippedOsmosianHarness())
                 return false;
 
             return ModContent.GetModItem(checkItem.type) is Omnitrix;
