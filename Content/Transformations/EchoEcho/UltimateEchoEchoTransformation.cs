@@ -46,7 +46,7 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
             int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
             int activeSpeakerCount = 0;
             int oldestSpeakerIndex = -1;
-            int lowestTimeLeft = int.MaxValue;
+            int lowestIdentity = int.MaxValue;
 
             for (int i = 0; i < Main.maxProjectiles; i++) {
                 Projectile projectile = Main.projectile[i];
@@ -54,8 +54,8 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
                     continue;
 
                 activeSpeakerCount++;
-                if (projectile.timeLeft < lowestTimeLeft) {
-                    lowestTimeLeft = projectile.timeLeft;
+                if (projectile.identity < lowestIdentity) {
+                    lowestIdentity = projectile.identity;
                     oldestSpeakerIndex = i;
                 }
             }
@@ -65,8 +65,12 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
             }
 
             player.AddBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>(), 2);
-            player.SpawnMinionOnCursor(source, player.whoAmI, speakerType,
-                (int)(damage * SecondaryAttackModifier), knockback);
+            Vector2 anchorPosition = Main.MouseWorld;
+            Vector2 spawnVelocity = player.Center.DirectionTo(anchorPosition) * 14f;
+            int projectileIndex = Projectile.NewProjectile(source, player.Center, spawnVelocity, speakerType,
+                (int)(damage * SecondaryAttackModifier), knockback, player.whoAmI, anchorPosition.X, anchorPosition.Y);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                Main.projectile[projectileIndex].originalDamage = (int)(damage * SecondaryAttackModifier);
             return false;
         }
 
