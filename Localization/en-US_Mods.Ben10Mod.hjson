@@ -539,6 +539,7 @@ Projectiles: {
 	SwampfireBoltProjectile.DisplayName: Swampfire Bolt Projectile
 	RathPounceProjectile.DisplayName: Rath Pounce Projectile
 	RathClawProjectile.DisplayName: Rath Claw Projectile
+	SwampfireVineProjectile.DisplayName: Swampfire Vine Projectile
 }
 
 Tiles: {
