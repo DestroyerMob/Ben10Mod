@@ -280,6 +280,7 @@ namespace Ben10Mod {
 
         public override void PostUpdate() {
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
+            int materialBuffType = ModContent.BuffType<MaterialAbsorptionBuff>();
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -312,9 +313,13 @@ namespace Ben10Mod {
                 trans.PostUpdate(Player, this);
 
             if (absorbedMaterialTime > 0) {
-                absorbedMaterialTime--;
-                if (absorbedMaterialTime <= 0)
+                if (!Player.HasBuff(materialBuffType)) {
                     absorbedMaterialItemType = 0;
+                    absorbedMaterialTime = 0;
+                }
+            }
+            else if (absorbedMaterialItemType != 0) {
+                absorbedMaterialItemType = 0;
             }
 
             if (pendingEvolutionStepDownTime > 0) {
@@ -559,13 +564,15 @@ namespace Ben10Mod {
 
             if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
                 Color tint = absorptionProfile.TintColor;
-                r = MathHelper.Lerp(r, tint.R / 255f, 0.35f);
-                g = MathHelper.Lerp(g, tint.G / 255f, 0.35f);
-                b = MathHelper.Lerp(b, tint.B / 255f, 0.35f);
+                r = MathHelper.Lerp(r, MathHelper.Clamp((tint.R / 255f) * 1.4f, 0f, 1f), 0.88f);
+                g = MathHelper.Lerp(g, MathHelper.Clamp((tint.G / 255f) * 1.4f, 0f, 1f), 0.88f);
+                b = MathHelper.Lerp(b, MathHelper.Clamp((tint.B / 255f) * 1.4f, 0f, 1f), 0.88f);
+                a = MathHelper.Lerp(a, 1f, 0.6f);
+                fullBright = true;
 
-                if (Main.rand.NextBool(10)) {
+                if (Main.rand.NextBool(5)) {
                     Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(16f, 24f), DustID.Smoke,
-                        Main.rand.NextVector2Circular(0.9f, 0.9f), 120, tint, 0.95f);
+                        Main.rand.NextVector2Circular(1.1f, 1.1f), 90, tint, 1.05f);
                     dust.noGravity = true;
                 }
             }
@@ -711,7 +718,7 @@ namespace Ben10Mod {
             ScreenShaderController.UpdateForLocalPlayer(Player);
         }
 
-        private bool TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile) {
+        public bool TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile) {
             if (absorbedMaterialTime > 0 && absorbedMaterialItemType > 0)
                 return MaterialAbsorptionRegistry.TryGetProfile(absorbedMaterialItemType, out profile);
 
@@ -721,11 +728,22 @@ namespace Ben10Mod {
 
         private void TryAbsorbHeldMaterial() {
             Item heldItem = Player.HeldItem;
-            if (heldItem == null || heldItem.IsAir)
+            if (heldItem == null || heldItem.IsAir) {
+                if (absorbedMaterialTime > 0)
+                    ClearAbsorbedMaterial();
                 return;
+            }
+
+            if (absorbedMaterialTime > 0 && heldItem.type == absorbedMaterialItemType) {
+                ClearAbsorbedMaterial();
+                return;
+            }
 
             if (!MaterialAbsorptionRegistry.TryGetProfile(heldItem.type, out MaterialAbsorptionProfile profile)) {
-                Main.NewText("That material cannot be absorbed.", new Color(230, 120, 120));
+                if (absorbedMaterialTime > 0)
+                    ClearAbsorbedMaterial();
+                else
+                    Main.NewText("That material cannot be absorbed.", new Color(230, 120, 120));
                 return;
             }
 
@@ -740,6 +758,7 @@ namespace Ben10Mod {
 
             absorbedMaterialItemType = profile.SourceItemType;
             absorbedMaterialTime = profile.DurationTicks;
+            Player.AddBuff(ModContent.BuffType<MaterialAbsorptionBuff>(), profile.DurationTicks);
 
             Main.NewText($"Absorbed {profile.DisplayName}.", profile.TintColor);
             CombatText.NewText(Player.getRect(), profile.TintColor, profile.DisplayName, dramatic: true);
@@ -747,6 +766,23 @@ namespace Ben10Mod {
             for (int i = 0; i < 20; i++) {
                 Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 26f), DustID.Smoke,
                     Main.rand.NextVector2Circular(2f, 2f), 120, profile.TintColor, 1.1f);
+                dust.noGravity = true;
+            }
+        }
+
+        private void ClearAbsorbedMaterial() {
+            if (!TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile))
+                return;
+
+            absorbedMaterialItemType = 0;
+            absorbedMaterialTime = 0;
+            Player.ClearBuff(ModContent.BuffType<MaterialAbsorptionBuff>());
+
+            Main.NewText($"{profile.DisplayName} absorption cleared.", new Color(220, 220, 220));
+
+            for (int i = 0; i < 14; i++) {
+                Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(18f, 22f), DustID.Smoke,
+                    Main.rand.NextVector2Circular(1.6f, 1.6f), 120, profile.TintColor, 0.95f);
                 dust.noGravity = true;
             }
         }

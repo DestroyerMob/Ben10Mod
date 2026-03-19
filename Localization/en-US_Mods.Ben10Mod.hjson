@@ -361,6 +361,11 @@ Buffs: {
 		Description: Crystalsapien
 	}
 
+	MaterialAbsorptionBuff: {
+		DisplayName: Material Absorption
+		Description: Kevin's absorbed material is enhancing his body.
+	}
+
 	FourArms_Buff: {
 		DisplayName: Fourarms
 		Description: Tetramand
