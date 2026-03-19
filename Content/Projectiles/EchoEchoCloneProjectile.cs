@@ -16,10 +16,10 @@ public class EchoEchoCloneProjectile : ModProjectile {
 
     private const int StateIdle = 0;
     private const int StateAttack = 1;
-    private const float IdleInertia = 30f;
-    private const float IdleSpeed = 8f;
-    private const float AttackInertia = 14f;
-    private const float AttackSpeed = 12f;
+    private const float IdleWalkSpeed = 4.6f;
+    private const float AttackWalkSpeed = 5.4f;
+    private const float Gravity = 0.4f;
+    private const float MaxFallSpeed = 10f;
 
     public override void SetStaticDefaults() {
         ProjectileID.Sets.MinionTargettingFeature[Type] = true;
@@ -36,7 +36,7 @@ public class EchoEchoCloneProjectile : ModProjectile {
         Projectile.netImportant = true;
         Projectile.penetrate = -1;
         Projectile.timeLeft = 18000;
-        Projectile.tileCollide = false;
+        Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
         Projectile.DamageType = DamageClass.Summon;
     }
@@ -59,20 +59,20 @@ public class EchoEchoCloneProjectile : ModProjectile {
             Projectile.timeLeft = 2;
 
         int cloneIndex = GetCloneIndex();
-        float bob = (float)Math.Sin(Main.GlobalTimeWrappedHourly * 4.2f + cloneIndex * 0.65f) * 7f;
         NPC target = FindTarget(owner, 620f);
-        Vector2 idleCenter = GetIdlePosition(owner, cloneIndex) + new Vector2(0f, bob);
+        Vector2 idleCenter = GetIdlePosition(owner, cloneIndex);
 
         if (target == null) {
             State = StateIdle;
-            DoIdleMovement(idleCenter);
+            MoveGrounded(idleCenter, IdleWalkSpeed);
         }
         else {
             State = StateAttack;
-            Vector2 screamCenter = target.Center + new Vector2(target.direction * 54f, -18f + bob);
-            DoAttackMovement(screamCenter);
+            Vector2 screamCenter = GetAttackPosition(target);
+            MoveGrounded(screamCenter, AttackWalkSpeed);
         }
 
+        ApplyGroundPhysics();
         Projectile.rotation = Projectile.velocity.X * 0.02f;
         Projectile.spriteDirection = Projectile.velocity.X >= 0f ? 1 : -1;
 
@@ -120,42 +120,52 @@ public class EchoEchoCloneProjectile : ModProjectile {
         float start = -(owner.ownedProjectileCounts[Type] - 1) * 0.5f;
         float slot = start + cloneIndex;
         float behindDirection = -owner.direction;
-        return owner.Center + new Vector2(slot * spacing, -14f) + new Vector2(behindDirection * 44f, 0f);
+        Vector2 bottom = owner.Bottom + new Vector2(behindDirection * 44f + slot * spacing, 0f);
+        return new Vector2(bottom.X, bottom.Y - Projectile.height * 0.5f);
     }
 
-    private void DoIdleMovement(Vector2 idleCenter) {
-        Vector2 toIdle = idleCenter - Projectile.Center;
-        float distance = toIdle.Length();
+    private Vector2 GetAttackPosition(NPC target) {
+        float side = Projectile.Center.X <= target.Center.X ? -1f : 1f;
+        Vector2 bottom = target.Bottom + new Vector2(side * 52f, 0f);
+        return new Vector2(bottom.X, bottom.Y - Projectile.height * 0.5f);
+    }
 
-        if (distance > 1600f) {
-            Projectile.Center = idleCenter;
+    private void MoveGrounded(Vector2 targetCenter, float walkSpeed) {
+        float horizontalDistance = targetCenter.X - Projectile.Center.X;
+
+        if (Vector2.DistanceSquared(Projectile.Center, targetCenter) > 1600f * 1600f) {
+            Projectile.Center = targetCenter;
             Projectile.velocity *= 0.1f;
             Projectile.netUpdate = true;
             return;
         }
 
-        if (distance > 14f) {
-            toIdle.Normalize();
-            toIdle *= IdleSpeed;
-            Projectile.velocity = (Projectile.velocity * (IdleInertia - 1f) + toIdle) / IdleInertia;
+        if (Math.Abs(horizontalDistance) > 12f) {
+            float desiredX = Math.Sign(horizontalDistance) * walkSpeed;
+            Projectile.velocity.X = MathHelper.Lerp(Projectile.velocity.X, desiredX, 0.18f);
         }
-        else if (Projectile.velocity.Length() > 1f) {
-            Projectile.velocity *= 0.92f;
+        else {
+            Projectile.velocity.X *= 0.8f;
+        }
+
+        bool grounded = IsGrounded();
+        if (grounded && targetCenter.Y + 18f < Projectile.Center.Y && Math.Abs(horizontalDistance) < 28f) {
+            Projectile.velocity.Y = -7f;
         }
     }
 
-    private void DoAttackMovement(Vector2 attackCenter) {
-        Vector2 toAttack = attackCenter - Projectile.Center;
-        float distance = toAttack.Length();
+    private void ApplyGroundPhysics() {
+        if (!IsGrounded()) {
+            Projectile.velocity.Y = Math.Min(MaxFallSpeed, Projectile.velocity.Y + Gravity);
+        }
+        else if (Projectile.velocity.Y > 0f) {
+            Projectile.velocity.Y = 0f;
+        }
+    }
 
-        if (distance > 8f) {
-            toAttack.Normalize();
-            toAttack *= AttackSpeed;
-            Projectile.velocity = (Projectile.velocity * (AttackInertia - 1f) + toAttack) / AttackInertia;
-        }
-        else if (Projectile.velocity.Length() > 1f) {
-            Projectile.velocity *= 0.88f;
-        }
+    private bool IsGrounded() {
+        return Collision.SolidCollision(new Vector2(Projectile.position.X, Projectile.position.Y + 2f),
+            Projectile.width, Projectile.height);
     }
 
     private NPC FindTarget(Player owner, float maxDistance) {
@@ -182,5 +192,15 @@ public class EchoEchoCloneProjectile : ModProjectile {
         }
 
         return closestTarget;
+    }
+
+    public override bool OnTileCollide(Vector2 oldVelocity) {
+        if (oldVelocity.X != Projectile.velocity.X)
+            Projectile.velocity.X = oldVelocity.X * -0.2f;
+
+        if (oldVelocity.Y > 0f)
+            Projectile.velocity.Y = 0f;
+
+        return false;
     }
 }
