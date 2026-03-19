@@ -44,15 +44,24 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
         Vector2 velocity, int damage, float knockback) {
         if (omp.altAttack) {
             int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
-            if (player.ownedProjectileCounts[speakerType] >= 3) {
-                for (int i = 0; i < Main.maxProjectiles; i++) {
-                    Projectile projectile = Main.projectile[i];
-                    if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != speakerType)
-                        continue;
+            int activeSpeakerCount = 0;
+            int oldestSpeakerIndex = -1;
+            int lowestTimeLeft = int.MaxValue;
 
-                    projectile.Kill();
-                    break;
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != speakerType)
+                    continue;
+
+                activeSpeakerCount++;
+                if (projectile.timeLeft < lowestTimeLeft) {
+                    lowestTimeLeft = projectile.timeLeft;
+                    oldestSpeakerIndex = i;
                 }
+            }
+
+            if (activeSpeakerCount >= 3 && oldestSpeakerIndex != -1) {
+                Main.projectile[oldestSpeakerIndex].Kill();
             }
 
             player.AddBuff(ModContent.BuffType<UltimateEchoEchoSpeakerBuff>(), 2);
