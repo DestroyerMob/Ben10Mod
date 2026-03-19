@@ -85,6 +85,19 @@ namespace Ben10Mod {
         public float cooldownDurationMultiplier = 1f;
         public float activeTransformationDurationMultiplier = 1f;
         public float activeCooldownDurationMultiplier = 1f;
+        public float primaryAbilityCooldownMultiplier = 1f;
+        public float ultimateAbilityCooldownMultiplier = 1f;
+        public int heroCritChanceBonus = 0;
+        public int heroArmorPenBonus = 0;
+        public float heroAttackSpeedBonus = 0f;
+        public float heroKnockbackBonus = 0f;
+        public int transformedDefenseBonus = 0;
+        public float transformedEnduranceBonus = 0f;
+        public float transformedMoveSpeedBonus = 0f;
+        public float transformedRunAccelerationBonus = 0f;
+        public float transformedJumpSpeedBonus = 0f;
+        public int omnitrixEnergyMaxBonus = 0;
+        public int omnitrixEnergyRegenBonus = 0;
         public int pendingEvolutionStepDownTime = 0;
         public string pendingEvolutionStepDownTransformationId = "";
         public Omnitrix equippedOmnitrix = null;
@@ -211,6 +224,19 @@ namespace Ben10Mod {
             omnitrixEnergyRegen = 0;
             transformationDurationMultiplier = 1f;
             cooldownDurationMultiplier = 1f;
+            primaryAbilityCooldownMultiplier = 1f;
+            ultimateAbilityCooldownMultiplier = 1f;
+            heroCritChanceBonus = 0;
+            heroArmorPenBonus = 0;
+            heroAttackSpeedBonus = 0f;
+            heroKnockbackBonus = 0f;
+            transformedDefenseBonus = 0;
+            transformedEnduranceBonus = 0f;
+            transformedMoveSpeedBonus = 0f;
+            transformedRunAccelerationBonus = 0f;
+            transformedJumpSpeedBonus = 0f;
+            omnitrixEnergyMaxBonus = 0;
+            omnitrixEnergyRegenBonus = 0;
 
             isTransformed = false;
             onCooldown = false;
@@ -250,6 +276,21 @@ namespace Ben10Mod {
         }
 
         public override void PostUpdateEquips() {
+            Player.GetCritChance<HeroDamage>() += heroCritChanceBonus;
+            Player.GetArmorPenetration<HeroDamage>() += heroArmorPenBonus;
+            Player.GetAttackSpeed<HeroDamage>() += heroAttackSpeedBonus;
+            Player.GetKnockback<HeroDamage>() += heroKnockbackBonus;
+
+            if (IsTransformed) {
+                Player.statDefense += transformedDefenseBonus;
+                Player.endurance += transformedEnduranceBonus;
+                Player.moveSpeed += transformedMoveSpeedBonus;
+                Player.maxRunSpeed += transformedMoveSpeedBonus * 1.8f;
+                Player.accRunSpeed += transformedMoveSpeedBonus * 2f;
+                Player.runAcceleration += transformedRunAccelerationBonus;
+                Player.jumpSpeedBoost += transformedJumpSpeedBonus;
+            }
+
             if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
                 Player.GetDamage(DamageClass.Generic) += absorptionProfile.GenericDamageBonus * absorptionStrengthMultiplier;
                 Player.statDefense += (int)Math.Round(absorptionProfile.DefenseBonus * absorptionStrengthMultiplier);

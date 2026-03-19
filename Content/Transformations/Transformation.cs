@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
+using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
@@ -145,10 +146,14 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool HasPrimaryAbilityForState(OmnitrixPlayer omp) => HasPrimaryAbility;
         public virtual bool HasUltimateAbilityForState(OmnitrixPlayer omp) => HasUltimateAbility;
         public virtual int GetPrimaryAbilityDuration(OmnitrixPlayer omp) => PrimaryAbilityDuration;
-        public virtual int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) => PrimaryAbilityCooldown;
+        public virtual int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) {
+            return ApplyAbilityCooldownMultiplier(PrimaryAbilityCooldown, omp.primaryAbilityCooldownMultiplier);
+        }
         public virtual int GetUltimateAbilityCost(OmnitrixPlayer omp) => UltimateAbilityCost;
         public virtual int GetUltimateAbilityDuration(OmnitrixPlayer omp) => UltimateAbilityDuration;
-        public virtual int GetUltimateAbilityCooldown(OmnitrixPlayer omp) => UltimateAbilityCooldown;
+        public virtual int GetUltimateAbilityCooldown(OmnitrixPlayer omp) {
+            return ApplyAbilityCooldownMultiplier(UltimateAbilityCooldown, omp.ultimateAbilityCooldownMultiplier);
+        }
         public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp) => UltimateAttack;
 
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -192,6 +197,14 @@ namespace Ben10Mod.Content.Transformations {
         protected virtual bool IsIntangibleWhilePrimaryAbilityActive(OmnitrixPlayer omp) {
             return omp.PrimaryAbilityEnabled &&
                    (TransformationName == "Ghostfreak" || TransformationName == "Bigchill");
+        }
+
+        protected static int ApplyAbilityCooldownMultiplier(int baseCooldown, float multiplier) {
+            if (baseCooldown <= 0)
+                return 0;
+
+            float safeMultiplier = Math.Max(0f, multiplier);
+            return Math.Max(1, (int)Math.Round(baseCooldown * safeMultiplier));
         }
 
         protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {
