@@ -6,14 +6,14 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Accessories;
 
 public class OsmosianHarness : ModItem {
-    public override string Texture => $"Terraria/Images/Item_{ItemID.FleshKnuckles}";
+    public override string Texture => $"Terraria/Images/Item_{ItemID.Shackle}";
 
     public override void SetDefaults() {
         Item.width = 30;
         Item.height = 30;
         Item.accessory = true;
-        Item.value = Item.buyPrice(gold: 6);
-        Item.rare = ItemRarityID.LightRed;
+        Item.value = Item.buyPrice(gold: 2);
+        Item.rare = ItemRarityID.Orange;
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
@@ -31,10 +31,19 @@ public class OsmosianHarness : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.FleshKnuckles)
-            .AddIngredient(ItemID.MeteoriteBar, 18)
-            .AddIngredient(ItemID.SoulofNight, 10)
-            .AddTile(TileID.MythrilAnvil)
+            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ItemID.Chain, 10)
+            .AddIngredient(ItemID.MeteoriteBar, 14)
+            .AddIngredient(ItemID.ShadowScale, 10)
+            .AddTile(TileID.Anvils)
+            .Register();
+
+        CreateRecipe()
+            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ItemID.Chain, 10)
+            .AddIngredient(ItemID.MeteoriteBar, 14)
+            .AddIngredient(ItemID.TissueSample, 10)
+            .AddTile(TileID.Anvils)
             .Register();
     }
 }
