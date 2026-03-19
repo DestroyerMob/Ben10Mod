@@ -47,6 +47,7 @@ namespace Ben10Mod {
         public bool ultimateAttack = false;
         public int transformationAttackSerial = 0;
         public int transformationAttackDamage = 0;
+        public int ultimateEchoEchoSpeakerSpawnSerial = 0;
         public int absorbedMaterialItemType = 0;
         public int absorbedMaterialTime = 0;
 
