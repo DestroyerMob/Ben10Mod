@@ -53,6 +53,7 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
         Vector2 targetCenter = owner.Center + angle.ToRotationVector2() * 66f;
         Projectile.Center = Vector2.Lerp(Projectile.Center, targetCenter, 0.18f);
         NPC target = FindClosestNPC(460f);
+        Projectile.localAI[0]++;
         Projectile.rotation = target != null
             ? Projectile.DirectionTo(target.Center).ToRotation()
             : Projectile.DirectionTo(owner.Center + owner.velocity).ToRotation();
@@ -64,21 +65,21 @@ public class UltimateEchoEchoSpeakerProjectile : ModProjectile {
             dust.noGravity = true;
         }
 
-        if ((int)Projectile.localAI[1] != omp.transformationAttackSerial && Main.myPlayer == Projectile.owner) {
-            Projectile.localAI[1] = omp.transformationAttackSerial;
-            if (target != null) {
-                for (int i = 0; i < 8; i++) {
-                    Vector2 burstVelocity = Main.rand.NextVector2CircularEdge(2.2f, 2.2f);
-                    Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.BlueCrystalShard, burstVelocity, 100,
-                        new Color(120, 210, 255), 1.25f);
-                    dust.noGravity = true;
-                }
+        int fireRate = omp.PrimaryAbilityEnabled ? 22 : 34;
+        if (target != null && Projectile.localAI[0] >= fireRate && Main.myPlayer == Projectile.owner) {
+            Projectile.localAI[0] = speakerIndex * 6f;
 
-                Vector2 velocity = Projectile.DirectionTo(target.Center) * 12f;
-                int attackDamage = omp.transformationAttackDamage > 0 ? omp.transformationAttackDamage : Projectile.damage;
-                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                    ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), attackDamage, 0f, Projectile.owner);
+            for (int i = 0; i < 8; i++) {
+                Vector2 burstVelocity = Main.rand.NextVector2CircularEdge(2.2f, 2.2f);
+                Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.BlueCrystalShard, burstVelocity, 100,
+                    new Color(120, 210, 255), 1.25f);
+                dust.noGravity = true;
             }
+
+            Vector2 velocity = Projectile.DirectionTo(target.Center) * 12f;
+            int attackDamage = Projectile.damage;
+            Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
+                ModContent.ProjectileType<EchoEchoSonicBlastProjectile>(), attackDamage, 0f, Projectile.owner);
         }
     }
 

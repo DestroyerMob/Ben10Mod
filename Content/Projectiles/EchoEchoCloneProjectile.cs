@@ -20,6 +20,7 @@ public class EchoEchoCloneProjectile : ModProjectile {
     private const float AttackWalkSpeed = 5.4f;
     private const float Gravity = 0.4f;
     private const float MaxFallSpeed = 10f;
+    private const float TeleportCatchupDistance = 520f;
 
     public override void SetStaticDefaults() {
         ProjectileID.Sets.MinionTargettingFeature[Type] = true;
@@ -61,6 +62,12 @@ public class EchoEchoCloneProjectile : ModProjectile {
         int cloneIndex = GetCloneIndex();
         NPC target = FindTarget(owner, 620f);
         Vector2 idleCenter = GetIdlePosition(owner, cloneIndex);
+
+        if (target == null && Projectile.Center.Distance(idleCenter) > TeleportCatchupDistance) {
+            Projectile.Center = idleCenter;
+            Projectile.velocity = Vector2.Zero;
+            Projectile.netUpdate = true;
+        }
 
         if (target == null) {
             State = StateIdle;
