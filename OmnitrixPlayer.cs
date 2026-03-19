@@ -215,13 +215,6 @@ namespace Ben10Mod {
             PrimaryAbilityEnabled = false;
             UltimateAbilityEnabled = false;
 
-            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
-                Player.GetDamage(DamageClass.Generic) += absorptionProfile.GenericDamageBonus * absorptionStrengthMultiplier;
-                Player.statDefense += (int)Math.Round(absorptionProfile.DefenseBonus * absorptionStrengthMultiplier);
-                Player.endurance += absorptionProfile.EnduranceBonus * absorptionStrengthMultiplier;
-                Player.GetKnockback(DamageClass.Melee) += absorptionProfile.MeleeKnockbackBonus * absorptionStrengthMultiplier;
-            }
-
             if (Player.controlDown && Player.releaseDown && Player.doubleTapCardinalTimer[DashDown] < 15)
                 DashDir = DashDown;
             else if (Player.controlUp && Player.releaseUp && Player.doubleTapCardinalTimer[DashUp] < 15)
@@ -234,6 +227,15 @@ namespace Ben10Mod {
                 DashDir = -1;
 
             trans?.ResetEffects(Player, this);
+        }
+
+        public override void PostUpdateEquips() {
+            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
+                Player.GetDamage(DamageClass.Generic) += absorptionProfile.GenericDamageBonus * absorptionStrengthMultiplier;
+                Player.statDefense += (int)Math.Round(absorptionProfile.DefenseBonus * absorptionStrengthMultiplier);
+                Player.endurance += absorptionProfile.EnduranceBonus * absorptionStrengthMultiplier;
+                Player.GetKnockback(DamageClass.Melee) += absorptionProfile.MeleeKnockbackBonus * absorptionStrengthMultiplier;
+            }
         }
 
         public override void PostUpdateBuffs() {
