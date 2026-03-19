@@ -1,4 +1,5 @@
-﻿using Ben10Mod.Keybinds;
+﻿using Ben10Mod.Common.Absorption;
+using Ben10Mod.Keybinds;
 using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
@@ -33,6 +34,8 @@ namespace Ben10Mod {
         public bool ultimateAttack = false;
         public int transformationAttackSerial = 0;
         public int transformationAttackDamage = 0;
+        public int absorbedMaterialItemType = 0;
+        public int absorbedMaterialTime = 0;
 
         public int cooldownTime = 120;
         public int transformationTime = 300;
@@ -110,6 +113,8 @@ namespace Ben10Mod {
             tag["masterControl"] = masterControl;
             tag["currentTransformationId"] = currentTransformationId;
             tag["omnitrixEnergy"] = omnitrixEnergy;
+            tag["absorbedMaterialItemType"] = absorbedMaterialItemType;
+            tag["absorbedMaterialTime"] = absorbedMaterialTime;
 
             tag["transformationRoster"] = transformationSlots;
             tag["unlockedTransformationRoster"] = unlockedTransformations.ToArray();
@@ -118,6 +123,8 @@ namespace Ben10Mod {
         public override void LoadData(TagCompound tag) {
             tag.TryGet("masterControl", out masterControl);
             omnitrixEnergy = tag.TryGet("omnitrixEnergy", out omnitrixEnergy) ? omnitrixEnergy : 0f;
+            absorbedMaterialItemType = tag.TryGet("absorbedMaterialItemType", out absorbedMaterialItemType) ? absorbedMaterialItemType : 0;
+            absorbedMaterialTime = tag.TryGet("absorbedMaterialTime", out absorbedMaterialTime) ? absorbedMaterialTime : 0;
 
             tag.TryGet("currentTransformationId", out currentTransformationId);
             int[] oldUnlockedRoster;
@@ -201,6 +208,13 @@ namespace Ben10Mod {
 
             PrimaryAbilityEnabled = false;
             UltimateAbilityEnabled = false;
+
+            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
+                Player.GetDamage(DamageClass.Generic) += absorptionProfile.GenericDamageBonus;
+                Player.statDefense += absorptionProfile.DefenseBonus;
+                Player.endurance += absorptionProfile.EnduranceBonus;
+                Player.GetKnockback(DamageClass.Melee) += absorptionProfile.MeleeKnockbackBonus;
+            }
 
             if (Player.controlDown && Player.releaseDown && Player.doubleTapCardinalTimer[DashDown] < 15)
                 DashDir = DashDown;
@@ -290,9 +304,18 @@ namespace Ben10Mod {
             if (Main.mouseRight && Main.mouseRightRelease && Player.HeldItem.ModItem is PlumbersBadge)
                 altAttack = !altAttack;
 
+            if (Player.whoAmI == Main.myPlayer && KeybindSystem.AbsorbMaterial.JustPressed)
+                TryAbsorbHeldMaterial();
+
             var trans = CurrentTransformation;
             if (trans != null)
                 trans.PostUpdate(Player, this);
+
+            if (absorbedMaterialTime > 0) {
+                absorbedMaterialTime--;
+                if (absorbedMaterialTime <= 0)
+                    absorbedMaterialItemType = 0;
+            }
 
             if (pendingEvolutionStepDownTime > 0) {
                 bool sameTransformation = currentTransformationId == pendingEvolutionStepDownTransformationId;
@@ -534,6 +557,19 @@ namespace Ben10Mod {
             var customSlot = ModContent.GetInstance<OmnitrixSlot>();
             GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
 
+            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
+                Color tint = absorptionProfile.TintColor;
+                r = MathHelper.Lerp(r, tint.R / 255f, 0.35f);
+                g = MathHelper.Lerp(g, tint.G / 255f, 0.35f);
+                b = MathHelper.Lerp(b, tint.B / 255f, 0.35f);
+
+                if (Main.rand.NextBool(10)) {
+                    Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(16f, 24f), DustID.Smoke,
+                        Main.rand.NextVector2Circular(0.9f, 0.9f), 120, tint, 0.95f);
+                    dust.noGravity = true;
+                }
+            }
+
             var trans = CurrentTransformation;
             if (trans != null)
                 trans.DrawEffects(ref drawInfo);
@@ -669,7 +705,50 @@ namespace Ben10Mod {
                 Player.fallStart = (int)(Player.position.Y / 16f);
             }
 
+            if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile))
+                Lighting.AddLight(Player.Center, absorptionProfile.TintColor.ToVector3() * 0.35f);
+
             ScreenShaderController.UpdateForLocalPlayer(Player);
+        }
+
+        private bool TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile) {
+            if (absorbedMaterialTime > 0 && absorbedMaterialItemType > 0)
+                return MaterialAbsorptionRegistry.TryGetProfile(absorbedMaterialItemType, out profile);
+
+            profile = null;
+            return false;
+        }
+
+        private void TryAbsorbHeldMaterial() {
+            Item heldItem = Player.HeldItem;
+            if (heldItem == null || heldItem.IsAir)
+                return;
+
+            if (!MaterialAbsorptionRegistry.TryGetProfile(heldItem.type, out MaterialAbsorptionProfile profile)) {
+                Main.NewText("That material cannot be absorbed.", new Color(230, 120, 120));
+                return;
+            }
+
+            if (heldItem.stack < profile.ConsumeAmount) {
+                Main.NewText($"You need {profile.ConsumeAmount} {profile.DisplayName} to absorb it.", new Color(255, 210, 110));
+                return;
+            }
+
+            heldItem.stack -= profile.ConsumeAmount;
+            if (heldItem.stack <= 0)
+                heldItem.TurnToAir();
+
+            absorbedMaterialItemType = profile.SourceItemType;
+            absorbedMaterialTime = profile.DurationTicks;
+
+            Main.NewText($"Absorbed {profile.DisplayName}.", profile.TintColor);
+            CombatText.NewText(Player.getRect(), profile.TintColor, profile.DisplayName, dramatic: true);
+
+            for (int i = 0; i < 20; i++) {
+                Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 26f), DustID.Smoke,
+                    Main.rand.NextVector2Circular(2f, 2f), 120, profile.TintColor, 1.1f);
+                dust.noGravity = true;
+            }
         }
 
         public void RecordEventParticipation(NPC npc) {
