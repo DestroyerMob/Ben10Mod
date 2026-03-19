@@ -31,8 +31,18 @@ namespace Ben10Mod {
         public bool wasTransformed = false;
         public bool onCooldown = false;
         public bool osmosianEquipped = false;
+        public float absorptionDurationMultiplier = 1f;
         public float absorptionStrengthMultiplier = 1f;
+        public float absorptionCostMultiplier = 1f;
         public float absorptionDebuffDurationMultiplier = 1f;
+        public int absorptionCritChanceBonus = 0;
+        public int absorptionArmorPenBonus = 0;
+        public float absorptionMeleeSpeedBonus = 0f;
+        public float absorptionMeleeKnockbackBonus = 0f;
+        public float absorptionMoveSpeedBonus = 0f;
+        public int absorptionLifeRegenBonus = 0;
+        public int absorptionMaxLifeBonus = 0;
+        public int absorptionFlatDefenseBonus = 0;
         public bool altAttack = false;
         public bool ultimateAttack = false;
         public int transformationAttackSerial = 0;
@@ -205,8 +215,18 @@ namespace Ben10Mod {
             isTransformed = false;
             onCooldown = false;
             osmosianEquipped = false;
+            absorptionDurationMultiplier = 1f;
             absorptionStrengthMultiplier = 1f;
+            absorptionCostMultiplier = 1f;
             absorptionDebuffDurationMultiplier = 1f;
+            absorptionCritChanceBonus = 0;
+            absorptionArmorPenBonus = 0;
+            absorptionMeleeSpeedBonus = 0f;
+            absorptionMeleeKnockbackBonus = 0f;
+            absorptionMoveSpeedBonus = 0f;
+            absorptionLifeRegenBonus = 0;
+            absorptionMaxLifeBonus = 0;
+            absorptionFlatDefenseBonus = 0;
             omnitrixEquipped = false;
             equippedOmnitrix = null;
 
@@ -235,6 +255,16 @@ namespace Ben10Mod {
                 Player.statDefense += (int)Math.Round(absorptionProfile.DefenseBonus * absorptionStrengthMultiplier);
                 Player.endurance += absorptionProfile.EnduranceBonus * absorptionStrengthMultiplier;
                 Player.GetKnockback(DamageClass.Melee) += absorptionProfile.MeleeKnockbackBonus * absorptionStrengthMultiplier;
+                Player.GetCritChance(DamageClass.Generic) += absorptionCritChanceBonus;
+                Player.GetArmorPenetration(DamageClass.Generic) += absorptionArmorPenBonus;
+                Player.GetAttackSpeed(DamageClass.Melee) += absorptionMeleeSpeedBonus;
+                Player.GetKnockback(DamageClass.Melee) += absorptionMeleeKnockbackBonus;
+                Player.moveSpeed += absorptionMoveSpeedBonus;
+                Player.maxRunSpeed += absorptionMoveSpeedBonus * 2.2f;
+                Player.accRunSpeed += absorptionMoveSpeedBonus * 2.5f;
+                Player.lifeRegen += absorptionLifeRegenBonus;
+                Player.statLifeMax2 += absorptionMaxLifeBonus;
+                Player.statDefense += absorptionFlatDefenseBonus;
             }
         }
 
@@ -322,14 +352,14 @@ namespace Ben10Mod {
 
             bool authoritativeBuffTracking = Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer;
             bool absorptionBlocked = !osmosianEquipped || omnitrixEquipped;
-            if (absorptionBlocked && absorbedMaterialItemType > 0 && authoritativeBuffTracking)
+            if (absorptionBlocked && absorbedMaterialTime > 0 && authoritativeBuffTracking)
                 ClearAbsorbedMaterial(showEffects: false);
 
-            if (absorbedMaterialItemType > 0) {
+            if (absorbedMaterialTime > 0) {
                 if (authoritativeBuffTracking && !Player.HasBuff(materialBuffType))
                     ClearAbsorbedMaterial(showEffects: false);
                 else if (authoritativeBuffTracking)
-                    Player.AddBuff(materialBuffType, 2);
+                    Player.AddBuff(materialBuffType, absorbedMaterialTime);
             }
             else if (absorbedMaterialItemType != 0) {
                 absorbedMaterialItemType = 0;
@@ -738,7 +768,7 @@ namespace Ben10Mod {
         }
 
         public bool TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile profile) {
-            if (absorbedMaterialItemType > 0)
+            if (absorbedMaterialTime > 0 && absorbedMaterialItemType > 0)
                 return MaterialAbsorptionRegistry.TryGetProfile(absorbedMaterialItemType, out profile);
 
             profile = null;
@@ -791,25 +821,26 @@ namespace Ben10Mod {
         private void TryAbsorbHeldMaterialDirect() {
             Item heldItem = Player.HeldItem;
             if (heldItem == null || heldItem.IsAir) {
-                if (absorbedMaterialItemType > 0)
+                if (absorbedMaterialTime > 0)
                     ClearAbsorbedMaterial();
                 return;
             }
 
-            if (absorbedMaterialItemType > 0 && heldItem.type == absorbedMaterialItemType) {
+            if (absorbedMaterialTime > 0 && heldItem.type == absorbedMaterialItemType) {
                 ClearAbsorbedMaterial();
                 return;
             }
 
             if (!MaterialAbsorptionRegistry.TryGetProfile(heldItem.type, out MaterialAbsorptionProfile profile)) {
-                if (absorbedMaterialItemType > 0)
+                if (absorbedMaterialTime > 0)
                     ClearAbsorbedMaterial();
                 else
                     Main.NewText("That material cannot be absorbed.", new Color(230, 120, 120));
                 return;
             }
 
-            int consumeAmount = Math.Max(1, profile.ConsumeAmount);
+            int consumeAmount = Math.Max(1, (int)Math.Round(profile.ConsumeAmount * absorptionCostMultiplier));
+            int durationTicks = Math.Max(60, (int)Math.Round(profile.DurationTicks * absorptionDurationMultiplier));
 
             if (heldItem.stack < consumeAmount) {
                 Main.NewText($"You need {consumeAmount} {profile.DisplayName} to absorb it.", new Color(255, 210, 110));
@@ -823,7 +854,7 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.Server)
                 NetMessage.SendData(MessageID.SyncEquipment, -1, -1, null, Player.whoAmI, Player.selectedItem);
 
-            SetAbsorbedMaterial(profile.SourceItemType, 2, showEffects: true);
+            SetAbsorbedMaterial(profile.SourceItemType, durationTicks, showEffects: true);
         }
 
         private void ClearAbsorbedMaterial(bool showEffects = true) {
@@ -859,12 +890,12 @@ namespace Ben10Mod {
                 previousProfile = activeProfile;
 
             absorbedMaterialItemType = itemType;
-            absorbedMaterialTime = itemType > 0 ? 2 : 0;
+            absorbedMaterialTime = itemType > 0 ? Math.Max(1, timeLeft) : 0;
 
             int buffType = ModContent.BuffType<MaterialAbsorptionBuff>();
             Player.ClearBuff(buffType);
-            if (itemType > 0)
-                Player.AddBuff(buffType, 2);
+            if (itemType > 0 && absorbedMaterialTime > 0)
+                Player.AddBuff(buffType, absorbedMaterialTime);
 
             if (showEffects && Main.netMode != NetmodeID.Server) {
                 if (itemType > 0 && MaterialAbsorptionRegistry.TryGetProfile(itemType, out MaterialAbsorptionProfile newProfile)) {

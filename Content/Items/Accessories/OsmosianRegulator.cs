@@ -17,14 +17,14 @@ public class OsmosianRegulator : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianStrength", "+55% absorption strength"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+100% absorption debuff duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+150% absorption duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+50% absorption debuff duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionStrengthMultiplier *= 1.55f;
-        omp.absorptionDebuffDurationMultiplier *= 2f;
+        omp.absorptionDurationMultiplier *= 2.5f;
+        omp.absorptionDebuffDurationMultiplier *= 1.5f;
     }
 
     public override void AddRecipes() {
