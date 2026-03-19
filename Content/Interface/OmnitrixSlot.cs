@@ -18,6 +18,10 @@ namespace Ben10Mod.Content.Interface
         public override string FunctionalTexture => "Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix";
 
         public override bool CanAcceptItem(Item checkItem, AccessorySlotType context) {
+            var omp = Player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.osmosianEquipped)
+                return false;
+
             return ModContent.GetModItem(checkItem.type) is Omnitrix;
         }
 

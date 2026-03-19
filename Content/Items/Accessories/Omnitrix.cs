@@ -78,6 +78,8 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.osmosianEquipped)
+                return;
 
             omp.omnitrixEquipped  = true;
             omp.equippedOmnitrix  = this;
@@ -110,6 +112,10 @@ namespace Ben10Mod.Content.Items.Accessories
             {
                 DetransformFromEnergyDepletion(player, omp);
             }
+        }
+
+        public override bool CanAccessoryBeEquippedWith(Item equippedItem, Item incomingItem, Player player) {
+            return equippedItem.ModItem is not OsmosianHarness && incomingItem.ModItem is not OsmosianHarness;
         }
 
         public override void UpdateInventory(Player player)

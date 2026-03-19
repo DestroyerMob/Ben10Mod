@@ -30,6 +30,7 @@ namespace Ben10Mod {
         public bool isTransformed = false;
         public bool wasTransformed = false;
         public bool onCooldown = false;
+        public bool osmosianEquipped = false;
         public bool altAttack = false;
         public bool ultimateAttack = false;
         public int transformationAttackSerial = 0;
@@ -201,6 +202,7 @@ namespace Ben10Mod {
 
             isTransformed = false;
             onCooldown = false;
+            osmosianEquipped = false;
             omnitrixEquipped = false;
             equippedOmnitrix = null;
 
@@ -313,6 +315,10 @@ namespace Ben10Mod {
                 trans.PostUpdate(Player, this);
 
             bool authoritativeBuffTracking = Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer;
+            bool absorptionBlocked = !osmosianEquipped || omnitrixEquipped;
+            if (absorptionBlocked && absorbedMaterialTime > 0 && authoritativeBuffTracking)
+                ClearAbsorbedMaterial(showEffects: false);
+
             if (absorbedMaterialTime > 0) {
                 if (authoritativeBuffTracking && !Player.HasBuff(materialBuffType))
                     ClearAbsorbedMaterial(showEffects: false);
@@ -744,6 +750,18 @@ namespace Ben10Mod {
         }
 
         private void TryAbsorbHeldMaterial() {
+            if (!osmosianEquipped) {
+                if (Player.whoAmI == Main.myPlayer)
+                    Main.NewText("You need an Osmosian Harness equipped to absorb materials.", new Color(230, 120, 120));
+                return;
+            }
+
+            if (omnitrixEquipped) {
+                if (Player.whoAmI == Main.myPlayer)
+                    Main.NewText("Osmosian absorption cannot be used while an Omnitrix is equipped.", new Color(230, 120, 120));
+                return;
+            }
+
             if (Main.netMode == NetmodeID.MultiplayerClient) {
                 ModPacket packet = Mod.GetPacket();
                 packet.Write((byte)Ben10Mod.MessageType.RequestAbsorbMaterial);
