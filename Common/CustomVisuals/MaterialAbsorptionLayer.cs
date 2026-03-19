@@ -28,18 +28,23 @@ public class MaterialAbsorptionLayer : PlayerDrawLayer {
         if (originalCount == 0)
             return;
 
-        float pulse = 0.88f + (float)System.Math.Sin(Main.GlobalTimeWrappedHourly * 8f) * 0.12f;
-        Color glowColor = Color.Lerp(profile.TintColor, Color.White, 0.12f);
-        Color shellColor = Color.Lerp(profile.TintColor, Color.White, 0.28f);
+        float pulse = 0.96f + (float)System.Math.Sin(Main.GlobalTimeWrappedHourly * 8f) * 0.18f;
+        Color glowColor = Color.Lerp(profile.TintColor, Color.White, 0.2f);
+        Color shellColor = Color.Lerp(profile.TintColor, Color.White, 0.36f);
+        Color outerColor = Color.Lerp(profile.TintColor, Color.White, 0.5f);
         Vector2[] glowOffsets = {
-            new(-2f, 0f),
-            new(2f, 0f),
-            new(0f, -2f),
-            new(0f, 2f),
-            new(-1.5f, -1.5f),
-            new(1.5f, -1.5f),
-            new(-1.5f, 1.5f),
-            new(1.5f, 1.5f)
+            new(-3f, 0f),
+            new(3f, 0f),
+            new(0f, -3f),
+            new(0f, 3f),
+            new(-2.5f, -2.5f),
+            new(2.5f, -2.5f),
+            new(-2.5f, 2.5f),
+            new(2.5f, 2.5f),
+            new(-4f, 0f),
+            new(4f, 0f),
+            new(0f, -4f),
+            new(0f, 4f)
         };
 
         for (int i = 0; i < originalCount; i++) {
@@ -52,25 +57,35 @@ public class MaterialAbsorptionLayer : PlayerDrawLayer {
             for (int j = 0; j < glowOffsets.Length; j++) {
                 DrawData glowCopy = data;
                 glowCopy.position += glowOffsets[j];
-                glowCopy.scale *= new Vector2(1.03f, 1.03f);
+                glowCopy.scale *= new Vector2(1.07f, 1.07f);
                 glowCopy.color = new Color(
                     (byte)MathHelper.Clamp(glowColor.R * pulse, 0f, 255f),
                     (byte)MathHelper.Clamp(glowColor.G * pulse, 0f, 255f),
                     (byte)MathHelper.Clamp(glowColor.B * pulse, 0f, 255f),
-                    (byte)MathHelper.Clamp(110f * alphaScale, 0f, 255f)
+                    (byte)MathHelper.Clamp(170f * alphaScale, 0f, 255f)
                 );
                 drawInfo.DrawDataCache.Add(glowCopy);
             }
 
             DrawData shellCopy = data;
-            shellCopy.scale *= new Vector2(1.015f, 1.015f);
+            shellCopy.scale *= new Vector2(1.03f, 1.03f);
             shellCopy.color = new Color(
                 (byte)MathHelper.Clamp(shellColor.R * pulse, 0f, 255f),
                 (byte)MathHelper.Clamp(shellColor.G * pulse, 0f, 255f),
                 (byte)MathHelper.Clamp(shellColor.B * pulse, 0f, 255f),
-                (byte)MathHelper.Clamp(185f * alphaScale, 0f, 255f)
+                (byte)MathHelper.Clamp(225f * alphaScale, 0f, 255f)
             );
             drawInfo.DrawDataCache.Add(shellCopy);
+
+            DrawData outerCopy = data;
+            outerCopy.scale *= new Vector2(1.12f, 1.12f);
+            outerCopy.color = new Color(
+                (byte)MathHelper.Clamp(outerColor.R * pulse, 0f, 255f),
+                (byte)MathHelper.Clamp(outerColor.G * pulse, 0f, 255f),
+                (byte)MathHelper.Clamp(outerColor.B * pulse, 0f, 255f),
+                (byte)MathHelper.Clamp(100f * alphaScale, 0f, 255f)
+            );
+            drawInfo.DrawDataCache.Add(outerCopy);
         }
     }
 }

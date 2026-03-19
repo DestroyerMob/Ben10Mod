@@ -28,6 +28,9 @@ public class VanillaMaterialAbsorptionSystem : ModSystem {
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.CrimtaneBar, ItemID.BloodButcherer, ItemID.CrimsonHelmet, ItemID.CrimsonScalemail, ItemID.CrimsonGreaves)
                 .AddHitBuff(BuffID.Bleeding, 300));
         MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.MeteoriteBar, ItemID.SpaceGun, ItemID.MeteorHelmet, ItemID.MeteorSuit, ItemID.MeteorLeggings)
+                .AddHitBuff(BuffID.OnFire, 180));
+        MaterialAbsorptionRegistry.Register(
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.HellstoneBar, ItemID.FieryGreatsword, ItemID.MoltenHelmet, ItemID.MoltenBreastplate, ItemID.MoltenGreaves)
                 .AddHitBuff(BuffID.OnFire, 300));
         MaterialAbsorptionRegistry.Register(
@@ -49,7 +52,19 @@ public class VanillaMaterialAbsorptionSystem : ModSystem {
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.TitaniumBar, ItemID.TitaniumSword, ItemID.TitaniumHelmet, ItemID.TitaniumBreastplate, ItemID.TitaniumLeggings)
                 .AddHitBuff(BuffID.Frostburn2, 180));
         MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.HallowedBar, ItemID.Excalibur, ItemID.HallowedHelmet, ItemID.HallowedPlateMail, ItemID.HallowedGreaves)
+                .AddHitBuff(BuffID.Ichor, 120));
+        MaterialAbsorptionRegistry.Register(
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.ChlorophyteBar, ItemID.ChlorophyteClaymore, ItemID.ChlorophyteHelmet, ItemID.ChlorophytePlateMail, ItemID.ChlorophyteGreaves)
                 .AddHitBuff(BuffID.Poisoned, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.ShroomiteBar, ItemID.Shroomerang, ItemID.ShroomiteHelmet, ItemID.ShroomiteBreastplate, ItemID.ShroomiteLeggings)
+                .AddHitBuff(BuffID.Slow, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.SpectreBar, ItemID.SpectreStaff, ItemID.SpectreMask, ItemID.SpectreRobe, ItemID.SpectrePants)
+                .AddHitBuff(BuffID.ShadowFlame, 180));
+        MaterialAbsorptionRegistry.Register(
+            MaterialAbsorptionRegistry.CreateRegistration(ItemID.LunarBar, ItemID.SolarEruption, ItemID.SolarFlareHelmet, ItemID.SolarFlareBreastplate, ItemID.SolarFlareLeggings)
+                .AddHitBuff(BuffID.Daybreak, 240));
     }
 }
