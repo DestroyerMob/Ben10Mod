@@ -2,133 +2,44 @@
 
 This guide explains how to build a separate tModLoader addon mod that extends `Ben10Mod`.
 
-It is written so you can build an addon from scratch using only this document and the Ben10Mod source.
-
 Related docs:
 
 - [README](../README.md)
 - [Architecture Guide](Architecture.md)
 - [Development Guide](Development.md)
 
-The intended addon use cases are:
+## Supported Extension Points
 
-- add a new Omnitrix
-- add a new transformation
-- add a new Plumber's Badge
-- add projectiles, buffs, items, and unlock content that interact with the Ben10Mod systems
-
-## What Is Supported
-
-Ben10Mod currently exposes three main extension points:
+Ben10Mod currently exposes three main extension surfaces:
 
 - `Ben10Mod.Content.Items.Accessories.Omnitrix`
 - `Ben10Mod.Content.Transformations.Transformation`
 - `Ben10Mod.Content.Items.Weapons.PlumbersBadge`
 
-The important design idea is:
+The important design rule is:
 
-- transformations register themselves automatically
-- Omnitrix items drive Omnitrix-specific behavior through overridable properties and hooks
-- badges are generic weapon shells and let the current transformation decide attack behavior
+- transformations own alien-specific behavior
+- Omnitrix items own energy/timing/evolution behavior
+- badges stay generic and ask the current transformation what to do
 
-If you are new to the internal runtime flow, read the architecture guide first and then come back here.
+## Mental Model
 
-## High-Level Architecture
+If you are building an addon, this is the model to use:
 
-If you are building an addon, this is the mental model to use.
-
-### Omnitrixes
-
-An Omnitrix is an accessory accepted by the custom Omnitrix slot. The base class handles:
-
-- energy capacity
-- energy regen or drain
-- transformation selection hotkeys
-- transformation activation
-- energy-based upkeep
-- detransform behavior
-- energy gained from damage
-- evolution hooks
-- child transformation capability hooks
-- hand visual hooks
-
-You extend this by subclassing `Omnitrix` and overriding the properties or virtual methods you want.
-
-### Transformations
-
-A transformation is not a `ModItem`. It is a custom `ModType` subclass that Ben10Mod registers into its transformation loader.
-
-Each transformation provides:
-
-- an ID
-- display name
-- icon
-- description
-- abilities list
-- buff ID
-- passive hooks
-- attack data
-- optional primary and ultimate ability hooks
-- costume frame logic
-
-To make a transformation usable in-game, you usually also create:
-
-- a transformation buff
-- a costume/equip item for the alien body
-- projectiles or helper items if needed
-- an unlock item or unlock event
-
-### Plumber's Badges
-
-The badge base class is intentionally simple. It provides:
-
-- generic weapon setup
-- damage class
-- energy consumption
-- attack timing reset
-- interaction with the current transformation
-
-The transformation controls what happens when the badge is used. The badge mostly controls:
-
-- base damage
-- rank identity
-- recipes
-
-## Folder Layout For An Addon
-
-Recommended layout:
-
-```text
-ModSources/
-  Ben10Mod/
-  Ben10Addon/
-    Ben10Addon.cs
-    Ben10Addon.csproj
-    build.txt
-    Content/
-      Items/
-        Accessories/
-        Weapons/
-      Transformations/
-        MyAlien/
-      Buffs/
-      Projectiles/
-```
-
-You do not need to put your addon inside the Ben10Mod folder. It should be its own mod in `ModSources`.
+- your transformation is a `Transformation` subclass, not a `ModItem`
+- your transformation registers itself automatically
+- your transformation becomes active through a `ModBuff` that sets `currentTransformationId`
+- your badge attacks are defined on the transformation
+- your Omnitrix item is just another `Omnitrix` subclass accepted by the shared slot
 
 ## Step 1: Add Ben10Mod As A Dependency
 
-There are two separate things to set up:
+You usually want both:
 
-1. runtime dependency
-2. compile-time reference
+- a runtime dependency
+- a compile-time project reference
 
-You usually want both.
-
-### Runtime Dependency In `build.txt`
-
-Create `build.txt` in your addon and include Ben10Mod as a mod reference.
+### `build.txt`
 
 Example:
 
@@ -141,15 +52,9 @@ hideResources = false
 modReferences = Ben10Mod
 ```
 
-This tells tModLoader that your addon depends on Ben10Mod being loaded.
+### `.csproj`
 
-### Compile-Time Reference In `.csproj`
-
-Your addon code needs access to Ben10Mod types such as `Omnitrix`, `Transformation`, and `PlumbersBadge`.
-
-If Ben10Mod source is present next to your addon in `ModSources`, the easiest setup is a project reference.
-
-Example `Ben10Addon.csproj`:
+Example:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -166,36 +71,7 @@ Example `Ben10Addon.csproj`:
 </Project>
 ```
 
-If you are not building against source and only have the built mod assembly, you can instead reference the Ben10Mod DLL manually. The exact path depends on your tModLoader install, so the project-reference approach is the recommended dev workflow.
-
-### Editor Note For Rider And Other IDEs
-
-If your addon builds successfully but the editor still shows missing-type errors for Ben10Mod symbols, that is usually an IDE design-time restore or indexing problem rather than a real code problem.
-
-Typical fixes:
-
-1. run `dotnet restore YourAddon.csproj`
-2. reload all projects in the editor
-3. invalidate editor caches if needed
-4. delete `bin` and `obj` and let the editor reindex
-
-If command-line build works but the editor still shows red squiggles, treat that as an IDE problem until proven otherwise.
-
-### Optional: Guard Against Missing Ben10Mod
-
-Your addon can assume Ben10Mod is present if you set `modReferences = Ben10Mod`.
-
-If you want a sanity check, in your `Mod` class you can still verify:
-
-```csharp
-public override void Load() {
-    if (!ModLoader.TryGetMod("Ben10Mod", out _)) {
-        Logger.Warn("Ben10Mod was not found. This addon requires Ben10Mod.");
-    }
-}
-```
-
-## Step 2: Create Your Addon Mod Root
+## Step 2: Create Your Addon Root
 
 Minimal root file:
 
@@ -208,9 +84,9 @@ public class Ben10Addon : Mod {
 }
 ```
 
-## Building A New Transformation
+## Building A Transformation
 
-This is the most important Ben10Mod addon type.
+This is the most important addon type.
 
 ### What A Transformation Needs
 
@@ -221,25 +97,95 @@ At minimum:
 
 Usually also:
 
-- a costume item that loads the alien equip textures
 - icon texture
-- head/body/legs textures
-- projectiles for attacks
-- an item or event that unlocks the transformation
+- costume/equip content
+- projectiles
+- unlock item or unlock progression hook
 
-## Transformation IDs
+### Transformation IDs
 
-Use a fully qualified ID based on your own mod name.
+Use your own mod-prefixed string ID.
 
 Example:
 
 - `Ben10Addon:ShockRock`
 
-Do not use `Ben10Mod:...` for addon transformations.
+Do not use `Ben10Mod:...` for addon content.
 
-Ben10Mod stores and syncs transformations by string ID, so the exact ID matters.
+## Current Action-Slot Model
 
-## Example Transformation Class
+This is the most important current API change.
+
+The public action slots are:
+
+- primary
+- secondary
+- tertiary
+- ultimate
+
+Each slot can be one of two things:
+
+- a timed ability
+- a badge attack loader
+
+That means `F`, `G`, `H`, and `U` are not just buff toggles anymore.
+
+### Timed Ability Slots
+
+Use properties such as:
+
+- `HasPrimaryAbility`
+- `PrimaryAbilityDuration`
+- `PrimaryAbilityCooldown`
+- `PrimaryAbilityCost`
+
+And optionally:
+
+- `TryActivatePrimaryAbility(...)`
+- `TryActivateSecondaryAbility(...)`
+- `TryActivateTertiaryAbility(...)`
+- `TryActivateUltimateAbility(...)`
+
+### Badge Attack Slots
+
+Use properties such as:
+
+- `PrimaryAttack`
+- `SecondaryAttack`
+- `PrimaryAbilityAttack`
+- `SecondaryAbilityAttack`
+- `TertiaryAbilityAttack`
+- `UltimateAttack`
+
+And the matching speed, style, channel, armor penetration, and energy-cost properties.
+
+### Important Rule
+
+For a given slot, prefer one mode per state.
+
+If you define both a timed ability and an ability-attack on the same slot, the timed ability wins by default unless you override the activation hook and choose differently yourself.
+
+## Attack Costs
+
+All badge attack profiles support optional energy costs.
+
+Current cost properties:
+
+- `PrimaryEnergyCost`
+- `SecondaryEnergyCost`
+- `PrimaryAbilityAttackEnergyCost`
+- `SecondaryAbilityAttackEnergyCost`
+- `TertiaryAbilityAttackEnergyCost`
+- `UltimateEnergyCost`
+
+Ben10Mod now handles this in the shared badge fire path:
+
+- `CanAffordCurrentAttack(...)`
+- `TryConsumeCurrentAttackCost(...)`
+
+That means addon transformations usually should not manually subtract badge attack energy in `Shoot(...)`.
+
+## Example Transformation
 
 ```csharp
 using System.Collections.Generic;
@@ -254,37 +200,50 @@ namespace Ben10Addon.Content.Transformations.ShockRock;
 public class ShockRockTransformation : Transformation {
     public override string FullID => "Ben10Addon:ShockRock";
     public override string TransformationName => "Shock Rock";
-    public override string Description => "A conductive crystal alien built for beam and burst attacks.";
+    public override string Description => "A conductive crystal alien built for ranged pressure and charged badge attacks.";
     public override string IconPath => "Ben10Addon/Content/Interface/ShockRockSelect";
-
     public override int TransformationBuffId => ModContent.BuffType<ShockRockBuff>();
 
     public override List<string> Abilities => new() {
         "Crystal bolt primary fire",
-        "Charged burst secondary attack",
-        "Energy shield primary ability"
+        "Charged burst secondary fire",
+        "Shield projector action key",
+        "Lance storm ultimate"
     };
 
     public override int PrimaryAttack => ModContent.ProjectileType<Projectiles.ShockRockBolt>();
     public override int PrimaryAttackSpeed => 16;
     public override int PrimaryShootSpeed => 12;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
-    public override float PrimaryAttackModifier => 1.0f;
+    public override string PrimaryAttackDisplayName => "Crystal Bolt";
     public override int PrimaryEnergyCost => 0;
 
     public override int SecondaryAttack => ModContent.ProjectileType<Projectiles.ShockRockBurst>();
-    public override int SecondaryAttackSpeed => 30;
-    public override int SecondaryShootSpeed => 8;
+    public override int SecondaryAttackSpeed => 28;
+    public override int SecondaryShootSpeed => 9;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override float SecondaryAttackModifier => 1.6f;
-    public override int SecondaryEnergyCost => 5;
+    public override string SecondaryAttackDisplayName => "Charged Burst";
+    public override int SecondaryEnergyCost => 4;
 
-    public override int PrimaryAbilityDuration => 60 * 5;
-    public override int PrimaryAbilityCooldown => 60 * 20;
+    public override bool HasPrimaryAbility => false;
+    public override int PrimaryAbilityAttack => ModContent.ProjectileType<Projectiles.ShockRockShieldNode>();
+    public override int PrimaryAbilityAttackSpeed => 22;
+    public override int PrimaryAbilityAttackShootSpeed => 0;
+    public override int PrimaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
+    public override string PrimaryAbilityAttackDisplayName => "Shield Projector";
+    public override int PrimaryAbilityAttackEnergyCost => 8;
+    public override bool PrimaryAbilityAttackSingleUse => true;
+
+    public override int UltimateAttack => ModContent.ProjectileType<Projectiles.ShockRockLanceStorm>();
+    public override int UltimateAttackSpeed => 20;
+    public override int UltimateShootSpeed => 0;
+    public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
+    public override string UltimateAttackDisplayName => "Lance Storm";
+    public override int UltimateEnergyCost => 35;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
-        base.UpdateEffects(player, omp);
-        player.endurance += 0.08f;
+        player.endurance += 0.06f;
+        player.GetDamage(DamageClass.Generic) += 0.08f;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -296,17 +255,7 @@ public class ShockRockTransformation : Transformation {
 }
 ```
 
-### Important Notes
-
-- `Transformation` auto-registers itself with Ben10Mod. You do not need to manually add it to a list.
-- `IconPath` must point to a real texture in your addon.
-- `TransformationBuffId` must point at a buff that keeps the transformation active.
-- `FrameEffects` is where you apply the alien costume visuals.
-- `UpdateEffects` is where you apply passive stats, accessories, flight items, and so on.
-
 ## Example Transformation Buff
-
-Your transformation buff is what tells Ben10Mod which transformation is active while the buff exists.
 
 ```csharp
 using Ben10Mod;
@@ -328,138 +277,47 @@ public class ShockRockBuff : ModBuff {
 }
 ```
 
-### Why This Buff Matters
+If the buff does not set `currentTransformationId`, the player will not be considered transformed into your form.
 
-Ben10Mod transformation logic is driven by `currentTransformationId`. If the buff does not set it, the player will not be considered transformed into your alien.
+## Custom `Shoot(...)` Overrides
 
-## Example Costume Item
+You only need to override `Shoot(...)` if the default projectile spawning is not enough.
 
-This is the alien "body" asset container. It loads head/body/legs equip textures so `FrameEffects` can use them.
+Use a custom override when you need:
 
-```csharp
-using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
+- cursor placement
+- projectile spread
+- special sentry limits
+- melee hitboxes
+- transformation-specific branching behavior
 
-namespace Ben10Addon.Content.Transformations.ShockRock;
+Remember:
 
-public class ShockRockCostume : ModItem {
-    public override void Load() {
-        if (Main.netMode == NetmodeID.Server)
-            return;
+- shared attack cost handling already happens before `Shoot(...)`
+- loaded attack cleanup also happens outside your transformation
 
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this);
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
-    }
+So your custom `Shoot(...)` usually only needs to worry about the actual attack behavior.
 
-    public override void SetStaticDefaults() {
-        if (Main.netMode == NetmodeID.Server)
-            return;
+## Building A Badge
 
-        int head = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Head);
-        int body = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
-        int legs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
+The badge itself is usually simple.
 
-        ArmorIDs.Head.Sets.DrawHead[head] = false;
-        ArmorIDs.Body.Sets.HidesTopSkin[body] = true;
-        ArmorIDs.Body.Sets.HidesArms[body] = true;
-        ArmorIDs.Legs.Sets.HidesBottomSkin[legs] = true;
-    }
-}
-```
-
-### Texture Naming Convention
-
-If the costume item is `ShockRockCostume.cs`, the common texture names are:
-
-- `ShockRockCostume.png`
-- `ShockRockCostume_Head.png`
-- `ShockRockCostume_Body.png`
-- `ShockRockCostume_Legs.png`
-
-You can use a different naming layout if your `Load()` method points to the correct texture paths.
-
-## Unlocking A Transformation
-
-There are two common ways to unlock a transformation.
-
-### Recommended: Use Ben10Mod's Helper
-
-```csharp
-using Ben10Mod.Content;
-
-TransformationHandler.AddTransformation(player, "Ben10Addon:ShockRock");
-```
-
-### Directly Through The Player
-
-```csharp
-using Ben10Mod;
-
-player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation("Ben10Addon:ShockRock");
-```
-
-### Example Unlock Item
-
-```csharp
-using Ben10Mod.Content;
-using Terraria;
-using Terraria.ID;
-using Terraria.ModLoader;
-
-namespace Ben10Addon.Content.Items;
-
-public class ShockRockDNA : ModItem {
-    public override void SetDefaults() {
-        Item.width = 28;
-        Item.height = 28;
-        Item.useAnimation = 20;
-        Item.useTime = 20;
-        Item.useStyle = ItemUseStyleID.HoldUp;
-        Item.useTurn = true;
-        Item.UseSound = SoundID.Item4;
-        Item.consumable = true;
-        Item.maxStack = 99;
-    }
-
-    public override bool CanUseItem(Player player) {
-        // Prevent wasting the consumable after the player has already unlocked the form.
-        return !TransformationHandler.HasTransformation(player, "Ben10Addon:ShockRock");
-    }
-
-    public override bool? UseItem(Player player) {
-        // Actually unlock the transformation on successful use.
-        TransformationHandler.AddTransformation(player, "Ben10Addon:ShockRock");
-
-        // Returning true completes the use. Because Item.consumable is true,
-        // tModLoader will consume one item from the stack.
-        return true;
-    }
-}
-```
-
-What actually makes this an unlock consumable:
-
-- `Item.consumable = true` makes the item consume on successful use
-- `TransformationHandler.AddTransformation(...)` performs the unlock
-- `CanUseItem(...)` prevents the player from consuming it after the unlock already exists
-
-## Building A New Plumber's Badge
-
-This is the easiest addon type.
-
-### What The Badge Actually Does
-
-The badge itself is just the weapon shell. The current transformation decides what projectile, use speed, channel behavior, and energy cost to use.
-
-That means a badge usually only needs:
+### What The Badge Owns
 
 - base damage
-- rank metadata
+- rank identity
 - recipe
 
-## Example Badge
+### What The Transformation Owns
+
+- projectile choice
+- timing
+- style
+- channeling
+- armor penetration
+- attack energy cost
+
+### Example Badge
 
 ```csharp
 using Ben10Mod.Content.Items.Weapons;
@@ -482,85 +340,23 @@ public class PlumberEliteBadge : PlumbersBadge {
 }
 ```
 
-### How The Badge Uses Your Transformation
+## Building An Omnitrix
 
-When held, the badge calls into the current transformation for:
+The base `Omnitrix` class already supports:
 
-- `ModifyPlumbersBadgeStats`
-- `GetEnergyCost`
-- `Shoot`
-
-So if you want your transformation to support primary, secondary, or ultimate badge attacks, you implement those in the transformation.
-
-### Minimum Badge Compatibility For A Transformation
-
-A transformation should define any of the following that it supports:
-
-- `PrimaryAttack`
-- `SecondaryAttack`
-- `UltimateAttack`
-- attack speed overrides
-- shoot speed overrides
-- use style overrides
-- channel flags
-- energy costs
-
-If you do nothing special beyond the built-in attack profile properties, the base `Transformation` class already knows how to feed the badge.
-
-## Building A New Omnitrix
-
-This is now designed to be addon-friendly.
-
-### What The Base Omnitrix Already Handles
-
-The base `Omnitrix` class already supports these overridable behaviors:
-
-- `MaxOmnitrixEnergy`
-- `OmnitrixEnergyRegen`
-- `OmnitrixEnergyDrain`
-- `EnergyPerDamageDivisor`
-- `MinimumEnergyGainPerHit`
-- `UseEnergyForTransformation`
-- `TranformationSwapCost`
-- `TimeoutDuration`
-- `TransformationDuration`
-- `EvolutionFeature`
-- `EvolutionCost`
-- `EvolutionResultItemType`
-- `EvolutionAnimationDuration`
-- `HideWhileUpdating`
-- `HandsOnTextureKey`
-- `CooldownHandsOnTextureKey`
-- `UpdatingHandsOnTextureKey`
-
-It also exposes these methods you can override:
-
-- `GetTransformationDuration`
-- `GetDetransformCooldownDuration`
-- `ShouldAddDetransformCooldown`
-- `HandleForcedDetransform`
-- `HandleUnequip`
-- `DetransformFromEnergyDepletion`
-- `GetEnergyGainFromDamage`
-- `ShouldStartEvolution`
-- `StartEvolution`
-- `GetEvolutionResultItemType`
-- `CompleteEvolution`
-- `GetHandsOnTextureKey`
-- `ApplyHandVisuals`
+- max energy
+- regen and drain
+- transformation duration rules
+- swap costs
+- damage-to-energy rules
+- evolution rules
+- hand visuals
 
 ### Example Omnitrix
 
 ```csharp
-using Ben10Mod;
 using Ben10Mod.Content.Items.Accessories;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Terraria;
-using Terraria.DataStructures;
-using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.ModLoader.IO;
 
 namespace Ben10Addon.Content.Items.Accessories;
 
@@ -568,736 +364,77 @@ public class TacticalOmnitrix : Omnitrix {
     public override int MaxOmnitrixEnergy => 900;
     public override int OmnitrixEnergyRegen => 5;
     public override int OmnitrixEnergyDrain => 2;
-    public override int EnergyPerDamageDivisor => 20;
-    public override int MinimumEnergyGainPerHit => 2;
     public override bool UseEnergyForTransformation => true;
     public override int TranformationSwapCost => 60;
-    public override int TimeoutDuration => 45;
-    public override int TransformationDuration => 300;
-
-    public override string HandsOnTextureKey => "TacticalOmnitrix";
-    public override string CooldownHandsOnTextureKey => "TacticalOmnitrixCooldown";
-    public override string UpdatingHandsOnTextureKey => "TacticalOmnitrixUpdating";
-
-    public override string Texture => $"Ben10Addon/Content/Items/Accessories/{Name}";
-
-    public override void Load() {
-        if (Main.netMode == NetmodeID.Server)
-            return;
-
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.HandsOn}", EquipType.HandsOn, name: "TacticalOmnitrix");
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}Cooldown_{EquipType.HandsOn}", EquipType.HandsOn, name: "TacticalOmnitrixCooldown");
-        EquipLoader.AddEquipTexture(Mod, $"{Texture}Updating_{EquipType.HandsOn}", EquipType.HandsOn, name: "TacticalOmnitrixUpdating");
-    }
-
-    public override ModItem Clone(Item item) {
-        var clone = (TacticalOmnitrix)base.Clone(item);
-        clone.transformationNum = transformationNum;
-        clone.transformationSlots = (string[])transformationSlots?.Clone();
-        return clone;
-    }
-
-    public override void SaveData(TagCompound tag) {
-        tag["selectedAlien"] = transformationNum;
-    }
-
-    public override void LoadData(TagCompound tag) {
-        tag.TryGet("selectedAlien", out transformationNum);
-    }
-
-    public override void SetStaticDefaults() {
-        dynamicTexture = ModContent.Request<Texture2D>("Ben10Addon/Content/Items/Accessories/TacticalOmnitrix").Value;
-    }
-
-    public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame,
-        Color drawColor, Color itemColor, Vector2 origin, float scale) {
-        if (player == null)
-            return true;
-
-        var omp = player.GetModPlayer<OmnitrixPlayer>();
-        string texturePath = omp.omnitrixUpdating
-            ? "Ben10Addon/Content/Items/Accessories/TacticalOmnitrixUpdating"
-            : omp.onCooldown
-                ? "Ben10Addon/Content/Items/Accessories/TacticalOmnitrixCooldown"
-                : "Ben10Addon/Content/Items/Accessories/TacticalOmnitrix";
-
-        dynamicTexture = ModContent.Request<Texture2D>(texturePath).Value;
-        spriteBatch.Draw(dynamicTexture, position, null, drawColor, 0f, origin, scale, SpriteEffects.None, 0f);
-        return false;
-    }
-
-    public override int GetEnergyGainFromDamage(int damageDone) {
-        return damageDone <= 0 ? 0 : Math.Max(damageDone / 18, 3);
-    }
-
-    public override void DetransformFromEnergyDepletion(Player player, OmnitrixPlayer omp) {
-        TransformationHandler.Detransform(player, 20, showParticles: true, addCooldown: true);
-    }
 }
 ```
 
-## Omnitrix Data You Usually Need To Persist
+For real Omnitrix items you will usually also implement:
 
-Most Omnitrix items should persist at least:
-
-- selected transformation slot index
-
-That is why the built-in Omnitrixes use:
-
+- texture loading
+- hands-on texture registration
 - `Clone`
 - `SaveData`
 - `LoadData`
 
-If your Omnitrix has custom state, store it there too.
+## Unlocking A Transformation
 
-## Choosing Timer-Based Vs Energy-Based Omnitrixes
-
-### Timer-Based Omnitrix
-
-Set:
-
-- `UseEnergyForTransformation => false`
-
-Then typically override:
-
-- `TransformationDuration`
-- `TimeoutDuration`
-
-This gives you classic timed transformation behavior.
-
-### Energy-Based Omnitrix
-
-Set:
-
-- `UseEnergyForTransformation => true`
-
-Then typically override:
-
-- `MaxOmnitrixEnergy`
-- `OmnitrixEnergyRegen`
-- `OmnitrixEnergyDrain`
-- `TranformationSwapCost`
-- `GetEnergyGainFromDamage`
-
-This gives you transformations that stay active while the Omnitrix has enough energy.
-
-## Omnitrix Evolution
-
-Ben10Mod still supports Omnitrix item evolution, such as one Omnitrix upgrading into another item.
-
-### Built-In Example
-
-`PrototypeOmnitrix` evolves into `RecalibratedOmnitrix` by overriding:
-
-- `EvolutionResultItemType`
-- `ShouldStartEvolution`
-
-### Example Evolution Override
+Recommended helper:
 
 ```csharp
-public override int EvolutionResultItemType => ModContent.ItemType<TacticalOmnitrixMk2>();
+using Ben10Mod.Content;
 
-public override bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
-    return defeatedNpcType == NPCID.Golem;
-}
+TransformationHandler.AddTransformation(player, "Ben10Addon:ShockRock");
 ```
 
-If that is enough for your design, you do not need to override anything else.
+Direct player call also works:
 
-### Custom Evolution Flow
+```csharp
+using Ben10Mod;
 
-If you need special effects or different timing:
-
-- override `StartEvolution`
-- override `CompleteEvolution`
+player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation("Ben10Addon:ShockRock");
+```
 
 ## Child Transformations And Branching Forms
 
-Transformation-to-transformation branching is now handled with child transformations.
+Use child transformations for:
 
-Use this system for:
+- ultimate forms that should behave like full transformations
+- alternate forms
+- branch forms
 
-- ultimate forms that should behave as full transformations
-- alternate forms with different attacks or abilities
-- mixed forms that depend on both the active alien and the currently selected alien
-- future DNA splice forms
+Important properties:
 
-The important design idea is:
-
-- the active transformation handles the transform key while already transformed
-- it can branch into one of its child transformations
-- the child is a real `Transformation` with its own buff, attacks, visuals, description, and abilities
-- a child can step back down into its parent and then fully detransform after a delay
-
-### Core Transformation Properties
-
-The main branching properties on `Transformation` are:
-
-- `HasChildTransformation`
 - `ChildTransformation`
 - `ChildTransformations`
 - `ParentTransformation`
 - `ParentStepDownDelay`
 - `StepDownToParentOnRepeatedTransform`
 
-Use `ChildTransformation` for the simple single-child case.
+Use the transform-key hooks when you need custom branching conditions.
 
-Use `ChildTransformations` when you want multiple possible outcomes and will decide between them with conditions.
+## Optional: Material Absorption Addon Content
 
-Set `ParentTransformation` on the child if repeated transform should step back down into the parent first.
+Ben10Mod also exposes absorbable-material registration through `Mod.Call`.
 
-### Simple Single-Child Example
-
-```csharp
-public class BigChillTransformation : Transformation {
-    public override string FullID => "MyAddon:BigChill";
-    public override string TransformationName => "Bigchill";
-    public override int TransformationBuffId => ModContent.BuffType<BigChillBuff>();
-
-    public override Transformation ChildTransformation
-        => ModContent.GetInstance<UltimateBigChillTransformation>();
-}
-
-public class UltimateBigChillTransformation : Transformation {
-    public override string FullID => "MyAddon:UltimateBigChill";
-    public override string TransformationName => "Ultimate Bigchill";
-    public override int TransformationBuffId => ModContent.BuffType<UltimateBigChillBuff>();
-
-    public override Transformation ParentTransformation
-        => ModContent.GetInstance<BigChillTransformation>();
-}
-```
-
-With the default implementation:
-
-- if Big Chill is active
-- and Big Chill is also the currently selected alien
-- and the Omnitrix allows evolution
-
-then pressing the transform key again will branch into `UltimateBigChillTransformation`.
-
-### Multiple Child Transformations
-
-If you want more than one possible child result:
-
-```csharp
-public override IReadOnlyList<Transformation> ChildTransformations => new Transformation[] {
-    ModContent.GetInstance<UltimateDiamondHeadTransformation>(),
-    ModContent.GetInstance<CrystalSpeedTransformation>()
-};
-```
-
-Then override `CanUseChildTransformation(...)` to decide which branch is valid.
-
-### Registering A Child For A Base-Mod Transformation
-
-Addons can now attach child branches to transformations they do not own by using
-`TransformationBranchRegistry`.
-
-This is the API to use if you want something like:
-
-- `Ben10Mod:BigChill -> MyAddon:UltimateBigChill`
-- `Ben10Mod:DiamondHead -> MyAddon:CrystalSpeed`
-
-Example:
-
-```csharp
-using Ben10Mod.Content.Transformations;
-using Terraria.ModLoader;
-
-namespace MyAddon;
-
-// Put branch registration in your addon Mod class or a ModSystem Load() method.
-public class MyAddonSystem : ModSystem {
-    public override void Load() {
-        TransformationBranchRegistry.RegisterChildBranch(
-            parentTransformationId: "Ben10Mod:BigChill",
-            childTransformationId: "MyAddon:UltimateBigChill",
-            condition: (player, omp, omnitrix, parent, child, selected) =>
-                selected?.FullID == "Ben10Mod:BigChill" &&
-                omnitrix.CanUseEvolutionFeature(player, omp, parent),
-            energyCost: (player, omp, omnitrix, parent, child, selected) =>
-                omnitrix.EvolutionCost,
-            shouldDetransformOnFailure: (player, omp, omnitrix, parent, child, selected) => true
-        );
-    }
-}
-```
-
-The registry is global at runtime, so the base transformation does not need to know your addon child exists.
-
-Where this `Load()` goes:
-
-- `public override void Load()` inside your addon's `Mod` class, or
-- `public override void Load()` inside a `ModSystem`
-
-Using a `ModSystem` is usually the cleanest option for registration-only code like this.
-
-### Conditional Child Transformations
-
-The main condition hook is:
-
-```csharp
-protected override bool CanUseChildTransformation(
-    Player player,
-    OmnitrixPlayer omp,
-    Omnitrix omnitrix,
-    Transformation childTransformation,
-    string selectedTransformationId)
-```
-
-This gives you access to:
-
-- the player
-- Omnitrix runtime state
-- the equipped Omnitrix
-- the candidate child transformation
-- the currently selected roster transformation ID
-
-This is the hook to use for mixed forms.
-
-Example:
-
-```csharp
-protected override bool CanUseChildTransformation(
-    Player player,
-    OmnitrixPlayer omp,
-    Omnitrix omnitrix,
-    Transformation childTransformation,
-    string selectedTransformationId) {
-    if (childTransformation.FullID == "MyAddon:UltimateDiamondHead")
-        return selectedTransformationId == FullID &&
-               omnitrix.CanUseEvolutionFeature(player, omp, this);
-
-    if (childTransformation.FullID == "MyAddon:CrystalSpeed") {
-        return selectedTransformationId == "MyAddon:XLR8" &&
-               omnitrix.CanDNASplice(player, omp, this,
-                   TransformationLoader.Get(selectedTransformationId),
-                   childTransformation);
-    }
-
-    return false;
-}
-```
-
-### Energy Cost And Failure Rules
-
-The default child branch uses `EvolutionCost` only for the simple default child case.
-
-If you want custom branch costs or different failure behavior, override:
-
-- `GetChildTransformationEnergyCost(...)`
-- `ShouldDetransformWhenChildTransformationFails(...)`
-- `OnChildTransformationActivated(...)`
-
-This lets you support:
-
-- free branches
-- expensive DNA splice branches
-- branches that fail silently
-- branches that detransform on failure
-
-### Omnitrix Capability Hooks
-
-The Omnitrix now exposes capability hooks for branch logic:
-
-- `CanUseChildTransformation(...)`
-- `CanDNASplice(...)`
-- `CanUseEvolutionFeature(...)`
-
-These can be used both by transformation overrides and by addon branch-registry conditions.
-
-Typical use:
-
-- keep transformation-specific branch rules in the transformation
-- keep Omnitrix-specific permission rules in the Omnitrix
-
-Example:
-
-```csharp
-public override bool CanDNASplice(Player player, OmnitrixPlayer omp,
-    Transformation current, Transformation selectedTransformation, Transformation child) {
-    return masterDNAFeatureUnlocked;
-}
-```
-
-### Step-Down Behavior
-
-If a child has `ParentTransformation` set, the default branch handling can step down first and then fully detransform after a delay.
-
-Useful properties and hooks:
-
-- `ParentTransformation`
-- `ParentStepDownDelay`
-- `StepDownToParentOnRepeatedTransform`
-- `CompleteEvolutionStepDown(...)`
-
-This is how forms like Ultimate Big Chill can:
-
-- repeated transform to return to normal Big Chill
-- play detransform visuals and sound
-- wait briefly
-- then fully detransform
-
-### Recommended Pattern
-
-When making branchable forms:
-
-1. create the base transformation as normal
-2. create each child form as its own full `Transformation`
-3. give every child its own buff
-4. set `ParentTransformation` on children that should step down
-5. use `CanUseChildTransformation(...)` for mixed-form conditions
-6. use Omnitrix capability hooks for feature gating such as evolution or DNA splicing
-
-This is the preferred replacement for the removed `Evolved*` property pattern.
-
-## Osmosian Material Absorption API
-
-Ben10Mod now exposes Kevin's material absorption system to addons.
-
-This system is registry-driven. Ben10Mod does not care whether your source item is
-literally a bar. If the item is registered as absorbable, Kevin can use it.
-
-The intended addon use cases are:
-
-- registering a new absorbable vanilla-style material
-- registering a custom modded bar or crafted material
-- overriding the default absorption cost or duration
-- adding on-hit debuff effects to an absorbed material
-
-### What Addons Can Register
-
-An absorbable material profile is built from:
-
-- a source item
-- a sword item
-- a helmet item
-- a body item
-- a leg item
-
-Ben10Mod uses those linked items to build the Kevin absorption profile dynamically.
-
-That profile currently supplies:
-
-- generic damage bonus
-- defense bonus
-- endurance bonus
-- melee knockback bonus
-- tint color
-- consume cost
-- duration
-- optional on-hit debuff effects
-
-### `Mod.Call` Commands
-
-Ben10Mod exposes the following calls:
+Current command:
 
 - `RegisterAbsorbableMaterial`
-- `IsAbsorbableMaterialRegistered`
-- `GetAbsorbableMaterialProfile`
 
-### Registering A Material
+This is useful if your addon adds new bars or materials that should work with the Osmosian absorption system.
 
-Signature:
+## Recommended Checklist Before Shipping An Addon
 
-```csharp
-ben10Mod.Call(
-    "RegisterAbsorbableMaterial",
-    sourceItemType,
-    swordItemType,
-    helmetItemType,
-    bodyItemType,
-    legItemType
-);
-```
+Make sure:
 
-Required arguments:
+- your transformation ID uses your own mod prefix
+- the transformation buff sets `currentTransformationId`
+- your icon path exists
+- your attacks are defined on the transformation, not hardcoded into the badge
+- your action-slot design matches the current timed-ability vs badge-attack model
+- your attack costs use the built-in cost properties
+- your unlock path actually grants the transformation
 
-- `sourceItemType`
-- `swordItemType`
-- `helmetItemType`
-- `bodyItemType`
-- `legItemType`
+## Practical Tip
 
-All five item IDs must be `int`.
-
-### Optional Registration Configuration
-
-You can also pass a configuration delegate as the seventh argument:
-
-```csharp
-ben10Mod.Call(
-    "RegisterAbsorbableMaterial",
-    sourceItemType,
-    swordItemType,
-    helmetItemType,
-    bodyItemType,
-    legItemType,
-    (Action<MaterialAbsorptionRegistration>)(registration => {
-        registration.ConsumeAmountOverride = 4;
-        registration.DurationTicksOverride = 60 * 20;
-        registration.GenericDamageBonusOverride = 0.12f;
-        registration.DefenseBonusOverride = 8;
-        registration.EnduranceBonusOverride = 0.04f;
-        registration.MeleeKnockbackBonusOverride = 0.6f;
-        registration.AddHitBuff(BuffID.OnFire, 180);
-    })
-);
-```
-
-The configuration object is
-`Ben10Mod.Common.Absorption.MaterialAbsorptionRegistration`.
-
-Available override fields are:
-
-- `ConsumeAmountOverride`
-- `DurationTicksOverride`
-- `GenericDamageBonusOverride`
-- `DefenseBonusOverride`
-- `EnduranceBonusOverride`
-- `MeleeKnockbackBonusOverride`
-
-For on-hit effects, use:
-
-- `AddHitBuff(int buffType, int buffTime)`
-
-### Full Example
-
-```csharp
-using System;
-using Ben10Mod.Common.Absorption;
-using Terraria.ID;
-using Terraria.ModLoader;
-
-namespace MyAddon;
-
-public class MyAddonSystem : ModSystem {
-    public override void PostSetupContent() {
-        Mod ben10Mod = ModLoader.GetMod("Ben10Mod");
-        if (ben10Mod is null)
-            return;
-
-        ben10Mod.Call(
-            "RegisterAbsorbableMaterial",
-            ModContent.ItemType<MyAlloyBar>(),
-            ModContent.ItemType<MyAlloyBlade>(),
-            ModContent.ItemType<MyAlloyHelmet>(),
-            ModContent.ItemType<MyAlloyChestplate>(),
-            ModContent.ItemType<MyAlloyGreaves>(),
-            (Action<MaterialAbsorptionRegistration>)(registration => {
-                registration.DurationTicksOverride = 60 * 18;
-                registration.DefenseBonusOverride = 10;
-                registration.AddHitBuff(BuffID.Electrified, 180);
-            })
-        );
-    }
-}
-```
-
-`PostSetupContent()` is the safest place for this registration, because all item
-types from both mods are available by then.
-
-### Checking Whether A Material Is Registered
-
-```csharp
-bool registered = (bool)ben10Mod.Call(
-    "IsAbsorbableMaterialRegistered",
-    ModContent.ItemType<MyAlloyBar>()
-);
-```
-
-### Reading The Built Profile
-
-```csharp
-MaterialAbsorptionProfile profile =
-    ben10Mod.Call("GetAbsorbableMaterialProfile", ModContent.ItemType<MyAlloyBar>())
-    as MaterialAbsorptionProfile;
-```
-
-The returned type is `Ben10Mod.Common.Absorption.MaterialAbsorptionProfile`.
-
-Useful properties include:
-
-- `SourceItemType`
-- `DisplayName`
-- `TintColor`
-- `ConsumeAmount`
-- `DurationTicks`
-- `GenericDamageBonus`
-- `DefenseBonus`
-- `EnduranceBonus`
-- `MeleeKnockbackBonus`
-- `HitEffects`
-
-### Multiplayer Notes For Absorption
-
-Kevin's absorption activation is server-authoritative.
-
-Addon materials do not need special multiplayer code as long as:
-
-- the source item is registered on both client and server
-- the item types are stable
-- the registration runs during normal mod loading
-
-Do not register absorbable materials conditionally based on local-only client state.
-
-## Connecting An Omnitrix To Your Addon Transformations
-
-You do not need to hardcode your Omnitrix to specific transformations.
-
-The Omnitrix system already works with string IDs stored in the player's roster and unlock list. Your addon transformations can be unlocked and assigned in the same UI.
-
-The main requirements are:
-
-- the transformation must be registered
-- the player must have unlocked it
-- the transformation ID must be placed into one of the roster slots
-
-## How The Roster/UI Works
-
-Ben10Mod stores:
-
-- `transformationSlots`
-- `unlockedTransformations`
-- `currentTransformationId`
-
-The alien selection UI reads those lists and renders icons from the transformation loader.
-
-This means addon transformations appear automatically in the roster UI as long as:
-
-- the transformation class is loaded
-- `GetTransformationIcon()` can load the icon
-- the transformation is unlocked for the player
-
-## Multiplayer Notes
-
-Ben10Mod already syncs transformation unlocks by transformation ID string.
-
-For addon safety:
-
-- use stable transformation IDs
-- never rename a transformation ID after users have saves using it
-- do not reuse an old ID for a different alien
-
-If you rename `Ben10Addon:ShockRock` to `Ben10Addon:ShockRockV2`, existing saves will still contain the old ID and the roster entry will no longer resolve.
-
-## Common Pitfalls
-
-### 1. Buff ID Does Not Match Transformation ID
-
-If the buff sets the wrong `currentTransformationId`, the transformation will not work correctly.
-
-### 2. Icon Path Is Wrong
-
-If `IconPath` points to a missing texture, the UI will break or show missing assets.
-
-### 3. No Costume Registered
-
-If your `FrameEffects` code asks for equip slots that were never loaded, the alien visuals will not appear.
-
-### 4. Unlock Item Uses The Wrong ID
-
-Make sure your unlock code uses the exact same transformation ID as `FullID`.
-
-### 5. Addon Uses `Ben10Mod:` IDs
-
-Do not do this for your own addon content. Use your addon mod's namespace and ID prefix.
-
-### 6. Your Badge "Does Nothing"
-
-That usually means your current transformation does not provide an attack profile or `Shoot` logic for the currently selected attack mode.
-
-### 7. Save-Breaking Renames
-
-Avoid renaming:
-
-- transformation IDs
-- item internal class names when texture naming depends on `Name`
-- hands-on texture keys if existing content relies on them
-
-### 8. Editor Shows Errors But Build Works
-
-This is especially common with project references in Rider.
-
-If:
-
-- `dotnet build` works
-- tModLoader can build the mod
-- but the editor still says Ben10Mod types are missing
-
-then your project setup is probably fine and the editor needs a restore/reload cycle.
-
-## Recommended Addon Workflow
-
-If you want the smoothest experience, build in this order:
-
-1. Create the addon mod root.
-2. Add `modReferences = Ben10Mod`.
-3. Add the project reference to `Ben10Mod.csproj`.
-4. Build one new transformation first.
-5. Add an unlock item and confirm it appears in the Ben10Mod roster UI.
-6. Add a custom badge if you want a new progression weapon.
-7. Add a custom Omnitrix last, once the transformation works.
-
-This makes debugging much easier because transformations are the foundation for the other two systems.
-
-## Minimal "First Addon" Checklist
-
-If you want the absolute minimum viable addon:
-
-1. Create a new mod folder in `ModSources`.
-2. Add `modReferences = Ben10Mod` to `build.txt`.
-3. Add a project reference to `../Ben10Mod/Ben10Mod.csproj`.
-4. Create one `Transformation` subclass.
-5. Create one matching `ModBuff`.
-6. Create one icon texture.
-7. Create one unlock item that calls `TransformationHandler.AddTransformation`.
-8. Launch and confirm the alien appears in the Ben10Mod roster UI.
-
-## Suggested Asset Checklist
-
-For a fully featured transformation:
-
-- icon texture for UI
-- costume base texture
-- head texture
-- body texture
-- legs texture
-- projectile textures
-- optional buff textures
-
-For a fully featured Omnitrix:
-
-- inventory texture
-- cooldown inventory texture
-- updating inventory texture
-- hands-on texture
-- hands-on cooldown texture
-- hands-on updating texture
-
-For a badge:
-
-- item texture
-
-## Final Advice
-
-Keep the addon small at first.
-
-The fastest successful path is:
-
-- one transformation
-- one unlock item
-- one simple projectile
-
-Once that works, add:
-
-- a badge
-- a custom Omnitrix
-- more advanced abilities
-
-If you want to mirror Ben10Mod's style, use the base systems as intended:
-
-- let transformations own combat behavior
-- let badges stay generic
-- let Omnitrixes own Omnitrix-specific resource and lifecycle rules
+If you are not sure how to implement something, copy the built-in content type that is closest to your goal and simplify from there. Ben10Mod's extension model is much easier to follow by example than by trying to treat the whole system as a blank-slate framework.

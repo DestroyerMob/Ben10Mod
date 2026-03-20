@@ -1,219 +1,238 @@
 # Ben10Mod Architecture Guide
 
-This document explains how the main gameplay systems fit together.
+This document explains how the current runtime is put together.
 
 It is intended for:
 
-- contributors working directly in Ben10Mod
-- addon authors who want to understand the runtime flow before extending it
-- developers trying to debug why a transformation, Omnitrix, or badge is not behaving correctly
+- contributors working inside Ben10Mod
+- addon authors who want the current mental model before extending it
+- anyone debugging why a transformation, Omnitrix, ability, or badge attack is behaving incorrectly
 
-## Core Design
+## Core Runtime Model
 
 Ben10Mod is built around a player-centric state model.
 
-The `OmnitrixPlayer` class is the central runtime state holder. It tracks:
+`OmnitrixPlayer` is the main state container. It tracks:
 
 - whether the player has an Omnitrix equipped
-- which transformation is currently active
+- which transformation is active
 - which transformations are unlocked
-- current roster assignment
-- Omnitrix energy state
-- ability toggles and cooldown flow
-- movement state such as dashing or possession
-- cosmetic and hand visual state
+- which five transformations are assigned to the active roster
+- Omnitrix energy and drain/regen state
+- timed ability flags and cooldown flow
+- the current badge attack selection state
+- progression participation for bosses and events
+- transformation-scale and custom-visual state
 
-Most other systems either:
+Most systems either:
 
 - mutate `OmnitrixPlayer`
-- read data from `OmnitrixPlayer`
-- or provide plug-in behavior that `OmnitrixPlayer` delegates to
+- read `OmnitrixPlayer`
+- or plug alien-specific behavior into hooks that `OmnitrixPlayer` calls
 
 ## Main Runtime Pieces
 
 ### `Ben10Mod`
 
-`Ben10Mod.cs` is the root mod entry point.
+`Ben10Mod.cs` is the mod entry point.
 
 Responsibilities:
 
-- load shaders and screen filters
+- load shaders and filters
 - define packet types
-- receive and process network packets
-
-At the moment, the main explicit packet behavior is transformation unlock syncing.
+- handle unlock and absorption sync packets
 
 ### `OmnitrixPlayer`
 
-`OmnitrixPlayer.cs` is the heart of the mod.
+`OmnitrixPlayer.cs` is the main runtime coordinator.
 
 Responsibilities:
 
 - persist unlock and roster data
-- track active transformation state
-- track Omnitrix energy
-- forward lifecycle hooks to the current transformation
-- drive ability activation
-- manage Omnitrix visuals
-- handle damage-to-energy conversion
-- handle event and boss participation tracking
+- track the active transformation
+- route update hooks into the current transformation
+- drive timed abilities and cooldown expiration
+- manage the attack-selection state machine
+- manage Omnitrix energy-facing state
+- track event participation and unlocks
+- expose UI-friendly state such as the current attack label and pulse
 
-If you are unsure where a gameplay behavior lives, this file is the first place to inspect.
+If you are unsure where a gameplay rule lives, start here first.
 
 ### `Transformation`
 
-`Content/Transformations/Transformation.cs` defines the transformation API.
+`Content/Transformations/Transformation.cs` is the alien API.
 
-A transformation provides:
+A transformation owns:
 
-- metadata: ID, name, description, icon, ability text
-- attack profile data used by badges
-- buff identity
-- lifecycle hooks such as `OnTransform`, `OnDetransform`, `UpdateEffects`, `PostUpdate`, `FrameEffects`
-- combat hooks such as `ModifyHurt`, `OnHitNPC`, `CanHitNPCWithProjectile`
-- ability hooks such as `TryActivatePrimaryAbility`
+- ID, display name, description, icon, and ability text
+- badge attack profiles
+- action-slot behavior for primary, secondary, tertiary, and ultimate
+- passive hooks such as `UpdateEffects`, `PostUpdate`, and `FrameEffects`
+- combat hooks such as `OnHitNPC`, `ModifyHurt`, and projectile hit hooks
+- branching and child-transformation behavior
 
-Transformations are the main source of alien-specific behavior.
+Transformations are the main source of alien-specific gameplay.
 
 ### `TransformationLoader`
 
 `Content/Transformations/TransformationLoader.cs` is the shared transformation registry.
 
-Each transformation registers itself automatically in `Transformation.Register()`.
-
-This registry is used by:
+Each transformation registers automatically. The loader is then used by:
 
 - roster UI
 - transformation activation
+- save/load resolution
 - unlock lookups
-- save data resolution
 
 ### `TransformationHandler`
 
-`Content/TransformationHandler.cs` is a utility layer around the core state machine.
+`Content/TransformationHandler.cs` is the shared state-transition helper.
 
-Responsibilities:
+Use it for:
 
-- begin transformation
-- end transformation
-- apply effects and sounds
-- add unlocks
-- query unlock state
+- transform
+- detransform
+- unlocks
+- transformation cleanup
 
-When possible, code that wants to transform or unlock something should go through `TransformationHandler` rather than rewriting the state transitions manually.
+Code should prefer this utility layer over manually changing player transformation fields.
 
 ### `Omnitrix`
 
-`Content/Items/Accessories/Omnitrix.cs` is the Omnitrix base API.
+`Content/Items/Accessories/Omnitrix.cs` is the base Omnitrix API.
 
-The Omnitrix system now follows the same extension philosophy as transformations and badges.
+It owns:
 
-The base class provides:
-
-- energy capacity and regen rules
-- energy drain rules
+- max energy
+- regen and drain
+- transformation duration rules
+- swap costs
+- transform/detransform behavior
 - damage-to-energy rules
-- transformation timing rules
-- swap cost rules
-- detransform behavior
 - evolution hooks
-- hand visual hooks
-- local keybind-driven transformation selection and activation
+- hand-visual hooks
 
-The important architectural change is that `OmnitrixPlayer` no longer hardcodes specific Omnitrix types. It delegates behavior to the currently equipped `Omnitrix`.
+The important architectural point is that `OmnitrixPlayer` no longer hardcodes specific Omnitrix items. It delegates to the currently equipped `Omnitrix`.
 
 ### `PlumbersBadge`
 
 `Content/Items/Weapons/PlumbersBadge.cs` is the generic badge weapon shell.
 
-Responsibilities:
+It owns:
 
-- define base weapon stats
-- consume Omnitrix energy when needed
-- apply generic timing reset
-- ask the current transformation how to behave
+- base weapon stats and rank identity
+- resetting the held-item defaults before a transformation modifies them
+- checking whether the currently selected attack is affordable
+- consuming attack energy in the shared fire path
+- calling into the active transformation's `Shoot(...)`
 
-Badges do not own alien-specific combat logic. Transformations do.
+Alien-specific attack logic belongs in transformations, not badges.
 
-## Data Flow
+## Action Slots And Attack Selection
+
+The modern combat model is split into two layers:
+
+- action slots
+- badge attack selection
+
+### Action Slots
+
+The action keys are:
+
+- primary
+- secondary
+- tertiary
+- ultimate
+
+Each slot can be configured by a transformation as either:
+
+- a timed ability
+- or a badge attack loader
+
+That means `F`, `G`, `H`, and `U` are not just buff toggles anymore. A transformation decides what each slot means.
+
+### Badge Attack Selection
+
+The badge uses a small state machine.
+
+The currently selected attack can be:
+
+- primary
+- secondary
+- primary ability attack
+- secondary ability attack
+- tertiary ability attack
+- ultimate attack
+
+Key points:
+
+- right click with the badge swaps between the base primary and secondary modes
+- loading an action-key attack temporarily replaces the base attack
+- some loaded attacks are single-use
+- some persist until replaced or cleared
+- the current selection drives badge stats, energy cost, HUD text, and projectile selection
+
+## Runtime Flows
 
 ### Transformation Flow
 
-The normal flow is:
+Normal transform flow:
 
 1. some code decides to transform the player
-2. `TransformationHandler.Transform(...)` is called
-3. the transformation is resolved through `TransformationLoader`
-4. `OmnitrixPlayer.currentTransformationId` is set
-5. the transformation buff is applied
-6. every tick, the buff keeps `currentTransformationId` and `isTransformed` in sync
-7. `OmnitrixPlayer` forwards update hooks to the active transformation
+2. `TransformationHandler.Transform(...)` resolves the target transformation
+3. the transformation buff is applied
+4. the buff sets `currentTransformationId` and marks the player transformed
+5. `OmnitrixPlayer` forwards lifecycle hooks to the active transformation every tick
 
-### Detransformation Flow
+### Detransform Flow
 
-The normal detransform path is:
+Normal detransform flow:
 
 1. `TransformationHandler.Detransform(...)` is called
-2. cooldowns and ability cleanup are handled
-3. transformation buffs are cleared
-4. `currentTransformationId` is cleared
-5. transformation flags are reset
-6. `OnDetransform` is called on the previous transformation
+2. timed abilities and loaded attacks are cleaned up
+3. cooldowns are applied when appropriate
+4. transformation buffs are cleared
+5. `currentTransformationId` is cleared
+
+### Timed Ability Flow
+
+When an action key is bound to a timed ability:
+
+1. `OmnitrixPlayer` checks slot availability and cooldowns
+2. activation cost is checked
+3. the relevant ability buff is applied
+4. the transformation reads that state through `PrimaryAbilityEnabled`, `IsPrimaryAbilityActive`, and related flags
+5. cooldown is applied when the ability ends
 
 ### Badge Attack Flow
 
-When a player uses a Plumber's Badge:
+When the player fires a `Plumber's Badge`:
 
 1. the badge checks whether the player is transformed
 2. the badge asks the current transformation to modify badge stats
-3. the badge asks the transformation for the current energy cost
-4. the badge consumes energy if needed
+3. `CanUseItem` checks whether the currently selected attack can be afforded
+4. the shared `Shoot` path consumes the current attack cost
 5. the badge calls `transformation.Shoot(...)`
+6. if the selected attack was a loaded ability-attack, post-fire cleanup such as single-use clearing happens
 
-The selected attack profile depends on:
-
-- primary attack by default
-- secondary attack when `altAttack` is toggled
-- ultimate attack when `ultimateAttack` is active
-
-### Unlock Flow
-
-Unlocks are stored as transformation string IDs in `unlockedTransformations`.
-
-Unlocks may come from:
-
-- boss progression
-- event progression
-- items
-- addon content
-
-In multiplayer, unlocks are synced by packet from server to client.
+This is important because costs are now tied to the currently selected attack profile, not split across different manual item paths.
 
 ## UI Systems
 
-### Omnitrix Slot
-
-`Content/Interface/OmnitrixSlot.cs` defines the custom Omnitrix accessory slot.
-
-Accepted content:
-
-- any `ModItem` inheriting from `Omnitrix`
-
-This is why addon Omnitrixes work without additional slot registration changes.
-
-### Alien Roster UI
+### Roster UI
 
 `Content/Interface/AlienSelectionScreen.cs` renders:
 
-- the active roster slots
-- the list of unlocked transformations
-- the selected transformation's icon, description, and abilities
+- the active five-slot roster
+- the unlocked transformation list
+- the selected transformation's description and abilities
 
-The UI resolves everything through the transformation loader, which is why addon transformations appear automatically if they register correctly and are unlocked.
+Because it resolves transformations through the loader, addon transformations appear automatically if they register correctly and are unlocked.
 
 ### Omnitrix Energy Bar
 
-`UISystem` also draws the Omnitrix energy bar.
+The `UISystem` also draws the Omnitrix energy bar.
 
 It reads directly from `OmnitrixPlayer`:
 
@@ -221,93 +240,74 @@ It reads directly from `OmnitrixPlayer`:
 - `omnitrixEnergy`
 - `omnitrixEnergyMax`
 
+### Current Attack HUD
+
+The same UI system now draws a current-attack panel under the energy bar.
+
+It shows:
+
+- the active attack slot label
+- the current attack display name
+- the per-shot energy cost
+- a short pulse when the attack selection changes
+
+That HUD is driven from `OmnitrixPlayer` plus transformation-supplied attack display names.
+
 ## Progression Systems
 
 ### Boss Unlocks
 
-`bossTrackerNPC.cs` tracks:
+`bossTrackerNPC.cs` handles boss-based unlock progression.
 
-- damage contribution by player
-- whether an NPC counts as a boss
-- multi-segment boss special cases
-- transformation unlock rewards
+It tracks:
+
+- damage contribution per player
+- which NPCs count as tracked encounters
+- multi-segment boss edge cases
+- unlock rewards
 - Omnitrix evolution triggers
-
-This file is the bridge between Terraria progression and Ben10Mod unlock progression.
 
 ### Event Unlocks
 
-`OmnitrixPlayer` also tracks participation in specific events and grants unlocks when those events end successfully.
+`OmnitrixPlayer` handles event-based unlocks.
 
-This means some transformation unlock logic lives in:
+It tracks:
+
+- whether the player participated in the event
+- whether the event completed successfully
+- which transformation should be unlocked when the event ends
+
+This is why unlock logic is split across:
 
 - `bossTrackerNPC.cs`
 - `OmnitrixPlayer.cs`
 
-## File Layout Conventions
+## Addon-Relevant Design Rules
 
-The codebase mostly follows these conventions:
+These are the important extension rules that the current architecture is built around:
 
-- `Content/Transformations/<AlienName>/` for alien-specific files
-- transformation class, costume item, and textures are grouped together
-- `Content/Buffs/Transformations/` for transformation buff assets and classes
-- `Content/Items/Accessories/` for Omnitrixes and accessory helpers
-- `Content/Items/Weapons/` for badges
-- `Content/Projectiles/` for alien attacks and utility projectiles
+- transformations are identified by stable string IDs
+- transformations auto-register
+- Omnitrixes are subclasses, not hardcoded type checks inside the player
+- badges stay generic and ask the transformation what to do
+- attack costs belong to attack profiles
+- timed abilities and attack-loading slots share the same action-key framework
 
-The folder structure is not perfectly uniform yet, but this is the intended organization.
+## Practical Debugging Tips
 
-## Patterns To Follow When Adding Code
+If something is wrong with transformation behavior:
 
-When adding new gameplay content, prefer these patterns:
+- inspect `OmnitrixPlayer.cs`
+- inspect the active transformation class
+- inspect `TransformationHandler.cs`
 
-- put alien-specific logic in a `Transformation` subclass
-- put Omnitrix-specific rules in an `Omnitrix` subclass
-- keep badges generic unless the badge itself really needs unique behavior
-- use `TransformationHandler` for unlock/transform transitions
-- identify transformations by stable string IDs
+If something is wrong with badge combat:
 
-Avoid:
+- inspect `PlumbersBadge.cs`
+- inspect the current transformation's attack profile data
+- inspect the transformation's `Shoot(...)` override if it has one
 
-- adding new hardcoded type checks in `OmnitrixPlayer`
-- keying behavior off transformation display names when an override or explicit hook would be cleaner
-- duplicating roster or unlock logic outside the shared systems
+If something is wrong with unlock progression:
 
-## Common Debugging Entry Points
-
-If something is broken, these are the most useful places to inspect.
-
-### Transformation does not appear in roster
-
-Check:
-
-- transformation class exists and loads
-- `FullID` is stable and unique
-- `IconPath` is valid
-- the transformation was actually unlocked
-- `TransformationBuffId` is valid
-
-### Player transforms but visuals do not change
-
-Check:
-
-- the buff sets the correct `currentTransformationId`
-- `FrameEffects` is implemented
-- equip textures were loaded in the costume item
-
-### Badge does nothing
-
-Check:
-
-- player is transformed
-- current transformation resolves correctly
-- the transformation defines attack data
-- energy cost is not blocking the attack
-
-### Omnitrix behavior is wrong
-
-Check:
-
-- which `Omnitrix` subclass is equipped
-- whether that subclass overrides the expected timing or energy behavior
-- whether the problem is in `OmnitrixPlayer` state or in the Omnitrix override
+- inspect `bossTrackerNPC.cs`
+- inspect the event unlock logic in `OmnitrixPlayer.cs`

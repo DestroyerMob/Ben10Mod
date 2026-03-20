@@ -1,26 +1,25 @@
 # Ben10Mod Development Guide
 
-This guide is for people working inside the Ben10Mod source itself.
+This guide is for contributors working inside the Ben10Mod source itself.
 
 It covers:
 
-- project setup
+- local project setup
 - build expectations
-- common editor issues
-- debugging tips
-- conventions for adding new code
+- the current gameplay model
+- practical conventions for adding or changing content
 
 ## Project Setup
 
-Ben10Mod is a tModLoader mod source project.
+Ben10Mod is a normal tModLoader source mod project.
 
 Important files:
 
 - `Ben10Mod.csproj`
 - `build.txt`
-- `Properties/launchSettings.json`
+- `Ben10Mod.cs`
 
-The project imports `..\tModLoader.targets`, so it expects to live inside a normal tModLoader `ModSources` folder.
+The project expects to live inside a standard tModLoader `ModSources` folder.
 
 ## Building
 
@@ -30,121 +29,145 @@ Typical command:
 dotnet build Ben10Mod.csproj
 ```
 
-This performs two distinct steps:
+That command performs two separate steps:
 
 1. compile the C# project
-2. invoke tModLoader's mod packaging/build tooling
+2. run tModLoader's packaging/build tooling
 
-If the C# compile succeeds but the final mod build fails, the failure may be environmental rather than code-related.
+When diagnosing build issues, treat those as separate layers.
 
-## Known Environment Gotcha: `FNA3D`
+### Known Environment Issue: `FNA3D`
 
-On some machines, especially with direct command-line builds, the final tModLoader packaging step may fail with an `FNA3D` native library error.
+On some machines, the final tModLoader packaging step fails because the local tModLoader install is missing the required `FNA3D` native library.
 
-What that means:
+Important distinction:
 
-- the C# code may already have compiled correctly
-- tModLoader's build tool could not load a required native runtime library from the local tModLoader installation
+- if the C# compile succeeds, your code changes may still be valid
+- the later packaging failure can still be an environment problem
 
-This is usually an environment/setup problem, not a gameplay code problem.
+## Current Gameplay Model
 
-When diagnosing build issues, separate:
+The modern runtime has three main extension surfaces:
 
-- C# compiler errors
-- tModLoader packaging/runtime environment errors
+- `Transformation`
+- `Omnitrix`
+- `PlumbersBadge`
 
-## Rider / IDE Notes
+And one central state owner:
 
-If Rider or another IDE shows false errors even though the project builds:
+- `OmnitrixPlayer`
 
-- reload all projects
-- invalidate caches
-- delete `bin` and `obj`
-- run `dotnet restore`
+### Current Combat Model
 
-For addon projects that reference Ben10Mod, Rider may show false red squiggles when its design-time restore gets stale even though command-line builds succeed.
+The badge system is no longer just primary, alternate, and ultimate.
+
+Current rules:
+
+- the badge has a shared attack-selection state machine
+- base combat starts from primary or secondary fire
+- right click swaps those base modes
+- `F`, `G`, `H`, and `U` can either:
+  - activate timed abilities
+  - or load badge attacks
+- loaded badge attacks temporarily replace the base attack selection
+- attack costs are attached to attack profiles
+- affordability is checked in `PlumbersBadge.CanUseItem`
+- attack energy is spent in the shared `PlumbersBadge.Shoot` path
+
+If you are changing combat behavior, read:
+
+- [OmnitrixPlayer.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/OmnitrixPlayer.cs)
+- [Transformation.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Transformations/Transformation.cs)
+- [PlumbersBadge.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Weapons/PlumbersBadge.cs)
 
 ## Common Contributor Workflows
 
-### Adding a new built-in transformation
+### Adding A New Built-In Transformation
 
 Typical checklist:
 
-1. add a new folder in `Content/Transformations/<AlienName>/`
+1. create `Content/Transformations/<AlienName>/`
 2. create the transformation class
 3. create the transformation buff
-4. create the costume/equip item if needed
-5. add textures
-6. add projectiles and helper items
+4. add costume/equip assets if needed
+5. add projectiles, helper items, or custom visuals
+6. define the badge attacks and action-slot behavior
 7. add unlock logic through boss, event, or item progression
-8. verify it appears in the roster UI and transforms correctly
+8. verify the transformation appears in the roster UI
 
-### Adding a new built-in Omnitrix
+### Adding A New Built-In Omnitrix
 
 Typical checklist:
 
 1. subclass `Omnitrix`
-2. set energy and timing properties
-3. implement hands-on texture loading
-4. implement inventory drawing if you need visual state changes
-5. add recipes or unlock logic
-6. if it branches into child forms, override the child transformation hooks and Omnitrix capability hooks
+2. set energy, drain, regen, and timing rules
+3. load and register hand textures if needed
+4. implement recipes or unlock logic
+5. implement evolution rules if it upgrades into something else
 
-### Adding a new badge
+### Adding A New Badge
 
 Typical checklist:
 
 1. subclass `PlumbersBadge`
 2. set base damage and rank metadata
-3. add a recipe
-4. ensure current transformations expose the attacks you expect the badge to fire
+3. add recipes
+4. verify the currently selected transformation exposes the attacks you expect
 
-## Code Conventions
+Most alien-specific weapon behavior should still stay in the transformation, not the badge item.
 
-These are the practical conventions to follow in this repo.
+## Practical Code Conventions
 
-### Use the shared systems
+### Use The Shared Systems
 
-Prefer using:
+Prefer:
 
-- `TransformationHandler.Transform`
-- `TransformationHandler.Detransform`
-- `TransformationHandler.AddTransformation`
+- `TransformationHandler.Transform(...)`
+- `TransformationHandler.Detransform(...)`
+- `TransformationHandler.AddTransformation(...)`
 
-instead of duplicating transformation state transitions by hand.
+instead of hand-editing transformation state fields.
 
-### Keep behavior close to ownership
+### Keep Behavior With Its Owner
 
 Put code in the system that owns it:
 
 - alien behavior belongs in `Transformation`
-- Omnitrix resource behavior belongs in `Omnitrix`
-- generic weapon shell behavior belongs in `PlumbersBadge`
+- Omnitrix resource rules belong in `Omnitrix`
+- shared weapon-shell behavior belongs in `PlumbersBadge`
+- cross-cutting player runtime state belongs in `OmnitrixPlayer`
 
-### Avoid new hardcoded content checks
+### Avoid New Hardcoded Content Checks
 
-The mod has historically used some concrete type checks. The current direction is to move away from those.
+Prefer:
 
-If you are adding something new, prefer:
-
+- virtual properties
 - virtual methods
-- overridable properties
-- registry lookups
+- registries
+- loader lookups
 
-over:
+Avoid adding fresh content-specific checks unless there is a strong reason.
 
-- `if item is SpecificOmnitrix`
-- `if transformation name == "SomeAlien"`
+### Use Stable Transformation IDs
 
-unless there is a strong reason to keep that logic explicit.
+Save data, UI, unlocks, and addon integration all rely on transformation string IDs.
 
-### Use stable string IDs for transformations
+Do not casually rename shipped IDs.
 
-Save data and multiplayer sync use transformation IDs directly.
+### Keep HUD Text In The Transformation Layer
 
-Avoid renaming IDs once shipped.
+The current-attack HUD now reads attack labels from the transformation.
 
-## Important Systems To Read Before Making Larger Changes
+If a transformation has a custom name you want shown in the HUD, use:
+
+- `PrimaryAttackDisplayName`
+- `SecondaryAttackDisplayName`
+- `PrimaryAbilityAttackDisplayName`
+- `SecondaryAbilityAttackDisplayName`
+- `TertiaryAbilityAttackDisplayName`
+- `UltimateAttackDisplayName`
+
+## Important Files To Read Before Bigger Changes
 
 If you are touching transformation gameplay:
 
@@ -152,16 +175,10 @@ If you are touching transformation gameplay:
 - [Transformation.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Transformations/Transformation.cs)
 - [TransformationHandler.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/TransformationHandler.cs)
 
-If you are touching Omnitrix behavior:
+If you are touching UI:
 
-- [Omnitrix.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Accessories/Omnitrix.cs)
+- [AlienSelectionScreen.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Interface/AlienSelectionScreen.cs)
 - [OmnitrixPlayer.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/OmnitrixPlayer.cs)
-- [OmnitrixSlot.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Interface/OmnitrixSlot.cs)
-
-If you are touching combat routing:
-
-- [PlumbersBadge.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Items/Weapons/PlumbersBadge.cs)
-- current transformation implementations
 
 If you are touching progression:
 
@@ -170,44 +187,49 @@ If you are touching progression:
 
 ## Troubleshooting
 
-### Transformation unlocks but cannot transform
+### A Transformation Unlocks But Cannot Be Used
 
 Check:
 
 - the transformation buff exists
 - `TransformationBuffId` is valid
-- the roster slot contains the exact transformation ID
-- the Omnitrix is equipped and not blocked by cooldown
+- the transformation is assigned to a roster slot
+- an Omnitrix is equipped
+- the player is not blocked by cooldown or missing energy
 
-### Transformation exists but does not show in the roster UI
-
-Check:
-
-- `IconPath` exists
-- the transformation was unlocked
-- the transformation class loads without type errors
-
-### Omnitrix shows but has wrong visuals
+### A Keyed Attack Does Nothing
 
 Check:
 
-- `Load()` registered the expected hands-on textures
-- `HandsOnTextureKey`, `CooldownHandsOnTextureKey`, and `UpdatingHandsOnTextureKey` match the registration names
+- whether that slot loads a badge attack instead of acting instantly
+- whether a `Plumber's Badge` is equipped in-hand
+- whether the current attack HUD shows the expected loaded mode
+- whether the attack profile has a projectile and enough energy
 
-### Build works on one machine but not another
+### The HUD Shows A Bad Attack Name
 
 Check:
 
-- both machines have the same tModLoader installation structure
-- `dotnet restore` has been run
-- IDE caches are clean
-- the local tModLoader runtime libraries exist
+- the transformation's attack display-name properties
+- whether the transformation is falling back to projectile display names
 
-## Suggested Future Documentation Targets
+### Build Works On One Machine But Not Another
 
-Areas that may deserve their own dedicated docs later:
+Check:
 
-- art and asset pipeline
-- shader setup
-- boss/event unlock balancing rules
-- multiplayer sync model beyond transformation unlocks
+- that both machines have the same tModLoader install structure
+- `dotnet restore`
+- IDE cache state
+- the local `FNA3D` runtime files in the tModLoader install
+
+## Documentation Rule Of Thumb
+
+If you change:
+
+- controls
+- action-slot behavior
+- the badge attack model
+- progression unlocks
+- player-facing Omnitrix progression
+
+update the docs in the same pass. The player guide, architecture guide, and addon guide should all describe the same current system.

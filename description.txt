@@ -1,8 +1,10 @@
-This mod is still in active development. Art is still being developed, and hardmode progression is only partially implemented so far.
+Ben10Mod brings Ben 10 style transformation gameplay to Terraria.
 
-Beat pre-hardmode bosses and events to unlock new transformations.
+Start with Heatblast, unlock more aliens through bosses and events, equip an Omnitrix in the custom Omnitrix slot, and use Plumber's Badges to fire each form's attacks.
 
-For updates and community discussion:
+Action keys can trigger timed abilities or load special badge attacks, and the current loaded attack is shown under the Omnitrix energy bar.
+
+This mod is still in active development. Art, balance, and later-progression content are still being expanded.
 
 Spriter: Eye of Rage - https://www.youtube.com/@TerraHulk
 Discord: https://discord.gg/XD7qN7DbdD
