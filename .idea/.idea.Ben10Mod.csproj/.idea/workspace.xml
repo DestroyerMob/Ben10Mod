@@ -9,13 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumbersBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumbersBadge.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/TransformationHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/TransformationHandler.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -156,7 +151,7 @@
       <workItem from="1773880617383" duration="2031000" />
       <workItem from="1773991970068" duration="163000" />
       <workItem from="1773992137185" duration="21000" />
-      <workItem from="1773992184362" duration="7084000" />
+      <workItem from="1773992184362" duration="7719000" />
     </task>
     <servers />
   </component>

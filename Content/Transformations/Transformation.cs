@@ -111,6 +111,12 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
         public virtual string Description => "A mysterious alien from the Omnitrix database.";
         public virtual List<string> Abilities => new List<string> { "Unknown abilities" };
+        public virtual string PrimaryAttackDisplayName => ResolveProjectileDisplayName(PrimaryAttack, "Primary Attack");
+        public virtual string SecondaryAttackDisplayName => ResolveProjectileDisplayName(SecondaryAttack, "Secondary Attack");
+        public virtual string PrimaryAbilityAttackDisplayName => ResolveProjectileDisplayName(PrimaryAbilityAttack, "Primary Ability");
+        public virtual string SecondaryAbilityAttackDisplayName => ResolveProjectileDisplayName(SecondaryAbilityAttack, "Secondary Ability");
+        public virtual string TertiaryAbilityAttackDisplayName => ResolveProjectileDisplayName(TertiaryAbilityAttack, "Tertiary Ability");
+        public virtual string UltimateAttackDisplayName => ResolveProjectileDisplayName(UltimateAttack, "Ultimate Attack");
         public virtual bool HasChildTransformation => ChildTransformation != null || ChildTransformations.Count > 0;
         public virtual Transformation ChildTransformation => null;
         public virtual IReadOnlyList<Transformation> ChildTransformations => System.Array.Empty<Transformation>();
@@ -225,6 +231,43 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int GetSecondaryAbilityAttackProjectileType(OmnitrixPlayer omp) => SecondaryAbilityAttack;
         public virtual int GetTertiaryAbilityAttackProjectileType(OmnitrixPlayer omp) => TertiaryAbilityAttack;
         public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp) => UltimateAttack;
+        public virtual OmnitrixPlayer.AttackSelection ResolveAttackSelection(OmnitrixPlayer.AttackSelection selection,
+            OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.Ultimate
+                    when GetUltimateAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.Ultimate,
+                OmnitrixPlayer.AttackSelection.TertiaryAbility
+                    when GetTertiaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.TertiaryAbility,
+                OmnitrixPlayer.AttackSelection.SecondaryAbility
+                    when GetSecondaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.SecondaryAbility,
+                OmnitrixPlayer.AttackSelection.PrimaryAbility
+                    when GetPrimaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.PrimaryAbility,
+                OmnitrixPlayer.AttackSelection.Secondary
+                    when SecondaryAttack > 0 => OmnitrixPlayer.AttackSelection.Secondary,
+                _ when PrimaryAttack > 0 => OmnitrixPlayer.AttackSelection.Primary,
+                _ => selection
+            };
+        }
+        public virtual string GetAttackSelectionLabel(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return ResolveAttackSelection(selection, omp) switch {
+                OmnitrixPlayer.AttackSelection.Secondary => "Secondary",
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => "Primary Ability",
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => "Secondary Ability",
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => "Tertiary Ability",
+                OmnitrixPlayer.AttackSelection.Ultimate => "Ultimate",
+                _ => "Primary"
+            };
+        }
+        public virtual string GetAttackSelectionDisplayName(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return ResolveAttackSelection(selection, omp) switch {
+                OmnitrixPlayer.AttackSelection.Secondary => SecondaryAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => PrimaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => SecondaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => TertiaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.Ultimate => UltimateAttackDisplayName,
+                _ => PrimaryAttackDisplayName
+            };
+        }
 
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             var profile = GetSelectedAttackProfile(omp);
@@ -262,6 +305,21 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int GetEnergyCost(OmnitrixPlayer omp) {
             return GetSelectedAttackProfile(omp)?.EnergyCost ?? 0;
         }
+        public virtual bool CanAffordCurrentAttack(OmnitrixPlayer omp) {
+            int energyCost = GetEnergyCost(omp);
+            return energyCost <= 0 || omp.omnitrixEnergy >= energyCost;
+        }
+        public virtual bool TryConsumeCurrentAttackCost(OmnitrixPlayer omp) {
+            int energyCost = GetEnergyCost(omp);
+            if (energyCost <= 0)
+                return true;
+
+            if (omp.omnitrixEnergy < energyCost)
+                return false;
+
+            omp.omnitrixEnergy -= energyCost;
+            return true;
+        }
         public virtual void FrameEffects(Player player, OmnitrixPlayer omp) { }
 
         protected virtual bool IsIntangibleWhilePrimaryAbilityActive(OmnitrixPlayer omp) {
@@ -275,6 +333,14 @@ namespace Ben10Mod.Content.Transformations {
 
             float safeMultiplier = Math.Max(0f, multiplier);
             return Math.Max(1, (int)Math.Round(baseCooldown * safeMultiplier));
+        }
+
+        protected static string ResolveProjectileDisplayName(int projectileType, string fallback) {
+            if (projectileType <= 0)
+                return fallback;
+
+            string displayName = Lang.GetProjectileName(projectileType).Value;
+            return string.IsNullOrWhiteSpace(displayName) ? fallback : displayName;
         }
 
         protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {

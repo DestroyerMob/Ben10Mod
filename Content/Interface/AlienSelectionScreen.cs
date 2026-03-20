@@ -9,6 +9,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
+using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Content.Interface
@@ -161,6 +162,59 @@ namespace Ben10Mod.Content.Interface
                 0.5f,
                 0.5f
             );
+
+            DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+        }
+
+        private void DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width)
+        {
+            if (!omp.IsTransformed)
+                return;
+
+            Transformation trans = omp.CurrentTransformation;
+            if (trans == null)
+                return;
+
+            Texture2D pixel = TextureAssets.MagicPixel.Value;
+            Rectangle panelRect = new Rectangle(x, y, width, 66);
+            bool holdingBadge = player.HeldItem.ModItem is PlumbersBadge;
+            float pulse = MathHelper.Clamp(omp.AttackSelectionPulseProgress, 0f, 1f);
+            Color accent = omp.GetCurrentAttackAccentColor();
+            Color borderColor = Color.Lerp(new Color(70, 90, 110), accent, 0.55f + pulse * 0.45f);
+            Color fillColor = holdingBadge
+                ? new Color(10, 18, 24, 205)
+                : new Color(10, 18, 24, 155);
+
+            if (pulse > 0f)
+            {
+                Rectangle glowRect = new Rectangle(panelRect.X - 2, panelRect.Y - 2, panelRect.Width + 4, panelRect.Height + 4);
+                Main.spriteBatch.Draw(pixel, glowRect, accent * (0.16f * pulse));
+            }
+
+            Main.spriteBatch.Draw(pixel, panelRect, fillColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Bottom - 2, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, 2, panelRect.Height), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
+
+            string slotLabel = omp.GetCurrentAttackSelectionLabel();
+            string attackName = omp.GetCurrentAttackDisplayName();
+            int energyCost = trans.GetEnergyCost(omp);
+
+            Utils.DrawBorderString(Main.spriteBatch, "Attack", new Vector2(panelRect.X + 10, panelRect.Y + 7),
+                new Color(220, 230, 240), 0.8f);
+            Utils.DrawBorderString(Main.spriteBatch, slotLabel, new Vector2(panelRect.Right - 10, panelRect.Y + 7),
+                borderColor, 0.82f, 1f, 0f);
+            Utils.DrawBorderString(Main.spriteBatch, attackName, new Vector2(panelRect.X + 10, panelRect.Y + 25),
+                Color.White, 0.96f);
+
+            if (energyCost > 0)
+            {
+                Utils.DrawBorderString(Main.spriteBatch, "Energy",
+                    new Vector2(panelRect.X + 10, panelRect.Y + 45), new Color(180, 195, 210), 0.72f);
+                Utils.DrawBorderString(Main.spriteBatch, $"{energyCost} OE",
+                    new Vector2(panelRect.Right - 10, panelRect.Y + 43), accent, 0.86f, 1f, 0f);
+            }
         }
 
         internal void ShowMyUI() => MyInterface?.SetState(AS);

@@ -60,6 +60,7 @@ namespace Ben10Mod {
         public int ultimateEchoEchoSpeakerSpawnSerial = 0;
         public int absorbedMaterialItemType = 0;
         public int absorbedMaterialTime = 0;
+        public int attackSelectionPulseTime = 0;
 
         public int cooldownTime = 120;
         public int transformationTime = 300;
@@ -138,11 +139,13 @@ namespace Ben10Mod {
         private readonly HashSet<int> activeEvents = new();
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
+        private const int AttackSelectionPulseDuration = 24;
         private float requestedTransformationScale = 1f;
         private int requestedTransformationScaleTime = 1;
         private Vector2 requestedTransformationHitboxScale = Vector2.One;
         private float lastExpandedTransformationScale = 1f;
         private Vector2 lastExpandedTransformationHitboxScale = Vector2.One;
+        private string lastAttackUiTransformationId = "";
 
         private const int EventBloodMoon = -1;
         private const int EventSolarEclipse = -2;
@@ -166,6 +169,7 @@ namespace Ben10Mod {
         public bool IsTertiaryAbilityAttackLoaded => setAttack == AttackSelection.TertiaryAbility;
         public bool HasLoadedAbilityAttack => IsAbilityAttackSelection(setAttack);
         public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
+        public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
 
         public Omnitrix GetActiveOmnitrix() {
             if (equippedOmnitrix != null)
@@ -543,6 +547,16 @@ namespace Ben10Mod {
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
+            if (attackSelectionPulseTime > 0)
+                attackSelectionPulseTime--;
+
+            string currentAttackTransformationId = isTransformed ? currentTransformationId : "";
+            if (lastAttackUiTransformationId != currentAttackTransformationId) {
+                lastAttackUiTransformationId = currentAttackTransformationId;
+                if (isTransformed)
+                    TriggerAttackSelectionPulse();
+            }
+
             bool authoritativeBuffTracking = Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer;
             bool absorptionBlocked = !osmosianEquipped || omnitrixEquipped;
             if (absorptionBlocked && absorbedMaterialTime > 0 && authoritativeBuffTracking)
@@ -788,6 +802,25 @@ namespace Ben10Mod {
             );
         }
 
+        public string GetCurrentAttackSelectionLabel() {
+            return CurrentTransformation?.GetAttackSelectionLabel(setAttack, this) ?? "Primary";
+        }
+
+        public string GetCurrentAttackDisplayName() {
+            return CurrentTransformation?.GetAttackSelectionDisplayName(setAttack, this) ?? "No Attack";
+        }
+
+        public Color GetCurrentAttackAccentColor() {
+            return CurrentTransformation?.ResolveAttackSelection(setAttack, this) switch {
+                AttackSelection.Secondary => new Color(120, 200, 255),
+                AttackSelection.PrimaryAbility => new Color(120, 255, 170),
+                AttackSelection.SecondaryAbility => new Color(255, 190, 90),
+                AttackSelection.TertiaryAbility => new Color(210, 140, 255),
+                AttackSelection.Ultimate => new Color(255, 210, 80),
+                _ => new Color(120, 255, 120)
+            };
+        }
+
         private bool ActivateAbilitySlot(AttackSelection slot, bool hasTimedAbility, bool hasAttackMode,
             int activeBuffType, int cooldownBuffType, int duration, int cooldown, int activationCost,
             ref string transformationIdStorage) {
@@ -892,21 +925,29 @@ namespace Ben10Mod {
             baseAttackSelection = baseAttackSelection == AttackSelection.Primary
                 ? AttackSelection.Secondary
                 : AttackSelection.Primary;
-            setAttack = baseAttackSelection;
+            SetAttackSelection(baseAttackSelection);
         }
 
         private void SetAttackSelection(AttackSelection selection) {
+            bool changed = setAttack != selection;
             setAttack = selection;
             if (selection is AttackSelection.Primary or AttackSelection.Secondary)
                 baseAttackSelection = selection;
+
+            if (changed)
+                TriggerAttackSelectionPulse();
         }
 
         public void ResetAttackToBaseSelection() {
-            setAttack = baseAttackSelection;
+            SetAttackSelection(baseAttackSelection);
         }
 
         private static bool IsAbilityAttackSelection(AttackSelection selection) {
             return selection is AttackSelection.PrimaryAbility or AttackSelection.SecondaryAbility or AttackSelection.TertiaryAbility;
+        }
+
+        private void TriggerAttackSelectionPulse() {
+            attackSelectionPulseTime = AttackSelectionPulseDuration;
         }
 
         public override bool CanUseItem(Item item) {

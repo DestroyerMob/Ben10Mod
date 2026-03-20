@@ -20,8 +20,6 @@ namespace Ben10Mod.Content.Items.Weapons {
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
 
-        private int OmnitrixEnergyUse = 0;
-
         private static bool HasActiveOwnedProjectile(Player player, int projType) {
             if (projType <= 0) return false;
 
@@ -77,8 +75,11 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         public override bool CanUseItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
-            return omp.IsTransformed &&
-                   !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.HasLoadedBadgeAttack);
+            if (!omp.IsTransformed)
+                return false;
+
+            var trans = omp.CurrentTransformation;
+            return trans?.CanAffordCurrentAttack(omp) ?? false;
         }
 
         public override void HoldItem(Player player) {
@@ -94,7 +95,6 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.noMelee          = true;
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
-            OmnitrixEnergyUse     = 0;
 
             if (!omp.IsTransformed) {
                 state.ultimateStarted = false;
@@ -102,22 +102,14 @@ namespace Ben10Mod.Content.Items.Weapons {
             }
 
             var trans = omp.CurrentTransformation;
-            if (trans != null) {
+            if (trans != null)
                 trans.ModifyPlumbersBadgeStats(Item, omp);
-                OmnitrixEnergyUse = trans.GetEnergyCost(omp);
-            }
 
             Item.useTime = Item.useAnimation = (int)(Item.useTime / AttackSpeedMultiplier);
         }
 
         public override bool? UseItem(Player player) {
-            var omp = player.GetModPlayer<OmnitrixPlayer>();
-            if (omp.omnitrixEnergy >= OmnitrixEnergyUse) {
-                omp.omnitrixEnergy -= OmnitrixEnergyUse;
-                return base.UseItem(player);
-            }
-
-            return false;
+            return base.UseItem(player);
         }
 
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source,
@@ -134,6 +126,9 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (firingUltimate && player.HasBuff<UltimateAbilityCooldown>()) return false;
             if (firingUltimate && state.ultimateStarted) return false;
+
+            if (!trans.TryConsumeCurrentAttackCost(omp))
+                return false;
 
             if (firingUltimate)
                 state.ultimateStarted = true;
