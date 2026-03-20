@@ -13,6 +13,9 @@ using Terraria.DataStructures;
 
 namespace Ben10Mod.Content.Transformations.HeatBlast {
     public class HeatBlastTransformation : Transformation {
+        private const float AuraRodDamageMultiplier = 0.1f;
+        private const int AuraRodEnergyCost = 100;
+
         public override string FullID             => "Ben10Mod:HeatBlast";
         public override string TransformationName => "Heatblast";
 
@@ -21,15 +24,22 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override string IconPath             => "Ben10Mod/Content/Interface/HeatBlastSelect";
         public override int    TransformationBuffId => ModContent.BuffType<HeatBlast_Buff>();
-        public override int PrimaryAbilityDuration => 60 * 120;
-        public override int PrimaryAbilityCooldown => 60 * 60;
+        public override bool HasPrimaryAbility => false;
+        public override int PrimaryAbilityCooldown => 0;
+        public override int PrimaryAbilityAttack => ModContent.ProjectileType<HeatBlastAuraRodProjectile>();
+        public override int PrimaryAbilityAttackSpeed => 24;
+        public override int PrimaryAbilityAttackShootSpeed => 0;
+        public override int PrimaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
+        public override float PrimaryAbilityAttackModifier => AuraRodDamageMultiplier;
+        public override int PrimaryAbilityAttackEnergyCost => AuraRodEnergyCost;
+        public override bool PrimaryAbilityAttackSingleUse => false;
 
         public override List<string> Abilities => new List<string> {
             "Flamethrower blast",
             "Flame bombs",
             "Flame-boosted jump",
             "Fire & lava immunity",
-            "Flame aura (inflicts hellflame debuff on nearby enemies)",
+            "Flame aura rod sentry",
             "Large fireball attack - ultimate charged attack"
         };
         
@@ -45,25 +55,6 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 omp.snowflake ? DustID.IceTorch : DustID.Flare,
                 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
             Main.dust[dustNum].noGravity = true;
-
-            if (omp.PrimaryAbilityEnabled) {
-                Vector2[] points = GenerateCirclePoints(250, 7 * 16);
-                for (int i = 0; i < points.Length; i++) {
-                    dustNum = Dust.NewDust(points[i] + player.Center, 1, 1,
-                        omp.snowflake ? DustID.IceTorch : DustID.Torch,
-                        rand.Next(-1, 2), rand.Next(-1, 2));
-                    Main.dust[dustNum].noGravity = true;
-                }
-
-                foreach (NPC npc in Main.npc) {
-                    if (npc.active && !npc.friendly && player.Distance(npc.Center) <= 10 * 16) {
-                        if (omp.snowflake && !npc.HasBuff(BuffID.Frostburn2))
-                            npc.AddBuff(BuffID.Frostburn2, 10 * 60);
-                        else if (!omp.snowflake && !npc.HasBuff(BuffID.OnFire3))
-                            npc.AddBuff(BuffID.OnFire3, 10 * 60);
-                    }
-                }
-            }
         }
         
         public override void OnHitNPC(Player player, OmnitrixPlayer omp, NPC target, NPC.HitInfo hit, int damageDone) {
@@ -95,21 +86,50 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override bool UltimateChannel => true;
         public override int UltimateEnergyCost => 10;
 
-        private static Vector2[] GenerateCirclePoints(int numberOfPoints, float radius) {
-            Vector2[] circlePoints   = new Vector2[numberOfPoints];
-            float     angleIncrement = 360f / numberOfPoints;
+        public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
+            Vector2 position, Vector2 velocity, int damage, float knockback) {
+            if (!omp.IsPrimaryAbilityAttackLoaded)
+                return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 
-            for (int i = 0; i < numberOfPoints; i++) {
-                float angle   = i * angleIncrement;
-                float radians = MathF.PI / 180f * angle;
+            int rodType = ModContent.ProjectileType<HeatBlastAuraRodProjectile>();
+            int maxRods = Math.Max(1, player.maxTurrets);
+            int activeRodCount = 0;
+            int oldestRodIndex = -1;
+            float oldestSpawnOrder = float.MaxValue;
 
-                float x = radius * MathF.Cos(radians);
-                float y = radius * MathF.Sin(radians);
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != player.whoAmI || projectile.type != rodType)
+                    continue;
 
-                circlePoints[i] = new Vector2(x, y);
+                activeRodCount++;
+                float spawnOrder = projectile.localAI[1] <= 0f ? projectile.identity : projectile.localAI[1];
+                if (spawnOrder < oldestSpawnOrder) {
+                    oldestSpawnOrder = spawnOrder;
+                    oldestRodIndex = i;
+                }
             }
 
-            return circlePoints;
+            if (activeRodCount >= maxRods && oldestRodIndex != -1)
+                Main.projectile[oldestRodIndex].Kill();
+
+            Vector2 spawnPosition = Main.MouseWorld;
+            int projectileIndex = Projectile.NewProjectile(source, spawnPosition, Vector2.Zero, rodType,
+                Math.Max(1, (int)Math.Round(damage * AuraRodDamageMultiplier)), 0f, player.whoAmI);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+                omp.transformationAttackSerial++;
+                Main.projectile[projectileIndex].originalDamage = Math.Max(1, (int)Math.Round(damage * AuraRodDamageMultiplier));
+                Main.projectile[projectileIndex].localAI[1] = omp.transformationAttackSerial;
+                Main.projectile[projectileIndex].netUpdate = true;
+            }
+
+            for (int i = 0; i < 18; i++) {
+                Dust dust = Dust.NewDustPerfect(spawnPosition + Main.rand.NextVector2Circular(18f, 18f), DustID.Flare,
+                    Main.rand.NextVector2Circular(2f, 2f), 100, new Color(255, 145, 50), Main.rand.NextFloat(1.2f, 1.7f));
+                dust.noGravity = true;
+            }
+
+            return false;
         }
 
         public override void FrameEffects(Player player, OmnitrixPlayer omp) {

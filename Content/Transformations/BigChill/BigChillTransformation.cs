@@ -163,7 +163,7 @@ public class BigChillTransformation : Transformation {
         Vector2 startCenter = player.Center;
         Vector2 destination = Main.MouseWorld;
 
-        omp.ultimateAttack = false;
+        omp.ResetAttackToBaseSelection();
 
         EmitPhaseBurst(startCenter);
         FreezeNPCsAlongPhasePath(startCenter, destination);

@@ -24,6 +24,15 @@ using Terraria.GameContent.Events;
 
 namespace Ben10Mod {
     public class OmnitrixPlayer : ModPlayer {
+        public enum AttackSelection {
+            Primary,
+            Secondary,
+            PrimaryAbility,
+            SecondaryAbility,
+            TertiaryAbility,
+            Ultimate
+        }
+
         public bool masterControl = false;
 
         public bool omnitrixEquipped = false;
@@ -43,8 +52,9 @@ namespace Ben10Mod {
         public int absorptionLifeRegenBonus = 0;
         public int absorptionMaxLifeBonus = 0;
         public int absorptionFlatDefenseBonus = 0;
-        public bool altAttack = false;
-        public bool ultimateAttack = false;
+        public AttackSelection setAttack = AttackSelection.Primary;
+        private AttackSelection baseAttackSelection = AttackSelection.Primary;
+        public bool loadedAbilityAttackUsed = false;
         public int transformationAttackSerial = 0;
         public int transformationAttackDamage = 0;
         public int ultimateEchoEchoSpeakerSpawnSerial = 0;
@@ -149,6 +159,13 @@ namespace Ben10Mod {
         public bool IsSecondaryAbilityActive => SecondaryAbilityEnabled || Player.HasBuff<SecondaryAbility>();
         public bool IsTertiaryAbilityActive => TertiaryAbilityEnabled || Player.HasBuff<TertiaryAbility>();
         public bool IsUltimateAbilityActive => UltimateAbilityEnabled || Player.HasBuff<UltimateAbility>();
+        public bool altAttack => setAttack == AttackSelection.Secondary;
+        public bool ultimateAttack => setAttack == AttackSelection.Ultimate;
+        public bool IsPrimaryAbilityAttackLoaded => setAttack == AttackSelection.PrimaryAbility;
+        public bool IsSecondaryAbilityAttackLoaded => setAttack == AttackSelection.SecondaryAbility;
+        public bool IsTertiaryAbilityAttackLoaded => setAttack == AttackSelection.TertiaryAbility;
+        public bool HasLoadedAbilityAttack => IsAbilityAttackSelection(setAttack);
+        public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
 
         public Omnitrix GetActiveOmnitrix() {
             if (equippedOmnitrix != null)
@@ -517,7 +534,7 @@ namespace Ben10Mod {
             }
 
             if (Main.mouseRight && Main.mouseRightRelease && Player.HeldItem.ModItem is PlumbersBadge)
-                altAttack = !altAttack;
+                ToggleBaseAttackSelection();
 
             if (Player.whoAmI == Main.myPlayer && KeybindSystem.AbsorbMaterial.JustPressed)
                 TryAbsorbHeldMaterial();
@@ -598,20 +615,20 @@ namespace Ben10Mod {
                     d.noGravity = true;
                 }
 
-                ultimateAttack = false;
+                ResetAttackToBaseSelection();
             }
 
             if (isTransformed) {
                 if (KeybindSystem.PrimaryAbility.JustPressed &&
-                    CurrentTransformation?.HasPrimaryAbilityForState(this) == true)
+                    CurrentTransformation?.HasPrimaryAbilityActionForState(this) == true)
                     ActivatePrimaryAbility();
 
                 if (KeybindSystem.SecondaryAbility.JustPressed &&
-                    CurrentTransformation?.HasSecondaryAbilityForState(this) == true)
+                    CurrentTransformation?.HasSecondaryAbilityActionForState(this) == true)
                     ActivateSecondaryAbility();
 
                 if (KeybindSystem.TertiaryAbility.JustPressed &&
-                    CurrentTransformation?.HasTertiaryAbilityForState(this) == true)
+                    CurrentTransformation?.HasTertiaryAbilityActionForState(this) == true)
                     ActivateTertiaryAbility();
 
                 if (KeybindSystem.UltimateAbility.JustPressed && CurrentTransformation != null)
@@ -652,7 +669,8 @@ namespace Ben10Mod {
             bool hasUltimateAttack = trans.GetUltimateAttackProjectileType(this) > 0;
 
             if (hasUltimateAbility) {
-                if (Player.HasBuff<UltimateAbilityCooldown>() || Player.HasBuff<UltimateAbility>() || ultimateAttack)
+                if (Player.HasBuff<UltimateAbilityCooldown>() || Player.HasBuff<UltimateAbility>() || ultimateAttack ||
+                    HasLoadedAbilityAttack)
                     return false;
 
                 int ultimateAbilityCost = trans.GetUltimateAbilityCost(this);
@@ -666,11 +684,15 @@ namespace Ben10Mod {
                 return false;
             }
 
-            if (!hasUltimateAttack || Player.HasBuff<UltimateAbility>() || Player.HasBuff<UltimateAbilityCooldown>())
+            if (!hasUltimateAttack || Player.HasBuff<UltimateAbility>() || Player.HasBuff<UltimateAbilityCooldown>() ||
+                HasLoadedAbilityAttack)
                 return false;
 
             int ultimateAttackCost = trans.GetUltimateAbilityCost(this);
             if (omnitrixEnergy >= ultimateAttackCost && !ultimateAttack) {
+                if (HasLoadedAbilityAttack)
+                    ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
+
                 for (int i = 0; i < 50; i++) {
                     Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
                         DustID.Firework_Blue,
@@ -678,7 +700,7 @@ namespace Ben10Mod {
                     d.noGravity = true;
                 }
 
-                ultimateAttack = true;
+                SetAttackSelection(AttackSelection.Ultimate);
                 return true;
             }
 
@@ -690,7 +712,7 @@ namespace Ben10Mod {
                     d.noGravity = true;
                 }
 
-                ultimateAttack = false;
+                ResetAttackToBaseSelection();
                 return true;
             }
 
@@ -701,57 +723,190 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
             if (trans == null) return false;
 
-            if (!trans.HasPrimaryAbilityForState(this))
+            if (!trans.HasPrimaryAbilityActionForState(this))
                 return false;
 
             if (trans.TryActivatePrimaryAbility(Player, this))
                 return true;
 
-            if (!Player.HasBuff<PrimaryAbilityCooldown>() && !Player.HasBuff<PrimaryAbility>()) {
-                Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), trans.GetPrimaryAbilityDuration(this));
-                primaryAbilityTransformationId = currentTransformationId;
-                return true;
-            }
-
-            return false;
+            return ActivateAbilitySlot(
+                AttackSelection.PrimaryAbility,
+                trans.HasPrimaryAbilityForState(this),
+                trans.HasPrimaryAbilityAttackForState(this),
+                ModContent.BuffType<PrimaryAbility>(),
+                ModContent.BuffType<PrimaryAbilityCooldown>(),
+                trans.GetPrimaryAbilityDuration(this),
+                trans.GetPrimaryAbilityCooldown(this),
+                trans.GetPrimaryAbilityCost(this),
+                ref primaryAbilityTransformationId
+            );
         }
 
         public bool ActivateSecondaryAbility() {
             var trans = CurrentTransformation;
             if (trans == null) return false;
 
-            if (!trans.HasSecondaryAbilityForState(this))
+            if (!trans.HasSecondaryAbilityActionForState(this))
                 return false;
 
             if (trans.TryActivateSecondaryAbility(Player, this))
                 return true;
 
-            if (!Player.HasBuff<SecondaryAbilityCooldown>() && !Player.HasBuff<SecondaryAbility>()) {
-                Player.AddBuff(ModContent.BuffType<SecondaryAbility>(), trans.GetSecondaryAbilityDuration(this));
-                secondaryAbilityTransformationId = currentTransformationId;
-                return true;
-            }
-
-            return false;
+            return ActivateAbilitySlot(
+                AttackSelection.SecondaryAbility,
+                trans.HasSecondaryAbilityForState(this),
+                trans.HasSecondaryAbilityAttackForState(this),
+                ModContent.BuffType<SecondaryAbility>(),
+                ModContent.BuffType<SecondaryAbilityCooldown>(),
+                trans.GetSecondaryAbilityDuration(this),
+                trans.GetSecondaryAbilityCooldown(this),
+                trans.GetSecondaryAbilityCost(this),
+                ref secondaryAbilityTransformationId
+            );
         }
 
         public bool ActivateTertiaryAbility() {
             var trans = CurrentTransformation;
             if (trans == null) return false;
 
-            if (!trans.HasTertiaryAbilityForState(this))
+            if (!trans.HasTertiaryAbilityActionForState(this))
                 return false;
 
             if (trans.TryActivateTertiaryAbility(Player, this))
                 return true;
 
-            if (!Player.HasBuff<TertiaryAbilityCooldown>() && !Player.HasBuff<TertiaryAbility>()) {
-                Player.AddBuff(ModContent.BuffType<TertiaryAbility>(), trans.GetTertiaryAbilityDuration(this));
-                tertiaryAbilityTransformationId = currentTransformationId;
+            return ActivateAbilitySlot(
+                AttackSelection.TertiaryAbility,
+                trans.HasTertiaryAbilityForState(this),
+                trans.HasTertiaryAbilityAttackForState(this),
+                ModContent.BuffType<TertiaryAbility>(),
+                ModContent.BuffType<TertiaryAbilityCooldown>(),
+                trans.GetTertiaryAbilityDuration(this),
+                trans.GetTertiaryAbilityCooldown(this),
+                trans.GetTertiaryAbilityCost(this),
+                ref tertiaryAbilityTransformationId
+            );
+        }
+
+        private bool ActivateAbilitySlot(AttackSelection slot, bool hasTimedAbility, bool hasAttackMode,
+            int activeBuffType, int cooldownBuffType, int duration, int cooldown, int activationCost,
+            ref string transformationIdStorage) {
+            if (hasTimedAbility) {
+                if (Player.HasBuff(cooldownBuffType) || Player.HasBuff(activeBuffType))
+                    return false;
+
+                if (omnitrixEnergy < activationCost)
+                    return false;
+
+                if (activationCost > 0)
+                    omnitrixEnergy -= activationCost;
+
+                Player.AddBuff(activeBuffType, duration);
+                transformationIdStorage = currentTransformationId;
                 return true;
             }
 
-            return false;
+            if (!hasAttackMode)
+                return false;
+
+            if (Player.HasBuff(cooldownBuffType) || Player.HasBuff(activeBuffType))
+                return false;
+
+            if (setAttack == slot) {
+                ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
+                return true;
+            }
+
+            if (omnitrixEnergy < activationCost)
+                return false;
+
+            ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
+
+            if (activationCost > 0)
+                omnitrixEnergy -= activationCost;
+
+            SetAttackSelection(slot);
+            loadedAbilityAttackUsed = false;
+            return true;
+        }
+
+        public void NotifyLoadedAbilityAttackFired() {
+            if (!HasLoadedAbilityAttack)
+                return;
+
+            loadedAbilityAttackUsed = true;
+
+            var trans = CurrentTransformation;
+            bool singleUse = trans != null && setAttack switch {
+                AttackSelection.PrimaryAbility => trans.PrimaryAbilityAttackSingleUse,
+                AttackSelection.SecondaryAbility => trans.SecondaryAbilityAttackSingleUse,
+                AttackSelection.TertiaryAbility => trans.TertiaryAbilityAttackSingleUse,
+                _ => false
+            };
+
+            if (singleUse)
+                ClearLoadedAbilityAttack(addCooldownIfUsed: true);
+        }
+
+        public void ClearLoadedAbilityAttack(bool addCooldownIfUsed = false) {
+            if (!HasLoadedAbilityAttack) {
+                loadedAbilityAttackUsed = false;
+                return;
+            }
+
+            if (addCooldownIfUsed && loadedAbilityAttackUsed)
+                ApplyLoadedAbilityAttackCooldown();
+
+            ResetAttackToBaseSelection();
+            loadedAbilityAttackUsed = false;
+        }
+
+        private void ApplyLoadedAbilityAttackCooldown() {
+            var trans = CurrentTransformation;
+            if (trans == null)
+                return;
+
+            switch (setAttack) {
+                case AttackSelection.PrimaryAbility:
+                    if (trans.GetPrimaryAbilityCooldown(this) > 0)
+                        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
+                            trans.GetPrimaryAbilityCooldown(this));
+                    break;
+                case AttackSelection.SecondaryAbility:
+                    if (trans.GetSecondaryAbilityCooldown(this) > 0)
+                        Player.AddBuff(ModContent.BuffType<SecondaryAbilityCooldown>(),
+                            trans.GetSecondaryAbilityCooldown(this));
+                    break;
+                case AttackSelection.TertiaryAbility:
+                    if (trans.GetTertiaryAbilityCooldown(this) > 0)
+                        Player.AddBuff(ModContent.BuffType<TertiaryAbilityCooldown>(),
+                            trans.GetTertiaryAbilityCooldown(this));
+                    break;
+            }
+        }
+
+        private void ToggleBaseAttackSelection() {
+            if (setAttack is not AttackSelection.Primary and not AttackSelection.Secondary)
+                return;
+
+            baseAttackSelection = baseAttackSelection == AttackSelection.Primary
+                ? AttackSelection.Secondary
+                : AttackSelection.Primary;
+            setAttack = baseAttackSelection;
+        }
+
+        private void SetAttackSelection(AttackSelection selection) {
+            setAttack = selection;
+            if (selection is AttackSelection.Primary or AttackSelection.Secondary)
+                baseAttackSelection = selection;
+        }
+
+        public void ResetAttackToBaseSelection() {
+            setAttack = baseAttackSelection;
+        }
+
+        private static bool IsAbilityAttackSelection(AttackSelection selection) {
+            return selection is AttackSelection.PrimaryAbility or AttackSelection.SecondaryAbility or AttackSelection.TertiaryAbility;
         }
 
         public override bool CanUseItem(Item item) {

@@ -21,6 +21,7 @@ namespace Ben10Mod.Content.Transformations {
         public bool NoMelee { get; init; }
         public int ArmorPenetration { get; init; }
         public int EnergyCost { get; init; }
+        public bool SingleUse { get; init; }
     }
 
     public abstract class Transformation : ModType {
@@ -28,38 +29,74 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual int PrimaryAttack => -1;
         public virtual int SecondaryAttack => -1;
+        public virtual int PrimaryAbilityAttack => -1;
+        public virtual int SecondaryAbilityAttack => -1;
+        public virtual int TertiaryAbilityAttack => -1;
         public virtual int UltimateAttack => -1;
         public virtual float PrimaryAttackModifier => 1f;
         public virtual float SecondaryAttackModifier => 1f;
+        public virtual float PrimaryAbilityAttackModifier => 1f;
+        public virtual float SecondaryAbilityAttackModifier => 1f;
+        public virtual float TertiaryAbilityAttackModifier => 1f;
         public virtual float UltimateAttackModifier => 1f;
         public virtual int PrimaryAttackSpeed => -1;
         public virtual int PrimaryShootSpeed => -1;
         public virtual int SecondaryAttackSpeed => -1;
         public virtual int SecondaryShootSpeed => -1;
+        public virtual int PrimaryAbilityAttackSpeed => -1;
+        public virtual int PrimaryAbilityAttackShootSpeed => -1;
+        public virtual int SecondaryAbilityAttackSpeed => -1;
+        public virtual int SecondaryAbilityAttackShootSpeed => -1;
+        public virtual int TertiaryAbilityAttackSpeed => -1;
+        public virtual int TertiaryAbilityAttackShootSpeed => -1;
         public virtual int UltimateAttackSpeed => -1;
         public virtual int UltimateShootSpeed => -1;
         public virtual int PrimaryUseStyle => ItemUseStyleID.Swing;
         public virtual int SecondaryUseStyle => ItemUseStyleID.Swing;
+        public virtual int PrimaryAbilityAttackUseStyle => ItemUseStyleID.Swing;
+        public virtual int SecondaryAbilityAttackUseStyle => ItemUseStyleID.Swing;
+        public virtual int TertiaryAbilityAttackUseStyle => ItemUseStyleID.Swing;
         public virtual int UltimateUseStyle => ItemUseStyleID.Swing;
         public virtual bool PrimaryChannel => false;
         public virtual bool SecondaryChannel => false;
+        public virtual bool PrimaryAbilityAttackChannel => false;
+        public virtual bool SecondaryAbilityAttackChannel => false;
+        public virtual bool TertiaryAbilityAttackChannel => false;
         public virtual bool UltimateChannel => false;
         public virtual bool PrimaryNoMelee => true;
         public virtual bool SecondaryNoMelee => true;
+        public virtual bool PrimaryAbilityAttackNoMelee => true;
+        public virtual bool SecondaryAbilityAttackNoMelee => true;
+        public virtual bool TertiaryAbilityAttackNoMelee => true;
         public virtual bool UltimateNoMelee => true;
         public virtual int PrimaryArmorPenetration => 0;
         public virtual int SecondaryArmorPenetration => 0;
+        public virtual int PrimaryAbilityAttackArmorPenetration => 0;
+        public virtual int SecondaryAbilityAttackArmorPenetration => 0;
+        public virtual int TertiaryAbilityAttackArmorPenetration => 0;
         public virtual int UltimateArmorPenetration => 0;
         public virtual int PrimaryEnergyCost => 0;
         public virtual int SecondaryEnergyCost => 0;
+        public virtual int PrimaryAbilityAttackEnergyCost => 0;
+        public virtual int SecondaryAbilityAttackEnergyCost => 0;
+        public virtual int TertiaryAbilityAttackEnergyCost => 0;
         public virtual int UltimateEnergyCost => 0;
         public virtual bool HasPrimaryAttack => PrimaryAttack > 0;
         public virtual bool HasSecondaryAttack => SecondaryAttack > 0;
+        public virtual bool HasPrimaryAbilityAttack => PrimaryAbilityAttack > 0;
+        public virtual bool HasSecondaryAbilityAttack => SecondaryAbilityAttack > 0;
+        public virtual bool HasTertiaryAbilityAttack => TertiaryAbilityAttack > 0;
         public virtual bool HasUltimateAttack => UltimateAttack > 0;
         public virtual bool HasPrimaryAbility => PrimaryAbilityDuration > 0;
         public virtual bool HasSecondaryAbility => SecondaryAbilityDuration > 0;
         public virtual bool HasTertiaryAbility => TertiaryAbilityDuration > 0;
+        public virtual bool PrimaryAbilityAttackSingleUse => false;
+        public virtual bool SecondaryAbilityAttackSingleUse => false;
+        public virtual bool TertiaryAbilityAttackSingleUse => false;
         public virtual bool HasUltimateAbility => false;
+        public virtual int PrimaryAbilityCost => 0;
+        public virtual int SecondaryAbilityCost => 0;
+        public virtual int TertiaryAbilityCost => 0;
         public virtual int UltimateAbilityCost => 50;
         public virtual int UltimateAbilityDuration => 30;
         public virtual int UltimateAbilityCooldown => 30;
@@ -151,10 +188,22 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetDisplayName(OmnitrixPlayer omp) => TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
+        public virtual bool HasPrimaryAbilityActionForState(OmnitrixPlayer omp)
+            => HasPrimaryAbilityForState(omp) || HasPrimaryAbilityAttackForState(omp);
+        public virtual bool HasSecondaryAbilityActionForState(OmnitrixPlayer omp)
+            => HasSecondaryAbilityForState(omp) || HasSecondaryAbilityAttackForState(omp);
+        public virtual bool HasTertiaryAbilityActionForState(OmnitrixPlayer omp)
+            => HasTertiaryAbilityForState(omp) || HasTertiaryAbilityAttackForState(omp);
         public virtual bool HasPrimaryAbilityForState(OmnitrixPlayer omp) => HasPrimaryAbility;
         public virtual bool HasSecondaryAbilityForState(OmnitrixPlayer omp) => HasSecondaryAbility;
         public virtual bool HasTertiaryAbilityForState(OmnitrixPlayer omp) => HasTertiaryAbility;
+        public virtual bool HasPrimaryAbilityAttackForState(OmnitrixPlayer omp) => HasPrimaryAbilityAttack;
+        public virtual bool HasSecondaryAbilityAttackForState(OmnitrixPlayer omp) => HasSecondaryAbilityAttack;
+        public virtual bool HasTertiaryAbilityAttackForState(OmnitrixPlayer omp) => HasTertiaryAbilityAttack;
         public virtual bool HasUltimateAbilityForState(OmnitrixPlayer omp) => HasUltimateAbility;
+        public virtual int GetPrimaryAbilityCost(OmnitrixPlayer omp) => PrimaryAbilityCost;
+        public virtual int GetSecondaryAbilityCost(OmnitrixPlayer omp) => SecondaryAbilityCost;
+        public virtual int GetTertiaryAbilityCost(OmnitrixPlayer omp) => TertiaryAbilityCost;
         public virtual int GetPrimaryAbilityDuration(OmnitrixPlayer omp) => PrimaryAbilityDuration;
         public virtual int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) {
             return ApplyAbilityCooldownMultiplier(PrimaryAbilityCooldown, omp.primaryAbilityCooldownMultiplier);
@@ -172,6 +221,9 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int GetUltimateAbilityCooldown(OmnitrixPlayer omp) {
             return ApplyAbilityCooldownMultiplier(UltimateAbilityCooldown, omp.ultimateAbilityCooldownMultiplier);
         }
+        public virtual int GetPrimaryAbilityAttackProjectileType(OmnitrixPlayer omp) => PrimaryAbilityAttack;
+        public virtual int GetSecondaryAbilityAttackProjectileType(OmnitrixPlayer omp) => SecondaryAbilityAttack;
+        public virtual int GetTertiaryAbilityAttackProjectileType(OmnitrixPlayer omp) => TertiaryAbilityAttack;
         public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp) => UltimateAttack;
 
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -398,6 +450,51 @@ namespace Ben10Mod.Content.Transformations {
             };
         }
 
+        protected virtual TransformationAttackProfile CreatePrimaryAbilityAttackProfile() {
+            return new TransformationAttackProfile {
+                ProjectileType = PrimaryAbilityAttack,
+                DamageMultiplier = PrimaryAbilityAttackModifier,
+                UseTime = PrimaryAbilityAttackSpeed,
+                ShootSpeed = PrimaryAbilityAttackShootSpeed,
+                UseStyle = PrimaryAbilityAttackUseStyle,
+                Channel = PrimaryAbilityAttackChannel,
+                NoMelee = PrimaryAbilityAttackNoMelee,
+                ArmorPenetration = PrimaryAbilityAttackArmorPenetration,
+                EnergyCost = PrimaryAbilityAttackEnergyCost,
+                SingleUse = PrimaryAbilityAttackSingleUse
+            };
+        }
+
+        protected virtual TransformationAttackProfile CreateSecondaryAbilityAttackProfile() {
+            return new TransformationAttackProfile {
+                ProjectileType = SecondaryAbilityAttack,
+                DamageMultiplier = SecondaryAbilityAttackModifier,
+                UseTime = SecondaryAbilityAttackSpeed,
+                ShootSpeed = SecondaryAbilityAttackShootSpeed,
+                UseStyle = SecondaryAbilityAttackUseStyle,
+                Channel = SecondaryAbilityAttackChannel,
+                NoMelee = SecondaryAbilityAttackNoMelee,
+                ArmorPenetration = SecondaryAbilityAttackArmorPenetration,
+                EnergyCost = SecondaryAbilityAttackEnergyCost,
+                SingleUse = SecondaryAbilityAttackSingleUse
+            };
+        }
+
+        protected virtual TransformationAttackProfile CreateTertiaryAbilityAttackProfile() {
+            return new TransformationAttackProfile {
+                ProjectileType = TertiaryAbilityAttack,
+                DamageMultiplier = TertiaryAbilityAttackModifier,
+                UseTime = TertiaryAbilityAttackSpeed,
+                ShootSpeed = TertiaryAbilityAttackShootSpeed,
+                UseStyle = TertiaryAbilityAttackUseStyle,
+                Channel = TertiaryAbilityAttackChannel,
+                NoMelee = TertiaryAbilityAttackNoMelee,
+                ArmorPenetration = TertiaryAbilityAttackArmorPenetration,
+                EnergyCost = TertiaryAbilityAttackEnergyCost,
+                SingleUse = TertiaryAbilityAttackSingleUse
+            };
+        }
+
         protected virtual TransformationAttackProfile CreateUltimateAttackProfile() {
             return new TransformationAttackProfile {
                 ProjectileType = UltimateAttack,
@@ -413,16 +510,21 @@ namespace Ben10Mod.Content.Transformations {
         }
 
         protected virtual TransformationAttackProfile GetSelectedAttackProfile(OmnitrixPlayer omp) {
-            if (GetUltimateAttackProjectileType(omp) > 0 && omp.ultimateAttack)
-                return CreateUltimateAttackProfile();
-
-            if (SecondaryAttack > 0 && omp.altAttack)
-                return CreateSecondaryAttackProfile();
-
-            if (PrimaryAttack > 0)
-                return CreatePrimaryAttackProfile();
-
-            return null;
+            return omp.setAttack switch {
+                OmnitrixPlayer.AttackSelection.Ultimate
+                    when GetUltimateAttackProjectileType(omp) > 0 => CreateUltimateAttackProfile(),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility
+                    when GetTertiaryAbilityAttackProjectileType(omp) > 0 => CreateTertiaryAbilityAttackProfile(),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility
+                    when GetSecondaryAbilityAttackProjectileType(omp) > 0 => CreateSecondaryAbilityAttackProfile(),
+                OmnitrixPlayer.AttackSelection.PrimaryAbility
+                    when GetPrimaryAbilityAttackProjectileType(omp) > 0 => CreatePrimaryAbilityAttackProfile(),
+                OmnitrixPlayer.AttackSelection.Secondary
+                    when SecondaryAttack > 0 => CreateSecondaryAttackProfile(),
+                _
+                    when PrimaryAttack > 0 => CreatePrimaryAttackProfile(),
+                _ => null
+            };
         }
 
         protected sealed override void Register() {

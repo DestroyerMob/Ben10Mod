@@ -40,7 +40,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (player.channel) return;
 
             if (omp.ultimateAttack) {
-                omp.ultimateAttack = false;
+                omp.ResetAttackToBaseSelection();
 
                 if (!player.HasBuff<UltimateAbilityCooldown>())
                     player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
@@ -78,7 +78,7 @@ namespace Ben10Mod.Content.Items.Weapons {
         public override bool CanUseItem(Player player) {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             return omp.IsTransformed &&
-                   !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.ultimateAttack);
+                   !(omp.omnitrixEnergy < OmnitrixEnergyUse && omp.HasLoadedBadgeAttack);
         }
 
         public override void HoldItem(Player player) {
@@ -130,6 +130,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (trans == null) return false;
 
             bool firingUltimate = omp.ultimateAttack;
+            bool firingLoadedAbilityAttack = omp.HasLoadedAbilityAttack;
 
             if (firingUltimate && player.HasBuff<UltimateAbilityCooldown>()) return false;
             if (firingUltimate && state.ultimateStarted) return false;
@@ -138,6 +139,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                 state.ultimateStarted = true;
 
             trans.Shoot(player, omp, source, position, velocity, damage, knockback);
+
+            if (firingLoadedAbilityAttack)
+                omp.NotifyLoadedAbilityAttackFired();
 
             return false;
         }

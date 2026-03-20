@@ -101,9 +101,10 @@ namespace Ben10Mod.Content
             player.ClearBuff(ModContent.BuffType<TertiaryAbility>());
             player.ClearBuff(ModContent.BuffType<UltimateAbility>());
 
+            omp.ClearLoadedAbilityAttack(addCooldownIfUsed: true);
             omp.currentTransformationId = "";
             omp.isTransformed           = false;
-            omp.ultimateAttack          = false;
+            omp.ResetAttackToBaseSelection();
             omp.activeTransformationDurationMultiplier = 1f;
             omp.activeCooldownDurationMultiplier = 1f;
 
