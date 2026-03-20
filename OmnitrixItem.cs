@@ -1,9 +1,6 @@
-﻿using Ben10Mod.Content.Items;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using Ben10Mod.Content.Items;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.GameContent.ItemDropRules;
 using Terraria.ID;
@@ -24,6 +21,21 @@ namespace Ben10Mod {
             if (item.type == ItemID.FrostCore) {
                 omp.snowflake = true;
             }
+        }
+
+        public override void UseItemHitbox(Item item, Player player, ref Rectangle hitbox, ref bool noHitbox) {
+            if (noHitbox || item.noMelee || item.damage <= 0)
+                return;
+
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            float scale = omp.CurrentTransformationScale;
+            if (scale <= 1f)
+                return;
+
+            int scaledWidth = Math.Max(hitbox.Width, (int)Math.Round(hitbox.Width * scale));
+            int scaledHeight = Math.Max(hitbox.Height, (int)Math.Round(hitbox.Height * scale));
+            Point center = hitbox.Center;
+            hitbox = new Rectangle(center.X - scaledWidth / 2, center.Y - scaledHeight / 2, scaledWidth, scaledHeight);
         }
     }
 }

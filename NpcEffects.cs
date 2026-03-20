@@ -1,7 +1,6 @@
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Transformations.HeatBlast;
-using Ben10Mod.Content.Transformations.XLR8;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -21,9 +20,32 @@ public class NpcEffects : GlobalNPC {
         return false;
     }
 
+    private static bool IsFrozenByXLR8Ultimate() {
+        foreach (Player player in Main.ActivePlayers) {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:XLR8")
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool ShouldHardFreeze(NPC npc) {
+        if (!npc.active || npc.friendly)
+            return false;
+
+        return npc.HasBuff(ModContent.BuffType<EnemyFrozen>()) || IsFrozenByXLR8Ultimate();
+    }
+
     public override bool PreAI(NPC npc) {
         var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-        if (omp.UltimateAbilityEnabled && omp.CurrentTransformation == ModContent.GetInstance<HeatBlastTransformation>()) {
+        if (ShouldHardFreeze(npc)) {
+            npc.velocity = Vector2.Zero;
+            npc.position = npc.oldPosition;
+            return false;
+        }
+
+        if (omp.IsUltimateAbilityActive && omp.CurrentTransformation == ModContent.GetInstance<HeatBlastTransformation>()) {
             npc.velocity = Vector2.Zero;
         }
         return base.PreAI(npc);
@@ -42,6 +64,10 @@ public class NpcEffects : GlobalNPC {
     }
 
     public override void DrawEffects(NPC npc, ref Color drawColor) {
+        if (ShouldHardFreeze(npc)) {
+            drawColor = Color.Lerp(drawColor, new Color(150, 210, 255), 0.75f);
+        }
+
         if (IsPossessed(npc)) {
             drawColor = new Color(170, 100, 255, 190);
         }

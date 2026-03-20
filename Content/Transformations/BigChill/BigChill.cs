@@ -19,7 +19,7 @@ namespace Ben10Mod.Content.Transformations.BigChill
             "Main attack: icy projectile shot.",
             "Alt attack: frost breath stream.",
             "Ultimate form: available through the Ultimatrix evolution feature.",
-            "Ultimate ability: freezing field that slows nearby enemies."
+            "Ultimate attack: phase to the cursor and freeze enemies passed through for 10 seconds."
         };
 
         public override void Load() {
@@ -33,10 +33,6 @@ namespace Ben10Mod.Content.Transformations.BigChill
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Head}", EquipType.Head, name: "UltimateBigChill", equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Body}", EquipType.Body, name: "UltimateBigChill");
             EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultimate_{EquipType.Legs}", EquipType.Legs, name: "UltimateBigChill");
-            
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Head}", EquipType.Head, name: "UltraBigChill", equipTexture: new XLR8Head());
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Body}", EquipType.Body, name: "UltraBigChill");
-            EquipLoader.AddEquipTexture(Mod, $"{Texture}Ultra_{EquipType.Legs}", EquipType.Legs, name: "UltraBigChill");
         }
 
         private void SetupDrawing() {
@@ -50,10 +46,6 @@ namespace Ben10Mod.Content.Transformations.BigChill
             int equipSlotHeadUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Head);
             int equipSlotBodyUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Body);
             int equipSlotLegsUltimate = EquipLoader.GetEquipSlot(Mod, "UltimateBigChill", EquipType.Legs);
-            
-            int equipSlotHeadUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Head);
-            int equipSlotBodyUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Body);
-            int equipSlotLegsUltra = EquipLoader.GetEquipSlot(Mod, "UltraBigChill", EquipType.Legs);
 
             ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
@@ -64,11 +56,6 @@ namespace Ben10Mod.Content.Transformations.BigChill
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyUltimate]    = true;
             ArmorIDs.Body.Sets.HidesArms[equipSlotBodyUltimate]       = true;
             ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsUltimate] = true;
-            
-            ArmorIDs.Head.Sets.DrawHead[equipSlotHeadUltra]        = false;
-            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBodyUltra]    = true;
-            ArmorIDs.Body.Sets.HidesArms[equipSlotBodyUltra]       = true;
-            ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegsUltra] = true;
         }
 
         public override void SetStaticDefaults() {

@@ -531,6 +531,26 @@ Buffs: {
 		Description: Primary Ability On Cooldown
 	}
 
+	SecondaryAbility: {
+		DisplayName: Secondary Ability
+		Description: Secondary Ability Activated
+	}
+
+	SecondaryAbilityCooldown: {
+		DisplayName: Secondary Ability Cooldown
+		Description: Secondary Ability On Cooldown
+	}
+
+	TertiaryAbility: {
+		DisplayName: Tertiary Ability
+		Description: Tertiary Ability Activated
+	}
+
+	TertiaryAbilityCooldown: {
+		DisplayName: Tertiary Ability Cooldown
+		Description: Tertiary Ability On Cooldown
+	}
+
 	BuzzShockMinionBuff: {
 		DisplayName: Buzz Shock Minion Buff
 		Description: A Buzzshock minion fights at your side
@@ -619,6 +639,11 @@ Buffs: {
 	NRG_Buff: {
 		DisplayName: N R G_ Buff
 		Description: Mods.Ben10Mod.Buffs.NRG_Buff.Description
+	}
+
+	EnemyFrozen: {
+		Description: Mods.Ben10Mod.Buffs.EnemyFrozen.Description
+		DisplayName: Enemy Frozen
 	}
 }
 

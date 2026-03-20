@@ -10,12 +10,27 @@
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Ben10Mod.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Ben10Mod.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionProfile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionProfile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionRegistry.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/MaterialAbsorptionRegistry.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common/Absorption/VanillaMaterialAbsorptionSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/Absorption/VanillaMaterialAbsorptionSystem.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Common/CustomVisuals/ScreenShaderController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Common/CustomVisuals/ScreenShaderController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HumungousaurPunchProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HumungousaurPunchProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HumungousaurShockwavePlayerProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HumungousaurShockwavePlayerProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/TransformationHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/TransformationHandler.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChill.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChill.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillUltra_Body.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillUltra_Head.png" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/EnemyFrozen.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillUltra_Legs.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/UltimateBigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/UltimateBigChillTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/UltraBigChillTransformation.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NpcEffects.cs" beforeDir="false" afterPath="$PROJECT_DIR$/NpcEffects.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixItem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixItem.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.txt" beforeDir="false" afterPath="$PROJECT_DIR$/build.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixProjectile.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,12 +51,12 @@
     &quot;assignee&quot;: &quot;DestroyerMob&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/DestroyerMob/Ben10Mod.git",
-    "accountId": "e10becbb-c5ff-41c4-b480-d3cf4848be98"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/DestroyerMob/Ben10Mod.git&quot;,
+    &quot;accountId&quot;: &quot;e10becbb-c5ff-41c4-b480-d3cf4848be98&quot;
   }
-}]]></component>
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" root0="FORCE_HIGHLIGHTING" />
@@ -51,6 +66,9 @@
     <urls />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="SWEA" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
 }</component>
@@ -150,6 +168,9 @@
       <workItem from="1773853451275" duration="85000" />
       <workItem from="1773853644958" duration="583000" />
       <workItem from="1773880617383" duration="2031000" />
+      <workItem from="1773991970068" duration="163000" />
+      <workItem from="1773992137185" duration="21000" />
+      <workItem from="1773992184362" duration="4991000" />
     </task>
     <servers />
   </component>

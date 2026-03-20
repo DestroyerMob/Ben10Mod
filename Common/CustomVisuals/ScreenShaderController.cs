@@ -81,14 +81,14 @@ public class ScreenShaderController : ModSystem {
             "Ben10Mod:Bluescale",
             shouldActivate: player => {
                 var omp = player.GetModPlayer<OmnitrixPlayer>();
-                return omp.UltimateAbilityEnabled && omp.currentTransformationId == "Ben10Mod:BigChill";
+                return omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:BigChill";
             });
 
         Register(
             "Ben10Mod:Grayscale",
             shouldActivate: player => {
                 var omp = player.GetModPlayer<OmnitrixPlayer>();
-                return omp.UltimateAbilityEnabled && omp.currentTransformationId == "Ben10Mod:XLR8";
+                return omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:XLR8";
             },
             whileActive: (shader, _) => shader.Shader.Parameters["strength"]?.SetValue(1f),
             onDeactivate: (shader, _) => shader.Shader.Parameters["strength"]?.SetValue(0f));

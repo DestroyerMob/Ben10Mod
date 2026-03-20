@@ -35,6 +35,8 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     public override int SecondaryAttackSpeed => 22;
     public override int SecondaryShootSpeed => 0;
     public override float SecondaryAttackModifier => 0.85f;
+    
+    
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.12f;

@@ -14,6 +14,7 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     public override string TransformationName => "Ultimate Bigchill";
     public override int TransformationBuffId => ModContent.BuffType<UltimateBigChill_Buff>();
     public override Transformation ParentTransformation => ModContent.GetInstance<BigChillTransformation>();
+    public override Transformation ChildTransformation => null;
 
     public override string Description =>
         "An evolved Necrofriggian form with denser ice power, improved aerial control, and all of Big Chill's spectral mobility.";
@@ -23,7 +24,7 @@ public class UltimateBigChillTransformation : BigChillTransformation {
         "Enhanced frost breath",
         "Phase movement",
         "Flight",
-        "Ultimate form attacks and abilities"
+        "Phase-through freeze strike"
     };
 
     public override float PrimaryAttackModifier => 1.25f;

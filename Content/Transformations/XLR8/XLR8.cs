@@ -19,7 +19,7 @@ namespace Ben10Mod.Content.Transformations.XLR8
             "Main attack: ultra-fast rushing strikes.",
             "Passive: huge movement speed, rapid acceleration, boosted jumping, and water running at speed.",
             "Mobility: horizontal dash by double tapping left or right.",
-            "Ultimate ability: temporal slowdown field that stops enemies and slows projectiles."
+            "Ultimate ability: grayscale perception shift that slows hostile NPCs and outside projectiles to a halt."
         };
 
         public override void Load() {

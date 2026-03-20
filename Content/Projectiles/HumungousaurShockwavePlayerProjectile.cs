@@ -24,7 +24,9 @@ public class HumungousaurShockwavePlayerProjectile : ModProjectile {
     public override void AI() {
         Projectile.velocity.Y = 0f;
         Projectile.rotation = 0f;
-        Projectile.scale = 1f + (60f - Projectile.timeLeft) * 0.015f;
+        float ownerScale = Projectile.ai[0] <= 0f ? 1f : Projectile.ai[0];
+        Projectile.scale = ownerScale * (1f + (60f - Projectile.timeLeft) * 0.015f);
+        Projectile.GetGlobalProjectile<OmnitrixProjectile>().EnableScaleHitboxSync(Projectile);
         Lighting.AddLight(Projectile.Center, 0.8f, 0.25f, 0.1f);
     }
 }

@@ -13,15 +13,17 @@ public class HumungousaurPunchProjectile : ModProjectile {
     private const int PunchLifetime = 12;
 
     public override void SetDefaults() {
-        Projectile.width = 58;
-        Projectile.height = 58;
+        Projectile.width = 22;
+        Projectile.height = 22;
         Projectile.friendly = true;
         Projectile.DamageType = DamageClass.Generic;
-        Projectile.penetrate = 1;
+        Projectile.penetrate = -1;
         Projectile.timeLeft = PunchLifetime;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.hide = true;
+        Projectile.usesLocalNPCImmunity = true;
+        Projectile.localNPCHitCooldown = PunchLifetime;
     }
 
     public override void AI() {
@@ -32,6 +34,7 @@ public class HumungousaurPunchProjectile : ModProjectile {
         }
 
         Projectile.scale = Projectile.ai[0] <= 0f ? 1f : Projectile.ai[0];
+        Projectile.GetGlobalProjectile<OmnitrixProjectile>().EnableScaleHitboxSync(Projectile);
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         if (direction.X != 0f)
             owner.direction = direction.X > 0f ? 1 : -1;
@@ -39,7 +42,7 @@ public class HumungousaurPunchProjectile : ModProjectile {
         float progress = 1f - Projectile.timeLeft / (float)PunchLifetime;
         float extensionCurve = progress < 0.38f ? progress / 0.38f : 1f - (progress - 0.38f) / 0.62f * 0.55f;
         float extension = MathHelper.Lerp(12f, 34f * Projectile.scale, MathHelper.Clamp(extensionCurve, 0f, 1f));
-        Vector2 shoulderOffset = new(owner.direction * 8f, -4f);
+        Vector2 shoulderOffset = new(owner.direction * 8f * Projectile.scale, -4f * Projectile.scale);
 
         Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
         Projectile.Center = owner.MountedCenter + shoulderOffset + direction * extension;
@@ -80,13 +83,32 @@ public class HumungousaurPunchProjectile : ModProjectile {
         return false;
     }
 
+    public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead)
+            return false;
+
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 shoulderOffset = new(owner.direction * 8f * Projectile.scale, -4f * Projectile.scale);
+        Vector2 lineStart = owner.MountedCenter + shoulderOffset;
+        Vector2 lineEnd = Projectile.Center + direction * (10f * Projectile.scale);
+        float collisionPoint = 0f;
+
+        return Collision.CheckAABBvLineCollision(
+            new Vector2(targetHitbox.X, targetHitbox.Y),
+            new Vector2(targetHitbox.Width, targetHitbox.Height),
+            lineStart,
+            lineEnd,
+            14f * Projectile.scale,
+            ref collisionPoint
+        );
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         for (int i = 0; i < 16; i++) {
             Dust dust = Dust.NewDustPerfect(target.Center, DustID.Smoke,
                 Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2f, 5.5f), 130, new Color(220, 155, 100), 1.2f);
             dust.noGravity = true;
         }
-
-        Projectile.Kill();
     }
 }

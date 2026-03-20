@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.Projectiles;
@@ -10,6 +11,12 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.Humungousaur;
 
 public class HumungousaurTransformation : Transformation {
+    public const float GrownScale = 1.65f;
+    public const float UltimateGrownScale = 1f + (GrownScale - 1f) * 2f;
+    public const int GrowthRampDuration = 3 * 60;
+    public const int UltimateAbilityDurationTicks = 20 * 60;
+    public const int UltimateAbilityCooldownTicks = 90 * 60;
+
     public override string FullID => "Ben10Mod:Humungousaur";
     public override string TransformationName => "Humungousaur";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
@@ -23,6 +30,7 @@ public class HumungousaurTransformation : Transformation {
         "Close-range power punch",
         "Forward shockwave slam",
         "Growth surge that boosts strength and toughness",
+        "Titan growth that doubles the surge",
         "Ultimate evolution"
     };
 
@@ -35,41 +43,56 @@ public class HumungousaurTransformation : Transformation {
     public override int SecondaryShootSpeed => 8;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override bool HasPrimaryAbility => true;
-    public override int PrimaryAbilityDuration => 18 * 60;
+    public override int PrimaryAbilityDuration => 60 * 60;
     public override int PrimaryAbilityCooldown => 50 * 60;
+    public override bool HasUltimateAbility => true;
+    public override int UltimateAbilityCost => 75;
+    public override int UltimateAbilityDuration => UltimateAbilityDurationTicks;
+    public override int UltimateAbilityCooldown => UltimateAbilityCooldownTicks;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
+        float growthScale = GetActiveGrowthScale(omp);
+        float growthBonusMultiplier = GetGrowthBonusMultiplier(growthScale);
+        bool growthActive = growthBonusMultiplier > 0f;
+
+        omp.SetTransformationScale(growthScale, GrowthRampDuration, 1f, growthScale);
+
         player.statDefense += 8;
         player.GetDamage(DamageClass.Generic) += 0.12f;
         player.GetKnockback(DamageClass.Generic) += 0.25f;
 
-        if (!omp.PrimaryAbilityEnabled)
+        if (!growthActive)
             return;
 
-        player.statDefense += 14;
-        player.GetDamage(DamageClass.Generic) += 0.2f;
-        player.GetKnockback(DamageClass.Generic) += 0.5f;
-        player.moveSpeed *= 0.9f;
+        player.statDefense += (int)Math.Round(14f * growthBonusMultiplier);
+        player.GetDamage(DamageClass.Generic) += 0.2f * growthBonusMultiplier;
+        player.GetKnockback(DamageClass.Generic) += 0.5f * growthBonusMultiplier;
+        player.moveSpeed *= Math.Max(0.65f, 1f - 0.1f * growthBonusMultiplier);
     }
 
     public override string GetDisplayName(OmnitrixPlayer omp) {
-        return omp.PrimaryAbilityEnabled ? "Humungousaur (Grown)" : base.GetDisplayName(omp);
+        if (omp.IsUltimateAbilityActive)
+            return "Humungousaur (Titan Growth)";
+
+        return omp.IsPrimaryAbilityActive ? "Humungousaur (Grown)" : base.GetDisplayName(omp);
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
-        float growthScale = omp.PrimaryAbilityEnabled ? 1.45f : 1f;
+        float growthScale = GetCurrentCombatScale(omp);
+        bool growthActive = growthScale > 1f;
 
         if (omp.altAttack) {
-            Vector2 shockwaveVelocity = new(player.direction * (omp.PrimaryAbilityEnabled ? 9f : 7.5f), 0f);
-            Projectile.NewProjectile(source, player.Bottom + new Vector2(player.direction * 12f, -10f), shockwaveVelocity,
+            Vector2 shockwaveVelocity = new(player.direction * (growthActive ? 9f : 7.5f), 0f);
+            Vector2 shockwaveSpawn = player.Bottom + new Vector2(player.direction * 12f * growthScale, -10f * growthScale);
+            Projectile.NewProjectile(source, shockwaveSpawn, shockwaveVelocity,
                 ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>(), (int)(damage * 1.05f * growthScale),
-                knockback, player.whoAmI);
+                knockback, player.whoAmI, growthScale);
             return false;
         }
 
         Vector2 punchVelocity = velocity.SafeNormalize(new Vector2(player.direction, 0f)) * 10f;
-        Projectile.NewProjectile(source, player.Center + punchVelocity * 2f, punchVelocity,
+        Projectile.NewProjectile(source, player.Center + punchVelocity * (2f * growthScale), punchVelocity,
             ModContent.ProjectileType<HumungousaurPunchProjectile>(), (int)(damage * growthScale), knockback,
             player.whoAmI, growthScale);
         return false;
@@ -84,7 +107,7 @@ public class HumungousaurTransformation : Transformation {
     public override void DrawEffects(ref PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        if (!omp.PrimaryAbilityEnabled)
+        if (!omp.IsPrimaryAbilityActive && !omp.IsUltimateAbilityActive)
             return;
 
         if (Main.rand.NextBool(3)) {
@@ -92,5 +115,23 @@ public class HumungousaurTransformation : Transformation {
             dust.velocity *= 0.2f;
             dust.noGravity = true;
         }
+    }
+
+    private static float GetActiveGrowthScale(OmnitrixPlayer omp) {
+        if (omp.IsUltimateAbilityActive)
+            return UltimateGrownScale;
+
+        return omp.IsPrimaryAbilityActive ? GrownScale : 1f;
+    }
+
+    private static float GetCurrentCombatScale(OmnitrixPlayer omp) {
+        return Math.Max(1f, omp.CurrentTransformationScale);
+    }
+
+    private static float GetGrowthBonusMultiplier(float growthScale) {
+        if (growthScale <= 1f || GrownScale <= 1f)
+            return 0f;
+
+        return (growthScale - 1f) / (GrownScale - 1f);
     }
 }

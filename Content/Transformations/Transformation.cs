@@ -57,12 +57,18 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool HasSecondaryAttack => SecondaryAttack > 0;
         public virtual bool HasUltimateAttack => UltimateAttack > 0;
         public virtual bool HasPrimaryAbility => PrimaryAbilityDuration > 0;
+        public virtual bool HasSecondaryAbility => SecondaryAbilityDuration > 0;
+        public virtual bool HasTertiaryAbility => TertiaryAbilityDuration > 0;
         public virtual bool HasUltimateAbility => false;
         public virtual int UltimateAbilityCost => 50;
         public virtual int UltimateAbilityDuration => 30;
         public virtual int UltimateAbilityCooldown => 30;
         public virtual int PrimaryAbilityDuration => 0;
         public virtual int PrimaryAbilityCooldown => 0;
+        public virtual int SecondaryAbilityDuration => 0;
+        public virtual int SecondaryAbilityCooldown => 0;
+        public virtual int TertiaryAbilityDuration => 0;
+        public virtual int TertiaryAbilityCooldown => 0;
         public virtual int TransformationBuffId => -1;
         public virtual string TransformationName => "None";
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
@@ -125,6 +131,8 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void OnHitAnything(Player player, OmnitrixPlayer omp, Entity victim, float x, float y) { }
 
         public virtual bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) => false;
+        public virtual bool TryActivateSecondaryAbility(Player player, OmnitrixPlayer omp) => false;
+        public virtual bool TryActivateTertiaryAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) => false;
         public virtual bool TryHandleTransformKeyWhileActive(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
             string selectedTransformationId) {
@@ -144,10 +152,20 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
         public virtual bool HasPrimaryAbilityForState(OmnitrixPlayer omp) => HasPrimaryAbility;
+        public virtual bool HasSecondaryAbilityForState(OmnitrixPlayer omp) => HasSecondaryAbility;
+        public virtual bool HasTertiaryAbilityForState(OmnitrixPlayer omp) => HasTertiaryAbility;
         public virtual bool HasUltimateAbilityForState(OmnitrixPlayer omp) => HasUltimateAbility;
         public virtual int GetPrimaryAbilityDuration(OmnitrixPlayer omp) => PrimaryAbilityDuration;
         public virtual int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) {
             return ApplyAbilityCooldownMultiplier(PrimaryAbilityCooldown, omp.primaryAbilityCooldownMultiplier);
+        }
+        public virtual int GetSecondaryAbilityDuration(OmnitrixPlayer omp) => SecondaryAbilityDuration;
+        public virtual int GetSecondaryAbilityCooldown(OmnitrixPlayer omp) {
+            return ApplyAbilityCooldownMultiplier(SecondaryAbilityCooldown, omp.secondaryAbilityCooldownMultiplier);
+        }
+        public virtual int GetTertiaryAbilityDuration(OmnitrixPlayer omp) => TertiaryAbilityDuration;
+        public virtual int GetTertiaryAbilityCooldown(OmnitrixPlayer omp) {
+            return ApplyAbilityCooldownMultiplier(TertiaryAbilityCooldown, omp.tertiaryAbilityCooldownMultiplier);
         }
         public virtual int GetUltimateAbilityCost(OmnitrixPlayer omp) => UltimateAbilityCost;
         public virtual int GetUltimateAbilityDuration(OmnitrixPlayer omp) => UltimateAbilityDuration;
@@ -195,7 +213,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void FrameEffects(Player player, OmnitrixPlayer omp) { }
 
         protected virtual bool IsIntangibleWhilePrimaryAbilityActive(OmnitrixPlayer omp) {
-            return omp.PrimaryAbilityEnabled &&
+            return omp.IsPrimaryAbilityActive &&
                    (TransformationName == "Ghostfreak" || TransformationName == "Bigchill");
         }
 

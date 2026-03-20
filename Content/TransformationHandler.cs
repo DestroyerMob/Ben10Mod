@@ -65,6 +65,21 @@ namespace Ben10Mod.Content
                 player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
                     current.GetPrimaryAbilityCooldown(omp));
 
+            if (player.HasBuff(ModContent.BuffType<SecondaryAbility>()) && current != null &&
+                current.GetSecondaryAbilityCooldown(omp) > 0)
+                player.AddBuff(ModContent.BuffType<SecondaryAbilityCooldown>(),
+                    current.GetSecondaryAbilityCooldown(omp));
+
+            if (player.HasBuff(ModContent.BuffType<TertiaryAbility>()) && current != null &&
+                current.GetTertiaryAbilityCooldown(omp) > 0)
+                player.AddBuff(ModContent.BuffType<TertiaryAbilityCooldown>(),
+                    current.GetTertiaryAbilityCooldown(omp));
+
+            if (player.HasBuff(ModContent.BuffType<UltimateAbility>()) && current != null &&
+                current.GetUltimateAbilityCooldown(omp) > 0)
+                player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(),
+                    current.GetUltimateAbilityCooldown(omp));
+
             if (showParticles)
             {
                 for (int i = 0; i < 25; i++)
@@ -82,6 +97,8 @@ namespace Ben10Mod.Content
                 player.ClearBuff(current.TransformationBuffId);
 
             player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
+            player.ClearBuff(ModContent.BuffType<SecondaryAbility>());
+            player.ClearBuff(ModContent.BuffType<TertiaryAbility>());
             player.ClearBuff(ModContent.BuffType<UltimateAbility>());
 
             omp.currentTransformationId = "";

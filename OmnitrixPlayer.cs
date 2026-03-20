@@ -53,12 +53,21 @@ namespace Ben10Mod {
 
         public int cooldownTime = 120;
         public int transformationTime = 300;
+        public float CurrentTransformationScale = 1f;
+        public Vector2 CurrentTransformationHitboxScale = Vector2.One;
 
         public bool PrimaryAbilityEnabled = false;
         public bool PrimaryAbilityWasEnabled = false;
+        public bool SecondaryAbilityEnabled = false;
+        public bool SecondaryAbilityWasEnabled = false;
+        public bool TertiaryAbilityEnabled = false;
+        public bool TertiaryAbilityWasEnabled = false;
         public bool UltimateAbilityEnabled = false;
         public bool UltimateAbilityWasEnabled = false;
-        public string tranUsedAbilityId = "";
+        public string primaryAbilityTransformationId = "";
+        public string secondaryAbilityTransformationId = "";
+        public string tertiaryAbilityTransformationId = "";
+        public string ultimateAbilityTransformationId = "";
 
         public int DashDir = -1;
         public const int DashDown = 0;
@@ -87,6 +96,8 @@ namespace Ben10Mod {
         public float activeTransformationDurationMultiplier = 1f;
         public float activeCooldownDurationMultiplier = 1f;
         public float primaryAbilityCooldownMultiplier = 1f;
+        public float secondaryAbilityCooldownMultiplier = 1f;
+        public float tertiaryAbilityCooldownMultiplier = 1f;
         public float ultimateAbilityCooldownMultiplier = 1f;
         public int heroCritChanceBonus = 0;
         public int heroArmorPenBonus = 0;
@@ -115,6 +126,13 @@ namespace Ben10Mod {
 
         private readonly HashSet<int> participatedEvents = new();
         private readonly HashSet<int> activeEvents = new();
+        private const int BaseTransformationWidth = 20;
+        private const int BaseTransformationHeight = 42;
+        private float requestedTransformationScale = 1f;
+        private int requestedTransformationScaleTime = 1;
+        private Vector2 requestedTransformationHitboxScale = Vector2.One;
+        private float lastExpandedTransformationScale = 1f;
+        private Vector2 lastExpandedTransformationHitboxScale = Vector2.One;
 
         private const int EventBloodMoon = -1;
         private const int EventSolarEclipse = -2;
@@ -127,6 +145,10 @@ namespace Ben10Mod {
             => TransformationLoader.Get(currentTransformationId);
 
         public bool IsTransformed => !string.IsNullOrEmpty(currentTransformationId);
+        public bool IsPrimaryAbilityActive => PrimaryAbilityEnabled || Player.HasBuff<PrimaryAbility>();
+        public bool IsSecondaryAbilityActive => SecondaryAbilityEnabled || Player.HasBuff<SecondaryAbility>();
+        public bool IsTertiaryAbilityActive => TertiaryAbilityEnabled || Player.HasBuff<TertiaryAbility>();
+        public bool IsUltimateAbilityActive => UltimateAbilityEnabled || Player.HasBuff<UltimateAbility>();
 
         public Omnitrix GetActiveOmnitrix() {
             if (equippedOmnitrix != null)
@@ -281,6 +303,8 @@ namespace Ben10Mod {
             omnitrixUpdating = false;
 
             PrimaryAbilityEnabled = false;
+            SecondaryAbilityEnabled = false;
+            TertiaryAbilityEnabled = false;
             UltimateAbilityEnabled = false;
 
             if (Player.controlDown && Player.releaseDown && Player.doubleTapCardinalTimer[DashDown] < 15)
@@ -295,6 +319,95 @@ namespace Ben10Mod {
                 DashDir = -1;
 
             trans?.ResetEffects(Player, this);
+            UpdateTransformationScale(trans == null);
+        }
+
+        public void SetTransformationScale(float targetScale, int transitionTicks = 1,
+            float? targetHitboxWidthScale = null, float? targetHitboxHeightScale = null) {
+            requestedTransformationScale = Math.Max(1f, targetScale);
+            requestedTransformationScaleTime = Math.Max(1, transitionTicks);
+            requestedTransformationHitboxScale = new Vector2(
+                Math.Max(1f, targetHitboxWidthScale ?? targetScale),
+                Math.Max(1f, targetHitboxHeightScale ?? targetScale)
+            );
+
+            if (requestedTransformationScale > 1f)
+                lastExpandedTransformationScale = requestedTransformationScale;
+
+            if (requestedTransformationHitboxScale.X > 1f || requestedTransformationHitboxScale.Y > 1f) {
+                lastExpandedTransformationHitboxScale = new Vector2(
+                    Math.Max(lastExpandedTransformationHitboxScale.X, requestedTransformationHitboxScale.X),
+                    Math.Max(lastExpandedTransformationHitboxScale.Y, requestedTransformationHitboxScale.Y)
+                );
+            }
+        }
+
+        private void UpdateTransformationScale(bool forceReset) {
+            if (forceReset) {
+                requestedTransformationScale = 1f;
+                requestedTransformationScaleTime = 1;
+                requestedTransformationHitboxScale = Vector2.One;
+            }
+
+            float targetScale = requestedTransformationScale;
+            float scaleReference = targetScale > 1f ? targetScale : Math.Max(CurrentTransformationScale, lastExpandedTransformationScale);
+            float step = Math.Abs(scaleReference - 1f) / requestedTransformationScaleTime;
+            if (step <= 0f)
+                step = Math.Abs(targetScale - CurrentTransformationScale);
+
+            CurrentTransformationScale = MoveTowards(CurrentTransformationScale, targetScale, step);
+            float hitboxReferenceX = requestedTransformationHitboxScale.X > 1f
+                ? requestedTransformationHitboxScale.X
+                : Math.Max(CurrentTransformationHitboxScale.X, lastExpandedTransformationHitboxScale.X);
+            float hitboxReferenceY = requestedTransformationHitboxScale.Y > 1f
+                ? requestedTransformationHitboxScale.Y
+                : Math.Max(CurrentTransformationHitboxScale.Y, lastExpandedTransformationHitboxScale.Y);
+            float hitboxStepX = Math.Abs(hitboxReferenceX - 1f) / requestedTransformationScaleTime;
+            float hitboxStepY = Math.Abs(hitboxReferenceY - 1f) / requestedTransformationScaleTime;
+
+            if (hitboxStepX <= 0f)
+                hitboxStepX = Math.Abs(requestedTransformationHitboxScale.X - CurrentTransformationHitboxScale.X);
+
+            if (hitboxStepY <= 0f)
+                hitboxStepY = Math.Abs(requestedTransformationHitboxScale.Y - CurrentTransformationHitboxScale.Y);
+
+            CurrentTransformationHitboxScale = new Vector2(
+                MoveTowards(CurrentTransformationHitboxScale.X, requestedTransformationHitboxScale.X, hitboxStepX),
+                MoveTowards(CurrentTransformationHitboxScale.Y, requestedTransformationHitboxScale.Y, hitboxStepY)
+            );
+
+            ApplyHitboxTransformationScale(CurrentTransformationHitboxScale);
+
+            if (CurrentTransformationScale <= 1f)
+                lastExpandedTransformationScale = 1f;
+
+            if (CurrentTransformationHitboxScale == Vector2.One)
+                lastExpandedTransformationHitboxScale = Vector2.One;
+
+            requestedTransformationScale = 1f;
+            requestedTransformationScaleTime = 1;
+            requestedTransformationHitboxScale = Vector2.One;
+        }
+
+        private void ApplyHitboxTransformationScale(Vector2 scale) {
+            int targetWidth = (int)Math.Round(BaseTransformationWidth * scale.X);
+            int targetHeight = (int)Math.Round(BaseTransformationHeight * scale.Y);
+
+            if (Player.width == targetWidth && Player.height == targetHeight)
+                return;
+
+            float left = Player.position.X;
+            float bottom = Player.position.Y + Player.height;
+            Player.width = targetWidth;
+            Player.height = targetHeight;
+            Player.position = new Vector2(left, bottom - targetHeight);
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta) {
+            if (Math.Abs(target - current) <= maxDelta)
+                return target;
+
+            return current + Math.Sign(target - current) * maxDelta;
         }
 
         public override void PostUpdateEquips() {
@@ -493,24 +606,36 @@ namespace Ben10Mod {
                     CurrentTransformation?.HasPrimaryAbilityForState(this) == true)
                     ActivatePrimaryAbility();
 
+                if (KeybindSystem.SecondaryAbility.JustPressed &&
+                    CurrentTransformation?.HasSecondaryAbilityForState(this) == true)
+                    ActivateSecondaryAbility();
+
+                if (KeybindSystem.TertiaryAbility.JustPressed &&
+                    CurrentTransformation?.HasTertiaryAbilityForState(this) == true)
+                    ActivateTertiaryAbility();
+
                 if (KeybindSystem.UltimateAbility.JustPressed && CurrentTransformation != null)
                     ActivateUltimateAbility();
             }
 
-            if (PrimaryAbilityWasEnabled && !PrimaryAbilityEnabled) {
-                var abilityTransformation = TransformationLoader.Get(tranUsedAbilityId);
-                if (abilityTransformation != null)
-                    Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(),
-                        abilityTransformation.GetPrimaryAbilityCooldown(this));
-            }
+            HandleAbilityCooldownExpiration(PrimaryAbilityWasEnabled, PrimaryAbilityEnabled,
+                primaryAbilityTransformationId, ModContent.BuffType<PrimaryAbilityCooldown>(),
+                static (transformation, omp) => transformation.GetPrimaryAbilityCooldown(omp));
             PrimaryAbilityWasEnabled = PrimaryAbilityEnabled;
 
-            if (UltimateAbilityWasEnabled && !UltimateAbilityEnabled) {
-                var abilityTransformation = TransformationLoader.Get(tranUsedAbilityId);
-                if (abilityTransformation != null)
-                    Player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(),
-                        abilityTransformation.GetUltimateAbilityCooldown(this));
-            }
+            HandleAbilityCooldownExpiration(SecondaryAbilityWasEnabled, SecondaryAbilityEnabled,
+                secondaryAbilityTransformationId, ModContent.BuffType<SecondaryAbilityCooldown>(),
+                static (transformation, omp) => transformation.GetSecondaryAbilityCooldown(omp));
+            SecondaryAbilityWasEnabled = SecondaryAbilityEnabled;
+
+            HandleAbilityCooldownExpiration(TertiaryAbilityWasEnabled, TertiaryAbilityEnabled,
+                tertiaryAbilityTransformationId, ModContent.BuffType<TertiaryAbilityCooldown>(),
+                static (transformation, omp) => transformation.GetTertiaryAbilityCooldown(omp));
+            TertiaryAbilityWasEnabled = TertiaryAbilityEnabled;
+
+            HandleAbilityCooldownExpiration(UltimateAbilityWasEnabled, UltimateAbilityEnabled,
+                ultimateAbilityTransformationId, ModContent.BuffType<UltimateAbilityCooldown>(),
+                static (transformation, omp) => transformation.GetUltimateAbilityCooldown(omp));
             UltimateAbilityWasEnabled = UltimateAbilityEnabled;
 
             UpdateEventTransformationUnlocks();
@@ -523,42 +648,50 @@ namespace Ben10Mod {
             if (trans.TryActivateUltimateAbility(Player, this))
                 return true;
 
-            if (trans.HasUltimateAbilityForState(this) && !Player.HasBuff<UltimateAbilityCooldown>() &&
-                !Player.HasBuff<UltimateAbility>()) {
+            bool hasUltimateAbility = trans.HasUltimateAbilityForState(this);
+            bool hasUltimateAttack = trans.GetUltimateAttackProjectileType(this) > 0;
+
+            if (hasUltimateAbility) {
+                if (Player.HasBuff<UltimateAbilityCooldown>() || Player.HasBuff<UltimateAbility>() || ultimateAttack)
+                    return false;
+
                 int ultimateAbilityCost = trans.GetUltimateAbilityCost(this);
                 if (omnitrixEnergy >= ultimateAbilityCost) {
                     Player.AddBuff(ModContent.BuffType<UltimateAbility>(), trans.GetUltimateAbilityDuration(this));
-                    tranUsedAbilityId = currentTransformationId;
+                    ultimateAbilityTransformationId = currentTransformationId;
                     omnitrixEnergy -= ultimateAbilityCost;
                     return true;
                 }
+
+                return false;
             }
-            else {
-                int ultimateAttackCost = trans.GetUltimateAbilityCost(this);
-                if (omnitrixEnergy >= ultimateAttackCost && !ultimateAttack &&
-                    !Player.HasBuff<UltimateAbilityCooldown>()) {
-                    for (int i = 0; i < 50; i++) {
-                        Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
-                            DustID.Firework_Blue,
-                            Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
-                        d.noGravity = true;
-                    }
 
-                    ultimateAttack = true;
-                    return true;
+            if (!hasUltimateAttack || Player.HasBuff<UltimateAbility>() || Player.HasBuff<UltimateAbilityCooldown>())
+                return false;
+
+            int ultimateAttackCost = trans.GetUltimateAbilityCost(this);
+            if (omnitrixEnergy >= ultimateAttackCost && !ultimateAttack) {
+                for (int i = 0; i < 50; i++) {
+                    Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                        DustID.Firework_Blue,
+                        Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                    d.noGravity = true;
                 }
 
-                if (ultimateAttack) {
-                    for (int i = 0; i < 50; i++) {
-                        Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
-                            DustID.Firework_Yellow,
-                            Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
-                        d.noGravity = true;
-                    }
+                ultimateAttack = true;
+                return true;
+            }
 
-                    ultimateAttack = false;
-                    return true;
+            if (ultimateAttack) {
+                for (int i = 0; i < 50; i++) {
+                    Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
+                        DustID.Firework_Yellow,
+                        Main.rand.NextVector2Circular(6f, 6f), Scale: Main.rand.NextFloat(1.5f, 2.5f));
+                    d.noGravity = true;
                 }
+
+                ultimateAttack = false;
+                return true;
             }
 
             return false;
@@ -576,7 +709,45 @@ namespace Ben10Mod {
 
             if (!Player.HasBuff<PrimaryAbilityCooldown>() && !Player.HasBuff<PrimaryAbility>()) {
                 Player.AddBuff(ModContent.BuffType<PrimaryAbility>(), trans.GetPrimaryAbilityDuration(this));
-                tranUsedAbilityId = currentTransformationId;
+                primaryAbilityTransformationId = currentTransformationId;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool ActivateSecondaryAbility() {
+            var trans = CurrentTransformation;
+            if (trans == null) return false;
+
+            if (!trans.HasSecondaryAbilityForState(this))
+                return false;
+
+            if (trans.TryActivateSecondaryAbility(Player, this))
+                return true;
+
+            if (!Player.HasBuff<SecondaryAbilityCooldown>() && !Player.HasBuff<SecondaryAbility>()) {
+                Player.AddBuff(ModContent.BuffType<SecondaryAbility>(), trans.GetSecondaryAbilityDuration(this));
+                secondaryAbilityTransformationId = currentTransformationId;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool ActivateTertiaryAbility() {
+            var trans = CurrentTransformation;
+            if (trans == null) return false;
+
+            if (!trans.HasTertiaryAbilityForState(this))
+                return false;
+
+            if (trans.TryActivateTertiaryAbility(Player, this))
+                return true;
+
+            if (!Player.HasBuff<TertiaryAbilityCooldown>() && !Player.HasBuff<TertiaryAbility>()) {
+                Player.AddBuff(ModContent.BuffType<TertiaryAbility>(), trans.GetTertiaryAbilityDuration(this));
+                tertiaryAbilityTransformationId = currentTransformationId;
                 return true;
             }
 
@@ -788,7 +959,7 @@ namespace Ben10Mod {
             base.OnHitNPC(target, hit, damageDone);
 
             var activeOmnitrix = GetActiveOmnitrix();
-            if (isTransformed && !ultimateAttack && !UltimateAbilityEnabled && activeOmnitrix != null)
+            if (isTransformed && !ultimateAttack && !IsUltimateAbilityActive && activeOmnitrix != null)
                 omnitrixEnergy += activeOmnitrix.GetEnergyGainFromDamage(hit.Damage);
         }
 
@@ -816,7 +987,7 @@ namespace Ben10Mod {
                 }
             }
 
-            if (PrimaryAbilityEnabled && trans != null &&
+            if (IsPrimaryAbilityActive && trans != null &&
                 (trans.TransformationName == "Ghostfreak" || trans.TransformationName == "Bigchill")) {
                 Player.gravity = 0f;
                 Player.noKnockback = true;
@@ -836,6 +1007,17 @@ namespace Ben10Mod {
 
             profile = null;
             return false;
+        }
+
+        private void HandleAbilityCooldownExpiration(bool wasEnabled, bool isEnabled, string transformationId,
+            int cooldownBuffType, Func<Transformation, OmnitrixPlayer, int> getCooldown) {
+            if (!wasEnabled || isEnabled || Player.HasBuff(cooldownBuffType))
+                return;
+
+            var abilityTransformation = TransformationLoader.Get(transformationId);
+            int cooldown = abilityTransformation == null ? 0 : getCooldown(abilityTransformation, this);
+            if (cooldown > 0)
+                Player.AddBuff(cooldownBuffType, cooldown);
         }
 
         private void ApplyAbsorptionHitEffects(NPC target) {

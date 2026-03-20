@@ -37,9 +37,7 @@ public class EchoEchoTransformation : Transformation {
     public override int SecondaryShootSpeed => 0;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override float SecondaryAttackModifier => 0.8f;
-    public override bool HasPrimaryAbility => true;
-    public override int PrimaryAbilityDuration => 16 * 60;
-    public override int PrimaryAbilityCooldown => 45 * 60;
+    
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         if (omp.PrimaryAbilityEnabled)
