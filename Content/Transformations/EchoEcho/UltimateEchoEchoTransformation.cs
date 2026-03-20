@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Summons;
 using Ben10Mod.Content.Buffs.Transformations;
@@ -46,7 +47,8 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
         Vector2 velocity, int damage, float knockback) {
         if (omp.altAttack) {
             int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
-            int maxSpeakers = Math.Max(1, player.maxTurrets) * SpeakersPerSentrySlot;
+            int sentrySlots = Math.Max(1, player.maxTurrets);
+            int maxSpeakers = sentrySlots * SpeakersPerSentrySlot;
             int activeSpeakerCount = 0;
             int oldestSpeakerIndex = -1;
             float oldestSpawnOrder = float.MaxValue;

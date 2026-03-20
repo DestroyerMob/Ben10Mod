@@ -582,13 +582,13 @@ Buffs: {
 	}
 
 	EchoEchoCloneBuff: {
-		DisplayName: Echo Echo Duplicates
-		Description: Echo Echo duplicates are active
+		DisplayName: Echo Echo Clone Buff
+		Description: Mods.Ben10Mod.Buffs.EchoEchoCloneBuff.Description
 	}
 
 	UltimateEchoEchoSpeakerBuff: {
-		DisplayName: Detached Speakers
-		Description: Detached speakers are deployed
+		DisplayName: Ultimate Echo Echo Speaker Buff
+		Description: Mods.Ben10Mod.Buffs.UltimateEchoEchoSpeakerBuff.Description
 	}
 
 	BuzzShockTagBuff: {
@@ -619,16 +619,6 @@ Buffs: {
 	NRG_Buff: {
 		DisplayName: N R G_ Buff
 		Description: Mods.Ben10Mod.Buffs.NRG_Buff.Description
-	}
-
-	EchoEchoCloneBuff: {
-		DisplayName: Echo Echo Clone Buff
-		Description: Mods.Ben10Mod.Buffs.EchoEchoCloneBuff.Description
-	}
-
-	UltimateEchoEchoSpeakerBuff: {
-		DisplayName: Ultimate Echo Echo Speaker Buff
-		Description: Mods.Ben10Mod.Buffs.UltimateEchoEchoSpeakerBuff.Description
 	}
 }
 
