@@ -24,6 +24,10 @@ public class OmnitrixProjectile : GlobalProjectile {
     private int     baseWidth        = 0;
     private int     baseHeight       = 0;
     private float   temporalFreezeProgress = 0f;
+    private Vector2 temporalFreezeResumeVelocity = Vector2.Zero;
+    private float   temporalFreezeRotation = 0f;
+    private int     temporalFreezeDirection = 1;
+    private int     temporalFreezeSpriteDirection = 1;
     
     public override void OnSpawn(Projectile projectile, IEntitySource source) {
         if (source is IEntitySource_WithStatsFromItem itemSource) {
@@ -50,6 +54,18 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (syncScaleHitbox)
             ApplyScaledHitbox(projectile);
         HandleTemporalFreeze(projectile);
+    }
+
+    public override void PostAI(Projectile projectile) {
+        if (!projectileSlowed)
+            return;
+
+        if (projectile.velocity.LengthSquared() > 0.0025f) {
+            CaptureFrozenFacing(projectile);
+            return;
+        }
+
+        ApplyFrozenFacing(projectile);
     }
 
     public override void OnHitNPC(Projectile projectile, NPC target, NPC.HitInfo hit, int damageDone) {
@@ -100,14 +116,18 @@ public class OmnitrixProjectile : GlobalProjectile {
             if (!projectileSlowed) {
                 projectileSlowed = true;
                 temporalFreezeProgress = 0f;
-                initialVelocity = projectile.velocity;
+                temporalFreezeResumeVelocity = projectile.velocity;
+                CaptureFrozenFacing(projectile);
+                projectile.netUpdate = true;
             }
 
-            if (initialVelocity == Vector2.Zero && projectile.velocity != Vector2.Zero)
-                initialVelocity = projectile.velocity;
+            if (temporalFreezeResumeVelocity == Vector2.Zero && projectile.velocity != Vector2.Zero)
+                temporalFreezeResumeVelocity = projectile.velocity;
 
             temporalFreezeProgress = Math.Min(1f, temporalFreezeProgress + 1f / TemporalFreezeRampFrames);
-            Vector2 startVelocity = initialVelocity == Vector2.Zero ? projectile.velocity : initialVelocity;
+            Vector2 startVelocity = temporalFreezeResumeVelocity == Vector2.Zero
+                ? projectile.velocity
+                : temporalFreezeResumeVelocity;
             projectile.velocity = Vector2.Lerp(startVelocity, Vector2.Zero, temporalFreezeProgress);
 
             if (temporalFreezeProgress >= 1f || projectile.velocity.LengthSquared() < 0.0025f)
@@ -119,12 +139,13 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (!projectileSlowed)
             return;
 
-        if (initialVelocity != Vector2.Zero)
-            projectile.velocity = initialVelocity * 2f;
+        if (temporalFreezeResumeVelocity != Vector2.Zero)
+            projectile.velocity = temporalFreezeResumeVelocity * 2f;
 
         projectileSlowed = false;
         temporalFreezeProgress = 0f;
-        initialVelocity = Vector2.Zero;
+        temporalFreezeResumeVelocity = Vector2.Zero;
+        projectile.netUpdate = true;
     }
 
     private static bool ShouldFreezeProjectile(Projectile projectile) {
@@ -141,12 +162,27 @@ public class OmnitrixProjectile : GlobalProjectile {
     }
 
     private static bool IsXLR8UltimateActive() {
-        Player player = Main.LocalPlayer;
-        if (player == null || !player.active)
-            return false;
+        foreach (Player player in Main.ActivePlayers) {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:XLR8")
+                return true;
+        }
 
-        var omp = player.GetModPlayer<OmnitrixPlayer>();
-        return omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:XLR8";
+        return false;
+    }
+
+    private void CaptureFrozenFacing(Projectile projectile) {
+        temporalFreezeRotation = projectile.rotation;
+        temporalFreezeDirection = projectile.direction == 0 ? (projectile.velocity.X >= 0f ? 1 : -1) : projectile.direction;
+        temporalFreezeSpriteDirection = projectile.spriteDirection == 0
+            ? temporalFreezeDirection
+            : projectile.spriteDirection;
+    }
+
+    private void ApplyFrozenFacing(Projectile projectile) {
+        projectile.rotation = temporalFreezeRotation;
+        projectile.direction = temporalFreezeDirection;
+        projectile.spriteDirection = temporalFreezeSpriteDirection;
     }
 
     private static void ApplyTransformationDamageType(Projectile projectile, IEntitySource source) {
