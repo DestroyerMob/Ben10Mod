@@ -515,6 +515,56 @@ Items: {
 		DisplayName: Plumber Siege Mask
 		Tooltip: ""
 	}
+
+	TitaniumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Titanium Hero Helmet
+	}
+
+	SpectreHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Spectre Hero Helmet
+	}
+
+	ShroomiteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Shroomite Hero Helmet
+	}
+
+	PalladiumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Palladium Hero Helmet
+	}
+
+	OrichalcumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Orichalcum Hero Helmet
+	}
+
+	MythrilHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Mythril Hero Helmet
+	}
+
+	HallowedHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Hallowed Hero Helmet
+	}
+
+	CobaltHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Cobalt Hero Helmet
+	}
+
+	ChlorophyteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Chlorophyte Hero Helmet
+	}
+
+	AdamantiteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Adamantite Hero Helmet
+	}
 }
 
 Keybinds: {

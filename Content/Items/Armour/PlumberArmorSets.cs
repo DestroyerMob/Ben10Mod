@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Materials;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -16,11 +19,59 @@ internal static class PlumberArmorTextures {
     public const string Pants = "Ben10Mod/Content/Items/Armour/PlumbersPants";
 }
 
+internal static class PlumberArmorPalette {
+    public static readonly Color Neutral = new(220, 225, 232);
+    public static readonly Color Vanguard = new(120, 174, 224);
+    public static readonly Color Scout = new(240, 198, 104);
+    public static readonly Color Assault = new(215, 96, 96);
+    public static readonly Color Overclock = new(255, 148, 72);
+    public static readonly Color Bulwark = new(246, 229, 155);
+    public static readonly Color Relay = new(118, 238, 163);
+    public static readonly Color Siege = new(98, 132, 218);
+    public static readonly Color Magistrata = new(247, 156, 230);
+
+    public static Color ResolveSharedEarlySetColor(Player player) {
+        if (player.armor[0].type == ModContent.ItemType<PlumbersGlassHelmet>()) {
+            return Scout;
+        }
+
+        if (player.armor[0].type == ModContent.ItemType<PlumbersHelmet>()) {
+            return Vanguard;
+        }
+
+        return Neutral;
+    }
+
+    public static Color Blend(Color baseColor, Color tint, float amount = 0.58f) {
+        Color blended = Color.Lerp(baseColor, tint, amount);
+        blended.A = baseColor.A;
+        return blended;
+    }
+
+    public static bool DrawInventory(ModItem item, SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor,
+        Vector2 origin, float scale, Color tint) {
+        spriteBatch.Draw(TextureAssets.Item[item.Type].Value, position, frame, Blend(drawColor, tint), 0f, origin, scale,
+            SpriteEffects.None, 0f);
+        return false;
+    }
+
+    public static bool DrawWorld(ModItem item, SpriteBatch spriteBatch, Color alphaColor, ref float rotation, ref float scale,
+        Color tint) {
+        Main.GetItemDrawFrame(item.Item.type, out Texture2D itemTexture, out Rectangle itemFrame);
+        Vector2 drawOrigin = itemFrame.Size() / 2f;
+        Vector2 drawPosition = item.Item.Bottom - Main.screenPosition - new Vector2(0f, drawOrigin.Y);
+        spriteBatch.Draw(itemTexture, drawPosition, itemFrame, Blend(alphaColor, tint), rotation, drawOrigin, scale,
+            SpriteEffects.None, 0f);
+        return false;
+    }
+}
+
 public abstract class PlumberArmorPiece : ModItem {
     protected abstract string ArmorTexture { get; }
     protected abstract int ArmorValue { get; }
     protected abstract int ArmorRarity { get; }
     protected abstract int ArmorDefense { get; }
+    protected abstract Color ArmorTint { get; }
     protected virtual int ArmorWidth => 18;
     protected virtual int ArmorHeight => 14;
     protected virtual string EquipBonusText => "";
@@ -44,14 +95,30 @@ public abstract class PlumberArmorPiece : ModItem {
             tooltips.Add(new TooltipLine(Mod, "EquipBonus", EquipBonusText));
         }
     }
+
+    public override void DrawArmorColor(Player drawPlayer, float shadow, ref Color color, ref int glowMask,
+        ref Color glowMaskColor) {
+        color = PlumberArmorPalette.Blend(color, ArmorTint);
+    }
+
+    public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor,
+        Color itemColor, Vector2 origin, float scale) {
+        return PlumberArmorPalette.DrawInventory(this, spriteBatch, position, frame, drawColor, origin, scale, ArmorTint);
+    }
+
+    public override bool PreDrawInWorld(SpriteBatch spriteBatch, Color lightColor, Color alphaColor, ref float rotation,
+        ref float scale, int whoAmI) {
+        return PlumberArmorPalette.DrawWorld(this, spriteBatch, alphaColor, ref rotation, ref scale, ArmorTint);
+    }
 }
 
 [AutoloadEquip(EquipType.Head)]
 public class PlumberAssaultHelmet : PlumberArmorPiece {
-    protected override string ArmorTexture => PlumberArmorTextures.GlassHelmet;
+    protected override string ArmorTexture => PlumberArmorTextures.Helmet;
     protected override int ArmorValue => Item.buyPrice(gold: 1);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 6;
+    protected override Color ArmorTint => PlumberArmorPalette.Assault;
     protected override string EquipBonusText => "+5% hero damage and +6 hero crit";
 
     public override void UpdateEquip(Player player) {
@@ -102,6 +169,7 @@ public class PlumberAssaultHarness : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 1, silver: 20);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 7;
+    protected override Color ArmorTint => PlumberArmorPalette.Assault;
     protected override string EquipBonusText => "+6% hero damage";
 
     public override void UpdateEquip(Player player) {
@@ -129,6 +197,7 @@ public class PlumberAssaultGreaves : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 1, silver: 10);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 5;
+    protected override Color ArmorTint => PlumberArmorPalette.Assault;
     protected override string EquipBonusText => "+6% movement speed while transformed";
 
     public override void UpdateEquip(Player player) {
@@ -156,6 +225,7 @@ public class PlumberOverclockHelm : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 2);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 7;
+    protected override Color ArmorTint => PlumberArmorPalette.Overclock;
     protected override string EquipBonusText => "+5% hero attack speed and +15 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
@@ -200,6 +270,7 @@ public class PlumberOverclockPlate : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 2, silver: 40);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 8;
+    protected override Color ArmorTint => PlumberArmorPalette.Overclock;
     protected override string EquipBonusText => "+6% hero damage";
 
     public override void UpdateEquip(Player player) {
@@ -220,6 +291,7 @@ public class PlumberOverclockGreaves : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 2, silver: 20);
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 6;
+    protected override Color ArmorTint => PlumberArmorPalette.Overclock;
     protected override string EquipBonusText => "+6% movement speed and acceleration while transformed";
 
     public override void UpdateEquip(Player player) {
@@ -242,6 +314,7 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 4);
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 10;
+    protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
     protected override string EquipBonusText => "+3 defense while transformed and +4 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
@@ -288,6 +361,7 @@ public class PlumberBulwarkMail : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 4, silver: 60);
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 12;
+    protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
     protected override string EquipBonusText => "+4% hero damage and +2 defense while transformed";
 
     public override void UpdateEquip(Player player) {
@@ -311,6 +385,7 @@ public class PlumberBulwarkGreaves : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 4, silver: 20);
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 8;
+    protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
     protected override string EquipBonusText => "+5% movement speed while transformed";
 
     public override void UpdateEquip(Player player) {
@@ -328,10 +403,11 @@ public class PlumberBulwarkGreaves : PlumberArmorPiece {
 
 [AutoloadEquip(EquipType.Head)]
 public class PlumberRelayVisor : PlumberArmorPiece {
-    protected override string ArmorTexture => PlumberArmorTextures.GlassHelmet;
+    protected override string ArmorTexture => PlumberArmorTextures.Helmet;
     protected override int ArmorValue => Item.buyPrice(gold: 6);
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 11;
+    protected override Color ArmorTint => PlumberArmorPalette.Relay;
     protected override string EquipBonusText => "+5% hero damage and +15 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
@@ -377,6 +453,7 @@ public class PlumberRelayCoat : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 6, silver: 40);
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 13;
+    protected override Color ArmorTint => PlumberArmorPalette.Relay;
     protected override string EquipBonusText => "+6 hero crit and +20 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
@@ -401,6 +478,7 @@ public class PlumberRelayLeggings : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 6);
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 9;
+    protected override Color ArmorTint => PlumberArmorPalette.Relay;
     protected override string EquipBonusText => "+7% movement speed and improved jump height while transformed";
 
     public override void UpdateEquip(Player player) {
@@ -425,6 +503,7 @@ public class PlumberSiegeMask : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 8);
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 13;
+    protected override Color ArmorTint => PlumberArmorPalette.Siege;
     protected override string EquipBonusText => "+5% hero damage and +8 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
@@ -472,6 +551,7 @@ public class PlumberSiegeCuirass : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 8, silver: 40);
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 15;
+    protected override Color ArmorTint => PlumberArmorPalette.Siege;
     protected override string EquipBonusText => "+8% hero damage";
 
     public override void UpdateEquip(Player player) {
@@ -493,6 +573,7 @@ public class PlumberSiegeBoots : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 8);
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 11;
+    protected override Color ArmorTint => PlumberArmorPalette.Siege;
     protected override string EquipBonusText => "+4% hero attack speed";
 
     public override void UpdateEquip(Player player) {
@@ -510,10 +591,11 @@ public class PlumberSiegeBoots : PlumberArmorPiece {
 
 [AutoloadEquip(EquipType.Head)]
 public class PlumberMagistrataHelm : PlumberArmorPiece {
-    protected override string ArmorTexture => PlumberArmorTextures.GlassHelmet;
+    protected override string ArmorTexture => PlumberArmorTextures.Helmet;
     protected override int ArmorValue => Item.buyPrice(gold: 12);
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 16;
+    protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
     protected override string EquipBonusText => "+7% hero damage and +8 hero crit";
 
     public override void UpdateEquip(Player player) {
@@ -559,6 +641,7 @@ public class PlumberMagistrataCoat : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 12, silver: 60);
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 18;
+    protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
     protected override string EquipBonusText => "+6% hero attack speed and +10 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
@@ -581,6 +664,7 @@ public class PlumberMagistrataGreaves : PlumberArmorPiece {
     protected override int ArmorValue => Item.buyPrice(gold: 12);
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 14;
+    protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
     protected override string EquipBonusText => "+8% movement speed and improved jump height while transformed";
 
     public override void UpdateEquip(Player player) {

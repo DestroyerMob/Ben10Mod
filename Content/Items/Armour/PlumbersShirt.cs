@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using Ben10Mod.Content.DamageClasses;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -27,6 +30,23 @@ namespace Ben10Mod.Content.Items.Armour{
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
             tooltips.Add(new TooltipLine(Mod, "EquipBonus", "+4% hero damage"));
+        }
+
+        public override void DrawArmorColor(Player drawPlayer, float shadow, ref Color color, ref int glowMask,
+            ref Color glowMaskColor) {
+            color = PlumberArmorPalette.Blend(color, PlumberArmorPalette.ResolveSharedEarlySetColor(drawPlayer));
+        }
+
+        public override bool PreDrawInInventory(SpriteBatch spriteBatch, Vector2 position, Rectangle frame, Color drawColor,
+            Color itemColor, Vector2 origin, float scale) {
+            return PlumberArmorPalette.DrawInventory(this, spriteBatch, position, frame, drawColor, origin, scale,
+                PlumberArmorPalette.Neutral);
+        }
+
+        public override bool PreDrawInWorld(SpriteBatch spriteBatch, Color lightColor, Color alphaColor,
+            ref float rotation, ref float scale, int whoAmI) {
+            return PlumberArmorPalette.DrawWorld(this, spriteBatch, alphaColor, ref rotation, ref scale,
+                PlumberArmorPalette.Neutral);
         }
 
         public override void AddRecipes()
