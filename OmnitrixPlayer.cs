@@ -134,6 +134,7 @@ namespace Ben10Mod {
         public bool snowflake = false;
         public bool advancedCircuitMatrix = false;
         public bool advancedCircuitMatrixEquippedWhileTransformed = false;
+        public bool transformationFailsafeEquipped = false;
 
         private readonly HashSet<int> participatedEvents = new();
         private readonly HashSet<int> activeEvents = new();
@@ -146,6 +147,7 @@ namespace Ben10Mod {
         private float lastExpandedTransformationScale = 1f;
         private Vector2 lastExpandedTransformationHitboxScale = Vector2.One;
         private string lastAttackUiTransformationId = "";
+        private bool skipAutomaticForcedDetransformHandling = false;
 
         private const int EventBloodMoon = -1;
         private const int EventSolarEclipse = -2;
@@ -284,6 +286,7 @@ namespace Ben10Mod {
 
             advancedCircuitMatrix = false;
             snowflake = false;
+            transformationFailsafeEquipped = false;
 
             omnitrixEnergyMax = 0;
             omnitrixEnergyRegen = 0;
@@ -473,19 +476,23 @@ namespace Ben10Mod {
             var trans = CurrentTransformation;
 
             if (wasTransformed && !isTransformed) {
-                var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-                if (customSlot != null) {
-                    var activeOmnitrix = GetActiveOmnitrix();
-                    if (masterControl) {
-                        TransformationHandler.Detransform(Player, 0, true, false);
-                    }
-                    else {
-                        if (activeOmnitrix != null)
-                            activeOmnitrix.HandleForcedDetransform(Player, this);
-                        else if (!string.IsNullOrEmpty(currentTransformationId))
-                            TransformationHandler.Detransform(Player, 0, showParticles: true, addCooldown: false);
+                if (!skipAutomaticForcedDetransformHandling) {
+                    var customSlot = ModContent.GetInstance<OmnitrixSlot>();
+                    if (customSlot != null) {
+                        var activeOmnitrix = GetActiveOmnitrix();
+                        if (masterControl) {
+                            TransformationHandler.Detransform(Player, 0, true, false);
+                        }
+                        else {
+                            if (activeOmnitrix != null)
+                                activeOmnitrix.HandleForcedDetransform(Player, this);
+                            else if (!string.IsNullOrEmpty(currentTransformationId))
+                                TransformationHandler.Detransform(Player, 0, showParticles: true, addCooldown: false);
+                        }
                     }
                 }
+
+                skipAutomaticForcedDetransformHandling = false;
             }
             wasTransformed = isTransformed;
 
@@ -989,6 +996,17 @@ namespace Ben10Mod {
         public override void PostHurt(Player.HurtInfo info) {
             CurrentTransformation?.PostHurt(Player, this, info);
             base.PostHurt(info);
+        }
+
+        public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust,
+            ref PlayerDeathReason damageSource) {
+            if (!transformationFailsafeEquipped || !IsTransformed)
+                return base.PreKill(damage, hitDirection, pvp, ref playSound, ref genDust, ref damageSource);
+
+            TriggerTransformationFailsafe();
+            playSound = false;
+            genDust = false;
+            return false;
         }
 
         public override void OnHitAnything(float x, float y, Entity victim) {
@@ -1564,6 +1582,29 @@ namespace Ben10Mod {
                    npc.type == NPCID.GoblinSorcerer ||
                    npc.type == NPCID.GoblinArcher ||
                    npc.type == NPCID.GoblinSummoner;
+        }
+
+        private void TriggerTransformationFailsafe() {
+            Omnitrix activeOmnitrix = GetActiveOmnitrix();
+            int cooldownSeconds = activeOmnitrix?.GetDetransformCooldownDuration(this) ?? cooldownTime;
+            if (cooldownSeconds <= 0)
+                cooldownSeconds = cooldownTime;
+            bool showEffects = Player.whoAmI == Main.myPlayer;
+
+            skipAutomaticForcedDetransformHandling = true;
+            TransformationHandler.Detransform(Player, cooldownSeconds, showParticles: showEffects, addCooldown: true,
+                playSound: showEffects);
+
+            Player.statLife = 1;
+            Player.dead = false;
+            Player.immuneNoBlink = true;
+            Player.immuneTime = Math.Max(Player.immuneTime, 180);
+
+            if (showEffects)
+                CombatText.NewText(Player.getRect(), new Color(96, 255, 160), "Failsafe!", dramatic: true);
+
+            if (Main.netMode != NetmodeID.SinglePlayer)
+                NetMessage.SendData(MessageID.PlayerLifeMana, -1, -1, null, Player.whoAmI);
         }
     }
 }

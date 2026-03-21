@@ -8,15 +8,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumberArmorSets.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumberArmorSets.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersPants.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersPants.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersShirt.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersShirt.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
-    </list>
+    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -156,7 +148,7 @@
       <workItem from="1773991970068" duration="163000" />
       <workItem from="1773992137185" duration="21000" />
       <workItem from="1773992184362" duration="8916000" />
-      <workItem from="1774041898622" duration="4731000" />
+      <workItem from="1774041898622" duration="5332000" />
     </task>
     <servers />
   </component>

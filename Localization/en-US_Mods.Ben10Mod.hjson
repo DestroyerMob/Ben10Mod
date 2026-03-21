@@ -565,6 +565,11 @@ Items: {
 		Tooltip: ""
 		DisplayName: Adamantite Hero Helmet
 	}
+
+	ReversionFailsafe: {
+		DisplayName: Reversion Failsafe
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
