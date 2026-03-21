@@ -4,6 +4,7 @@ using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Accessories.Wings;
@@ -64,6 +65,17 @@ public class BigChillTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+
+        player.GetDamage<HeroDamage>() += 0.1f;
+        player.GetCritChance<HeroDamage>() += 6f;
+        player.moveSpeed += 0.12f;
+        player.noFallDmg = true;
+        player.endurance += 0.04f;
+        player.iceSkate = true;
+        player.buffImmune[BuffID.Chilled] = true;
+        player.buffImmune[BuffID.Frozen] = true;
+        player.buffImmune[BuffID.Frostburn] = true;
+        player.buffImmune[BuffID.Frostburn2] = true;
 
         var abilitySlot = ModContent.GetInstance<AbilitySlot>();
         abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BigChillWings>());

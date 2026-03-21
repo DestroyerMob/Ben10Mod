@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -35,8 +36,10 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.statDefense += 18;
-        player.GetDamage(DamageClass.Generic) += 0.22f;
-        player.GetKnockback(DamageClass.Generic) += 0.45f;
+        player.GetDamage<HeroDamage>() += 0.22f;
+        player.GetKnockback<HeroDamage>() += 0.45f;
+        player.GetArmorPenetration<HeroDamage>() += 10;
+        player.endurance += 0.08f;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,

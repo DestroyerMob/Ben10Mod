@@ -4,7 +4,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public class PlumberSeniorAgentBadge : PlumbersBadge {
-    public override int    BaseDamage     => 50;
+    public override int    BaseDamage     => 58;
     public override string BadgeRankName  => "SeniorAgent";
     public override int    BadgeRankValue => 5;
 

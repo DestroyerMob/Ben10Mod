@@ -290,6 +290,8 @@ namespace Ben10Mod {
             transformationDurationMultiplier = 1f;
             cooldownDurationMultiplier = 1f;
             primaryAbilityCooldownMultiplier = 1f;
+            secondaryAbilityCooldownMultiplier = 1f;
+            tertiaryAbilityCooldownMultiplier = 1f;
             ultimateAbilityCooldownMultiplier = 1f;
             heroCritChanceBonus = 0;
             heroArmorPenBonus = 0;
@@ -614,7 +616,8 @@ namespace Ben10Mod {
 
                 possessionTimer--;
                 if (possessionTimer <= 0) {
-                    npc.SimpleStrikeNPC(Player.HeldItem.damage * 2, Player.direction, false, 0, DamageClass.Magic);
+                    npc.SimpleStrikeNPC(Player.HeldItem.damage * 2, Player.direction, false, 0,
+                        ModContent.GetInstance<HeroDamage>());
                     EndPossession();
                 }
             }

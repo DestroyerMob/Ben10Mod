@@ -1,10 +1,5 @@
-﻿using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.Items.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Ben10Mod.Content.DamageClasses;
 using Terraria;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
@@ -21,9 +16,18 @@ namespace Ben10Mod.Content.Items.Armour {
             Item.width = 18;
             Item.height = 14;
 
-            Item.defense = 1;
+            Item.defense = 2;
+            Item.value = Item.buyPrice(silver: 95);
+            Item.rare = ItemRarityID.White;
+        }
 
-            Item.value = 010000;
+        public override void UpdateEquip(Player player) {
+            player.GetCritChance<HeroDamage>() += 6f;
+            player.GetAttackSpeed<HeroDamage>() += 0.04f;
+        }
+
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            tooltips.Add(new TooltipLine(Mod, "EquipBonus", "+6 hero crit and +4% hero attack speed"));
         }
 
         public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -35,14 +39,16 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+12% movement speed while transformed";
+            player.setBonus = "While transformed: +12% movement speed and improved jump height. Also grants +10 hero crit";
             
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (omp.isTransformed) {
-                player.moveSpeed   *= 1.12f;
-                player.accRunSpeed *= 1.12f;
+                omp.transformedMoveSpeedBonus += 0.12f;
+                omp.transformedJumpSpeedBonus += 1.6f;
             }
+
+            player.GetCritChance<HeroDamage>() += 10f;
         }
 
         public override void AddRecipes()

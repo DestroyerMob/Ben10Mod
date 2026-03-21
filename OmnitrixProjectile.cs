@@ -1,4 +1,5 @@
 using System;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
@@ -29,6 +30,12 @@ public class OmnitrixProjectile : GlobalProjectile {
             itemUsed        = itemSource.Item.type;
             initialVelocity = projectile.velocity;
         }
+        else if (source is EntitySource_Parent { Entity: Projectile parentProjectile }) {
+            itemUsed = parentProjectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed;
+            initialVelocity = projectile.velocity;
+        }
+
+        ApplyTransformationDamageType(projectile, source);
     }
 
     public override void ModifyHitNPC(Projectile projectile, NPC target, ref NPC.HitModifiers modifiers) {
@@ -140,5 +147,45 @@ public class OmnitrixProjectile : GlobalProjectile {
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         return omp.IsUltimateAbilityActive && omp.currentTransformationId == "Ben10Mod:XLR8";
+    }
+
+    private static void ApplyTransformationDamageType(Projectile projectile, IEntitySource source) {
+        if (!projectile.friendly || projectile.hostile)
+            return;
+
+        if (!ShouldUseHeroDamage(projectile, source))
+            return;
+
+        projectile.DamageType = ModContent.GetInstance<HeroDamage>();
+    }
+
+    private static bool ShouldUseHeroDamage(Projectile projectile, IEntitySource source) {
+        if (source is IEntitySource_WithStatsFromItem itemSource && itemSource.Item.ModItem is PlumbersBadge)
+            return true;
+
+        if (source is EntitySource_Parent parentSource) {
+            if (parentSource.Entity is Projectile parentProjectile) {
+                if (parentProjectile.DamageType == ModContent.GetInstance<HeroDamage>())
+                    return true;
+
+                if (parentProjectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed != 0)
+                    return true;
+            }
+
+            if (parentSource.Entity is Player sourcePlayer &&
+                sourcePlayer.GetModPlayer<OmnitrixPlayer>().IsTransformed &&
+                projectile.ModProjectile?.Mod?.Name == "Ben10Mod")
+                return true;
+        }
+
+        if (projectile.owner >= 0 && projectile.owner < Main.maxPlayers) {
+            Player owner = Main.player[projectile.owner];
+            if (owner.active &&
+                owner.GetModPlayer<OmnitrixPlayer>().IsTransformed &&
+                projectile.ModProjectile?.Mod?.Name == "Ben10Mod")
+                return true;
+        }
+
+        return false;
     }
 }

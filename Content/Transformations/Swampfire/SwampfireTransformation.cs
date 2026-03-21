@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
 using Terraria.DataStructures;
@@ -37,16 +38,19 @@ public class SwampfireTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 36 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage(DamageClass.Magic) += 0.12f;
-        player.lifeRegen += 1;
+        player.GetDamage<HeroDamage>() += 0.14f;
+        player.lifeRegen += 2;
         player.fireWalk = true;
+        player.buffImmune[BuffID.OnFire] = true;
+        player.buffImmune[BuffID.OnFire3] = true;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.lifeRegen += 4;
-        player.statDefense += 6;
-        player.moveSpeed *= 0.85f;
+        player.lifeRegen += 6;
+        player.statDefense += 10;
+        player.endurance += 0.04f;
+        player.moveSpeed *= 0.8f;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

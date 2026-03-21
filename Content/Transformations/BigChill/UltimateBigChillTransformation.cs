@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Accessories.Wings;
@@ -33,6 +34,9 @@ public class UltimateBigChillTransformation : BigChillTransformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetAttackSpeed<HeroDamage>() += 0.08f;
+        player.endurance += 0.04f;
 
         var abilitySlot = ModContent.GetInstance<AbilitySlot>();
         abilitySlot.FunctionalItem = new Item(ModContent.ItemType<UltimateBigChillWings>());

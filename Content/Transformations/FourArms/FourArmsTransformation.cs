@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
 using Terraria.ModLoader;
@@ -33,10 +34,13 @@ public class FourArmsTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
-        player.GetAttackSpeed(DamageClass.Melee) += 0.25f;
-        player.GetCritChance(DamageClass.Generic) = 50f;
+        player.GetDamage<HeroDamage>() += 0.18f;
+        player.GetAttackSpeed<HeroDamage>() += 0.22f;
+        player.GetCritChance<HeroDamage>() += 12f;
+        player.GetKnockback<HeroDamage>() += 0.8f;
+        player.statDefense += 6;
         player.noFallDmg = true;
-        Player.jumpSpeed *= 1.9f;
+        player.jumpSpeedBoost += 2.8f;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

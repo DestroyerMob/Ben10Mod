@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Projectiles;
@@ -40,7 +41,8 @@ public class JetrayTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 28 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage(DamageClass.Generic) += 0.12f;
+        player.GetDamage<HeroDamage>() += 0.14f;
+        player.GetAttackSpeed<HeroDamage>() += 0.08f;
         player.moveSpeed += 0.18f;
         player.maxRunSpeed += 1.8f;
         player.accRunSpeed += 1.6f;
@@ -51,7 +53,8 @@ public class JetrayTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage(DamageClass.Generic) += 0.1f;
+        player.GetDamage<HeroDamage>() += 0.1f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
         player.moveSpeed += 0.2f;
         player.maxRunSpeed += 2.5f;
         player.accRunSpeed += 2f;

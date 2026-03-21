@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -38,18 +39,20 @@ public class NRGTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 42 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage(DamageClass.Generic) += 0.12f;
-        player.statDefense += 14;
-        player.endurance += 0.06f;
+        player.GetDamage<HeroDamage>() += 0.14f;
+        player.statDefense += 16;
+        player.endurance += 0.08f;
+        player.GetKnockback<HeroDamage>() += 0.4f;
         player.fireWalk = true;
         player.lavaImmune = true;
+        player.noKnockback = true;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage(DamageClass.Generic) += 0.18f;
-        player.statDefense += 8;
-        player.endurance += 0.05f;
+        player.GetDamage<HeroDamage>() += 0.2f;
+        player.statDefense += 10;
+        player.endurance += 0.06f;
         Lighting.AddLight(player.Center, 1f, 0.45f, 0.12f);
     }
 

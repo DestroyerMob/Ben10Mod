@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
 using Terraria.ModLoader;
@@ -27,6 +28,17 @@ public class WildVineTransformation : Transformation {
     public override int SecondaryAttack => ModContent.ProjectileType<WildVineGrapple>();
     public override int SecondaryAttackSpeed => 32;
     public override int SecondaryShootSpeed => 10;
+
+    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+        base.UpdateEffects(player, omp);
+
+        player.GetDamage<HeroDamage>() += 0.1f;
+        player.moveSpeed += 0.08f;
+        player.runAcceleration += 0.06f;
+        player.jumpSpeedBoost += 1.8f;
+        player.noFallDmg = true;
+        player.lifeRegen += player.velocity.Y == 0f ? 3 : 1;
+    }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<WildVine>();

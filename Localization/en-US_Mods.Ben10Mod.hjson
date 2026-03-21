@@ -425,6 +425,96 @@ Items: {
 		DisplayName: Ultimate Relay
 		Tooltip: ""
 	}
+
+	PlumberAssaultGreaves: {
+		DisplayName: Plumber Assault Greaves
+		Tooltip: ""
+	}
+
+	PlumberAssaultHarness: {
+		DisplayName: Plumber Assault Harness
+		Tooltip: ""
+	}
+
+	PlumberAssaultHelmet: {
+		DisplayName: Plumber Assault Helmet
+		Tooltip: ""
+	}
+
+	PlumberBulwarkGreaves: {
+		DisplayName: Plumber Bulwark Greaves
+		Tooltip: ""
+	}
+
+	PlumberBulwarkHelm: {
+		DisplayName: Plumber Bulwark Helm
+		Tooltip: ""
+	}
+
+	PlumberBulwarkMail: {
+		DisplayName: Plumber Bulwark Mail
+		Tooltip: ""
+	}
+
+	PlumberMagistrataCoat: {
+		DisplayName: Plumber Magistrata Coat
+		Tooltip: ""
+	}
+
+	PlumberMagistrataGreaves: {
+		DisplayName: Plumber Magistrata Greaves
+		Tooltip: ""
+	}
+
+	PlumberMagistrataHelm: {
+		DisplayName: Plumber Magistrata Helm
+		Tooltip: ""
+	}
+
+	PlumberOverclockGreaves: {
+		DisplayName: Plumber Overclock Greaves
+		Tooltip: ""
+	}
+
+	PlumberOverclockHelm: {
+		DisplayName: Plumber Overclock Helm
+		Tooltip: ""
+	}
+
+	PlumberOverclockPlate: {
+		DisplayName: Plumber Overclock Plate
+		Tooltip: ""
+	}
+
+	PlumberRelayCoat: {
+		DisplayName: Plumber Relay Coat
+		Tooltip: ""
+	}
+
+	PlumberRelayLeggings: {
+		DisplayName: Plumber Relay Leggings
+		Tooltip: ""
+	}
+
+	PlumberRelayVisor: {
+		DisplayName: Plumber Relay Visor
+		Tooltip: ""
+	}
+
+	PlumberSiegeBoots: {
+		DisplayName: Plumber Siege Boots
+		Tooltip: ""
+	}
+
+	PlumberSiegeCuirass: {
+		DisplayName: Plumber Siege Cuirass
+		Tooltip: ""
+	}
+
+	PlumberSiegeMask: {
+		DisplayName: Plumber Siege Mask
+		Tooltip: ""
+	}
 }
 
 Keybinds: {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -58,15 +59,17 @@ public class HumungousaurTransformation : Transformation {
         omp.SetTransformationScale(growthScale, GrowthRampDuration, 1f, growthScale);
 
         player.statDefense += 8;
-        player.GetDamage(DamageClass.Generic) += 0.12f;
-        player.GetKnockback(DamageClass.Generic) += 0.25f;
+        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetKnockback<HeroDamage>() += 0.25f;
+        player.endurance += 0.04f;
 
         if (!growthActive)
             return;
 
         player.statDefense += (int)Math.Round(14f * growthBonusMultiplier);
-        player.GetDamage(DamageClass.Generic) += 0.2f * growthBonusMultiplier;
-        player.GetKnockback(DamageClass.Generic) += 0.5f * growthBonusMultiplier;
+        player.GetDamage<HeroDamage>() += 0.2f * growthBonusMultiplier;
+        player.GetKnockback<HeroDamage>() += 0.5f * growthBonusMultiplier;
+        player.endurance += 0.05f * growthBonusMultiplier;
         player.moveSpeed *= Math.Max(0.65f, 1f - 0.1f * growthBonusMultiplier);
     }
 

@@ -1,10 +1,5 @@
-﻿using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.Items.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Ben10Mod.Content.DamageClasses;
 using Terraria;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
@@ -21,9 +16,19 @@ namespace Ben10Mod.Content.Items.Armour {
             Item.width = 18;
             Item.height = 14;
 
-            Item.value = 010000;
+            Item.value = Item.buyPrice(silver: 90);
+            Item.rare = ItemRarityID.White;
+            Item.defense = 3;
+        }
 
-            Item.defense = 2;
+        public override void UpdateEquip(Player player) {
+            var omp = player.GetModPlayer<OmnitrixPlayer>();
+            omp.transformedDefenseBonus += 2;
+            player.GetArmorPenetration<HeroDamage>() += 4;
+        }
+
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            tooltips.Add(new TooltipLine(Mod, "EquipBonus", "+2 defense while transformed and +4 hero armor penetration"));
         }
 
         public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -35,13 +40,16 @@ namespace Ben10Mod.Content.Items.Armour {
 
         public override void UpdateArmorSet(Player player) {
 
-            player.setBonus = "+8 defence while transformed";
+            player.setBonus = "While transformed: +8 defense and +4% endurance. Also grants +0.6 hero knockback";
             
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (omp.isTransformed) {
-                player.statDefense += 8;
+                omp.transformedDefenseBonus += 8;
+                omp.transformedEnduranceBonus += 0.04f;
             }
+
+            player.GetKnockback<HeroDamage>() += 0.6f;
         }
 
         public override void AddRecipes()

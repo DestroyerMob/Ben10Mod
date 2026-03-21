@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
 using Terraria.ID;
@@ -31,6 +32,16 @@ public class EyeGuyTransformation : Transformation {
     public override int UltimateEnergyCost => 10;
     public override int PrimaryShootSpeed => 30;
     public override int PrimaryAttackSpeed => 15;
+
+    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+        base.UpdateEffects(player, omp);
+
+        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetCritChance<HeroDamage>() += 12f;
+        player.GetArmorPenetration<HeroDamage>() += 6;
+        player.nightVision = true;
+        player.detectCreature = true;
+    }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<EyeGuy>();

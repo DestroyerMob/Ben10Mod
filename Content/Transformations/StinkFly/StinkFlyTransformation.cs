@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Projectiles;
@@ -33,6 +34,13 @@ public class StinkFlyTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetCritChance<HeroDamage>() += 6f;
+        player.moveSpeed += 0.12f;
+        player.maxRunSpeed += 1.2f;
+        player.accRunSpeed += 1f;
+        player.noFallDmg = true;
+        player.wingTimeMax += 45;
         ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
     }
 

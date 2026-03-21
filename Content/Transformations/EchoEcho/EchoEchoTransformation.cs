@@ -40,8 +40,13 @@ public class EchoEchoTransformation : Transformation {
     
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
+        player.moveSpeed += 0.08f;
+        player.maxMinions += 1;
+
         if (omp.PrimaryAbilityEnabled)
-            player.GetAttackSpeed<HeroDamage>() += 0.3f;
+            player.GetAttackSpeed<HeroDamage>() += 0.18f;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,

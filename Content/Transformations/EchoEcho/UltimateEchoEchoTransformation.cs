@@ -39,10 +39,12 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetDamage<HeroDamage>() += 0.18f;
+        player.GetAttackSpeed<HeroDamage>() += 0.14f;
+        player.maxTurrets += 1;
 
         if (omp.PrimaryAbilityEnabled)
-            player.GetAttackSpeed<HeroDamage>() += 0.4f;
+            player.GetAttackSpeed<HeroDamage>() += 0.24f;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,

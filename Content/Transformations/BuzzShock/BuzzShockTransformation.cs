@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Summons;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -42,6 +43,18 @@ public class BuzzShockTransformation : Transformation {
     public override float UltimateAttackModifier => 2.5f;
 
     public override int SecondaryAttack => -1;
+
+    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+        base.UpdateEffects(player, omp);
+
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
+        player.moveSpeed += 0.1f;
+        player.maxRunSpeed += 0.8f;
+        player.maxMinions += 1;
+        player.noFallDmg = true;
+        Lighting.AddLight(player.Center, new Vector3(0.2f, 0.45f, 0.7f));
+    }
 
     public override void PostUpdate(Player player, OmnitrixPlayer omp) {
         if (!omp.PrimaryAbilityEnabled || Main.myPlayer != player.whoAmI)

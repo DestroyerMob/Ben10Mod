@@ -5,7 +5,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public class PlumberDeputyBadgeDemonite : PlumbersBadge {
-    public override int    BaseDamage     => 17;
+    public override int    BaseDamage     => 20;
     public override string BadgeRankName  => "Deputy";
     public override int    BadgeRankValue => 2;
 

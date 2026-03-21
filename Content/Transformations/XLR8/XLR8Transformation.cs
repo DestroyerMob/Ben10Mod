@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Terraria;
 using Terraria.DataStructures;
@@ -40,10 +41,11 @@ public class XLR8Transformation : Transformation {
         
         player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5f : 2.5f;
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4f : 2f;
-        player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
+        player.GetAttackSpeed<HeroDamage>() += omp.PrimaryAbilityEnabled ? 0.5f : 1f;
+        player.GetCritChance<HeroDamage>() += omp.PrimaryAbilityEnabled ? 14f : 8f;
         player.pickSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
+        player.jumpSpeedBoost += omp.PrimaryAbilityEnabled ? 3f : 1.6f;
         if (Math.Abs(player.velocity.X) > 2) {
-            Player.jumpSpeed *= omp.PrimaryAbilityEnabled ? 3.0f : 1.5f;
             player.waterWalk =  true;
         }
     }

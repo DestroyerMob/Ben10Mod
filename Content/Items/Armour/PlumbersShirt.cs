@@ -1,9 +1,5 @@
-﻿using Ben10Mod.Content.Items.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Ben10Mod.Content.DamageClasses;
 using Terraria;
 using Terraria.GameContent.Creative;
 using Terraria.ID;
@@ -20,9 +16,17 @@ namespace Ben10Mod.Content.Items.Armour{
             Item.width = 18;
             Item.height = 14;
 
-            Item.value = 010000;
+            Item.value = Item.buyPrice(silver: 110);
+            Item.rare = ItemRarityID.White;
+            Item.defense = 4;
+        }
 
-            Item.defense = 3;
+        public override void UpdateEquip(Player player) {
+            player.GetDamage<HeroDamage>() += 0.04f;
+        }
+
+        public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            tooltips.Add(new TooltipLine(Mod, "EquipBonus", "+4% hero damage"));
         }
 
         public override void AddRecipes()

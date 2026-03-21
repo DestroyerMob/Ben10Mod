@@ -54,17 +54,23 @@ public class RipJawsTransformation : Transformation {
         bool inRain = Main.raining && player.ZoneRain && !inWater;
         bool inUnderworld = player.ZoneUnderworldHeight;
 
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.statDefense += 6;
+        player.GetArmorPenetration<HeroDamage>() += 8;
+
         if (inWater) {
             player.merman = true;
             player.breathCD = 0;
             player.breath = player.breathMax;
             player.GetDamage<HeroDamage>() *= WaterDamageMultiplier;
+            player.GetAttackSpeed<HeroDamage>() += 0.16f;
             Lighting.AddLight(player.Center, Vector3.One);
             player.maxFallSpeed *= WaterFallSpeedMultiplier;
             player.moveSpeed *= WaterMoveSpeedMultiplier;
         }
         else if (inRain) {
             player.GetDamage<HeroDamage>() *= RainDamageMultiplier;
+            player.GetAttackSpeed<HeroDamage>() += 0.08f;
             Lighting.AddLight(player.Center, Vector3.One * 0.65f);
             player.maxFallSpeed *= RainFallSpeedMultiplier;
             player.moveSpeed *= RainMoveSpeedMultiplier;

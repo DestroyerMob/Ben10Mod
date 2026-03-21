@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -45,6 +46,12 @@ public class GhostFreakTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
         player.noFallDmg = true;
+        player.GetCritChance<HeroDamage>() += 10f;
+        player.moveSpeed += 0.12f;
+        player.maxRunSpeed += 0.8f;
+        player.aggro -= 400;
+        player.nightVision = true;
+        player.endurance += 0.04f;
     }
 
     public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {

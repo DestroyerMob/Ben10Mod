@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -38,16 +39,17 @@ public class ArmodrilloTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 40 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage(DamageClass.Generic) += 0.14f;
+        player.GetDamage<HeroDamage>() += 0.14f;
         player.statDefense += 10;
         player.endurance += 0.05f;
-        player.GetKnockback(DamageClass.Generic) += 0.6f;
+        player.GetKnockback<HeroDamage>() += 0.6f;
+        player.GetArmorPenetration<HeroDamage>() += 10;
         player.noKnockback = true;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage(DamageClass.Generic) += 0.18f;
+        player.GetDamage<HeroDamage>() += 0.18f;
         player.statDefense += 14;
         player.endurance += 0.08f;
         player.moveSpeed -= 0.05f;

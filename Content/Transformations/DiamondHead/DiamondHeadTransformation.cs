@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -48,6 +49,8 @@ public class DiamondHeadTransformation : Transformation {
         base.UpdateEffects(player, omp);
 
         player.statDefense += 20;
+        player.GetArmorPenetration<HeroDamage>() += 10;
+        player.GetKnockback<HeroDamage>() += 0.35f;
         player.wingTimeMax = 0;
         player.wingTime = 0;
 

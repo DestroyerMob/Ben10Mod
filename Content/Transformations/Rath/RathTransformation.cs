@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -38,18 +39,21 @@ public class RathTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 32 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage(DamageClass.Generic) += 0.14f;
-        player.GetAttackSpeed(DamageClass.Melee) += 0.12f;
+        player.GetDamage<HeroDamage>() += 0.15f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
+        player.GetCritChance<HeroDamage>() += 8f;
         player.moveSpeed += 0.08f;
-        player.GetKnockback(DamageClass.Generic) += 0.45f;
+        player.GetKnockback<HeroDamage>() += 0.45f;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage(DamageClass.Generic) += 0.18f;
-        player.GetAttackSpeed(DamageClass.Melee) += 0.18f;
+        player.GetDamage<HeroDamage>() += 0.18f;
+        player.GetAttackSpeed<HeroDamage>() += 0.18f;
+        player.GetCritChance<HeroDamage>() += 6f;
         player.moveSpeed += 0.22f;
         player.runAcceleration *= 1.2f;
+        player.endurance += 0.04f;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,

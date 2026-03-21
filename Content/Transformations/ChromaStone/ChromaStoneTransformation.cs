@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
@@ -33,6 +34,18 @@ public class ChromaStoneTransformation : Transformation {
     public override int PrimaryAttackSpeed => 20;
 
     private int _chromastoneAbsobtion = 0;
+
+    public override void ResetEffects(Player player, OmnitrixPlayer omp) {
+        int storedCharge = Math.Min(_chromastoneAbsobtion, 80);
+
+        player.GetDamage<HeroDamage>() += 0.1f + storedCharge / 500f;
+        player.statDefense += 8 + storedCharge / 12;
+        player.endurance += 0.04f;
+        player.GetArmorPenetration<HeroDamage>() += 6 + storedCharge / 20;
+
+        if (omp.PrimaryAbilityEnabled)
+            player.endurance += 0.08f;
+    }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity,
         int damage, float knockback) {

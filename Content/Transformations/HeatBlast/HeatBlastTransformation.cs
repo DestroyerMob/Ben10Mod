@@ -5,6 +5,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Projectiles;
@@ -44,8 +45,13 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         };
         
         public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+            player.GetDamage<HeroDamage>() += 0.1f;
+            player.GetAttackSpeed<HeroDamage>() += 0.08f;
             player.fireWalk   = true;
             player.lavaImmune = true;
+            player.buffImmune[BuffID.OnFire] = true;
+            player.buffImmune[BuffID.OnFire3] = true;
+            player.buffImmune[BuffID.Burning] = true;
 
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
             abilitySlot.FunctionalItem = new Item(ModContent.ItemType<HeatBlastExtraJumpAccessory>());

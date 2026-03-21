@@ -9,13 +9,49 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/projectSettingsUpdater.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/description.txt" beforeDir="false" afterPath="$PROJECT_DIR$/description.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/AddonAPI.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/AddonAPI.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/Architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/Architecture.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/Development.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/Development.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Accessories/RecalibratedOmnitrix.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Accessories/RecalibratedOmnitrix.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Accessories/Ultimatrix.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Accessories/Ultimatrix.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersGlassHelmet.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersHelmet.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersPants.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersPants.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumbersShirt.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumbersShirt.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/HeavenlyCrystallineBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/HeavenlyCrystallineBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberAgentBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberAgentBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberCadetBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberCadetBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberDeputyBadgeCrimtane.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberDeputyBadgeCrimtane.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberDeputyBadgeDemonite.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberDeputyBadgeDemonite.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberFieldProctorBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberFieldProctorBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberMagisterBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberMagisterBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberMagistrataBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberMagistrataBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberProctorBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberProctorBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberSeniorAgentBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberSeniorAgentBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Weapons/PlumberSeniorDeputyBadge.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Weapons/PlumberSeniorDeputyBadge.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Armodrillo/ArmodrilloTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Armodrillo/ArmodrilloTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/UltimateBigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/UltimateBigChillTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/EchoEchoTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EchoEcho/UltimateEchoEchoTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/EyeGuy/EyeGuyTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EyeGuy/EyeGuyTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/GhostFreak/GhostFreakTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/GhostFreak/GhostFreakTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/UltimateHumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/UltimateHumungousaurTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/RipJaws/RipJawsTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/RipJaws/RipJawsTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFlyTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFlyTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Swampfire/SwampfireTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Swampfire/SwampfireTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/WildVine/WildVineTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/WildVine/WildVineTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixProjectile.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -156,7 +192,7 @@
       <workItem from="1773991970068" duration="163000" />
       <workItem from="1773992137185" duration="21000" />
       <workItem from="1773992184362" duration="8916000" />
-      <workItem from="1774041898622" duration="29000" />
+      <workItem from="1774041898622" duration="3007000" />
     </task>
     <servers />
   </component>
