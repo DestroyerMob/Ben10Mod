@@ -66,6 +66,318 @@ internal static class PlumberArmorPalette {
     }
 }
 
+public class HeroPlumberArmorPlayer : ModPlayer {
+    private static DamageClass HeroClass => ModContent.GetInstance<HeroDamage>();
+
+    private const int BulwarkPulseCooldownTime = 15 * 60;
+    private const int RelayChargeDuration = 5 * 60;
+    private const int SiegeBraceRequiredTime = 36;
+    private const int MagistrataStackCooldownTime = 24;
+
+    public bool bulwarkSet;
+    public bool relaySet;
+    public bool siegeSet;
+    public bool magistrataSet;
+
+    private int bulwarkPulseCooldown;
+    private int relayChargeTime;
+    private int siegeBraceTime;
+    private bool siegeBurstReady;
+    private int magistrataCommandStacks;
+    private int magistrataStackCooldown;
+    private OmnitrixPlayer.AttackSelection lastAttackSelection = OmnitrixPlayer.AttackSelection.Primary;
+    private bool lastPrimaryAbilityActive;
+    private bool lastSecondaryAbilityActive;
+    private bool lastTertiaryAbilityActive;
+    private bool lastUltimateAbilityActive;
+
+    public override void ResetEffects() {
+        bulwarkSet = false;
+        relaySet = false;
+        siegeSet = false;
+        magistrataSet = false;
+    }
+
+    public override void UpdateDead() {
+        bulwarkPulseCooldown = 0;
+        relayChargeTime = 0;
+        siegeBraceTime = 0;
+        siegeBurstReady = false;
+        magistrataCommandStacks = 0;
+        magistrataStackCooldown = 0;
+        CacheAbilityState(Player.GetModPlayer<OmnitrixPlayer>());
+    }
+
+    public override void PostUpdate() {
+        if (!bulwarkSet)
+            bulwarkPulseCooldown = 0;
+        if (!relaySet)
+            relayChargeTime = 0;
+        if (!siegeSet) {
+            siegeBraceTime = 0;
+            siegeBurstReady = false;
+        }
+        if (!magistrataSet) {
+            magistrataCommandStacks = 0;
+            magistrataStackCooldown = 0;
+        }
+
+        if (bulwarkPulseCooldown > 0)
+            bulwarkPulseCooldown--;
+        if (relayChargeTime > 0)
+            relayChargeTime--;
+        if (magistrataStackCooldown > 0)
+            magistrataStackCooldown--;
+
+        var omp = Player.GetModPlayer<OmnitrixPlayer>();
+        bool abilityActivated = HasAbilityActivation(omp);
+        bool attackSelectionChanged = omp.setAttack != lastAttackSelection;
+
+        if (!omp.IsTransformed) {
+            relayChargeTime = 0;
+            siegeBraceTime = 0;
+            siegeBurstReady = false;
+            magistrataCommandStacks = 0;
+            magistrataStackCooldown = 0;
+            CacheAbilityState(omp);
+            return;
+        }
+
+        if (relaySet && (abilityActivated || (attackSelectionChanged && omp.HasLoadedBadgeAttack)))
+            PrimeRelayBurst();
+
+        UpdateSiegeState();
+
+        if (magistrataSet && magistrataStackCooldown <= 0 && (abilityActivated || attackSelectionChanged))
+            GainMagistrataCommandStack();
+
+        CacheAbilityState(omp);
+    }
+
+    public override void PostHurt(Player.HurtInfo info) {
+        if (bulwarkSet && Player.GetModPlayer<OmnitrixPlayer>().IsTransformed && bulwarkPulseCooldown <= 0 && info.Damage > 0) {
+            bulwarkPulseCooldown = BulwarkPulseCooldownTime;
+            TriggerBulwarkPulse(Math.Max(80, info.Damage * 2));
+        }
+
+        base.PostHurt(info);
+    }
+
+    public override void OnHitNPCWithItem(Item item, NPC target, NPC.HitInfo hit, int damageDone) {
+        if (item.DamageType == HeroClass)
+            HandleHeroHit(target, damageDone);
+
+        base.OnHitNPCWithItem(item, target, hit, damageDone);
+    }
+
+    public override void OnHitNPCWithProj(Projectile proj, NPC target, NPC.HitInfo hit, int damageDone) {
+        if (proj.DamageType == HeroClass)
+            HandleHeroHit(target, damageDone);
+
+        base.OnHitNPCWithProj(proj, target, hit, damageDone);
+    }
+
+    private void HandleHeroHit(NPC target, int damageDone) {
+        if (relaySet && relayChargeTime > 0)
+            TriggerRelayBurst(target, damageDone);
+
+        if (siegeSet && siegeBurstReady)
+            TriggerSiegeBurst(target, damageDone);
+
+        if (magistrataSet && magistrataCommandStacks >= 3)
+            TriggerMagistrataVerdict(target, damageDone);
+    }
+
+    private void PrimeRelayBurst() {
+        bool wasUncharged = relayChargeTime <= 0;
+        relayChargeTime = RelayChargeDuration;
+
+        if (wasUncharged && Player.whoAmI == Main.myPlayer)
+            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Relay, "Relay Charged");
+    }
+
+    private void UpdateSiegeState() {
+        if (!siegeSet) {
+            siegeBraceTime = 0;
+            siegeBurstReady = false;
+            return;
+        }
+
+        if (siegeBurstReady)
+            return;
+
+        bool grounded = Math.Abs(Player.velocity.Y) <= 0.05f;
+        bool braced = grounded && Math.Abs(Player.velocity.X) <= 0.75f && !Player.mount.Active;
+        if (braced) {
+            siegeBraceTime = Math.Min(SiegeBraceRequiredTime, siegeBraceTime + 1);
+            if (siegeBraceTime >= SiegeBraceRequiredTime) {
+                siegeBurstReady = true;
+                if (Player.whoAmI == Main.myPlayer)
+                    CombatText.NewText(Player.getRect(), PlumberArmorPalette.Siege, "Siege Ready");
+            }
+        }
+        else {
+            siegeBraceTime = Math.Max(0, siegeBraceTime - 2);
+        }
+    }
+
+    private void GainMagistrataCommandStack() {
+        magistrataStackCooldown = MagistrataStackCooldownTime;
+        if (magistrataCommandStacks < 3)
+            magistrataCommandStacks++;
+
+        if (magistrataCommandStacks >= 3 && Player.whoAmI == Main.myPlayer)
+            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Magistrata, "Verdict Ready");
+    }
+
+    private void TriggerBulwarkPulse(int damage) {
+        float radius = 220f;
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            foreach (NPC npc in Main.ActiveNPCs) {
+                if (!npc.CanBeChasedBy() || Vector2.Distance(npc.Center, Player.Center) > radius)
+                    continue;
+
+                int direction = npc.Center.X >= Player.Center.X ? 1 : -1;
+                npc.SimpleStrikeNPC(damage, direction, false, 6f, HeroClass);
+            }
+        }
+
+        SpawnDustBurst(Player.Center, radius, DustID.HallowedTorch, PlumberArmorPalette.Bulwark);
+
+        if (Player.whoAmI == Main.myPlayer)
+            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Bulwark, "Bulwark Pulse");
+    }
+
+    private void TriggerRelayBurst(NPC primaryTarget, int damageDone) {
+        relayChargeTime = 0;
+        RestoreOmnitrixEnergy(12f);
+
+        List<NPC> chainedTargets = FindNearestTargets(primaryTarget.Center, 320f, 3, primaryTarget.whoAmI);
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            int damage = Math.Max(1, (int)Math.Round(damageDone * 0.45f));
+            foreach (NPC npc in chainedTargets) {
+                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
+                npc.SimpleStrikeNPC(damage, direction, false, 0f, HeroClass);
+            }
+        }
+
+        foreach (NPC npc in chainedTargets)
+            SpawnDustLink(primaryTarget.Center, npc.Center, DustID.Electric, PlumberArmorPalette.Relay);
+    }
+
+    private void TriggerSiegeBurst(NPC primaryTarget, int damageDone) {
+        siegeBurstReady = false;
+        siegeBraceTime = 0;
+
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            int primaryDamage = Math.Max(1, (int)Math.Round(damageDone * 0.5f));
+            int splashDamage = Math.Max(1, (int)Math.Round(damageDone * 0.35f));
+
+            primaryTarget.SimpleStrikeNPC(primaryDamage, Player.direction, false, 5f, HeroClass);
+
+            foreach (NPC npc in FindNearestTargets(primaryTarget.Center, 180f, 4, primaryTarget.whoAmI)) {
+                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
+                npc.SimpleStrikeNPC(splashDamage, direction, false, 4f, HeroClass);
+            }
+        }
+
+        SpawnDustBurst(primaryTarget.Center, 96f, DustID.BlueTorch, PlumberArmorPalette.Siege);
+    }
+
+    private void TriggerMagistrataVerdict(NPC primaryTarget, int damageDone) {
+        magistrataCommandStacks = 0;
+        magistrataStackCooldown = MagistrataStackCooldownTime;
+        RestoreOmnitrixEnergy(20f);
+
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            int primaryDamage = Math.Max(1, (int)Math.Round(damageDone * 0.7f));
+            int echoDamage = Math.Max(1, (int)Math.Round(damageDone * 0.45f));
+
+            primaryTarget.SimpleStrikeNPC(primaryDamage, Player.direction, false, 0f, HeroClass);
+
+            foreach (NPC npc in FindNearestTargets(primaryTarget.Center, 260f, 2, primaryTarget.whoAmI)) {
+                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
+                npc.SimpleStrikeNPC(echoDamage, direction, false, 0f, HeroClass);
+            }
+        }
+
+        SpawnDustBurst(primaryTarget.Center, 112f, DustID.PinkTorch, PlumberArmorPalette.Magistrata);
+    }
+
+    private void RestoreOmnitrixEnergy(float amount) {
+        if (Player.whoAmI != Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        var omp = Player.GetModPlayer<OmnitrixPlayer>();
+        omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + amount);
+    }
+
+    private static void SpawnDustBurst(Vector2 center, float radius, int dustType, Color color) {
+        for (int i = 0; i < 18; i++) {
+            Vector2 velocity = Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2.2f, 4.6f);
+            Vector2 position = center + velocity.SafeNormalize(Vector2.UnitX) * Main.rand.NextFloat(8f, radius * 0.25f);
+            Dust dust = Dust.NewDustPerfect(position, dustType, velocity, 120, color, 1.2f);
+            dust.noGravity = true;
+        }
+    }
+
+    private static void SpawnDustLink(Vector2 start, Vector2 end, int dustType, Color color) {
+        int points = 8;
+        for (int i = 0; i <= points; i++) {
+            Vector2 position = Vector2.Lerp(start, end, i / (float)points);
+            Dust dust = Dust.NewDustPerfect(position, dustType, Vector2.Zero, 120, color, 1.05f);
+            dust.noGravity = true;
+        }
+    }
+
+    private static List<NPC> FindNearestTargets(Vector2 origin, float maxDistance, int count, int excludedNpc) {
+        List<NPC> results = new();
+        HashSet<int> usedIds = new();
+        if (excludedNpc >= 0)
+            usedIds.Add(excludedNpc);
+
+        while (results.Count < count) {
+            NPC closest = null;
+            float closestDistance = maxDistance;
+
+            foreach (NPC npc in Main.ActiveNPCs) {
+                if (!npc.CanBeChasedBy() || usedIds.Contains(npc.whoAmI))
+                    continue;
+
+                float distance = Vector2.Distance(origin, npc.Center);
+                if (distance >= closestDistance)
+                    continue;
+
+                closestDistance = distance;
+                closest = npc;
+            }
+
+            if (closest == null)
+                break;
+
+            usedIds.Add(closest.whoAmI);
+            results.Add(closest);
+        }
+
+        return results;
+    }
+
+    private bool HasAbilityActivation(OmnitrixPlayer omp) {
+        return (!lastPrimaryAbilityActive && omp.IsPrimaryAbilityActive)
+               || (!lastSecondaryAbilityActive && omp.IsSecondaryAbilityActive)
+               || (!lastTertiaryAbilityActive && omp.IsTertiaryAbilityActive)
+               || (!lastUltimateAbilityActive && omp.IsUltimateAbilityActive);
+    }
+
+    private void CacheAbilityState(OmnitrixPlayer omp) {
+        lastAttackSelection = omp.setAttack;
+        lastPrimaryAbilityActive = omp.IsPrimaryAbilityActive;
+        lastSecondaryAbilityActive = omp.IsSecondaryAbilityActive;
+        lastTertiaryAbilityActive = omp.IsTertiaryAbilityActive;
+        lastUltimateAbilityActive = omp.IsUltimateAbilityActive;
+    }
+}
+
 public abstract class PlumberArmorPiece : ModItem {
     protected abstract string ArmorTexture { get; }
     protected abstract int ArmorValue { get; }
@@ -483,20 +795,17 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10 defense and +5% endurance. Below half life, gain +12% hero damage and +10% movement speed";
+            "While transformed: +6 defense and +3% endurance. Every 15 seconds, the next hit you take unleashes a Bulwark Pulse that blasts nearby enemies";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
+        var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
+        hvap.bulwarkSet = true;
         if (!omp.isTransformed) {
             return;
         }
 
-        omp.transformedDefenseBonus += 10;
-        omp.transformedEnduranceBonus += 0.05f;
-
-        if (player.statLife <= player.statLifeMax2 / 2) {
-            player.GetDamage<HeroDamage>() += 0.12f;
-            omp.transformedMoveSpeedBonus += 0.10f;
-        }
+        omp.transformedDefenseBonus += 6;
+        omp.transformedEnduranceBonus += 0.03f;
     }
 
     public override void AddRecipes() {
@@ -576,18 +885,17 @@ public class PlumberRelayVisor : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +45 Omnitrix energy, +1 energy regen, 20% longer transformations, 15% shorter ultimate cooldowns, and +6% hero attack speed";
+            "While transformed: +25 Omnitrix energy and 15% longer transformations. Activating an ability or loading a special attack charges your next Hero hit to chain lightning and restore energy";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
+        var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
+        hvap.relaySet = true;
         if (!omp.isTransformed) {
             return;
         }
 
-        omp.omnitrixEnergyMaxBonus += 45;
-        omp.omnitrixEnergyRegenBonus += 1;
-        omp.transformationDurationMultiplier *= 1.20f;
-        omp.ultimateAbilityCooldownMultiplier *= 0.85f;
-        player.GetAttackSpeed<HeroDamage>() += 0.06f;
+        omp.omnitrixEnergyMaxBonus += 25;
+        omp.transformationDurationMultiplier *= 1.15f;
     }
 
     public override void AddRecipes() {
@@ -671,22 +979,16 @@ public class PlumberSiegeMask : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +15 hero crit and +0.8 hero knockback. While grounded and nearly stationary, gain +12% hero damage and +12 hero armor penetration";
+            "While transformed: +10 hero crit. Brace while grounded to ready a Siege Burst; your next Hero hit detonates around the target";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
+        var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
+        hvap.siegeSet = true;
         if (!omp.isTransformed) {
             return;
         }
 
-        player.GetCritChance<HeroDamage>() += 15f;
-        player.GetKnockback<HeroDamage>() += 0.8f;
-
-        bool grounded = Math.Abs(player.velocity.Y) <= 0.1f;
-        bool braced = Math.Abs(player.velocity.X) <= 1.25f;
-        if (grounded && braced) {
-            player.GetDamage<HeroDamage>() += 0.12f;
-            player.GetArmorPenetration<HeroDamage>() += 12;
-        }
+        player.GetCritChance<HeroDamage>() += 10f;
     }
 
     public override void AddRecipes() {
@@ -763,18 +1065,16 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10% hero damage, +8 defense, +5% endurance, +60 Omnitrix energy, +1 energy regen, and 10% shorter primary and ultimate cooldowns";
+            "While transformed: +40 Omnitrix energy and 10% shorter primary and ultimate cooldowns. Ability activations and attack swaps build Command stacks; at 3 stacks, your next Hero hit delivers a Verdict strike and restores energy";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
+        var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
+        hvap.magistrataSet = true;
         if (!omp.isTransformed) {
             return;
         }
 
-        player.GetDamage<HeroDamage>() += 0.10f;
-        omp.transformedDefenseBonus += 8;
-        omp.transformedEnduranceBonus += 0.05f;
-        omp.omnitrixEnergyMaxBonus += 60;
-        omp.omnitrixEnergyRegenBonus += 1;
+        omp.omnitrixEnergyMaxBonus += 40;
         omp.primaryAbilityCooldownMultiplier *= 0.90f;
         omp.ultimateAbilityCooldownMultiplier *= 0.90f;
     }
