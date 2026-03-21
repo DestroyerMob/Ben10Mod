@@ -113,6 +113,159 @@ public abstract class PlumberArmorPiece : ModItem {
 }
 
 [AutoloadEquip(EquipType.Head)]
+public class PlumbersHelmet : PlumberArmorPiece {
+    protected override string ArmorTexture => PlumberArmorTextures.Helmet;
+    protected override int ArmorValue => Item.buyPrice(silver: 90);
+    protected override int ArmorRarity => ItemRarityID.White;
+    protected override int ArmorDefense => 3;
+    protected override Color ArmorTint => PlumberArmorPalette.Vanguard;
+    protected override string EquipBonusText => "+2 defense while transformed and +4 hero armor penetration";
+
+    public override void UpdateEquip(Player player) {
+        var omp = player.GetModPlayer<OmnitrixPlayer>();
+        omp.transformedDefenseBonus += 2;
+        player.GetArmorPenetration<HeroDamage>() += 4;
+    }
+
+    public override bool IsArmorSet(Item head, Item body, Item legs) {
+        return body.type == ModContent.ItemType<PlumbersShirt>()
+            && legs.type == ModContent.ItemType<PlumbersPants>();
+    }
+
+    public override void UpdateArmorSet(Player player) {
+        player.setBonus = "While transformed: +8 defense and +4% endurance. Also grants +0.6 hero knockback";
+
+        var omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (omp.isTransformed) {
+            omp.transformedDefenseBonus += 8;
+            omp.transformedEnduranceBonus += 0.04f;
+        }
+
+        player.GetKnockback<HeroDamage>() += 0.6f;
+    }
+
+    public override void AddRecipes() {
+        CreateRecipe()
+            .AddIngredient(ItemID.IronBar, 15)
+            .AddTile(TileID.Anvils)
+            .Register();
+
+        CreateRecipe()
+            .AddIngredient(ItemID.LeadBar, 15)
+            .AddTile(TileID.Anvils)
+            .Register();
+    }
+}
+
+[AutoloadEquip(EquipType.Head)]
+public class PlumbersGlassHelmet : PlumberArmorPiece {
+    protected override string ArmorTexture => PlumberArmorTextures.GlassHelmet;
+    protected override int ArmorValue => Item.buyPrice(silver: 95);
+    protected override int ArmorRarity => ItemRarityID.White;
+    protected override int ArmorDefense => 2;
+    protected override Color ArmorTint => PlumberArmorPalette.Scout;
+    protected override string EquipBonusText => "+6 hero crit and +4% hero attack speed";
+
+    public override void UpdateEquip(Player player) {
+        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetAttackSpeed<HeroDamage>() += 0.04f;
+    }
+
+    public override bool IsArmorSet(Item head, Item body, Item legs) {
+        return body.type == ModContent.ItemType<PlumbersShirt>()
+            && legs.type == ModContent.ItemType<PlumbersPants>();
+    }
+
+    public override void UpdateArmorSet(Player player) {
+        player.setBonus = "While transformed: +12% movement speed and improved jump height. Also grants +10 hero crit";
+
+        var omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (omp.isTransformed) {
+            omp.transformedMoveSpeedBonus += 0.12f;
+            omp.transformedJumpSpeedBonus += 1.6f;
+        }
+
+        player.GetCritChance<HeroDamage>() += 10f;
+    }
+
+    public override void AddRecipes() {
+        CreateRecipe()
+            .AddIngredient(ItemID.IronBar, 5)
+            .AddIngredient(ItemID.Glass, 10)
+            .AddTile(TileID.Anvils)
+            .Register();
+
+        CreateRecipe()
+            .AddIngredient(ItemID.LeadBar, 5)
+            .AddIngredient(ItemID.Glass, 10)
+            .AddTile(TileID.Anvils)
+            .Register();
+    }
+}
+
+[AutoloadEquip(EquipType.Body)]
+public class PlumbersShirt : PlumberArmorPiece {
+    protected override string ArmorTexture => PlumberArmorTextures.Shirt;
+    protected override int ArmorValue => Item.buyPrice(silver: 110);
+    protected override int ArmorRarity => ItemRarityID.White;
+    protected override int ArmorDefense => 4;
+    protected override Color ArmorTint => PlumberArmorPalette.Neutral;
+    protected override string EquipBonusText => "+4% hero damage";
+
+    public override void UpdateEquip(Player player) {
+        player.GetDamage<HeroDamage>() += 0.04f;
+    }
+
+    public override void DrawArmorColor(Player drawPlayer, float shadow, ref Color color, ref int glowMask,
+        ref Color glowMaskColor) {
+        color = PlumberArmorPalette.Blend(color, PlumberArmorPalette.ResolveSharedEarlySetColor(drawPlayer));
+    }
+
+    public override void AddRecipes() {
+        CreateRecipe()
+            .AddIngredient(ItemID.IronBar, 25)
+            .AddTile(TileID.Anvils)
+            .Register();
+
+        CreateRecipe()
+            .AddIngredient(ItemID.LeadBar, 25)
+            .AddTile(TileID.Anvils)
+            .Register();
+    }
+}
+
+[AutoloadEquip(EquipType.Legs)]
+public class PlumbersPants : PlumberArmorPiece {
+    protected override string ArmorTexture => PlumberArmorTextures.Pants;
+    protected override int ArmorValue => Item.buyPrice(silver: 100);
+    protected override int ArmorRarity => ItemRarityID.White;
+    protected override int ArmorDefense => 3;
+    protected override Color ArmorTint => PlumberArmorPalette.Neutral;
+    protected override string EquipBonusText => "+5% movement speed while transformed";
+
+    public override void UpdateEquip(Player player) {
+        player.GetModPlayer<OmnitrixPlayer>().transformedMoveSpeedBonus += 0.05f;
+    }
+
+    public override void DrawArmorColor(Player drawPlayer, float shadow, ref Color color, ref int glowMask,
+        ref Color glowMaskColor) {
+        color = PlumberArmorPalette.Blend(color, PlumberArmorPalette.ResolveSharedEarlySetColor(drawPlayer));
+    }
+
+    public override void AddRecipes() {
+        CreateRecipe()
+            .AddIngredient(ItemID.IronBar, 20)
+            .AddTile(TileID.Anvils)
+            .Register();
+
+        CreateRecipe()
+            .AddIngredient(ItemID.LeadBar, 20)
+            .AddTile(TileID.Anvils)
+            .Register();
+    }
+}
+
+[AutoloadEquip(EquipType.Head)]
 public class PlumberAssaultHelmet : PlumberArmorPiece {
     protected override string ArmorTexture => PlumberArmorTextures.Helmet;
     protected override int ArmorValue => Item.buyPrice(gold: 1);
