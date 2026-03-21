@@ -201,7 +201,7 @@ public class OmnitrixProjectile : GlobalProjectile {
 
         if (source is EntitySource_Parent parentSource) {
             if (parentSource.Entity is Projectile parentProjectile) {
-                if (parentProjectile.DamageType == ModContent.GetInstance<HeroDamage>())
+                if (parentProjectile.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
                     return true;
 
                 if (parentProjectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed != 0)

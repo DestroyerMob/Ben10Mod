@@ -33,14 +33,14 @@ public class HeroVanillaArmorPlayer : ModPlayer {
     }
 
     public override void OnHitNPCWithItem(Item item, NPC target, NPC.HitInfo hit, int damageDone) {
-        if (item.DamageType == HeroClass)
+        if (item.CountsAsClass(HeroClass))
             ApplyHeroHitEffects(target, damageDone);
 
         base.OnHitNPCWithItem(item, target, hit, damageDone);
     }
 
     public override void OnHitNPCWithProj(Projectile proj, NPC target, NPC.HitInfo hit, int damageDone) {
-        if (proj.DamageType == HeroClass)
+        if (proj.CountsAsClass(HeroClass))
             ApplyHeroHitEffects(target, damageDone);
 
         base.OnHitNPCWithProj(proj, target, hit, damageDone);

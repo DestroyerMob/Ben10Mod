@@ -71,7 +71,8 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
     private const int BulwarkPulseCooldownTime = 15 * 60;
     private const int RelayChargeDuration = 5 * 60;
-    private const int SiegeBraceRequiredTime = 36;
+    private const int SiegeLockDuration = 2 * 60;
+    private const int SiegeRequiredLocks = 3;
     private const int MagistrataStackCooldownTime = 24;
 
     public bool bulwarkSet;
@@ -81,8 +82,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
     private int bulwarkPulseCooldown;
     private int relayChargeTime;
-    private int siegeBraceTime;
-    private bool siegeBurstReady;
+    private int siegeLockedTargetIndex = -1;
+    private int siegeLockStacks;
+    private int siegeLockTime;
     private int magistrataCommandStacks;
     private int magistrataStackCooldown;
     private OmnitrixPlayer.AttackSelection lastAttackSelection = OmnitrixPlayer.AttackSelection.Primary;
@@ -101,8 +103,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     public override void UpdateDead() {
         bulwarkPulseCooldown = 0;
         relayChargeTime = 0;
-        siegeBraceTime = 0;
-        siegeBurstReady = false;
+        siegeLockedTargetIndex = -1;
+        siegeLockStacks = 0;
+        siegeLockTime = 0;
         magistrataCommandStacks = 0;
         magistrataStackCooldown = 0;
         CacheAbilityState(Player.GetModPlayer<OmnitrixPlayer>());
@@ -114,8 +117,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         if (!relaySet)
             relayChargeTime = 0;
         if (!siegeSet) {
-            siegeBraceTime = 0;
-            siegeBurstReady = false;
+            siegeLockedTargetIndex = -1;
+            siegeLockStacks = 0;
+            siegeLockTime = 0;
         }
         if (!magistrataSet) {
             magistrataCommandStacks = 0;
@@ -126,8 +130,15 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             bulwarkPulseCooldown--;
         if (relayChargeTime > 0)
             relayChargeTime--;
+        if (siegeLockTime > 0)
+            siegeLockTime--;
         if (magistrataStackCooldown > 0)
             magistrataStackCooldown--;
+
+        if (siegeLockTime <= 0) {
+            siegeLockedTargetIndex = -1;
+            siegeLockStacks = 0;
+        }
 
         var omp = Player.GetModPlayer<OmnitrixPlayer>();
         bool abilityActivated = HasAbilityActivation(omp);
@@ -135,8 +146,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
         if (!omp.IsTransformed) {
             relayChargeTime = 0;
-            siegeBraceTime = 0;
-            siegeBurstReady = false;
+            siegeLockedTargetIndex = -1;
+            siegeLockStacks = 0;
+            siegeLockTime = 0;
             magistrataCommandStacks = 0;
             magistrataStackCooldown = 0;
             CacheAbilityState(omp);
@@ -145,8 +157,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
         if (relaySet && (abilityActivated || (attackSelectionChanged && omp.HasLoadedBadgeAttack)))
             PrimeRelayBurst();
-
-        UpdateSiegeState();
 
         if (magistrataSet && magistrataStackCooldown <= 0 && (abilityActivated || attackSelectionChanged))
             GainMagistrataCommandStack();
@@ -164,14 +174,14 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     public override void OnHitNPCWithItem(Item item, NPC target, NPC.HitInfo hit, int damageDone) {
-        if (item.DamageType == HeroClass)
+        if (item.CountsAsClass(HeroClass))
             HandleHeroHit(target, damageDone);
 
         base.OnHitNPCWithItem(item, target, hit, damageDone);
     }
 
     public override void OnHitNPCWithProj(Projectile proj, NPC target, NPC.HitInfo hit, int damageDone) {
-        if (proj.DamageType == HeroClass)
+        if (proj.CountsAsClass(HeroClass))
             HandleHeroHit(target, damageDone);
 
         base.OnHitNPCWithProj(proj, target, hit, damageDone);
@@ -181,8 +191,8 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         if (relaySet && relayChargeTime > 0)
             TriggerRelayBurst(target, damageDone);
 
-        if (siegeSet && siegeBurstReady)
-            TriggerSiegeBurst(target, damageDone);
+        if (siegeSet)
+            HandleSiegeHit(target, damageDone);
 
         if (magistrataSet && magistrataCommandStacks >= 3)
             TriggerMagistrataVerdict(target, damageDone);
@@ -196,28 +206,22 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             CombatText.NewText(Player.getRect(), PlumberArmorPalette.Relay, "Relay Charged");
     }
 
-    private void UpdateSiegeState() {
-        if (!siegeSet) {
-            siegeBraceTime = 0;
-            siegeBurstReady = false;
-            return;
-        }
-
-        if (siegeBurstReady)
-            return;
-
-        bool grounded = Math.Abs(Player.velocity.Y) <= 0.05f;
-        bool braced = grounded && Math.Abs(Player.velocity.X) <= 0.75f && !Player.mount.Active;
-        if (braced) {
-            siegeBraceTime = Math.Min(SiegeBraceRequiredTime, siegeBraceTime + 1);
-            if (siegeBraceTime >= SiegeBraceRequiredTime) {
-                siegeBurstReady = true;
-                if (Player.whoAmI == Main.myPlayer)
-                    CombatText.NewText(Player.getRect(), PlumberArmorPalette.Siege, "Siege Ready");
-            }
+    private void HandleSiegeHit(NPC target, int damageDone) {
+        if (target.whoAmI == siegeLockedTargetIndex && siegeLockTime > 0) {
+            siegeLockStacks = Math.Min(SiegeRequiredLocks, siegeLockStacks + 1);
         }
         else {
-            siegeBraceTime = Math.Max(0, siegeBraceTime - 2);
+            siegeLockedTargetIndex = target.whoAmI;
+            siegeLockStacks = 1;
+        }
+
+        siegeLockTime = SiegeLockDuration;
+
+        if (siegeLockStacks >= SiegeRequiredLocks) {
+            TriggerSiegeBurst(target, damageDone);
+            siegeLockedTargetIndex = -1;
+            siegeLockStacks = 0;
+            siegeLockTime = 0;
         }
     }
 
@@ -266,9 +270,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     private void TriggerSiegeBurst(NPC primaryTarget, int damageDone) {
-        siegeBurstReady = false;
-        siegeBraceTime = 0;
-
         if (Main.netMode != NetmodeID.MultiplayerClient) {
             int primaryDamage = Math.Max(1, (int)Math.Round(damageDone * 0.5f));
             int splashDamage = Math.Max(1, (int)Math.Round(damageDone * 0.35f));
@@ -979,7 +980,7 @@ public class PlumberSiegeMask : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10 hero crit. Brace while grounded to ready a Siege Burst; your next Hero hit detonates around the target";
+            "While transformed: +10 hero crit. Repeated Hero hits lock onto a target; at 3 locks, a Siege Burst detonates around them";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();

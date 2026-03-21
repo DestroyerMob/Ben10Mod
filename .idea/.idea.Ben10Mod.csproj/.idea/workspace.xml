@@ -8,7 +8,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="" />
+    <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/PlumberArmorSets.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/PlumberArmorSets.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Items/Armour/VanillaHeroHelmets.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Items/Armour/VanillaHeroHelmets.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixProjectile.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
