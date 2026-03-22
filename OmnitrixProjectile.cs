@@ -16,6 +16,10 @@ namespace Ben10Mod;
 
 public class OmnitrixProjectile : GlobalProjectile {
     private const float TemporalFreezeRampFrames = 45f;
+    private static readonly string[] TexturelessProjectilePaths = {
+        "Terraria/Images/Projectile_0",
+        "Terraria/Images/Projectile_-1"
+    };
 
     public override bool InstancePerEntity => true;
 
@@ -57,6 +61,9 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (syncScaleHitbox)
             ApplyScaledHitbox(projectile);
         HandleTemporalFreeze(projectile);
+
+        if (ShouldApplyMagistrataVisuals(projectile) && IsDustOnlyProjectile(projectile))
+            SpawnMagistrataDustRing(projectile);
     }
 
     public override void PostAI(Projectile projectile) {
@@ -99,14 +106,25 @@ public class OmnitrixProjectile : GlobalProjectile {
         Vector2 origin = frame.Size() * 0.5f;
         Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(0f, projectile.gfxOffY);
         SpriteEffects effects = projectile.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-        Color outlineColor = new Color(95, 255, 120, 0) * 0.78f;
-        float offsetDistance = Math.Max(2.5f, projectile.scale * 3f);
+        Color outerColor = new Color(70, 255, 110, 220) * 0.9f;
+        Color innerColor = new Color(150, 255, 175, 180) * 0.75f;
+        float outerOffset = Math.Max(3.5f, projectile.scale * 4f);
+        float innerOffset = Math.Max(1.8f, projectile.scale * 2.2f);
 
-        for (int i = 0; i < 8; i++) {
-            Vector2 offset = (MathHelper.TwoPi * i / 8f).ToRotationVector2() * offsetDistance;
-            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, outlineColor, projectile.rotation, origin,
+        for (int i = 0; i < 12; i++) {
+            Vector2 offset = (MathHelper.TwoPi * i / 12f).ToRotationVector2() * outerOffset;
+            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, outerColor, projectile.rotation, origin,
                 projectile.scale, effects, 0);
         }
+
+        for (int i = 0; i < 8; i++) {
+            Vector2 offset = (MathHelper.TwoPi * i / 8f).ToRotationVector2() * innerOffset;
+            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, innerColor, projectile.rotation, origin,
+                projectile.scale, effects, 0);
+        }
+
+        Main.EntitySpriteDraw(texture, drawPosition, frame, new Color(95, 255, 120, 55), projectile.rotation, origin,
+            projectile.scale * 1.01f, effects, 0);
     }
 
     public void EnableScaleHitboxSync(Projectile projectile) {
@@ -249,7 +267,14 @@ public class OmnitrixProjectile : GlobalProjectile {
     }
 
     private static bool ShouldDrawMagistrataOutline(Projectile projectile) {
-        if (!projectile.active || projectile.hide || !projectile.friendly || projectile.hostile || projectile.Opacity <= 0f)
+        if (!ShouldApplyMagistrataVisuals(projectile) || projectile.hide || IsDustOnlyProjectile(projectile))
+            return false;
+
+        return true;
+    }
+
+    private static bool ShouldApplyMagistrataVisuals(Projectile projectile) {
+        if (!projectile.active || !projectile.friendly || projectile.hostile || projectile.Opacity <= 0f)
             return false;
 
         if (!projectile.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
@@ -263,5 +288,38 @@ public class OmnitrixProjectile : GlobalProjectile {
             return false;
 
         return owner.GetModPlayer<HeroPlumberArmorPlayer>().IsMagistrataEffectActive();
+    }
+
+    private static bool IsDustOnlyProjectile(Projectile projectile) {
+        string texturePath = projectile.ModProjectile?.Texture;
+        if (string.IsNullOrEmpty(texturePath))
+            return projectile.hide;
+
+        foreach (string texturelessPath in TexturelessProjectilePaths) {
+            if (string.Equals(texturePath, texturelessPath, StringComparison.Ordinal))
+                return true;
+        }
+
+        return projectile.hide && string.Equals(texturePath, $"Terraria/Images/Projectile_{ProjectileID.None}", StringComparison.Ordinal);
+    }
+
+    private void SpawnMagistrataDustRing(Projectile projectile) {
+        if (Main.dedServ || framesAlive % 4 != 0)
+            return;
+
+        float radiusX = Math.Max(6f, projectile.width * projectile.scale * 0.5f);
+        float radiusY = Math.Max(6f, projectile.height * projectile.scale * 0.5f);
+        int points = Math.Clamp((int)Math.Round((radiusX + radiusY) / 10f), 8, 18);
+        float rotation = Main.GlobalTimeWrappedHourly * 1.8f + projectile.identity * 0.13f;
+
+        for (int i = 0; i < points; i++) {
+            float angle = rotation + MathHelper.TwoPi * i / points;
+            Vector2 unit = angle.ToRotationVector2();
+            Vector2 offset = new Vector2(unit.X * radiusX, unit.Y * radiusY);
+            Vector2 velocity = unit * 0.18f + projectile.velocity * 0.03f;
+            Dust dust = Dust.NewDustPerfect(projectile.Center + offset, DustID.GreenTorch, velocity, 90,
+                new Color(110, 255, 135), 1.12f);
+            dust.noGravity = true;
+        }
     }
 }

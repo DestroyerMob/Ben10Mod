@@ -113,7 +113,8 @@ public class NpcEffects : GlobalNPC {
         }
 
         if (IsEnergyOverloaded(npc)) {
-            drawColor = Color.Lerp(drawColor, new Color(110, 255, 120), 0.52f);
+            drawColor = Color.Lerp(drawColor, new Color(110, 255, 120), 0.7f);
+            Lighting.AddLight(npc.Center, 0.14f, 0.5f, 0.18f);
         }
 
         if (IsPossessed(npc)) {
@@ -129,11 +130,26 @@ public class NpcEffects : GlobalNPC {
             spark.noGravity = true;
         }
 
-        if (IsEnergyOverloaded(npc) && Main.rand.NextBool(3)) {
-            Vector2 position = npc.Center + Main.rand.NextVector2Circular(npc.width * 0.48f, npc.height * 0.48f);
-            Vector2 velocity = Main.rand.NextVector2Circular(0.45f, 0.45f);
-            Dust spark = Dust.NewDustPerfect(position, DustID.GreenTorch, velocity, 95, new Color(125, 255, 135), 1.18f);
-            spark.noGravity = true;
+        if (IsEnergyOverloaded(npc)) {
+            for (int i = 0; i < 2; i++) {
+                Vector2 position = npc.Center + Main.rand.NextVector2Circular(npc.width * 0.52f, npc.height * 0.52f);
+                Vector2 velocity = Main.rand.NextVector2Circular(0.65f, 0.65f);
+                Dust spark = Dust.NewDustPerfect(position, DustID.GreenTorch, velocity, 85,
+                    new Color(125, 255, 135), Main.rand.NextFloat(1.18f, 1.45f));
+                spark.noGravity = true;
+            }
+
+            if (Main.rand.NextBool(2)) {
+                float ringRotation = Main.GlobalTimeWrappedHourly * 2.2f + npc.whoAmI * 0.31f;
+                for (int i = 0; i < 4; i++) {
+                    float angle = ringRotation + MathHelper.TwoPi * i / 4f;
+                    Vector2 unit = angle.ToRotationVector2();
+                    Vector2 offset = new Vector2(unit.X * npc.width * 0.42f, unit.Y * npc.height * 0.42f);
+                    Dust ringDust = Dust.NewDustPerfect(npc.Center + offset, DustID.GreenTorch, unit * 0.25f, 80,
+                        new Color(170, 255, 120), 1.28f);
+                    ringDust.noGravity = true;
+                }
+            }
         }
 
         if (IsPossessed(npc)) {
