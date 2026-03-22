@@ -1,10 +1,13 @@
 using System;
+using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.DataStructures;
+using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.WorldBuilding;
@@ -83,6 +86,26 @@ public class OmnitrixProjectile : GlobalProjectile {
                 Main.projectile[projNum].hostile  = false;
                 Main.projectile[projNum].friendly = true;
             }
+        }
+    }
+
+    public override void PostDraw(Projectile projectile, Color lightColor) {
+        if (!ShouldDrawMagistrataOutline(projectile))
+            return;
+
+        Texture2D texture = TextureAssets.Projectile[projectile.type].Value;
+        int frameCount = Main.projFrames[projectile.type] <= 0 ? 1 : Main.projFrames[projectile.type];
+        Rectangle frame = texture.Frame(1, frameCount, 0, projectile.frame);
+        Vector2 origin = frame.Size() * 0.5f;
+        Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(0f, projectile.gfxOffY);
+        SpriteEffects effects = projectile.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        Color outlineColor = new Color(95, 255, 120, 0) * 0.78f;
+        float offsetDistance = Math.Max(2.5f, projectile.scale * 3f);
+
+        for (int i = 0; i < 8; i++) {
+            Vector2 offset = (MathHelper.TwoPi * i / 8f).ToRotationVector2() * offsetDistance;
+            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, outlineColor, projectile.rotation, origin,
+                projectile.scale, effects, 0);
         }
     }
 
@@ -223,5 +246,22 @@ public class OmnitrixProjectile : GlobalProjectile {
         }
 
         return false;
+    }
+
+    private static bool ShouldDrawMagistrataOutline(Projectile projectile) {
+        if (!projectile.active || projectile.hide || !projectile.friendly || projectile.hostile || projectile.Opacity <= 0f)
+            return false;
+
+        if (!projectile.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
+            return false;
+
+        if (projectile.owner < 0 || projectile.owner >= Main.maxPlayers)
+            return false;
+
+        Player owner = Main.player[projectile.owner];
+        if (!owner.active)
+            return false;
+
+        return owner.GetModPlayer<HeroPlumberArmorPlayer>().IsMagistrataEffectActive();
     }
 }

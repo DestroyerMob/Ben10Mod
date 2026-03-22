@@ -15,6 +15,7 @@ public class NpcEffects : GlobalNPC {
 
     private const int ElectrocutedStationaryDamagePerSecond = 4;
     private const int ElectrocutedMovingDamagePerSecond = 16;
+    private const int EnergyOverloadedDamagePerSecond = 45;
     
     public bool IsPossessed(NPC npc) {
         foreach (Player p in Main.ActivePlayers) {
@@ -45,6 +46,10 @@ public class NpcEffects : GlobalNPC {
         return npc.HasBuff(ModContent.BuffType<EnemyElectrocuted>());
     }
 
+    private static bool IsEnergyOverloaded(NPC npc) {
+        return npc.HasBuff(ModContent.BuffType<EnergyOverloaded>());
+    }
+
     public override bool PreAI(NPC npc) {
         var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
         if (ShouldHardFreeze(npc)) {
@@ -72,17 +77,29 @@ public class NpcEffects : GlobalNPC {
     }
 
     public override void UpdateLifeRegen(NPC npc, ref int damage) {
-        if (IsElectrocuted(npc)) {
-            if (npc.lifeRegen > 0)
-                npc.lifeRegen = 0;
+        int totalDamagePerSecond = 0;
+        bool hasDamagingDebuff = IsElectrocuted(npc) || IsEnergyOverloaded(npc);
 
+        if (hasDamagingDebuff && npc.lifeRegen > 0)
+            npc.lifeRegen = 0;
+
+        if (IsElectrocuted(npc)) {
             int damagePerSecond = Math.Abs(npc.velocity.X) > 0.01f
                 ? ElectrocutedMovingDamagePerSecond
                 : ElectrocutedStationaryDamagePerSecond;
 
             npc.lifeRegen -= damagePerSecond * 2;
-            if (damage < damagePerSecond)
-                damage = damagePerSecond;
+            totalDamagePerSecond += damagePerSecond;
+        }
+
+        if (IsEnergyOverloaded(npc)) {
+            npc.lifeRegen -= EnergyOverloadedDamagePerSecond * 2;
+            totalDamagePerSecond += EnergyOverloadedDamagePerSecond;
+        }
+
+        if (totalDamagePerSecond > 0) {
+            if (damage < totalDamagePerSecond)
+                damage = totalDamagePerSecond;
         }
     }
 
@@ -95,6 +112,10 @@ public class NpcEffects : GlobalNPC {
             drawColor = Color.Lerp(drawColor, new Color(150, 230, 255), 0.45f);
         }
 
+        if (IsEnergyOverloaded(npc)) {
+            drawColor = Color.Lerp(drawColor, new Color(110, 255, 120), 0.52f);
+        }
+
         if (IsPossessed(npc)) {
             drawColor = new Color(170, 100, 255, 190);
         }
@@ -105,6 +126,13 @@ public class NpcEffects : GlobalNPC {
             Vector2 position = npc.Center + Main.rand.NextVector2Circular(npc.width * 0.45f, npc.height * 0.45f);
             Vector2 velocity = Main.rand.NextVector2Circular(0.35f, 0.35f);
             Dust spark = Dust.NewDustPerfect(position, DustID.Electric, velocity, 110, new Color(175, 235, 255), 1.05f);
+            spark.noGravity = true;
+        }
+
+        if (IsEnergyOverloaded(npc) && Main.rand.NextBool(3)) {
+            Vector2 position = npc.Center + Main.rand.NextVector2Circular(npc.width * 0.48f, npc.height * 0.48f);
+            Vector2 velocity = Main.rand.NextVector2Circular(0.45f, 0.45f);
+            Dust spark = Dust.NewDustPerfect(position, DustID.GreenTorch, velocity, 95, new Color(125, 255, 135), 1.18f);
             spark.noGravity = true;
         }
 

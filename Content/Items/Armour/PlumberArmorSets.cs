@@ -74,7 +74,7 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     private const int BulwarkMaxChargeHits = 10;
     private const float BulwarkExplosionRadius = 132f;
     private const int BulwarkElectrocutedDuration = 5 * 60;
-    private const int MagistrataStackCooldownTime = 24;
+    private const int MagistrataOverloadedDuration = 5 * 60;
     private const float RelayDodgeChance = 0.15f;
     internal const int SiegeBoomerangBaseDamage = 52;
 
@@ -85,13 +85,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
     private int bulwarkChargeHits;
     private int bulwarkDischargeVisualTime;
-    private int magistrataCommandStacks;
-    private int magistrataStackCooldown;
-    private OmnitrixPlayer.AttackSelection lastAttackSelection = OmnitrixPlayer.AttackSelection.Primary;
-    private bool lastPrimaryAbilityActive;
-    private bool lastSecondaryAbilityActive;
-    private bool lastTertiaryAbilityActive;
-    private bool lastUltimateAbilityActive;
 
     public bool HasBulwarkShieldCharge => bulwarkChargeHits > 0;
     public int BulwarkVisibleChargeHits => Math.Min(bulwarkChargeHits, BulwarkMaxChargeHits - 1);
@@ -118,9 +111,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     public override void UpdateDead() {
         bulwarkChargeHits = 0;
         bulwarkDischargeVisualTime = 0;
-        magistrataCommandStacks = 0;
-        magistrataStackCooldown = 0;
-        CacheAbilityState(Player.GetModPlayer<OmnitrixPlayer>());
     }
 
     public override void PostUpdate() {
@@ -134,26 +124,13 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             bulwarkDischargeVisualTime = 0;
         }
 
-        if (!magistrataSet) {
-            magistrataCommandStacks = 0;
-            magistrataStackCooldown = 0;
-        }
-
         if (bulwarkDischargeVisualTime > 0)
             bulwarkDischargeVisualTime--;
-        if (magistrataStackCooldown > 0)
-            magistrataStackCooldown--;
-
         var omp = Player.GetModPlayer<OmnitrixPlayer>();
-        bool abilityActivated = HasAbilityActivation(omp);
-        bool attackSelectionChanged = omp.setAttack != lastAttackSelection;
 
         if (!omp.IsTransformed) {
             bulwarkChargeHits = 0;
             bulwarkDischargeVisualTime = 0;
-            magistrataCommandStacks = 0;
-            magistrataStackCooldown = 0;
-            CacheAbilityState(omp);
             return;
         }
 
@@ -167,11 +144,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
         if (siegeSet && Player.whoAmI == Main.myPlayer && Player.ownedProjectileCounts[ModContent.ProjectileType<PlumberSiegeBoomerangProjectile>()] < 1)
             SpawnSiegeBoomerang();
-
-        if (magistrataSet && magistrataStackCooldown <= 0 && (abilityActivated || attackSelectionChanged))
-            GainMagistrataCommandStack();
-
-        CacheAbilityState(omp);
     }
 
     public override void PostHurt(Player.HurtInfo info) {
@@ -196,14 +168,14 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
     public override void OnHitNPCWithItem(Item item, NPC target, NPC.HitInfo hit, int damageDone) {
         if (item.CountsAsClass(HeroClass))
-            HandleHeroHit(target, damageDone);
+            HandleHeroHit(target);
 
         base.OnHitNPCWithItem(item, target, hit, damageDone);
     }
 
     public override void OnHitNPCWithProj(Projectile proj, NPC target, NPC.HitInfo hit, int damageDone) {
         if (proj.CountsAsClass(HeroClass))
-            HandleHeroHit(target, damageDone);
+            HandleHeroHit(target);
 
         base.OnHitNPCWithProj(proj, target, hit, damageDone);
     }
@@ -217,15 +189,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         return true;
     }
 
-    private void HandleHeroHit(NPC target, int damageDone) {
-        if (IsMagistrataSetEquipped() && IsTransformationStateActive() && magistrataCommandStacks >= 3)
-            TriggerMagistrataVerdict(target, damageDone);
-    }
-
-    private void GainMagistrataCommandStack() {
-        magistrataStackCooldown = MagistrataStackCooldownTime;
-        if (magistrataCommandStacks < 3)
-            magistrataCommandStacks++;
+    private void HandleHeroHit(NPC target) {
+        if (IsMagistrataEffectActive())
+            ApplyMagistrataOverload(target);
     }
 
     private void TriggerBulwarkDischarge() {
@@ -304,6 +270,10 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         return IsSiegeSetEquipped() && IsTransformationStateActive();
     }
 
+    public bool IsMagistrataEffectActive() {
+        return IsMagistrataSetEquipped() && IsTransformationStateActive();
+    }
+
     private bool IsTransformationStateActive() {
         OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
         return omp.isTransformed || omp.IsTransformed;
@@ -343,32 +313,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             && Player.armor[2].type == legsType;
     }
 
-    private void TriggerMagistrataVerdict(NPC primaryTarget, int damageDone) {
-        magistrataCommandStacks = 0;
-        magistrataStackCooldown = MagistrataStackCooldownTime;
-        RestoreOmnitrixEnergy(20f);
-
-        if (Main.netMode != NetmodeID.MultiplayerClient) {
-            int primaryDamage = Math.Max(1, (int)Math.Round(damageDone * 0.7f));
-            int echoDamage = Math.Max(1, (int)Math.Round(damageDone * 0.45f));
-
-            primaryTarget.SimpleStrikeNPC(primaryDamage, Player.direction, false, 0f, HeroClass);
-
-            foreach (NPC npc in FindNearestTargets(primaryTarget.Center, 260f, 2, primaryTarget.whoAmI)) {
-                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
-                npc.SimpleStrikeNPC(echoDamage, direction, false, 0f, HeroClass);
-            }
-        }
-
-        SpawnDustBurst(primaryTarget.Center, 112f, DustID.PinkTorch, PlumberArmorPalette.Magistrata);
-    }
-
-    private void RestoreOmnitrixEnergy(float amount) {
-        if (Player.whoAmI != Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient)
-            return;
-
-        var omp = Player.GetModPlayer<OmnitrixPlayer>();
-        omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + amount);
+    private void ApplyMagistrataOverload(NPC target) {
+        target.AddBuff(ModContent.BuffType<EnergyOverloaded>(), MagistrataOverloadedDuration);
+        target.netUpdate = true;
     }
 
     public void PlayRelayDodgeVisual(bool sync = true) {
@@ -411,52 +358,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         }
     }
 
-    private static List<NPC> FindNearestTargets(Vector2 origin, float maxDistance, int count, int excludedNpc) {
-        List<NPC> results = new();
-        HashSet<int> usedIds = new();
-        if (excludedNpc >= 0)
-            usedIds.Add(excludedNpc);
-
-        while (results.Count < count) {
-            NPC closest = null;
-            float closestDistance = maxDistance;
-
-            foreach (NPC npc in Main.ActiveNPCs) {
-                if (!npc.CanBeChasedBy() || usedIds.Contains(npc.whoAmI))
-                    continue;
-
-                float distance = Vector2.Distance(origin, npc.Center);
-                if (distance >= closestDistance)
-                    continue;
-
-                closestDistance = distance;
-                closest = npc;
-            }
-
-            if (closest == null)
-                break;
-
-            usedIds.Add(closest.whoAmI);
-            results.Add(closest);
-        }
-
-        return results;
-    }
-
-    private bool HasAbilityActivation(OmnitrixPlayer omp) {
-        return (!lastPrimaryAbilityActive && omp.IsPrimaryAbilityActive)
-               || (!lastSecondaryAbilityActive && omp.IsSecondaryAbilityActive)
-               || (!lastTertiaryAbilityActive && omp.IsTertiaryAbilityActive)
-               || (!lastUltimateAbilityActive && omp.IsUltimateAbilityActive);
-    }
-
-    private void CacheAbilityState(OmnitrixPlayer omp) {
-        lastAttackSelection = omp.setAttack;
-        lastPrimaryAbilityActive = omp.IsPrimaryAbilityActive;
-        lastSecondaryAbilityActive = omp.IsSecondaryAbilityActive;
-        lastTertiaryAbilityActive = omp.IsTertiaryAbilityActive;
-        lastUltimateAbilityActive = omp.IsUltimateAbilityActive;
-    }
 }
 
 public abstract class PlumberArmorPiece : ModItem {
@@ -1146,7 +1047,7 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +40 Omnitrix energy and 10% shorter primary and ultimate cooldowns. Ability activations and attack swaps build Command stacks; at 3 stacks, your next Hero hit delivers a Verdict strike and restores energy";
+            "While transformed: +100 Omnitrix energy and 10% shorter primary and ultimate cooldowns. Hero attacks overload enemies with unstable Hero Energy";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -1155,7 +1056,7 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
             return;
         }
 
-        omp.omnitrixEnergyMaxBonus += 40;
+        omp.omnitrixEnergyMaxBonus += 100;
         omp.primaryAbilityCooldownMultiplier *= 0.90f;
         omp.ultimateAbilityCooldownMultiplier *= 0.90f;
     }
