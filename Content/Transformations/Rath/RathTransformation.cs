@@ -10,7 +10,11 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.Rath;
 
-public class RathTransformation : Transformation {
+    public class RathTransformation : Transformation {
+        private const float RageClawScale = 1.45f;
+        private const float BaseClawSpawnOffset = 100f;
+        private const float RageClawSpawnOffset = 100f;
+
     public override string FullID => "Ben10Mod:Rath";
     public override string TransformationName => "Rath";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
@@ -68,8 +72,10 @@ public class RathTransformation : Transformation {
             return false;
         }
 
-        Projectile.NewProjectile(source, player.Center + direction * 16f, direction * 6f,
-            ModContent.ProjectileType<RathClawProjectile>(), damage, knockback, player.whoAmI);
+        float clawScale = omp.PrimaryAbilityEnabled ? RageClawScale : 1f;
+        float clawSpawnOffset = omp.PrimaryAbilityEnabled ? RageClawSpawnOffset : BaseClawSpawnOffset;
+        Projectile.NewProjectile(source, player.Center + (direction * clawSpawnOffset), direction * 6f,
+            ModContent.ProjectileType<RathClawProjectile>(), damage, knockback, player.whoAmI, 0f, clawScale);
         return false;
     }
 

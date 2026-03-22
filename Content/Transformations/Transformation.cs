@@ -12,6 +12,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations {
     public class TransformationAttackProfile {
+        public string DisplayName { get; init; }
         public int ProjectileType { get; init; } = -1;
         public float DamageMultiplier { get; init; } = 1f;
         public int UseTime { get; init; } = -1;
@@ -194,6 +195,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetDisplayName(OmnitrixPlayer omp) => TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
+        public virtual int GetMoveSetIndex(OmnitrixPlayer omp) => 0;
         public virtual bool HasPrimaryAbilityActionForState(OmnitrixPlayer omp)
             => HasPrimaryAbilityForState(omp) || HasPrimaryAbilityAttackForState(omp);
         public virtual bool HasSecondaryAbilityActionForState(OmnitrixPlayer omp)
@@ -203,9 +205,9 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool HasPrimaryAbilityForState(OmnitrixPlayer omp) => HasPrimaryAbility;
         public virtual bool HasSecondaryAbilityForState(OmnitrixPlayer omp) => HasSecondaryAbility;
         public virtual bool HasTertiaryAbilityForState(OmnitrixPlayer omp) => HasTertiaryAbility;
-        public virtual bool HasPrimaryAbilityAttackForState(OmnitrixPlayer omp) => HasPrimaryAbilityAttack;
-        public virtual bool HasSecondaryAbilityAttackForState(OmnitrixPlayer omp) => HasSecondaryAbilityAttack;
-        public virtual bool HasTertiaryAbilityAttackForState(OmnitrixPlayer omp) => HasTertiaryAbilityAttack;
+        public virtual bool HasPrimaryAbilityAttackForState(OmnitrixPlayer omp) => GetPrimaryAbilityAttackProjectileType(omp) > 0;
+        public virtual bool HasSecondaryAbilityAttackForState(OmnitrixPlayer omp) => GetSecondaryAbilityAttackProjectileType(omp) > 0;
+        public virtual bool HasTertiaryAbilityAttackForState(OmnitrixPlayer omp) => GetTertiaryAbilityAttackProjectileType(omp) > 0;
         public virtual bool HasUltimateAbilityForState(OmnitrixPlayer omp) => HasUltimateAbility;
         public virtual int GetPrimaryAbilityCost(OmnitrixPlayer omp) => PrimaryAbilityCost;
         public virtual int GetSecondaryAbilityCost(OmnitrixPlayer omp) => SecondaryAbilityCost;
@@ -227,24 +229,28 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int GetUltimateAbilityCooldown(OmnitrixPlayer omp) {
             return ApplyAbilityCooldownMultiplier(UltimateAbilityCooldown, omp.ultimateAbilityCooldownMultiplier);
         }
-        public virtual int GetPrimaryAbilityAttackProjectileType(OmnitrixPlayer omp) => PrimaryAbilityAttack;
-        public virtual int GetSecondaryAbilityAttackProjectileType(OmnitrixPlayer omp) => SecondaryAbilityAttack;
-        public virtual int GetTertiaryAbilityAttackProjectileType(OmnitrixPlayer omp) => TertiaryAbilityAttack;
-        public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp) => UltimateAttack;
+        public virtual int GetPrimaryAbilityAttackProjectileType(OmnitrixPlayer omp)
+            => GetRawAttackProfile(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp)?.ProjectileType ?? -1;
+        public virtual int GetSecondaryAbilityAttackProjectileType(OmnitrixPlayer omp)
+            => GetRawAttackProfile(OmnitrixPlayer.AttackSelection.SecondaryAbility, omp)?.ProjectileType ?? -1;
+        public virtual int GetTertiaryAbilityAttackProjectileType(OmnitrixPlayer omp)
+            => GetRawAttackProfile(OmnitrixPlayer.AttackSelection.TertiaryAbility, omp)?.ProjectileType ?? -1;
+        public virtual int GetUltimateAttackProjectileType(OmnitrixPlayer omp)
+            => GetRawAttackProfile(OmnitrixPlayer.AttackSelection.Ultimate, omp)?.ProjectileType ?? -1;
         public virtual OmnitrixPlayer.AttackSelection ResolveAttackSelection(OmnitrixPlayer.AttackSelection selection,
             OmnitrixPlayer omp) {
             return selection switch {
                 OmnitrixPlayer.AttackSelection.Ultimate
-                    when GetUltimateAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.Ultimate,
+                    when HasAttackProfile(OmnitrixPlayer.AttackSelection.Ultimate, omp) => OmnitrixPlayer.AttackSelection.Ultimate,
                 OmnitrixPlayer.AttackSelection.TertiaryAbility
-                    when GetTertiaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.TertiaryAbility,
+                    when HasAttackProfile(OmnitrixPlayer.AttackSelection.TertiaryAbility, omp) => OmnitrixPlayer.AttackSelection.TertiaryAbility,
                 OmnitrixPlayer.AttackSelection.SecondaryAbility
-                    when GetSecondaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.SecondaryAbility,
+                    when HasAttackProfile(OmnitrixPlayer.AttackSelection.SecondaryAbility, omp) => OmnitrixPlayer.AttackSelection.SecondaryAbility,
                 OmnitrixPlayer.AttackSelection.PrimaryAbility
-                    when GetPrimaryAbilityAttackProjectileType(omp) > 0 => OmnitrixPlayer.AttackSelection.PrimaryAbility,
+                    when HasAttackProfile(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp) => OmnitrixPlayer.AttackSelection.PrimaryAbility,
                 OmnitrixPlayer.AttackSelection.Secondary
-                    when SecondaryAttack > 0 => OmnitrixPlayer.AttackSelection.Secondary,
-                _ when PrimaryAttack > 0 => OmnitrixPlayer.AttackSelection.Primary,
+                    when HasAttackProfile(OmnitrixPlayer.AttackSelection.Secondary, omp) => OmnitrixPlayer.AttackSelection.Secondary,
+                _ when HasAttackProfile(OmnitrixPlayer.AttackSelection.Primary, omp) => OmnitrixPlayer.AttackSelection.Primary,
                 _ => selection
             };
         }
@@ -259,14 +265,9 @@ namespace Ben10Mod.Content.Transformations {
             };
         }
         public virtual string GetAttackSelectionDisplayName(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
-            return ResolveAttackSelection(selection, omp) switch {
-                OmnitrixPlayer.AttackSelection.Secondary => SecondaryAttackDisplayName,
-                OmnitrixPlayer.AttackSelection.PrimaryAbility => PrimaryAbilityAttackDisplayName,
-                OmnitrixPlayer.AttackSelection.SecondaryAbility => SecondaryAbilityAttackDisplayName,
-                OmnitrixPlayer.AttackSelection.TertiaryAbility => TertiaryAbilityAttackDisplayName,
-                OmnitrixPlayer.AttackSelection.Ultimate => UltimateAttackDisplayName,
-                _ => PrimaryAttackDisplayName
-            };
+            OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+            TransformationAttackProfile profile = GetRawAttackProfile(resolvedSelection, omp);
+            return ResolveAttackProfileDisplayName(profile, GetAttackSelectionFallbackDisplayName(resolvedSelection));
         }
 
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -294,11 +295,7 @@ namespace Ben10Mod.Content.Transformations {
             if (profile == null || profile.ProjectileType <= 0)
                 return false;
 
-            int finalDamage = (int)(damage * profile.DamageMultiplier);
-            Projectile.NewProjectile(source, position, velocity, profile.ProjectileType, finalDamage, knockback,
-                player.whoAmI);
-            
-            return false;
+            return ShootAttackProfile(player, source, profile, position, velocity, damage, knockback);
         }
         
 
@@ -488,8 +485,104 @@ namespace Ben10Mod.Content.Transformations {
             TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false, playSound: false);
         }
 
+        protected static IReadOnlyList<TransformationAttackProfile> CreateMoveSetProfiles(
+            params TransformationAttackProfile[] profiles) {
+            return profiles ?? Array.Empty<TransformationAttackProfile>();
+        }
+
+        protected static TransformationAttackProfile CreateDisabledAttackProfile(string displayName = null) {
+            return new TransformationAttackProfile {
+                DisplayName = displayName,
+                ProjectileType = -1
+            };
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetPrimaryAttackProfiles() {
+            return CreateMoveSetProfiles(CreatePrimaryAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetSecondaryAttackProfiles() {
+            return CreateMoveSetProfiles(CreateSecondaryAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetPrimaryAbilityAttackProfiles() {
+            return CreateMoveSetProfiles(CreatePrimaryAbilityAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetSecondaryAbilityAttackProfiles() {
+            return CreateMoveSetProfiles(CreateSecondaryAbilityAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetTertiaryAbilityAttackProfiles() {
+            return CreateMoveSetProfiles(CreateTertiaryAbilityAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetUltimateAttackProfiles() {
+            return CreateMoveSetProfiles(CreateUltimateAttackProfile());
+        }
+
+        protected virtual IReadOnlyList<TransformationAttackProfile> GetAttackProfiles(
+            OmnitrixPlayer.AttackSelection selection) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.Secondary => GetSecondaryAttackProfiles(),
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => GetPrimaryAbilityAttackProfiles(),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => GetSecondaryAbilityAttackProfiles(),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => GetTertiaryAbilityAttackProfiles(),
+                OmnitrixPlayer.AttackSelection.Ultimate => GetUltimateAttackProfiles(),
+                _ => GetPrimaryAttackProfiles()
+            };
+        }
+
+        protected virtual TransformationAttackProfile GetRawAttackProfile(OmnitrixPlayer.AttackSelection selection,
+            OmnitrixPlayer omp) {
+            IReadOnlyList<TransformationAttackProfile> profiles = GetAttackProfiles(selection);
+            if (profiles == null || profiles.Count == 0)
+                return null;
+
+            int moveSetIndex = Math.Max(0, GetMoveSetIndex(omp));
+            int resolvedIndex = Math.Min(moveSetIndex, profiles.Count - 1);
+            return profiles[resolvedIndex];
+        }
+
+        protected virtual bool HasAttackProfile(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return GetRawAttackProfile(selection, omp)?.ProjectileType > 0;
+        }
+
+        protected virtual string GetAttackSelectionFallbackDisplayName(OmnitrixPlayer.AttackSelection selection) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.Secondary => SecondaryAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => PrimaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => SecondaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => TertiaryAbilityAttackDisplayName,
+                OmnitrixPlayer.AttackSelection.Ultimate => UltimateAttackDisplayName,
+                _ => PrimaryAttackDisplayName
+            };
+        }
+
+        protected virtual string ResolveAttackProfileDisplayName(TransformationAttackProfile profile, string fallback) {
+            if (profile == null)
+                return fallback;
+
+            if (!string.IsNullOrWhiteSpace(profile.DisplayName))
+                return profile.DisplayName;
+
+            return ResolveProjectileDisplayName(profile.ProjectileType, fallback);
+        }
+
+        protected virtual bool ShootAttackProfile(Player player, EntitySource_ItemUse_WithAmmo source,
+            TransformationAttackProfile profile, Vector2 position, Vector2 velocity, int damage, float knockback) {
+            if (profile == null || profile.ProjectileType <= 0)
+                return false;
+
+            int finalDamage = (int)(damage * profile.DamageMultiplier);
+            Projectile.NewProjectile(source, position, velocity, profile.ProjectileType, finalDamage, knockback,
+                player.whoAmI);
+            return false;
+        }
+
         protected virtual TransformationAttackProfile CreatePrimaryAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = PrimaryAttackDisplayName,
                 ProjectileType = PrimaryAttack,
                 DamageMultiplier = PrimaryAttackModifier,
                 UseTime = PrimaryAttackSpeed,
@@ -504,6 +597,7 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual TransformationAttackProfile CreateSecondaryAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = SecondaryAttackDisplayName,
                 ProjectileType = SecondaryAttack,
                 DamageMultiplier = SecondaryAttackModifier,
                 UseTime = SecondaryAttackSpeed,
@@ -518,6 +612,7 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual TransformationAttackProfile CreatePrimaryAbilityAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = PrimaryAbilityAttackDisplayName,
                 ProjectileType = PrimaryAbilityAttack,
                 DamageMultiplier = PrimaryAbilityAttackModifier,
                 UseTime = PrimaryAbilityAttackSpeed,
@@ -533,6 +628,7 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual TransformationAttackProfile CreateSecondaryAbilityAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = SecondaryAbilityAttackDisplayName,
                 ProjectileType = SecondaryAbilityAttack,
                 DamageMultiplier = SecondaryAbilityAttackModifier,
                 UseTime = SecondaryAbilityAttackSpeed,
@@ -548,6 +644,7 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual TransformationAttackProfile CreateTertiaryAbilityAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = TertiaryAbilityAttackDisplayName,
                 ProjectileType = TertiaryAbilityAttack,
                 DamageMultiplier = TertiaryAbilityAttackModifier,
                 UseTime = TertiaryAbilityAttackSpeed,
@@ -563,6 +660,7 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual TransformationAttackProfile CreateUltimateAttackProfile() {
             return new TransformationAttackProfile {
+                DisplayName = UltimateAttackDisplayName,
                 ProjectileType = UltimateAttack,
                 DamageMultiplier = UltimateAttackModifier,
                 UseTime = UltimateAttackSpeed,
@@ -576,21 +674,8 @@ namespace Ben10Mod.Content.Transformations {
         }
 
         protected virtual TransformationAttackProfile GetSelectedAttackProfile(OmnitrixPlayer omp) {
-            return omp.setAttack switch {
-                OmnitrixPlayer.AttackSelection.Ultimate
-                    when GetUltimateAttackProjectileType(omp) > 0 => CreateUltimateAttackProfile(),
-                OmnitrixPlayer.AttackSelection.TertiaryAbility
-                    when GetTertiaryAbilityAttackProjectileType(omp) > 0 => CreateTertiaryAbilityAttackProfile(),
-                OmnitrixPlayer.AttackSelection.SecondaryAbility
-                    when GetSecondaryAbilityAttackProjectileType(omp) > 0 => CreateSecondaryAbilityAttackProfile(),
-                OmnitrixPlayer.AttackSelection.PrimaryAbility
-                    when GetPrimaryAbilityAttackProjectileType(omp) > 0 => CreatePrimaryAbilityAttackProfile(),
-                OmnitrixPlayer.AttackSelection.Secondary
-                    when SecondaryAttack > 0 => CreateSecondaryAttackProfile(),
-                _
-                    when PrimaryAttack > 0 => CreatePrimaryAttackProfile(),
-                _ => null
-            };
+            OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(omp.setAttack, omp);
+            return GetRawAttackProfile(resolvedSelection, omp);
         }
 
         protected sealed override void Register() {

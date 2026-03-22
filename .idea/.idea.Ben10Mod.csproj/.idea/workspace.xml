@@ -10,15 +10,10 @@
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Ben10Mod.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Ben10Mod.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/ArmodrilloDrillProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/ArmodrilloDrillProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/ArmodrilloUltimateSlamProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/ArmodrilloUltimateSlamProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/NRGBurstProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/NRGBurstProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/RathClawProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/RathClawProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +154,7 @@
       <workItem from="1773991970068" duration="163000" />
       <workItem from="1773992137185" duration="21000" />
       <workItem from="1773992184362" duration="8916000" />
-      <workItem from="1774041898622" duration="19606000" />
+      <workItem from="1774041898622" duration="23955000" />
     </task>
     <servers />
   </component>

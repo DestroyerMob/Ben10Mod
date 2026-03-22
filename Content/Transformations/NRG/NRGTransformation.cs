@@ -62,14 +62,7 @@ public class NRGTransformation : Transformation {
     public override int UltimateAbilityDuration => UnboundCoreDuration;
     public override int UltimateAbilityCooldown => UnboundCoreCooldown;
     public override string SecondaryAttackDisplayName => "Radiant Seeker";
-
-    public override OmnitrixPlayer.AttackSelection ResolveAttackSelection(OmnitrixPlayer.AttackSelection selection,
-        OmnitrixPlayer omp) {
-        if (!omp.IsUltimateAbilityActive && selection == OmnitrixPlayer.AttackSelection.Secondary)
-            return OmnitrixPlayer.AttackSelection.Primary;
-
-        return base.ResolveAttackSelection(selection, omp);
-    }
+    public override int GetMoveSetIndex(OmnitrixPlayer omp) => omp.IsUltimateAbilityActive ? 1 : 0;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.14f;
@@ -100,42 +93,48 @@ public class NRGTransformation : Transformation {
         ApplyUnboundFlight(player);
     }
 
-    public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
-        base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (omp.setAttack is not OmnitrixPlayer.AttackSelection.Primary and not OmnitrixPlayer.AttackSelection.Secondary)
-            return;
-
-        if (!omp.IsUltimateAbilityActive) {
-            if (omp.altAttack) {
-                item.useTime = item.useAnimation = PrimaryAttackSpeed;
-                item.shootSpeed = PrimaryShootSpeed;
-                item.useStyle = PrimaryUseStyle;
-                item.channel = false;
-                item.noMelee = true;
-                item.ArmorPenetration = PrimaryArmorPenetration;
+    protected override IReadOnlyList<TransformationAttackProfile> GetPrimaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreatePrimaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = PrimaryAttackDisplayName,
+                ProjectileType = PrimaryAttack,
+                DamageMultiplier = PrimaryAttackModifier,
+                UseTime = UnboundPrimaryAttackSpeed,
+                ShootSpeed = UnboundPrimaryShootSpeed,
+                UseStyle = PrimaryUseStyle,
+                Channel = PrimaryChannel,
+                NoMelee = PrimaryNoMelee,
+                ArmorPenetration = PrimaryArmorPenetration,
+                EnergyCost = PrimaryEnergyCost
             }
+        );
+    }
 
-            return;
-        }
-
-        if (omp.altAttack) {
-            item.useTime = item.useAnimation = UnboundSecondaryAttackSpeed;
-            item.shootSpeed = UnboundSecondaryShootSpeed;
-        }
-        else {
-            item.useTime = item.useAnimation = UnboundPrimaryAttackSpeed;
-            item.shootSpeed = UnboundPrimaryShootSpeed;
-        }
-
-        item.useStyle = ItemUseStyleID.Shoot;
-        item.channel = false;
-        item.noMelee = true;
+    protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreateDisabledAttackProfile(SecondaryAttackDisplayName),
+            new TransformationAttackProfile {
+                DisplayName = SecondaryAttackDisplayName,
+                ProjectileType = SecondaryAttack,
+                DamageMultiplier = SecondaryAttackModifier,
+                UseTime = UnboundSecondaryAttackSpeed,
+                ShootSpeed = UnboundSecondaryShootSpeed,
+                UseStyle = SecondaryUseStyle,
+                Channel = SecondaryChannel,
+                NoMelee = SecondaryNoMelee,
+                ArmorPenetration = SecondaryArmorPenetration,
+                EnergyCost = SecondaryEnergyCost
+            }
+        );
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
+        TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+        if (profile == null || profile.ProjectileType <= 0)
+            return false;
 
         if (omp.IsPrimaryAbilityAttackLoaded) {
             int burstDamage = System.Math.Max(1, (int)System.Math.Round(damage * ContainmentBurstDamageMultiplier));
@@ -145,17 +144,16 @@ public class NRGTransformation : Transformation {
             return false;
         }
 
-        if (omp.IsUltimateAbilityActive && omp.altAttack) {
-            Projectile.NewProjectile(source, player.MountedCenter + direction * 14f, direction * UnboundSecondaryShootSpeed,
-                ModContent.ProjectileType<NRGHomingEnergyBallProjectile>(),
-                System.Math.Max(1, (int)System.Math.Round(damage * UnboundSecondaryDamageMultiplier)),
+        if (profile.ProjectileType == ModContent.ProjectileType<NRGHomingEnergyBallProjectile>()) {
+            Projectile.NewProjectile(source, player.MountedCenter + direction * 14f, direction * profile.ShootSpeed,
+                profile.ProjectileType,
+                System.Math.Max(1, (int)System.Math.Round(damage * profile.DamageMultiplier)),
                 knockback + 0.75f, player.whoAmI);
             return false;
         }
 
-        float laserSpeed = omp.IsUltimateAbilityActive ? UnboundPrimaryShootSpeed : PrimaryShootSpeed;
-        Projectile.NewProjectile(source, player.Center + direction * 18f, direction * laserSpeed,
-            ModContent.ProjectileType<NRGLaserProjectile>(), damage, knockback + 0.5f, player.whoAmI);
+        Projectile.NewProjectile(source, player.Center + direction * 18f, direction * profile.ShootSpeed,
+            profile.ProjectileType, damage, knockback + 0.5f, player.whoAmI);
         return false;
     }
 
