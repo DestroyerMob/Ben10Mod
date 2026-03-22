@@ -7,7 +7,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
-public class NRGLaserProjectile : ModProjectile {
+public class NRGLaserProjectile : ModProjectile, IMagistrataOutlineProvider {
     public override string Texture => "Ben10Mod/Content/Projectiles/EyeGuyLaserbeam";
 
     public override void SetDefaults() {
@@ -57,5 +57,19 @@ public class NRGLaserProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(BuffID.OnFire3, 180);
+    }
+
+    public bool TryGetMagistrataOutlineDrawData(out MagistrataOutlineDrawData drawData) {
+        Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
+        drawData = new MagistrataOutlineDrawData(
+            texture,
+            Projectile.Center - Main.screenPosition,
+            null,
+            texture.Size() * 0.5f,
+            Projectile.rotation + MathHelper.PiOver2,
+            Projectile.scale,
+            SpriteEffects.None
+        );
+        return true;
     }
 }

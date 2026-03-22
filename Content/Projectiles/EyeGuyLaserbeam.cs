@@ -6,7 +6,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles
 {
-    public class EyeGuyLaserbeam : ModProjectile
+    public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider
     {
         public override void SetDefaults()
         {
@@ -53,6 +53,20 @@ namespace Ben10Mod.Content.Projectiles
                 0);
 
             return false; // skip default drawing
+        }
+
+        public bool TryGetMagistrataOutlineDrawData(out MagistrataOutlineDrawData drawData) {
+            Texture2D texture = ModContent.Request<Texture2D>(Texture).Value;
+            drawData = new MagistrataOutlineDrawData(
+                texture,
+                Projectile.Center - Main.screenPosition,
+                null,
+                texture.Size() * 0.5f,
+                Projectile.rotation + MathHelper.PiOver2,
+                Projectile.scale,
+                SpriteEffects.None
+            );
+            return true;
         }
     }
 }

@@ -14,6 +14,20 @@ using Terraria.WorldBuilding;
 
 namespace Ben10Mod;
 
+public readonly record struct MagistrataOutlineDrawData(
+    Texture2D Texture,
+    Vector2 DrawPosition,
+    Rectangle? SourceRectangle,
+    Vector2 Origin,
+    float Rotation,
+    float Scale,
+    SpriteEffects Effects
+);
+
+public interface IMagistrataOutlineProvider {
+    bool TryGetMagistrataOutlineDrawData(out MagistrataOutlineDrawData drawData);
+}
+
 public class OmnitrixProjectile : GlobalProjectile {
     private const float TemporalFreezeRampFrames = 45f;
     private static readonly string[] TexturelessProjectilePaths = {
@@ -100,12 +114,9 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (!ShouldDrawMagistrataOutline(projectile))
             return;
 
-        Texture2D texture = TextureAssets.Projectile[projectile.type].Value;
-        int frameCount = Main.projFrames[projectile.type] <= 0 ? 1 : Main.projFrames[projectile.type];
-        Rectangle frame = texture.Frame(1, frameCount, 0, projectile.frame);
-        Vector2 origin = frame.Size() * 0.5f;
-        Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(0f, projectile.gfxOffY);
-        SpriteEffects effects = projectile.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        if (!TryGetMagistrataOutlineDrawData(projectile, out MagistrataOutlineDrawData drawData))
+            return;
+
         Color outerColor = new Color(70, 255, 110, 220) * 0.9f;
         Color innerColor = new Color(150, 255, 175, 180) * 0.75f;
         float outerOffset = Math.Max(3.5f, projectile.scale * 4f);
@@ -113,18 +124,18 @@ public class OmnitrixProjectile : GlobalProjectile {
 
         for (int i = 0; i < 12; i++) {
             Vector2 offset = (MathHelper.TwoPi * i / 12f).ToRotationVector2() * outerOffset;
-            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, outerColor, projectile.rotation, origin,
-                projectile.scale, effects, 0);
+            Main.EntitySpriteDraw(drawData.Texture, drawData.DrawPosition + offset, drawData.SourceRectangle, outerColor,
+                drawData.Rotation, drawData.Origin, drawData.Scale, drawData.Effects, 0);
         }
 
         for (int i = 0; i < 8; i++) {
             Vector2 offset = (MathHelper.TwoPi * i / 8f).ToRotationVector2() * innerOffset;
-            Main.EntitySpriteDraw(texture, drawPosition + offset, frame, innerColor, projectile.rotation, origin,
-                projectile.scale, effects, 0);
+            Main.EntitySpriteDraw(drawData.Texture, drawData.DrawPosition + offset, drawData.SourceRectangle, innerColor,
+                drawData.Rotation, drawData.Origin, drawData.Scale, drawData.Effects, 0);
         }
 
-        Main.EntitySpriteDraw(texture, drawPosition, frame, new Color(95, 255, 120, 55), projectile.rotation, origin,
-            projectile.scale * 1.01f, effects, 0);
+        Main.EntitySpriteDraw(drawData.Texture, drawData.DrawPosition, drawData.SourceRectangle, new Color(95, 255, 120, 55),
+            drawData.Rotation, drawData.Origin, drawData.Scale * 1.01f, drawData.Effects, 0);
     }
 
     public void EnableScaleHitboxSync(Projectile projectile) {
@@ -301,6 +312,27 @@ public class OmnitrixProjectile : GlobalProjectile {
         }
 
         return projectile.hide && string.Equals(texturePath, $"Terraria/Images/Projectile_{ProjectileID.None}", StringComparison.Ordinal);
+    }
+
+    private static bool TryGetMagistrataOutlineDrawData(Projectile projectile, out MagistrataOutlineDrawData drawData) {
+        if (projectile.ModProjectile is IMagistrataOutlineProvider provider &&
+            provider.TryGetMagistrataOutlineDrawData(out drawData))
+            return true;
+
+        Texture2D texture = TextureAssets.Projectile[projectile.type].Value;
+        if (texture is null)
+        {
+            drawData = default;
+            return false;
+        }
+
+        int frameCount = Main.projFrames[projectile.type] <= 0 ? 1 : Main.projFrames[projectile.type];
+        Rectangle frame = texture.Frame(1, frameCount, 0, projectile.frame);
+        Vector2 origin = frame.Size() * 0.5f;
+        Vector2 drawPosition = projectile.Center - Main.screenPosition + new Vector2(0f, projectile.gfxOffY);
+        SpriteEffects effects = projectile.spriteDirection == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        drawData = new MagistrataOutlineDrawData(texture, drawPosition, frame, origin, projectile.rotation, projectile.scale, effects);
+        return true;
     }
 
     private void SpawnMagistrataDustRing(Projectile projectile) {
