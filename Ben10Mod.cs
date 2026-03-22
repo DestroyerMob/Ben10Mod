@@ -24,20 +24,25 @@ namespace Ben10Mod {
 
 			return command switch {
 				"RegisterAbsorbableMaterial" => CallRegisterAbsorbableMaterial(args),
-				"IsAbsorbableMaterialRegistered" => args.Length >= 2 && args[1] is int itemType && MaterialAbsorptionRegistry.IsRegistered(itemType),
-				"GetAbsorbableMaterialProfile" => args.Length >= 2 && args[1] is int profileItemType && MaterialAbsorptionRegistry.TryGetProfile(profileItemType, out MaterialAbsorptionProfile profile) ? profile : null,
+				"IsAbsorbableMaterialRegistered" => args.Length >= 2 && args[1] is int itemType &&
+				                                    MaterialAbsorptionRegistry.IsRegistered(itemType),
+				"GetAbsorbableMaterialProfile" => args.Length >= 2 && args[1] is int profileItemType &&
+				                                  MaterialAbsorptionRegistry.TryGetProfile(profileItemType,
+					                                  out MaterialAbsorptionProfile profile)
+					? profile
+					: null,
 				_ => throw new ArgumentException($"Unknown Ben10Mod.Call command '{command}'.")
 			};
 		}
 
 		public override void Load() {
-			
-			if (ModLoader.TryGetMod("ColoredDamageTypes", out Mod coloreddamagetypes))
-			{
+
+			if (ModLoader.TryGetMod("ColoredDamageTypes", out Mod coloreddamagetypes)) {
 				//Color version
-				coloreddamagetypes.Call("AddDamageType", ModContent.GetInstance<HeroDamage>(), new Color(0, 200, 00), new Color(0, 200, 0), new Color(0, 255, 0));
+				coloreddamagetypes.Call("AddDamageType", ModContent.GetInstance<HeroDamage>(), new Color(0, 200, 00),
+					new Color(0, 200, 0), new Color(0, 255, 0));
 			}
-			
+
 			if (Main.netMode != NetmodeID.Server) {
 				Asset<Effect> dyeShader = this.Assets.Request<Effect>("Effects/MyDyes");
 				Asset<Effect> filterShader = this.Assets.Request<Effect>("Effects/MyFilters");
@@ -46,9 +51,11 @@ namespace Ben10Mod {
 				GameShaders.Armor.BindShader(ModContent.ItemType<DiscoDye>(),
 					new ArmorShaderData(dyeShader, "BasicTint"));
 
-				
-				Filters.Scene["Ben10Mod:Grayscale"] = new Filter(new ScreenShaderData(filterShader, "Grayscale"), EffectPriority.Medium);
-				Filters.Scene["Ben10Mod:Bluescale"] = new Filter(new ScreenShaderData(filterShader, "Bluescale"), EffectPriority.Medium);
+
+				Filters.Scene["Ben10Mod:Grayscale"] = new Filter(new ScreenShaderData(filterShader, "Grayscale"),
+					EffectPriority.Medium);
+				Filters.Scene["Ben10Mod:Bluescale"] = new Filter(new ScreenShaderData(filterShader, "Bluescale"),
+					EffectPriority.Medium);
 			}
 		}
 
@@ -82,7 +89,8 @@ namespace Ben10Mod {
 					if (!player.active)
 						return;
 
-					player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId, sync: false, showEffects: playerIndex == Main.myPlayer);
+					player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId, sync: false,
+						showEffects: playerIndex == Main.myPlayer);
 					break;
 				}
 				case MessageType.RemoveTransformation: {
@@ -99,7 +107,8 @@ namespace Ben10Mod {
 					if (!player.active)
 						return;
 
-					player.GetModPlayer<OmnitrixPlayer>().RemoveTransformation(transformationId, sync: false, showEffects: playerIndex == Main.myPlayer);
+					player.GetModPlayer<OmnitrixPlayer>().RemoveTransformation(transformationId, sync: false,
+						showEffects: playerIndex == Main.myPlayer);
 					break;
 				}
 				case MessageType.RequestAbsorbMaterial: {
@@ -161,19 +170,23 @@ namespace Ben10Mod {
 
 		private static object CallRegisterAbsorbableMaterial(object[] args) {
 			if (args.Length < 6)
-				throw new ArgumentException("RegisterAbsorbableMaterial requires source, sword, helmet, body, and leg item IDs.");
+				throw new ArgumentException(
+					"RegisterAbsorbableMaterial requires source, sword, helmet, body, and leg item IDs.");
 
-			if (args[1] is not int sourceItemType || args[2] is not int swordItemType || args[3] is not int helmetItemType ||
+			if (args[1] is not int sourceItemType || args[2] is not int swordItemType ||
+			    args[3] is not int helmetItemType ||
 			    args[4] is not int bodyItemType || args[5] is not int legItemType)
 				throw new ArgumentException("RegisterAbsorbableMaterial item IDs must be ints.");
 
-			var registration = MaterialAbsorptionRegistry.CreateRegistration(sourceItemType, swordItemType, helmetItemType, bodyItemType, legItemType);
+			var registration = MaterialAbsorptionRegistry.CreateRegistration(sourceItemType, swordItemType,
+				helmetItemType, bodyItemType, legItemType);
 
 			if (args.Length >= 7) {
 				if (args[6] is Action<MaterialAbsorptionRegistration> configure)
 					configure(registration);
 				else
-					throw new ArgumentException("RegisterAbsorbableMaterial optional 7th argument must be an Action<MaterialAbsorptionRegistration>.");
+					throw new ArgumentException(
+						"RegisterAbsorbableMaterial optional 7th argument must be an Action<MaterialAbsorptionRegistration>.");
 			}
 
 			MaterialAbsorptionRegistry.Register(registration);

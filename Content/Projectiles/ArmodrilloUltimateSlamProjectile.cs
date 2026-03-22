@@ -8,9 +8,12 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ArmodrilloUltimateSlamProjectile : ModProjectile {
-    private const int LaunchFrames = 22;
-    private const float LaunchVelocity = -24f;
-    private const float SlamVelocity = 26f;
+    private const int LaunchFrames = 28;
+    private const float LaunchVelocity = -17f;
+    private const float LaunchEndVelocity = -5.5f;
+    private const float SlamStartVelocity = 16f;
+    private const float SlamVelocity = 34f;
+    private const float SlamAcceleration = 2.7f;
     private const float HorizontalDamp = 0.82f;
 
     public override string Texture => "Terraria/Images/Projectile_0";
@@ -69,7 +72,7 @@ public class ArmodrilloUltimateSlamProjectile : ModProjectile {
         }
 
         owner.velocity.X *= 0.94f;
-        owner.velocity.Y = Math.Min(owner.velocity.Y, MathHelper.Lerp(LaunchVelocity, LaunchVelocity * 0.55f, launchProgress));
+        owner.velocity.Y = Math.Min(owner.velocity.Y, MathHelper.Lerp(LaunchVelocity, LaunchEndVelocity, launchProgress));
 
         if (Projectile.localAI[0] >= LaunchFrames) {
             Projectile.ai[0] = 1f;
@@ -81,7 +84,7 @@ public class ArmodrilloUltimateSlamProjectile : ModProjectile {
     private void UpdateSlam(Player owner) {
         Projectile.localAI[0]++;
         owner.velocity.X *= HorizontalDamp;
-        owner.velocity.Y = MathHelper.Clamp(owner.velocity.Y + 1.85f, 12f, SlamVelocity);
+        owner.velocity.Y = MathHelper.Clamp(owner.velocity.Y + SlamAcceleration, SlamStartVelocity, SlamVelocity);
 
         if (Main.rand.NextBool()) {
             Dust dust = Dust.NewDustPerfect(owner.Bottom + Main.rand.NextVector2Circular(14f, 10f),

@@ -546,8 +546,11 @@ namespace Ben10Mod {
                 }
             }
 
-            if (Main.mouseRight && Main.mouseRightRelease && Player.HeldItem.ModItem is PlumbersBadge)
-                ToggleBaseAttackSelection();
+            if (Player.whoAmI == Main.myPlayer && Main.mouseRight && Main.mouseRightRelease &&
+                Player.HeldItem.ModItem is PlumbersBadge) {
+                Main.mouseRightRelease = false;
+                HandleBadgeRightClickSelection();
+            }
 
             if (Player.whoAmI == Main.myPlayer && KeybindSystem.AbsorbMaterial.JustPressed)
                 TryAbsorbHeldMaterial();
@@ -928,7 +931,37 @@ namespace Ben10Mod {
             }
         }
 
-        private void ToggleBaseAttackSelection() {
+        private bool CanSelectAbilityAttackSlot(AttackSelection slot) {
+            var trans = CurrentTransformation;
+            if (trans == null)
+                return false;
+
+            return slot switch {
+                AttackSelection.PrimaryAbility => trans.HasPrimaryAbilityAttackForState(this) &&
+                                                  !Player.HasBuff<PrimaryAbility>() &&
+                                                  !Player.HasBuff<PrimaryAbilityCooldown>(),
+                AttackSelection.SecondaryAbility => trans.HasSecondaryAbilityAttackForState(this) &&
+                                                    !Player.HasBuff<SecondaryAbility>() &&
+                                                    !Player.HasBuff<SecondaryAbilityCooldown>(),
+                AttackSelection.TertiaryAbility => trans.HasTertiaryAbilityAttackForState(this) &&
+                                                   !Player.HasBuff<TertiaryAbility>() &&
+                                                   !Player.HasBuff<TertiaryAbilityCooldown>(),
+                _ => false
+            };
+        }
+
+        private void HandleBadgeRightClickSelection() {
+            if (HasLoadedAbilityAttack) {
+                AttackSelection targetSelection = AttackSelection.Primary;
+
+                if (setAttack == targetSelection)
+                    return;
+
+                ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
+                SetAttackSelection(targetSelection);
+                return;
+            }
+
             if (setAttack is not AttackSelection.Primary and not AttackSelection.Secondary)
                 return;
 

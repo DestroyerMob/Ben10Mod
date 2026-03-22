@@ -10,11 +10,10 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class ArmodrilloDrillProjectile : ModProjectile {
     private const int Lifetime = 16;
-    private const float MinReach = 12f;
-    private const float MaxReach = 56f;
-    private const float HitboxLead = 16f;
-    private const float HandleOffsetX = 10f;
-    private const float HandleOffsetY = -4f;
+    private const float MinArmReach = 6f;
+    private const float MaxArmReach = 26f;
+    private const float DrillTipLead = 26f;
+    private const float HandNormalOffset = 5f;
 
     public override string Texture => $"Terraria/Images/Item_{ItemID.ChlorophyteJackhammer}";
 
@@ -40,17 +39,13 @@ public class ArmodrilloDrillProjectile : ModProjectile {
         }
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        float progress = 1f - Projectile.timeLeft / (float)Lifetime;
-        float thrust = progress < 0.38f
-            ? Utils.GetLerpValue(0f, 0.38f, progress, true)
-            : Utils.GetLerpValue(1f, 0.38f, progress, true);
-        float reach = MathHelper.Lerp(MinReach, MaxReach, thrust);
+        float thrust = GetThrustAmount();
         owner.direction = direction.X >= 0f ? 1 : -1;
-        Vector2 handPosition = GetHandPosition(owner);
-        Vector2 drillHeadPosition = handPosition + direction * (reach + HitboxLead);
+        Vector2 handPosition = GetHandPosition(owner, direction, thrust);
+        Vector2 drillHeadPosition = handPosition + direction * DrillTipLead;
 
         Projectile.Center = drillHeadPosition;
-        Projectile.rotation = direction.ToRotation() - MathHelper.PiOver4;
+        Projectile.rotation = direction.ToRotation();
         owner.itemRotation = direction.ToRotation() * owner.direction;
         owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, direction.ToRotation() - MathHelper.PiOver2);
         owner.heldProj = Projectile.whoAmI;
@@ -71,17 +66,25 @@ public class ArmodrilloDrillProjectile : ModProjectile {
 
         Texture2D texture = TextureAssets.Item[ItemID.ChlorophyteJackhammer].Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        Vector2 drawPosition = GetHandPosition(owner) - Main.screenPosition;
+        Vector2 drawPosition = GetHandPosition(owner, direction, GetThrustAmount()) - Main.screenPosition;
         Vector2 origin = new(8f, texture.Height - 8f);
-        SpriteEffects effects = direction.X < 0f ? SpriteEffects.FlipVertically : SpriteEffects.None;
-        float rotation = direction.ToRotation() - MathHelper.PiOver4 + (direction.X < 0f ? MathHelper.Pi : 0f);
+        float rotation = direction.ToRotation();
 
         Main.EntitySpriteDraw(texture, drawPosition, null, Projectile.GetAlpha(lightColor), rotation, origin, Projectile.scale,
-            effects, 0);
+            SpriteEffects.None, 0);
         return false;
     }
 
-    private static Vector2 GetHandPosition(Player owner) {
-        return owner.MountedCenter + new Vector2(owner.direction * HandleOffsetX, HandleOffsetY);
+    private float GetThrustAmount() {
+        float progress = 1f - Projectile.timeLeft / (float)Lifetime;
+        return progress < 0.38f
+            ? Utils.GetLerpValue(0f, 0.38f, progress, true)
+            : Utils.GetLerpValue(1f, 0.38f, progress, true);
+    }
+
+    private static Vector2 GetHandPosition(Player owner, Vector2 direction, float thrust) {
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        float armReach = MathHelper.Lerp(MinArmReach, MaxArmReach, thrust);
+        return owner.MountedCenter + direction * armReach - normal * HandNormalOffset;
     }
 }

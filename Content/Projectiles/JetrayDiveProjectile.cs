@@ -9,31 +9,51 @@ public class JetrayDiveProjectile : ModProjectile {
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.PhantasmalBolt}";
 
     public override void SetDefaults() {
-        Projectile.width = 30;
-        Projectile.height = 30;
+        Projectile.width = 28;
+        Projectile.height = 28;
         Projectile.friendly = true;
         Projectile.DamageType = DamageClass.Generic;
         Projectile.penetrate = -1;
-        Projectile.timeLeft = 16;
+        Projectile.timeLeft = 14;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
+        Projectile.hide = true;
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 10;
+        Projectile.localNPCHitCooldown = 12;
     }
 
     public override void AI() {
         Player owner = Main.player[Projectile.owner];
-        Vector2 direction = owner.velocity.SafeNormalize(Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f)));
-        Projectile.Center = owner.Center + direction * 18f;
-        Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
+        if (!owner.active || owner.dead) {
+            Projectile.Kill();
+            return;
+        }
+
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        owner.velocity = Projectile.velocity;
         owner.direction = direction.X >= 0f ? 1 : -1;
         owner.immune = true;
-        owner.immuneTime = 6;
+        owner.immuneTime = 12;
+        owner.fallStart = (int)(owner.position.Y / 16f);
 
-        if (Main.rand.NextBool(2)) {
+        Projectile.Center = owner.Center + direction * 18f;
+        Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
+        Projectile.velocity *= 0.93f;
+
+        if (Main.rand.NextBool()) {
             Dust dust = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height, DustID.BlueCrystalShard,
-                -direction.X * 1.2f, -direction.Y * 1.2f, 100, Color.Cyan, 1.15f);
+                -direction.X * 1.4f, -direction.Y * 1.4f, 100, Color.SpringGreen, 1.1f);
             dust.noGravity = true;
         }
+    }
+
+    public override bool PreDraw(ref Color lightColor) {
+        return false;
+    }
+
+    public override void OnKill(int timeLeft) {
+        Player owner = Main.player[Projectile.owner];
+        if (owner.active && !owner.dead)
+            owner.velocity *= 0.45f;
     }
 }

@@ -19,50 +19,40 @@ public class JetrayTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Jetray_Buff>();
 
     public override string Description =>
-        "A hyperspeed aerial hunter that fires neuroshocks and rams targets in a lightning-fast dive.";
+        "A hyperspeed aerial hunter that fires piercing eye-lasers, stays airborne with ease, and lunges through prey.";
 
     public override List<string> Abilities => new() {
-        "Rapid neuroshock bolts",
-        "High-speed dive strike",
-        "Afterburner flight"
+        "Rapid green laser fire",
+        "Short-range click dash",
+        "Quick aerial flight"
     };
 
-    public override int PrimaryAttack => ModContent.ProjectileType<JetrayBoltProjectile>();
-    public override int PrimaryAttackSpeed => 14;
-    public override int PrimaryShootSpeed => 16;
+    public override int PrimaryAttack => ModContent.ProjectileType<JetrayLaserProjectile>();
+    public override int PrimaryAttackSpeed => 15;
+    public override int PrimaryShootSpeed => 30;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override int SecondaryAttack => ModContent.ProjectileType<JetrayDiveProjectile>();
-    public override int SecondaryAttackSpeed => 28;
-    public override int SecondaryShootSpeed => 14;
+    public override int SecondaryAttackSpeed => 40;
+    public override int SecondaryShootSpeed => 1;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override float SecondaryAttackModifier => 1.45f;
-    public override bool HasPrimaryAbility => true;
-    public override int PrimaryAbilityDuration => 7 * 60;
-    public override int PrimaryAbilityCooldown => 28 * 60;
+    public override float SecondaryAttackModifier => 1.35f;
+    public override bool HasPrimaryAbility => false;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.14f;
         player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.moveSpeed += 0.18f;
-        player.maxRunSpeed += 1.8f;
-        player.accRunSpeed += 1.6f;
+        player.moveSpeed += 0.22f;
+        player.maxRunSpeed += 2.4f;
+        player.accRunSpeed += 2f;
+        player.jumpSpeedBoost += 1.25f;
         player.ignoreWater = true;
         player.gills = true;
         player.noFallDmg = true;
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        player.GetDamage<HeroDamage>() += 0.1f;
-        player.GetAttackSpeed<HeroDamage>() += 0.12f;
-        player.moveSpeed += 0.2f;
-        player.maxRunSpeed += 2.5f;
-        player.accRunSpeed += 2f;
     }
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
-        ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
+        ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<JetrayWings>());
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
@@ -70,17 +60,20 @@ public class JetrayTransformation : Transformation {
         Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
 
         if (omp.altAttack) {
-            player.velocity = direction * (omp.PrimaryAbilityEnabled ? 19f : 16f);
-            player.immune = true;
-            player.immuneTime = 12;
-            Projectile.NewProjectile(source, player.Center + direction * 12f, direction * 9f,
+            if (player.whoAmI == Main.myPlayer) {
+                Vector2 mouseDirection = player.DirectionTo(Main.MouseWorld);
+                if (mouseDirection != Vector2.Zero)
+                    direction = mouseDirection;
+            }
+
+            Projectile.NewProjectile(source, player.Center + direction * 12f, direction * 34f,
                 ModContent.ProjectileType<JetrayDiveProjectile>(), (int)(damage * SecondaryAttackModifier),
                 knockback + 1.5f, player.whoAmI);
             return false;
         }
 
-        Projectile.NewProjectile(source, player.Center + direction * 10f, direction * (omp.PrimaryAbilityEnabled ? 20f : 17f),
-            ModContent.ProjectileType<JetrayBoltProjectile>(), damage, knockback, player.whoAmI);
+        Projectile.NewProjectile(source, player.Center + direction * 10f, direction * PrimaryShootSpeed,
+            ModContent.ProjectileType<JetrayLaserProjectile>(), damage, knockback, player.whoAmI);
         return false;
     }
 
@@ -88,6 +81,6 @@ public class JetrayTransformation : Transformation {
         player.head = ArmorIDs.Head.NecroHelmet;
         player.body = ArmorIDs.Body.NecroBreastplate;
         player.legs = ArmorIDs.Legs.NecroGreaves;
-        player.wings = EquipLoader.GetEquipSlot(Mod, nameof(StinkFlyWings), EquipType.Wings);
+        player.wings = EquipLoader.GetEquipSlot(Mod, nameof(JetrayWings), EquipType.Wings);
     }
 }

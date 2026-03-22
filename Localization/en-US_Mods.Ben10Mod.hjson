@@ -570,6 +570,11 @@ Items: {
 		DisplayName: Reversion Failsafe
 		Tooltip: ""
 	}
+
+	JetrayWings: {
+		DisplayName: Jetray Wings
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -860,6 +865,9 @@ Projectiles: {
 	BulwarkShieldVisualProjectile.DisplayName: Bulwark Shield Visual Projectile
 	PlumberSiegeBoomerangProjectile.DisplayName: Plumber Siege Boomerang Projectile
 	ArmodrilloUltimateSlamProjectile.DisplayName: Armodrillo Ultimate Slam Projectile
+	NRGLaserProjectile.DisplayName: N R G Laser Projectile
+	NRGHomingEnergyBallProjectile.DisplayName: N R G Homing Energy Ball Projectile
+	JetrayLaserProjectile.DisplayName: Jetray Laser Projectile
 }
 
 Tiles: {
