@@ -858,6 +858,8 @@ Projectiles: {
 	NRGRadiationProjectile.DisplayName: N R G Radiation Projectile
 	HeatBlastAuraRodProjectile.DisplayName: Heat Blast Aura Rod Projectile
 	BulwarkShieldVisualProjectile.DisplayName: Bulwark Shield Visual Projectile
+	PlumberSiegeBoomerangProjectile.DisplayName: Plumber Siege Boomerang Projectile
+	ArmodrilloUltimateSlamProjectile.DisplayName: Armodrillo Ultimate Slam Projectile
 }
 
 Tiles: {

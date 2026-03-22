@@ -17,26 +17,28 @@ public class ArmodrilloTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Armodrillo_Buff>();
 
     public override string Description =>
-        "A heavily-armored powerhouse that pulverizes enemies with spinning drills and rolling tremors.";
+        "A heavily-armored powerhouse that pulverizes enemies with piston drills and seismic ground-shattering force.";
 
     public override List<string> Abilities => new() {
         "Piston drill strike",
-        "Earth-ripping shockwave",
-        "Siege plating"
+        "Siege plating",
+        "Seismic slam ultimate attack"
     };
 
     public override int PrimaryAttack => ModContent.ProjectileType<ArmodrilloDrillProjectile>();
     public override int PrimaryAttackSpeed => 24;
     public override int PrimaryShootSpeed => 10;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
-    public override int SecondaryAttack => ModContent.ProjectileType<ArmodrilloQuakeProjectile>();
-    public override int SecondaryAttackSpeed => 34;
-    public override int SecondaryShootSpeed => 8;
-    public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override float SecondaryAttackModifier => 1.35f;
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 8 * 60;
     public override int PrimaryAbilityCooldown => 40 * 60;
+    public override int UltimateAttack => ModContent.ProjectileType<ArmodrilloUltimateSlamProjectile>();
+    public override float UltimateAttackModifier => 3f;
+    public override int UltimateAttackSpeed => 30;
+    public override int UltimateUseStyle => ItemUseStyleID.Shoot;
+    public override int UltimateEnergyCost => 75;
+    public override int UltimateAbilityCost => 75;
+    public override int UltimateAbilityCooldown => 60 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.14f;
@@ -57,14 +59,13 @@ public class ArmodrilloTransformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
-        Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
-
-        if (omp.altAttack) {
-            Projectile.NewProjectile(source, player.Center + direction * 20f, direction * 7f,
-                ModContent.ProjectileType<ArmodrilloQuakeProjectile>(), (int)(damage * SecondaryAttackModifier),
-                knockback + 2f, player.whoAmI);
+        if (omp.ultimateAttack) {
+            Projectile.NewProjectile(source, player.Center, Vector2.Zero, UltimateAttack,
+                (int)(damage * UltimateAttackModifier), knockback + 2f, player.whoAmI);
             return false;
         }
+
+        Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
 
         Projectile.NewProjectile(source, player.Center + direction * 18f, direction * 6f,
             ModContent.ProjectileType<ArmodrilloDrillProjectile>(), damage, knockback + 1f, player.whoAmI);

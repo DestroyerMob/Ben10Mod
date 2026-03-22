@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Materials;
+using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -73,10 +74,9 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     private const int BulwarkMaxChargeHits = 10;
     private const float BulwarkExplosionRadius = 132f;
     private const int BulwarkElectrocutedDuration = 5 * 60;
-    private const int RelayChargeDuration = 5 * 60;
-    private const int SiegeLockDuration = 2 * 60;
-    private const int SiegeRequiredLocks = 3;
     private const int MagistrataStackCooldownTime = 24;
+    private const float RelayDodgeChance = 0.15f;
+    internal const int SiegeBoomerangBaseDamage = 52;
 
     public bool bulwarkSet;
     public bool relaySet;
@@ -85,10 +85,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
 
     private int bulwarkChargeHits;
     private int bulwarkDischargeVisualTime;
-    private int relayChargeTime;
-    private int siegeLockedTargetIndex = -1;
-    private int siegeLockStacks;
-    private int siegeLockTime;
     private int magistrataCommandStacks;
     private int magistrataStackCooldown;
     private OmnitrixPlayer.AttackSelection lastAttackSelection = OmnitrixPlayer.AttackSelection.Primary;
@@ -122,10 +118,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     public override void UpdateDead() {
         bulwarkChargeHits = 0;
         bulwarkDischargeVisualTime = 0;
-        relayChargeTime = 0;
-        siegeLockedTargetIndex = -1;
-        siegeLockStacks = 0;
-        siegeLockTime = 0;
         magistrataCommandStacks = 0;
         magistrataStackCooldown = 0;
         CacheAbilityState(Player.GetModPlayer<OmnitrixPlayer>());
@@ -142,31 +134,15 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             bulwarkDischargeVisualTime = 0;
         }
 
-        if (!relaySet)
-            relayChargeTime = 0;
-        if (!siegeSet) {
-            siegeLockedTargetIndex = -1;
-            siegeLockStacks = 0;
-            siegeLockTime = 0;
-        }
         if (!magistrataSet) {
             magistrataCommandStacks = 0;
             magistrataStackCooldown = 0;
         }
 
-        if (relayChargeTime > 0)
-            relayChargeTime--;
         if (bulwarkDischargeVisualTime > 0)
             bulwarkDischargeVisualTime--;
-        if (siegeLockTime > 0)
-            siegeLockTime--;
         if (magistrataStackCooldown > 0)
             magistrataStackCooldown--;
-
-        if (siegeLockTime <= 0) {
-            siegeLockedTargetIndex = -1;
-            siegeLockStacks = 0;
-        }
 
         var omp = Player.GetModPlayer<OmnitrixPlayer>();
         bool abilityActivated = HasAbilityActivation(omp);
@@ -175,10 +151,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         if (!omp.IsTransformed) {
             bulwarkChargeHits = 0;
             bulwarkDischargeVisualTime = 0;
-            relayChargeTime = 0;
-            siegeLockedTargetIndex = -1;
-            siegeLockStacks = 0;
-            siegeLockTime = 0;
             magistrataCommandStacks = 0;
             magistrataStackCooldown = 0;
             CacheAbilityState(omp);
@@ -193,8 +165,8 @@ public class HeroPlumberArmorPlayer : ModPlayer {
                 SpawnBulwarkDischargeDust();
         }
 
-        if (relaySet && (abilityActivated || (attackSelectionChanged && omp.HasLoadedBadgeAttack)))
-            PrimeRelayBurst();
+        if (siegeSet && Player.whoAmI == Main.myPlayer && Player.ownedProjectileCounts[ModContent.ProjectileType<PlumberSiegeBoomerangProjectile>()] < 1)
+            SpawnSiegeBoomerang();
 
         if (magistrataSet && magistrataStackCooldown <= 0 && (abilityActivated || attackSelectionChanged))
             GainMagistrataCommandStack();
@@ -236,38 +208,18 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         base.OnHitNPCWithProj(proj, target, hit, damageDone);
     }
 
+    public override bool FreeDodge(Player.HurtInfo info) {
+        if (!info.Dodgeable || !IsRelayEffectActive() || Main.rand.NextFloat() >= RelayDodgeChance)
+            return false;
+
+        PlayRelayDodgeVisual();
+
+        return true;
+    }
+
     private void HandleHeroHit(NPC target, int damageDone) {
-        if (IsRelaySetEquipped() && IsTransformationStateActive() && relayChargeTime > 0)
-            TriggerRelayBurst(target, damageDone);
-
-        if (IsSiegeSetEquipped() && IsTransformationStateActive())
-            HandleSiegeHit(target, damageDone);
-
         if (IsMagistrataSetEquipped() && IsTransformationStateActive() && magistrataCommandStacks >= 3)
             TriggerMagistrataVerdict(target, damageDone);
-    }
-
-    private void PrimeRelayBurst() {
-        relayChargeTime = RelayChargeDuration;
-    }
-
-    private void HandleSiegeHit(NPC target, int damageDone) {
-        if (target.whoAmI == siegeLockedTargetIndex && siegeLockTime > 0) {
-            siegeLockStacks = Math.Min(SiegeRequiredLocks, siegeLockStacks + 1);
-        }
-        else {
-            siegeLockedTargetIndex = target.whoAmI;
-            siegeLockStacks = 1;
-        }
-
-        siegeLockTime = SiegeLockDuration;
-
-        if (siegeLockStacks >= SiegeRequiredLocks) {
-            TriggerSiegeBurst(target, damageDone);
-            siegeLockedTargetIndex = -1;
-            siegeLockStacks = 0;
-            siegeLockTime = 0;
-        }
     }
 
     private void GainMagistrataCommandStack() {
@@ -344,6 +296,14 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         return IsBulwarkSetEquipped() && IsTransformationStateActive();
     }
 
+    private bool IsRelayEffectActive() {
+        return IsRelaySetEquipped() && IsTransformationStateActive();
+    }
+
+    private bool IsSiegeEffectActive() {
+        return IsSiegeSetEquipped() && IsTransformationStateActive();
+    }
+
     private bool IsTransformationStateActive() {
         OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
         return omp.isTransformed || omp.IsTransformed;
@@ -383,39 +343,6 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             && Player.armor[2].type == legsType;
     }
 
-    private void TriggerRelayBurst(NPC primaryTarget, int damageDone) {
-        relayChargeTime = 0;
-        RestoreOmnitrixEnergy(12f);
-
-        List<NPC> chainedTargets = FindNearestTargets(primaryTarget.Center, 320f, 3, primaryTarget.whoAmI);
-        if (Main.netMode != NetmodeID.MultiplayerClient) {
-            int damage = Math.Max(1, (int)Math.Round(damageDone * 0.45f));
-            foreach (NPC npc in chainedTargets) {
-                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
-                npc.SimpleStrikeNPC(damage, direction, false, 0f, HeroClass);
-            }
-        }
-
-        foreach (NPC npc in chainedTargets)
-            SpawnDustLink(primaryTarget.Center, npc.Center, DustID.Electric, PlumberArmorPalette.Relay);
-    }
-
-    private void TriggerSiegeBurst(NPC primaryTarget, int damageDone) {
-        if (Main.netMode != NetmodeID.MultiplayerClient) {
-            int primaryDamage = Math.Max(1, (int)Math.Round(damageDone * 0.5f));
-            int splashDamage = Math.Max(1, (int)Math.Round(damageDone * 0.35f));
-
-            primaryTarget.SimpleStrikeNPC(primaryDamage, Player.direction, false, 5f, HeroClass);
-
-            foreach (NPC npc in FindNearestTargets(primaryTarget.Center, 180f, 4, primaryTarget.whoAmI)) {
-                int direction = npc.Center.X >= primaryTarget.Center.X ? 1 : -1;
-                npc.SimpleStrikeNPC(splashDamage, direction, false, 4f, HeroClass);
-            }
-        }
-
-        SpawnDustBurst(primaryTarget.Center, 96f, DustID.BlueTorch, PlumberArmorPalette.Siege);
-    }
-
     private void TriggerMagistrataVerdict(NPC primaryTarget, int damageDone) {
         magistrataCommandStacks = 0;
         magistrataStackCooldown = MagistrataStackCooldownTime;
@@ -444,20 +371,42 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + amount);
     }
 
+    public void PlayRelayDodgeVisual(bool sync = true) {
+        if (!Main.dedServ) {
+            SpawnDustBurst(Player.MountedCenter, 56f, DustID.Electric, PlumberArmorPalette.Relay);
+            for (int i = 0; i < 10; i++) {
+                Vector2 velocity = Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(1.8f, 3f);
+                Dust dust = Dust.NewDustPerfect(Player.MountedCenter, DustID.Electric, velocity, 110, PlumberArmorPalette.Relay, 1.05f);
+                dust.noGravity = true;
+            }
+        }
+
+        if (!sync || Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI != Main.myPlayer)
+            return;
+
+        ModPacket packet = ModContent.GetInstance<global::Ben10Mod.Ben10Mod>().GetPacket();
+        packet.Write((byte)global::Ben10Mod.Ben10Mod.MessageType.RelayDodgeVisual);
+        packet.Write((byte)Player.whoAmI);
+        packet.Send();
+    }
+
+    private void SpawnSiegeBoomerang() {
+        int damage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(SiegeBoomerangBaseDamage)));
+        int projectileIndex = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.MountedCenter, Vector2.Zero,
+            ModContent.ProjectileType<PlumberSiegeBoomerangProjectile>(), damage, 2f, Player.whoAmI);
+
+        if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+            Projectile projectile = Main.projectile[projectileIndex];
+            projectile.originalDamage = SiegeBoomerangBaseDamage;
+            projectile.DamageType = HeroClass;
+        }
+    }
+
     private static void SpawnDustBurst(Vector2 center, float radius, int dustType, Color color) {
         for (int i = 0; i < 18; i++) {
             Vector2 velocity = Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2.2f, 4.6f);
             Vector2 position = center + velocity.SafeNormalize(Vector2.UnitX) * Main.rand.NextFloat(8f, radius * 0.25f);
             Dust dust = Dust.NewDustPerfect(position, dustType, velocity, 120, color, 1.2f);
-            dust.noGravity = true;
-        }
-    }
-
-    private static void SpawnDustLink(Vector2 start, Vector2 end, int dustType, Color color) {
-        int points = 8;
-        for (int i = 0; i <= points; i++) {
-            Vector2 position = Vector2.Lerp(start, end, i / (float)points);
-            Dust dust = Dust.NewDustPerfect(position, dustType, Vector2.Zero, 120, color, 1.05f);
             dust.noGravity = true;
         }
     }
@@ -1017,7 +966,7 @@ public class PlumberRelayVisor : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +25 Omnitrix energy and 15% longer transformations. Activating an ability or loading a special attack charges your next Hero hit to chain lightning and restore energy";
+            "While transformed: +25 Omnitrix energy, 15% longer transformations, and a 15% chance to dodge attacks";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -1111,7 +1060,7 @@ public class PlumberSiegeMask : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10 hero crit. Repeated Hero hits lock onto a target; at 3 locks, a Siege Burst detonates around them";
+            "While transformed: +10 hero crit. Summons a fast Siege boomerang that must return above you before it can strike again";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();

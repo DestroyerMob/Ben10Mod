@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.ID;
@@ -8,6 +9,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class SwampfireVineProjectile : ModProjectile {
+    private const float VineWaveAmplitude = 16f;
+    private const float VineWaveFrequency = 1.65f;
+    private const float VineWaveSecondaryAmplitude = 5f;
+    private const float VineWaveSpeed = 0.14f;
+
     public override string Texture => "Terraria/Images/Projectile_0";
 
     public override void SetDefaults() {
@@ -26,6 +32,7 @@ public class SwampfireVineProjectile : ModProjectile {
 
     public override void AI() {
         Projectile.velocity = Vector2.Zero;
+        Projectile.frameCounter++;
 
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
@@ -38,28 +45,56 @@ public class SwampfireVineProjectile : ModProjectile {
         }
 
         Lighting.AddLight(Projectile.Center, new Vector3(0.34f, 0.85f, 0.18f) * 0.75f);
+        for (int i = 0; i < 5; i++)
+            SpawnVineDust(Main.rand.NextFloat(), Main.rand.NextBool() ? DustID.Grass : DustID.JunglePlants,
+                new Color(130, 230, 90), 1f, 6f);
 
-        if (Main.rand.NextBool()) {
-            Vector2 dustPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-24f, 24f), Main.rand.NextFloat(-Projectile.height + 12f, 0f));
-            Dust dust = Dust.NewDustPerfect(dustPos, Main.rand.NextBool() ? DustID.Grass : DustID.JunglePlants,
-                new Vector2(Main.rand.NextFloat(-0.4f, 0.4f), Main.rand.NextFloat(-0.8f, -0.15f)), 120,
-                new Color(130, 230, 90), 1f);
-            dust.noGravity = true;
-        }
-
-        if (Main.rand.NextBool(2)) {
-            Vector2 extraPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-26f, 26f), Main.rand.NextFloat(-Projectile.height + 16f, -8f));
-            Dust extraDust = Dust.NewDustPerfect(extraPos, DustID.JungleGrass, Main.rand.NextVector2Circular(0.3f, 0.6f), 120,
-                new Color(110, 215, 90), 0.95f);
-            extraDust.noGravity = true;
-        }
+        if (Main.rand.NextBool())
+            SpawnVineDust(Main.rand.NextFloat(), DustID.JungleGrass, new Color(110, 215, 90), 0.95f, 9f, phaseOffset: 0.55f, amplitudeScale: 1.08f);
 
         if (Main.rand.NextBool(3)) {
-            Vector2 emberPos = Projectile.Bottom + new Vector2(Main.rand.NextFloat(-12f, 12f), Main.rand.NextFloat(-40f, 0f));
-            Dust ember = Dust.NewDustPerfect(emberPos, DustID.Torch, Main.rand.NextVector2Circular(0.5f, 0.5f), 120,
-                new Color(255, 150, 70), 0.9f);
+            float emberProgress = Main.rand.NextFloat(0.02f, 0.35f);
+            Vector2 emberPos = GetVineCurvePoint(emberProgress, phaseOffset: 0.25f, amplitudeScale: 0.7f)
+                + Main.rand.NextVector2Circular(4f, 6f);
+            Dust ember = Dust.NewDustPerfect(emberPos, DustID.Torch,
+                GetVineCurveTangent(emberProgress, phaseOffset: 0.25f, amplitudeScale: 0.7f) * Main.rand.NextFloat(0.15f, 0.45f)
+                + Main.rand.NextVector2Circular(0.22f, 0.22f), 120, new Color(255, 150, 70), 0.9f);
             ember.noGravity = true;
         }
+    }
+
+    private Vector2 GetVineCurvePoint(float progress, float phaseOffset = 0f, float amplitudeScale = 1f) {
+        progress = MathHelper.Clamp(progress, 0f, 1f);
+
+        float waveTime = Projectile.frameCounter * VineWaveSpeed + phaseOffset;
+        float vineHeight = Projectile.height - 8f;
+        float swayStrength = 0.2f + 0.8f * progress;
+        float primaryOffset = MathF.Sin(progress * MathHelper.TwoPi * VineWaveFrequency + waveTime) *
+            VineWaveAmplitude * amplitudeScale * swayStrength;
+        float secondaryOffset = MathF.Sin(progress * MathHelper.TwoPi * 0.75f - waveTime * 0.7f) *
+            VineWaveSecondaryAmplitude * amplitudeScale * progress;
+
+        return Projectile.Bottom + new Vector2(primaryOffset + secondaryOffset, -progress * vineHeight);
+    }
+
+    private Vector2 GetVineCurveTangent(float progress, float phaseOffset = 0f, float amplitudeScale = 1f) {
+        float step = 0.02f;
+        Vector2 start = GetVineCurvePoint(progress - step, phaseOffset, amplitudeScale);
+        Vector2 end = GetVineCurvePoint(progress + step, phaseOffset, amplitudeScale);
+        Vector2 tangent = end - start;
+
+        return tangent.LengthSquared() > 0.001f ? Vector2.Normalize(tangent) : -Vector2.UnitY;
+    }
+
+    private void SpawnVineDust(float progress, int dustType, Color color, float scale, float width, float phaseOffset = 0f, float amplitudeScale = 1f) {
+        Vector2 curvePoint = GetVineCurvePoint(progress, phaseOffset, amplitudeScale);
+        Vector2 tangent = GetVineCurveTangent(progress, phaseOffset, amplitudeScale);
+        Vector2 normal = new(-tangent.Y, tangent.X);
+        Vector2 dustPos = curvePoint + normal * Main.rand.NextFloat(-width, width);
+        Vector2 drift = tangent * Main.rand.NextFloat(0.12f, 0.35f) + normal * Main.rand.NextFloat(-0.16f, 0.16f);
+
+        Dust dust = Dust.NewDustPerfect(dustPos, dustType, drift, 120, color, scale);
+        dust.noGravity = true;
     }
 
     public override bool? CanHitNPC(NPC target) {

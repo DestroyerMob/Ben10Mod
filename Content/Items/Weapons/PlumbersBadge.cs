@@ -38,10 +38,11 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (player.channel) return;
 
             if (omp.ultimateAttack) {
+                int ultimateCooldown = omp.CurrentTransformation?.GetUltimateAbilityCooldown(omp) ?? 0;
                 omp.ResetAttackToBaseSelection();
 
-                if (!player.HasBuff<UltimateAbilityCooldown>())
-                    player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), 60 * 60);
+                if (ultimateCooldown > 0 && !player.HasBuff<UltimateAbilityCooldown>())
+                    player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), ultimateCooldown);
             }
 
             int ultimateType = omp.CurrentTransformation?.GetUltimateAttackProjectileType(omp) ?? 0;

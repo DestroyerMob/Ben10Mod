@@ -1,9 +1,12 @@
 using System.IO;
 using System;
 using Ben10Mod.Common.Absorption;
+using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using ReLogic.Content;
@@ -28,6 +31,13 @@ namespace Ben10Mod {
 		}
 
 		public override void Load() {
+			
+			if (ModLoader.TryGetMod("ColoredDamageTypes", out Mod coloreddamagetypes))
+			{
+				//Color version
+				coloreddamagetypes.Call("AddDamageType", ModContent.GetInstance<HeroDamage>(), new Color(0, 200, 00), new Color(0, 200, 0), new Color(0, 255, 0));
+			}
+			
 			if (Main.netMode != NetmodeID.Server) {
 				Asset<Effect> dyeShader = this.Assets.Request<Effect>("Effects/MyDyes");
 				Asset<Effect> filterShader = this.Assets.Request<Effect>("Effects/MyFilters");
@@ -50,7 +60,8 @@ namespace Ben10Mod {
 			UnlockTransformation,
 			RemoveTransformation,
 			RequestAbsorbMaterial,
-			SyncAbsorbedMaterial
+			SyncAbsorbedMaterial,
+			RelayDodgeVisual
 		}
 
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
@@ -122,6 +133,27 @@ namespace Ben10Mod {
 						return;
 
 					player.GetModPlayer<OmnitrixPlayer>().ApplyAbsorbedMaterialSync(itemType, timeLeft, showEffects);
+					break;
+				}
+				case MessageType.RelayDodgeVisual: {
+					int playerIndex = reader.ReadByte();
+
+					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[playerIndex];
+					if (!player.active)
+						return;
+
+					if (Main.netMode == NetmodeID.Server) {
+						ModPacket packet = GetPacket();
+						packet.Write((byte)MessageType.RelayDodgeVisual);
+						packet.Write((byte)playerIndex);
+						packet.Send(-1, whoAmI);
+						return;
+					}
+
+					player.GetModPlayer<HeroPlumberArmorPlayer>().PlayRelayDodgeVisual(sync: false);
 					break;
 				}
 			}
