@@ -875,6 +875,7 @@ Projectiles: {
 	JetrayLaserProjectile.DisplayName: Jetray Laser Projectile
 	FourArmsPunchProjectile.DisplayName: Four Arms Punch Projectile
 	PunchProjectile.DisplayName: Punch Projectile
+	FourArmsLandingShockwaveProjectile.DisplayName: Four Arms Landing Shockwave Projectile
 }
 
 Tiles: {

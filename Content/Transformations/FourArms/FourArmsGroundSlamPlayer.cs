@@ -8,6 +8,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsGroundSlamPlayer : ModPlayer {
+    private const string TransformationId = "Ben10Mod:FourArms";
     private const float FastFallAcceleration = 0.72f;
     private const float FastFallMinimumSpeed = 9.5f;
     private const float FastFallSpeedCap = 17.5f;
@@ -25,21 +26,20 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     }
 
     public override void ResetEffects() {
-        fourArmsActive = false;
+        fourArmsActive = IsFourArmsActive();
     }
 
     public override void PostUpdate() {
-        if (fourArmsActive)
+        if (fourArmsActive) {
+            UpdateFourArmsMovement();
             return;
+        }
 
-        slamArmed = false;
-        lastFallSpeed = 0f;
+        ResetSlamState();
         wasGrounded = IsGrounded(Player);
     }
 
-    public void UpdateFourArmsMovement() {
-        fourArmsActive = true;
-
+    private void UpdateFourArmsMovement() {
         bool grounded = IsGrounded(Player);
         bool falling = Player.velocity.Y > 0f;
 
@@ -69,6 +69,11 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         wasGrounded = grounded;
     }
 
+    private void ResetSlamState() {
+        slamArmed = false;
+        lastFallSpeed = 0f;
+    }
+
     private void SpawnLandingShockwave() {
         if (Player.whoAmI != Main.myPlayer)
             return;
@@ -88,8 +93,21 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         return FallbackBaseDamage;
     }
 
+    private bool IsFourArmsActive() {
+        return Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == TransformationId;
+    }
+
     private static bool IsGrounded(Player player) {
-        return player.velocity.Y >= 0f &&
-               Collision.SolidCollision(player.position + new Vector2(0f, player.height - 2f), player.width, 8);
+        if (player.velocity.Y < 0f)
+            return false;
+
+        int tileY = (int)Math.Floor((player.position.Y + player.height) / 16f);
+        int leftTileX = (int)Math.Floor((player.position.X + 2f) / 16f);
+        int centerTileX = (int)Math.Floor(player.Center.X / 16f);
+        int rightTileX = (int)Math.Floor((player.position.X + player.width - 2f) / 16f);
+
+        return WorldGen.SolidTileAllowBottomSlope(leftTileX, tileY) ||
+               WorldGen.SolidTileAllowBottomSlope(centerTileX, tileY) ||
+               WorldGen.SolidTileAllowBottomSlope(rightTileX, tileY);
     }
 }
