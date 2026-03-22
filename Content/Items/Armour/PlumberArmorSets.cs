@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Materials;
 using Microsoft.Xna.Framework;
@@ -69,7 +70,9 @@ internal static class PlumberArmorPalette {
 public class HeroPlumberArmorPlayer : ModPlayer {
     private static DamageClass HeroClass => ModContent.GetInstance<HeroDamage>();
 
-    private const int BulwarkPulseCooldownTime = 15 * 60;
+    private const int BulwarkMaxChargeHits = 10;
+    private const float BulwarkExplosionRadius = 132f;
+    private const int BulwarkElectrocutedDuration = 5 * 60;
     private const int RelayChargeDuration = 5 * 60;
     private const int SiegeLockDuration = 2 * 60;
     private const int SiegeRequiredLocks = 3;
@@ -80,7 +83,8 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     public bool siegeSet;
     public bool magistrataSet;
 
-    private int bulwarkPulseCooldown;
+    private int bulwarkChargeHits;
+    private int bulwarkDischargeVisualTime;
     private int relayChargeTime;
     private int siegeLockedTargetIndex = -1;
     private int siegeLockStacks;
@@ -93,6 +97,14 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     private bool lastTertiaryAbilityActive;
     private bool lastUltimateAbilityActive;
 
+    public bool HasBulwarkShieldCharge => bulwarkChargeHits > 0;
+    public int BulwarkVisibleChargeHits => Math.Min(bulwarkChargeHits, BulwarkMaxChargeHits - 1);
+    public float BulwarkChargeProgress => BulwarkVisibleChargeHits <= 0
+        ? 0f
+        : BulwarkVisibleChargeHits / (float)(BulwarkMaxChargeHits - 1);
+    public bool HasBulwarkVisual => bulwarkChargeHits > 0 || bulwarkDischargeVisualTime > 0;
+    public float BulwarkDischargeProgress => bulwarkDischargeVisualTime / 16f;
+
     public override void ResetEffects() {
         bulwarkSet = false;
         relaySet = false;
@@ -100,8 +112,16 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         magistrataSet = false;
     }
 
+    public override void PostUpdateEquips() {
+        bulwarkSet = IsBulwarkSetEquipped();
+        relaySet = IsRelaySetEquipped();
+        siegeSet = IsSiegeSetEquipped();
+        magistrataSet = IsMagistrataSetEquipped();
+    }
+
     public override void UpdateDead() {
-        bulwarkPulseCooldown = 0;
+        bulwarkChargeHits = 0;
+        bulwarkDischargeVisualTime = 0;
         relayChargeTime = 0;
         siegeLockedTargetIndex = -1;
         siegeLockStacks = 0;
@@ -112,8 +132,16 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     public override void PostUpdate() {
-        if (!bulwarkSet)
-            bulwarkPulseCooldown = 0;
+        bulwarkSet = IsBulwarkSetEquipped();
+        relaySet = IsRelaySetEquipped();
+        siegeSet = IsSiegeSetEquipped();
+        magistrataSet = IsMagistrataSetEquipped();
+
+        if (!bulwarkSet) {
+            bulwarkChargeHits = 0;
+            bulwarkDischargeVisualTime = 0;
+        }
+
         if (!relaySet)
             relayChargeTime = 0;
         if (!siegeSet) {
@@ -126,10 +154,10 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             magistrataStackCooldown = 0;
         }
 
-        if (bulwarkPulseCooldown > 0)
-            bulwarkPulseCooldown--;
         if (relayChargeTime > 0)
             relayChargeTime--;
+        if (bulwarkDischargeVisualTime > 0)
+            bulwarkDischargeVisualTime--;
         if (siegeLockTime > 0)
             siegeLockTime--;
         if (magistrataStackCooldown > 0)
@@ -145,6 +173,8 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         bool attackSelectionChanged = omp.setAttack != lastAttackSelection;
 
         if (!omp.IsTransformed) {
+            bulwarkChargeHits = 0;
+            bulwarkDischargeVisualTime = 0;
             relayChargeTime = 0;
             siegeLockedTargetIndex = -1;
             siegeLockStacks = 0;
@@ -153,6 +183,14 @@ public class HeroPlumberArmorPlayer : ModPlayer {
             magistrataStackCooldown = 0;
             CacheAbilityState(omp);
             return;
+        }
+
+        if (!Main.dedServ) {
+            if (HasBulwarkShieldCharge)
+                SpawnBulwarkShieldDust();
+
+            if (bulwarkDischargeVisualTime > 0)
+                SpawnBulwarkDischargeDust();
         }
 
         if (relaySet && (abilityActivated || (attackSelectionChanged && omp.HasLoadedBadgeAttack)))
@@ -165,9 +203,20 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     public override void PostHurt(Player.HurtInfo info) {
-        if (bulwarkSet && Player.GetModPlayer<OmnitrixPlayer>().IsTransformed && bulwarkPulseCooldown <= 0 && info.Damage > 0) {
-            bulwarkPulseCooldown = BulwarkPulseCooldownTime;
-            TriggerBulwarkPulse(Math.Max(80, info.Damage * 2));
+        if (info.Damage > 0 && IsBulwarkEffectActive()) {
+            bulwarkChargeHits = Math.Min(BulwarkMaxChargeHits, bulwarkChargeHits + 1);
+
+            if (!Main.dedServ) {
+                Dust dust = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(24f, 30f), DustID.Electric,
+                    Main.rand.NextVector2Circular(1.1f, 1.1f), 120, new Color(110, 220, 255), 1.05f);
+                dust.noGravity = true;
+            }
+
+            if (bulwarkChargeHits >= BulwarkMaxChargeHits) {
+                TriggerBulwarkDischarge();
+                bulwarkChargeHits = 0;
+                bulwarkDischargeVisualTime = 16;
+            }
         }
 
         base.PostHurt(info);
@@ -188,22 +237,18 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     private void HandleHeroHit(NPC target, int damageDone) {
-        if (relaySet && relayChargeTime > 0)
+        if (IsRelaySetEquipped() && IsTransformationStateActive() && relayChargeTime > 0)
             TriggerRelayBurst(target, damageDone);
 
-        if (siegeSet)
+        if (IsSiegeSetEquipped() && IsTransformationStateActive())
             HandleSiegeHit(target, damageDone);
 
-        if (magistrataSet && magistrataCommandStacks >= 3)
+        if (IsMagistrataSetEquipped() && IsTransformationStateActive() && magistrataCommandStacks >= 3)
             TriggerMagistrataVerdict(target, damageDone);
     }
 
     private void PrimeRelayBurst() {
-        bool wasUncharged = relayChargeTime <= 0;
         relayChargeTime = RelayChargeDuration;
-
-        if (wasUncharged && Player.whoAmI == Main.myPlayer)
-            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Relay, "Relay Charged");
     }
 
     private void HandleSiegeHit(NPC target, int damageDone) {
@@ -229,27 +274,113 @@ public class HeroPlumberArmorPlayer : ModPlayer {
         magistrataStackCooldown = MagistrataStackCooldownTime;
         if (magistrataCommandStacks < 3)
             magistrataCommandStacks++;
-
-        if (magistrataCommandStacks >= 3 && Player.whoAmI == Main.myPlayer)
-            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Magistrata, "Verdict Ready");
     }
 
-    private void TriggerBulwarkPulse(int damage) {
-        float radius = 220f;
-        if (Main.netMode != NetmodeID.MultiplayerClient) {
-            foreach (NPC npc in Main.ActiveNPCs) {
-                if (!npc.CanBeChasedBy() || Vector2.Distance(npc.Center, Player.Center) > radius)
-                    continue;
+    private void TriggerBulwarkDischarge() {
+        foreach (NPC npc in Main.ActiveNPCs) {
+            if (!npc.CanBeChasedBy() || Vector2.Distance(npc.Center, Player.Center) > BulwarkExplosionRadius)
+                continue;
 
-                int direction = npc.Center.X >= Player.Center.X ? 1 : -1;
-                npc.SimpleStrikeNPC(damage, direction, false, 6f, HeroClass);
+            npc.AddBuff(ModContent.BuffType<EnemyElectrocuted>(), BulwarkElectrocutedDuration);
+            npc.netUpdate = true;
+        }
+
+        SpawnDustBurst(Player.Center, BulwarkExplosionRadius, DustID.Electric, new Color(110, 220, 255));
+        for (int i = 0; i < 24; i++) {
+            Vector2 velocity = Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(3.5f, 6.5f);
+            Dust dust = Dust.NewDustPerfect(Player.Center, DustID.Electric, velocity, 90, Color.White, 1.25f);
+            dust.noGravity = true;
+        }
+    }
+
+    private void SpawnBulwarkShieldDust() {
+        int points = BulwarkVisibleChargeHits;
+        if (points <= 0)
+            return;
+
+        float progress = BulwarkChargeProgress;
+        float radius = Math.Max(Player.width, Player.height) * 0.46f + 6f + points * 2.5f;
+        float rotation = Main.GlobalTimeWrappedHourly * 0.85f;
+
+        Lighting.AddLight(Player.MountedCenter, new Vector3(0.05f, 0.11f, 0.16f) * (0.2f + progress * 0.25f));
+
+        if (Main.GameUpdateCount % 5 != Player.whoAmI % 5)
+            return;
+
+        for (int i = 0; i < points; i++) {
+            float angle = rotation + MathHelper.TwoPi * i / points;
+            Vector2 direction = angle.ToRotationVector2();
+            Vector2 position = Player.MountedCenter + direction * radius;
+            Vector2 velocity = direction.RotatedBy(MathHelper.PiOver2) * 0.12f;
+
+            Dust dust = Dust.NewDustPerfect(position, DustID.Electric, velocity, 120,
+                new Color(145, 225, 255), 0.92f + progress * 0.18f);
+            dust.noGravity = true;
+        }
+    }
+
+    private void SpawnBulwarkDischargeDust() {
+        float expansion = 1f - BulwarkDischargeProgress;
+        float radius = 24f + expansion * 72f;
+        int points = 8;
+
+        if (Main.GameUpdateCount % 2 == 0) {
+            for (int i = 0; i < points; i++) {
+                float angle = MathHelper.TwoPi * i / points + Main.GlobalTimeWrappedHourly * 0.35f;
+                Vector2 direction = angle.ToRotationVector2();
+                Vector2 position = Player.MountedCenter + direction * radius;
+                Vector2 velocity = direction * (0.5f + expansion * 0.9f);
+
+                Dust dust = Dust.NewDustPerfect(position, DustID.Electric, velocity, 105,
+                    new Color(210, 248, 255), 1f);
+                dust.noGravity = true;
             }
         }
 
-        SpawnDustBurst(Player.Center, radius, DustID.HallowedTorch, PlumberArmorPalette.Bulwark);
+        Lighting.AddLight(Player.MountedCenter, new Vector3(0.09f, 0.18f, 0.22f) * MathHelper.Clamp(BulwarkDischargeProgress * 0.55f, 0f, 0.55f));
+    }
 
-        if (Player.whoAmI == Main.myPlayer)
-            CombatText.NewText(Player.getRect(), PlumberArmorPalette.Bulwark, "Bulwark Pulse");
+    private bool IsBulwarkEffectActive() {
+        return IsBulwarkSetEquipped() && IsTransformationStateActive();
+    }
+
+    private bool IsTransformationStateActive() {
+        OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+        return omp.isTransformed || omp.IsTransformed;
+    }
+
+    private bool IsBulwarkSetEquipped() {
+        return HasArmorSetEquipped(
+            ModContent.ItemType<PlumberBulwarkHelm>(),
+            ModContent.ItemType<PlumberBulwarkMail>(),
+            ModContent.ItemType<PlumberBulwarkGreaves>());
+    }
+
+    private bool IsRelaySetEquipped() {
+        return HasArmorSetEquipped(
+            ModContent.ItemType<PlumberRelayVisor>(),
+            ModContent.ItemType<PlumberRelayCoat>(),
+            ModContent.ItemType<PlumberRelayLeggings>());
+    }
+
+    private bool IsSiegeSetEquipped() {
+        return HasArmorSetEquipped(
+            ModContent.ItemType<PlumberSiegeMask>(),
+            ModContent.ItemType<PlumberSiegeCuirass>(),
+            ModContent.ItemType<PlumberSiegeBoots>());
+    }
+
+    private bool IsMagistrataSetEquipped() {
+        return HasArmorSetEquipped(
+            ModContent.ItemType<PlumberMagistrataHelm>(),
+            ModContent.ItemType<PlumberMagistrataCoat>(),
+            ModContent.ItemType<PlumberMagistrataGreaves>());
+    }
+
+    private bool HasArmorSetEquipped(int headType, int bodyType, int legsType) {
+        return Player.armor[0].type == headType
+            && Player.armor[1].type == bodyType
+            && Player.armor[2].type == legsType;
     }
 
     private void TriggerRelayBurst(NPC primaryTarget, int damageDone) {
@@ -796,7 +927,7 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +6 defense and +3% endurance. Every 15 seconds, the next hit you take unleashes a Bulwark Pulse that blasts nearby enemies";
+            "While transformed: +6 defense and +3% endurance. Taking damage charges an energy shield; at 10 hits it detonates and electrifies nearby enemies";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();

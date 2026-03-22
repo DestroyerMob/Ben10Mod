@@ -1,5 +1,6 @@
 using Terraria.ID;
 using Terraria.ModLoader;
+using Ben10Mod.Content.Buffs.Debuffs;
 
 namespace Ben10Mod.Common.Absorption;
 
@@ -35,7 +36,7 @@ public class VanillaMaterialAbsorptionSystem : ModSystem {
                 .AddHitBuff(BuffID.OnFire, 300));
         MaterialAbsorptionRegistry.Register(
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.CobaltBar, ItemID.CobaltSword, ItemID.CobaltHelmet, ItemID.CobaltBreastplate, ItemID.CobaltLeggings)
-                .AddHitBuff(BuffID.Electrified, 120));
+                .AddHitBuff(ModContent.BuffType<EnemyElectrocuted>(), 120));
         MaterialAbsorptionRegistry.Register(
             MaterialAbsorptionRegistry.CreateRegistration(ItemID.PalladiumBar, ItemID.PalladiumSword, ItemID.PalladiumHelmet, ItemID.PalladiumBreastplate, ItemID.PalladiumLeggings)
                 .AddHitBuff(BuffID.Weak, 240));

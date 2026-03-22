@@ -1,6 +1,7 @@
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Transformations.HeatBlast;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -11,6 +12,9 @@ namespace Ben10Mod;
 
 public class NpcEffects : GlobalNPC {
     public override bool InstancePerEntity => true;
+
+    private const int ElectrocutedStationaryDamagePerSecond = 4;
+    private const int ElectrocutedMovingDamagePerSecond = 16;
     
     public bool IsPossessed(NPC npc) {
         foreach (Player p in Main.ActivePlayers) {
@@ -35,6 +39,10 @@ public class NpcEffects : GlobalNPC {
             return false;
 
         return npc.HasBuff(ModContent.BuffType<EnemyFrozen>()) || IsFrozenByXLR8Ultimate();
+    }
+
+    private static bool IsElectrocuted(NPC npc) {
+        return npc.HasBuff(ModContent.BuffType<EnemyElectrocuted>());
     }
 
     public override bool PreAI(NPC npc) {
@@ -63,9 +71,28 @@ public class NpcEffects : GlobalNPC {
         // }
     }
 
+    public override void UpdateLifeRegen(NPC npc, ref int damage) {
+        if (IsElectrocuted(npc)) {
+            if (npc.lifeRegen > 0)
+                npc.lifeRegen = 0;
+
+            int damagePerSecond = Math.Abs(npc.velocity.X) > 0.01f
+                ? ElectrocutedMovingDamagePerSecond
+                : ElectrocutedStationaryDamagePerSecond;
+
+            npc.lifeRegen -= damagePerSecond * 2;
+            if (damage < damagePerSecond)
+                damage = damagePerSecond;
+        }
+    }
+
     public override void DrawEffects(NPC npc, ref Color drawColor) {
         if (ShouldHardFreeze(npc)) {
             drawColor = Color.Lerp(drawColor, new Color(150, 210, 255), 0.75f);
+        }
+
+        if (IsElectrocuted(npc)) {
+            drawColor = Color.Lerp(drawColor, new Color(150, 230, 255), 0.45f);
         }
 
         if (IsPossessed(npc)) {
@@ -74,6 +101,13 @@ public class NpcEffects : GlobalNPC {
     }
 
     public override void PostDraw(NPC npc, SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor) {
+        if (IsElectrocuted(npc) && Main.rand.NextBool(4)) {
+            Vector2 position = npc.Center + Main.rand.NextVector2Circular(npc.width * 0.45f, npc.height * 0.45f);
+            Vector2 velocity = Main.rand.NextVector2Circular(0.35f, 0.35f);
+            Dust spark = Dust.NewDustPerfect(position, DustID.Electric, velocity, 110, new Color(175, 235, 255), 1.05f);
+            spark.noGravity = true;
+        }
+
         if (IsPossessed(npc)) {
             if (Main.rand.NextBool(3)) {
                 Dust.NewDustPerfect(npc.Center + Main.rand.NextVector2Circular(npc.width * 0.6f, npc.height * 0.6f),

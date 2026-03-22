@@ -790,6 +790,11 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.EnemyFrozen.Description
 		DisplayName: Enemy Frozen
 	}
+
+	EnemyElectrocuted: {
+		Description: Mods.Ben10Mod.Buffs.EnemyElectrocuted.Description
+		DisplayName: Enemy Electrocuted
+	}
 }
 
 Projectiles: {
@@ -852,6 +857,7 @@ Projectiles: {
 	NRGBurstProjectile.DisplayName: N R G Burst Projectile
 	NRGRadiationProjectile.DisplayName: N R G Radiation Projectile
 	HeatBlastAuraRodProjectile.DisplayName: Heat Blast Aura Rod Projectile
+	BulwarkShieldVisualProjectile.DisplayName: Bulwark Shield Visual Projectile
 }
 
 Tiles: {
