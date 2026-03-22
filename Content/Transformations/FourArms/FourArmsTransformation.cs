@@ -44,6 +44,10 @@ public class FourArmsTransformation : Transformation {
         player.jumpSpeedBoost += 2.8f;
     }
 
+    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        player.GetModPlayer<FourArmsGroundSlamPlayer>().UpdateFourArmsMovement();
+    }
+
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<FourArms>();
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
