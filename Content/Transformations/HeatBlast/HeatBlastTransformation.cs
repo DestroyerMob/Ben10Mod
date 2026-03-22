@@ -86,11 +86,13 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override int UltimateAttack =>
             ModContent.ProjectileType<HeatBlastUltimateProjectile>();
-        public override int UltimateAttackSpeed => 6;
-        public override int UltimateShootSpeed => 0;
-        public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
-        public override bool UltimateChannel => true;
-        public override int UltimateEnergyCost => 10;
+
+        public override int  UltimateAbilityCooldown => 60 * 60;
+        public override int  UltimateAttackSpeed     => 6;
+        public override int  UltimateShootSpeed      => 0;
+        public override int  UltimateUseStyle        => ItemUseStyleID.HoldUp;
+        public override bool UltimateChannel         => true;
+        public override int  UltimateEnergyCost      => 10;
 
         public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int damage, float knockback) {

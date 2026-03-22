@@ -34,7 +34,7 @@ namespace Ben10Mod.Content.Transformations.Rath;
     public override int PrimaryShootSpeed => 10;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override int SecondaryAttack => ModContent.ProjectileType<RathPounceProjectile>();
-    public override int SecondaryAttackSpeed => 34;
+    public override int SecondaryAttackSpeed => 120;
     public override int SecondaryShootSpeed => 14;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override float SecondaryAttackModifier => 1.35f;
