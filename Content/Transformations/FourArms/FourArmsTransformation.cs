@@ -23,13 +23,14 @@ public class FourArmsTransformation : Transformation {
         "High leap and fall resistance"
     };
 
-    public override int PrimaryAttack => ModContent.ProjectileType<FistProjectile>();
+    public override int PrimaryAttack => ModContent.ProjectileType<FourArmsPunchProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 25;
 
-    public override int SecondaryAttack => ModContent.ProjectileType<FourArmsClap>();
-    public override int SecondaryAttackSpeed => 18;
-    public override int SecondaryShootSpeed => 25;
+    public override int   SecondaryAttack         => ModContent.ProjectileType<FourArmsClap>();
+    public override int   SecondaryAttackSpeed    => 36;
+    public override int   SecondaryShootSpeed     => 50;
+    public override float SecondaryAttackModifier => 0.1f;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);

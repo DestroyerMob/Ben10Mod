@@ -873,6 +873,8 @@ Projectiles: {
 	NRGLaserProjectile.DisplayName: N R G Laser Projectile
 	NRGHomingEnergyBallProjectile.DisplayName: N R G Homing Energy Ball Projectile
 	JetrayLaserProjectile.DisplayName: Jetray Laser Projectile
+	FourArmsPunchProjectile.DisplayName: Four Arms Punch Projectile
+	PunchProjectile.DisplayName: Punch Projectile
 }
 
 Tiles: {

@@ -7,5 +7,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
-public class HumungousaurPunchProjectile : PunchProjectile {
+public class FourArmsPunchProjectile : PunchProjectile {
+    protected override Color Background => Color.Black;
+    protected override Color Foreground => Color.Red;
 }

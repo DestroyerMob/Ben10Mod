@@ -1,3 +1,5 @@
+using System;
+using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -17,19 +19,20 @@ public class FourArmsClap : ModProjectile {
         Projectile.height = 8;
         Projectile.aiStyle = ProjAIStyleID.Arrow;
 
-        AIType = ProjectileID.Bullet;
-        Projectile.friendly = true;
-        Projectile.timeLeft = 360;
-        Projectile.tileCollide = false;
-        Projectile.DamageType = DamageClass.Ranged;
+        AIType                 = ProjectileID.Bullet;
+        Projectile.friendly    = true;
+        Projectile.timeLeft    = 360;
+        Projectile.knockBack   = 500f;
+        Projectile.DamageType  = ModContent.GetInstance<HeroDamage>();
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         Vector2 impactDirection = Projectile.velocity.SafeNormalize(Vector2.UnitX);
-        Vector2 burstDirection = -impactDirection;
         Vector2 impactPoint = GetImpactPoint(target, impactDirection);
 
-        SpawnImpactBurst(impactPoint, burstDirection);
+        SpawnImpactBurst(impactPoint, impactDirection);
+        Vector2 pushDirection = (target.Center - Main.player[Projectile.owner].Center).SafeNormalize(Vector2.UnitX);
+        target.velocity = pushDirection * Math.Max(target.velocity.Length(), 8f);
     }
 
     public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
