@@ -3,7 +3,6 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.FourArms;
@@ -89,6 +88,6 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     }
 
     private static bool IsGrounded(Player player) {
-        return player.velocity.Y == 0f || player.collideY;
+        return player.velocity.Y == 0f;
     }
 }

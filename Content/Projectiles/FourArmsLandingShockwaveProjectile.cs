@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Ben10Mod.Content.DamageClasses;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -20,7 +21,7 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
         Projectile.penetrate = -1;
         Projectile.usesLocalNPCImmunity = true;
         Projectile.localNPCHitCooldown = -1;
-        Projectile.DamageType = ModContent.GetInstance<Ben10Mod.Content.DamageClasses.HeroDamage>();
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
     }
 
     public override void AI() {
