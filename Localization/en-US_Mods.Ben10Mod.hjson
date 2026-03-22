@@ -800,6 +800,11 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.EnemyElectrocuted.Description
 		DisplayName: Enemy Electrocuted
 	}
+
+	EnergyOverloaded: {
+		Description: Mods.Ben10Mod.Buffs.EnergyOverloaded.Description
+		DisplayName: Energy Overloaded
+	}
 }
 
 Projectiles: {

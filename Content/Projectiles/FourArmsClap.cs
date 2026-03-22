@@ -16,22 +16,28 @@ namespace Ben10Mod.Content.Projectiles {
         public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
         public override void SetDefaults() {
-            Projectile.width = 64;
-            Projectile.height = 64;
+            Projectile.width = 8;
+            Projectile.height = 8;
             Projectile.aiStyle = ProjAIStyleID.Arrow;
 
             AIType                 = ProjectileID.Bullet;
             Projectile.friendly    = true;
-            Projectile.timeLeft    = 5;
-            Projectile.penetrate   = -1;
+            Projectile.timeLeft    = 360;
             Projectile.tileCollide = false;
             Projectile.DamageType  = DamageClass.Ranged;
         }
 
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            for (int i = 0; i < 64; i++) {
+                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.WhiteTorch, Projectile.velocity.X + Main.rand.NextFloat(-15, 15), Projectile.velocity.Y + Main.rand.NextFloat(-15, 15), Scale: 3);
+                Main.dust[dustNum].noGravity = true;
+            }
+        }
+
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
             Random random = new Random();
-            for (int i = 0; i < 30; i++) {
-                int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.WhiteTorch, 0, 0, 1, Color.White, 1);
+            for (int i = 0; i < 16; i++) {
+                int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.WhiteTorch);
                 Main.dust[dustNum].noGravity = true;
             }
         }
