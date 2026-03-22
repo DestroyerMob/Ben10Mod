@@ -9,6 +9,7 @@ namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsGroundSlamPlayer : ModPlayer {
     private const float FastFallAcceleration = 0.72f;
+    private const float FastFallMinimumSpeed = 9.5f;
     private const float FastFallSpeedCap = 17.5f;
     private const float MinimumImpactSpeed = 8f;
     private const float ShockwaveDamageMultiplier = 0.8f;
@@ -46,7 +47,7 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
             lastFallSpeed = Math.Max(lastFallSpeed, Player.velocity.Y);
 
         if (!grounded && Player.controlDown && falling) {
-            Player.velocity.Y = Math.Min(Player.velocity.Y + FastFallAcceleration, FastFallSpeedCap);
+            Player.velocity.Y = MathHelper.Clamp(Player.velocity.Y + FastFallAcceleration, FastFallMinimumSpeed, FastFallSpeedCap);
             Player.maxFallSpeed = Math.Max(Player.maxFallSpeed, FastFallSpeedCap);
             Player.fallStart = (int)(Player.position.Y / 16f);
             slamArmed = true;
@@ -88,6 +89,7 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     }
 
     private static bool IsGrounded(Player player) {
-        return player.velocity.Y == 0f;
+        return player.velocity.Y >= 0f &&
+               Collision.SolidCollision(player.position + new Vector2(0f, player.height - 2f), player.width, 8);
     }
 }
