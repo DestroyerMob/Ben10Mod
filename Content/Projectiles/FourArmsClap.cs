@@ -29,7 +29,7 @@ namespace Ben10Mod.Content.Projectiles {
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
             for (int i = 0; i < 64; i++) {
-                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.WhiteTorch, Projectile.velocity.X + Main.rand.NextFloat(-15, 15), Projectile.velocity.Y + Main.rand.NextFloat(-15, 15), Scale: 3);
+                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.WhiteTorch,  Main.rand.NextFloat(-85, 85), Main.rand.NextFloat(-85, 85), Scale: 3);
                 Main.dust[dustNum].noGravity = true;
             }
         }
