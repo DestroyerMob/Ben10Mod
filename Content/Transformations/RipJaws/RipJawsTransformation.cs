@@ -4,7 +4,6 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -87,14 +86,6 @@ public class RipJawsTransformation : Transformation {
         }
 
         player.accFlipper = true;
-    }
-
-    public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
-        Vector2 velocity, int damage, float knockback) {
-        if (omp.altAttack)
-            player.velocity += velocity * 2f;
-
-        return base.Shoot(player, omp, source, position, velocity, damage, knockback);
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

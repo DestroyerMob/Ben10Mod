@@ -28,7 +28,7 @@ public class XLR8Transformation : Transformation {
 
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
-    public override int    PrimaryAttack           => ModContent.ProjectileType<FistProjectile>();
+    public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
     public override int    PrimaryAttackSpeed      => 3;
     public override int    PrimaryShootSpeed       => 30;
     public override bool   HasUltimateAbility      => true;

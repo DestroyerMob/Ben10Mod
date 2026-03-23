@@ -14,6 +14,13 @@ public class PunchProjectile : ModProjectile {
     
     protected virtual Color Foreground => new Color(255, 214, 170, 175);
     protected virtual Color Background => new Color(196, 116, 67, 235);
+    protected virtual int SpawnDustType => DustID.Smoke;
+    protected virtual Color SpawnDustColor => new Color(255, 190, 135);
+    protected virtual int TrailDustType => DustID.Torch;
+    protected virtual Color TrailDustColor => new Color(255, 170, 95);
+    protected virtual Vector3 LightEmission => new(1f, 0.45f, 0.18f);
+    protected virtual int ImpactDustType => DustID.Smoke;
+    protected virtual Color ImpactDustColor => new Color(220, 155, 100);
     
 
     public override void SetDefaults() {
@@ -56,19 +63,19 @@ public class PunchProjectile : ModProjectile {
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
             for (int i = 0; i < 14; i++) {
-                Dust dust = Dust.NewDustPerfect(owner.MountedCenter + shoulderOffset + direction * 30f, DustID.Smoke,
-                    direction.RotatedByRandom(0.5f) * Main.rand.NextFloat(2f, 5f), 140, new Color(255, 190, 135), 1.15f);
+                Dust dust = Dust.NewDustPerfect(owner.MountedCenter + shoulderOffset + direction * 30f, SpawnDustType,
+                    direction.RotatedByRandom(0.5f) * Main.rand.NextFloat(2f, 5f), 140, SpawnDustColor, 1.15f);
                 dust.noGravity = true;
             }
         }
 
         if (Main.rand.NextBool(2)) {
-            Dust trailDust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(10f, 10f), DustID.Torch,
-                -direction * Main.rand.NextFloat(0.4f, 1.5f), 120, new Color(255, 170, 95), 1f + Projectile.scale * 0.08f);
+            Dust trailDust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(10f, 10f), TrailDustType,
+                -direction * Main.rand.NextFloat(0.4f, 1.5f), 120, TrailDustColor, 1f + Projectile.scale * 0.08f);
             trailDust.noGravity = true;
         }
 
-        Lighting.AddLight(Projectile.Center, new Vector3(1f, 0.45f, 0.18f) * 0.9f);
+        Lighting.AddLight(Projectile.Center, LightEmission * 0.9f);
     }
 
     public override bool PreDraw(ref Color lightColor) {
@@ -110,8 +117,8 @@ public class PunchProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         for (int i = 0; i < 16; i++) {
-            Dust dust = Dust.NewDustPerfect(target.Center, DustID.Smoke,
-                Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2f, 5.5f), 130, new Color(220, 155, 100), 1.2f);
+            Dust dust = Dust.NewDustPerfect(target.Center, ImpactDustType,
+                Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2f, 5.5f), 130, ImpactDustColor, 1.2f);
             dust.noGravity = true;
         }
     }
