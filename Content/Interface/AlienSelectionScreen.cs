@@ -238,6 +238,56 @@ namespace Ben10Mod.Content.Interface
 
         private string currentlySelectedId = "";
 
+        private static Asset<Texture2D> GetSafeTransformationIcon(Transformation trans)
+        {
+            try
+            {
+                Asset<Texture2D> icon = trans?.GetTransformationIcon();
+                if (icon != null)
+                    return icon;
+            }
+            catch
+            {
+            }
+
+            return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
+        }
+
+        private static string GetSafeTransformationName(Transformation trans)
+        {
+            return string.IsNullOrWhiteSpace(trans?.TransformationName) ? "Unknown Alien" : trans.TransformationName;
+        }
+
+        private static string GetSafeTransformationDescription(Transformation trans, OmnitrixPlayer player)
+        {
+            string description = null;
+
+            try
+            {
+                description = trans?.GetDescription(player);
+            }
+            catch
+            {
+            }
+
+            return string.IsNullOrWhiteSpace(description) ? "No description available." : description;
+        }
+
+        private static IReadOnlyList<string> GetSafeTransformationAbilities(Transformation trans, OmnitrixPlayer player)
+        {
+            try
+            {
+                List<string> abilities = trans?.GetAbilities(player);
+                if (abilities != null && abilities.Count > 0)
+                    return abilities;
+            }
+            catch
+            {
+            }
+
+            return new[] { "No abilities listed." };
+        }
+
         public override void OnInitialize()
         {
             mainPanel = new UIPanel();
@@ -385,7 +435,7 @@ namespace Ben10Mod.Content.Interface
             {
                 string id = i < player.transformationSlots.Length ? player.transformationSlots[i] : string.Empty;
                 var trans = TransformationLoader.Get(id);
-                rosterSlots[i].SetImage(trans?.GetTransformationIcon() ?? ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
+                rosterSlots[i].SetImage(GetSafeTransformationIcon(trans));
             }
 
             unlockedGrid.Clear();
@@ -396,7 +446,7 @@ namespace Ben10Mod.Content.Interface
                 var trans = TransformationLoader.Get(id);
                 if (trans == null) continue;
 
-                var icon = trans.GetTransformationIcon();
+                var icon = GetSafeTransformationIcon(trans);
                 var slot = new UIElement();
                 slot.Width.Set(92f, 0f);
                 slot.Height.Set(92f, 0f);
@@ -438,8 +488,9 @@ namespace Ben10Mod.Content.Interface
                 return;
             }
 
-            nameText.SetText(trans.TransformationName);
-            descriptionText.SetText(trans.Description);
+            OmnitrixPlayer player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            nameText.SetText(GetSafeTransformationName(trans));
+            descriptionText.SetText(GetSafeTransformationDescription(trans, player));
 
             // Give wrapped descriptions enough room before the abilities section starts.
             var descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 72f;
@@ -448,9 +499,9 @@ namespace Ben10Mod.Content.Interface
             abilityList.Top.Set(abilitiesTop + 30f, 0f);
 
             abilityList.Clear();
-            var abilities = trans.Abilities;
+            var abilities = GetSafeTransformationAbilities(trans, player);
             foreach (var ability in abilities)
-                abilityList.Add(new UIText("• " + ability, 0.95f));
+                abilityList.Add(new UIText("• " + (ability ?? "Unknown ability"), 0.95f));
         }
 
         private void UpdateInfoPanelFromTransformationId(string transformationId)
