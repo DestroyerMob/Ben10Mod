@@ -1540,8 +1540,10 @@ namespace Ben10Mod {
         }
 
         public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
-            if (Main.netMode == NetmodeID.Server)
+            if (Main.netMode == NetmodeID.Server) {
+                SyncTransformationState(toWho: toWho, ignoreClient: fromWho);
                 SyncAbsorbedMaterial(showEffects: false, toWho: toWho, ignoreClient: fromWho);
+            }
         }
 
         private void SetAbsorbedMaterial(int itemType, int timeLeft, bool showEffects, MaterialAbsorptionProfile previousProfile = null,
@@ -1639,6 +1641,7 @@ namespace Ben10Mod {
             }
 
             if (sync && Main.netMode == NetmodeID.Server) {
+                SyncTransformationState(toWho: Player.whoAmI);
                 ModPacket packet = Mod.GetPacket();
                 packet.Write((byte)Ben10Mod.MessageType.UnlockTransformation);
                 packet.Write((byte)Player.whoAmI);
@@ -1669,6 +1672,7 @@ namespace Ben10Mod {
             }
 
             if (sync && Main.netMode == NetmodeID.Server) {
+                SyncTransformationState(toWho: Player.whoAmI);
                 ModPacket packet = Mod.GetPacket();
                 packet.Write((byte)Ben10Mod.MessageType.RemoveTransformation);
                 packet.Write((byte)Player.whoAmI);
@@ -1677,6 +1681,33 @@ namespace Ben10Mod {
             }
 
             return true;
+        }
+
+        private void SyncTransformationState(int toWho = -1, int ignoreClient = -1) {
+            if (Main.netMode != NetmodeID.Server)
+                return;
+
+            if (!Main.dedServ && Player.whoAmI == Main.myPlayer) {
+                Player localPlayer = Main.LocalPlayer;
+                if (localPlayer != null && localPlayer.active) {
+                    OmnitrixPlayer localOmnitrixPlayer = localPlayer.GetModPlayer<OmnitrixPlayer>();
+                    if (!ReferenceEquals(localOmnitrixPlayer, this))
+                        localOmnitrixPlayer.ApplyTransformationStateSync((string[])transformationSlots.Clone(), unlockedTransformations.ToArray());
+                }
+            }
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.SyncTransformationState);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write((byte)transformationSlots.Length);
+            for (int i = 0; i < transformationSlots.Length; i++)
+                packet.Write(transformationSlots[i] ?? string.Empty);
+
+            packet.Write((ushort)unlockedTransformations.Count);
+            for (int i = 0; i < unlockedTransformations.Count; i++)
+                packet.Write(unlockedTransformations[i] ?? string.Empty);
+
+            packet.Send(toWho, ignoreClient);
         }
 
         private void UpdateEventTransformationUnlocks() {

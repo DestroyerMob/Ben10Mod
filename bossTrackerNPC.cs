@@ -12,6 +12,7 @@ namespace Ben10Mod {
         // Tracks per-player contribution on each boss instance so unlock rewards only go to participants.
         private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
         private static readonly Dictionary<string, int[]> EncounterDamageByPlayer = new();
+        private static readonly Dictionary<string, bool[]> EncounterParticipantsByPlayer = new();
 
         private static bool CountsAsBoss(NPC npc) {
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
@@ -43,6 +44,13 @@ namespace Ben10Mod {
             }
 
             encounterDamage[playerIndex] += damage;
+
+            if (!EncounterParticipantsByPlayer.TryGetValue(encounterKey, out bool[] encounterParticipants)) {
+                encounterParticipants = new bool[Main.maxPlayers];
+                EncounterParticipantsByPlayer[encounterKey] = encounterParticipants;
+            }
+
+            encounterParticipants[playerIndex] = true;
         }
 
 
@@ -76,14 +84,16 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
             if (!CountsAsTrackedEncounter(npc)) return;
 
+            CaptureEncounterParticipants(npc);
+
             if (!IsEncounterComplete(npc))
                 return;
 
             string transformationId = GetTransformationIdForBoss(npc.type);
-            int[] contributionByPlayer = GetContributionByPlayer(npc);
+            bool[] participatingPlayers = GetParticipatingPlayers(npc);
 
             for (int i = 0; i < Main.maxPlayers; i++) {
-                if (contributionByPlayer[i] <= 0) continue;
+                if (!participatingPlayers[i]) continue;
 
                 Player player = Main.player[i];
                 if (!player.active) continue;
@@ -127,19 +137,61 @@ namespace Ben10Mod {
             return true;
         }
 
-        private int[] GetContributionByPlayer(NPC npc) {
+        private static void CaptureEncounterParticipants(NPC npc) {
             string encounterKey = GetEncounterContributionKey(npc);
-            if (!string.IsNullOrEmpty(encounterKey) &&
-                EncounterDamageByPlayer.TryGetValue(encounterKey, out int[] encounterDamage))
-                return encounterDamage;
+            if (string.IsNullOrEmpty(encounterKey))
+                return;
 
-            return _damageByPlayer;
+            if (!EncounterParticipantsByPlayer.TryGetValue(encounterKey, out bool[] encounterParticipants)) {
+                encounterParticipants = new bool[Main.maxPlayers];
+                EncounterParticipantsByPlayer[encounterKey] = encounterParticipants;
+            }
+
+            for (int i = 0; i < Main.maxPlayers; i++) {
+                if (npc.playerInteraction[i])
+                    encounterParticipants[i] = true;
+            }
+
+            if (npc.lastInteraction >= 0 && npc.lastInteraction < Main.maxPlayers)
+                encounterParticipants[npc.lastInteraction] = true;
+        }
+
+        private bool[] GetParticipatingPlayers(NPC npc) {
+            bool[] participatingPlayers = new bool[Main.maxPlayers];
+            string encounterKey = GetEncounterContributionKey(npc);
+            if (!string.IsNullOrEmpty(encounterKey)) {
+                if (EncounterParticipantsByPlayer.TryGetValue(encounterKey, out bool[] encounterParticipants)) {
+                    for (int i = 0; i < Main.maxPlayers; i++)
+                        participatingPlayers[i] = encounterParticipants[i];
+                }
+
+                if (EncounterDamageByPlayer.TryGetValue(encounterKey, out int[] encounterDamage)) {
+                    for (int i = 0; i < Main.maxPlayers; i++) {
+                        if (encounterDamage[i] > 0)
+                            participatingPlayers[i] = true;
+                    }
+                }
+
+                return participatingPlayers;
+            }
+
+            for (int i = 0; i < Main.maxPlayers; i++) {
+                if (npc.playerInteraction[i] || _damageByPlayer[i] > 0)
+                    participatingPlayers[i] = true;
+            }
+
+            if (npc.lastInteraction >= 0 && npc.lastInteraction < Main.maxPlayers)
+                participatingPlayers[npc.lastInteraction] = true;
+
+            return participatingPlayers;
         }
 
         private static void ClearEncounterContribution(NPC npc) {
             string encounterKey = GetEncounterContributionKey(npc);
-            if (!string.IsNullOrEmpty(encounterKey))
+            if (!string.IsNullOrEmpty(encounterKey)) {
                 EncounterDamageByPlayer.Remove(encounterKey);
+                EncounterParticipantsByPlayer.Remove(encounterKey);
+            }
         }
 
         private static string GetTransformationIdForBoss(int npcType) {

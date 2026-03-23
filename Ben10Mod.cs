@@ -70,6 +70,7 @@ namespace Ben10Mod {
 			RequestUnlockTransformation,
 			RequestRemoveTransformation,
 			RequestSyncTransformationState,
+			SyncTransformationState,
 			RequestAbsorbMaterial,
 			AbsorbMaterialFeedback,
 			SyncAbsorbedMaterial,
@@ -167,6 +168,33 @@ namespace Ben10Mod {
 							return;
 
 						Player player = Main.player[whoAmI];
+						if (!player.active)
+							return;
+
+						int slotCount = reader.ReadByte();
+						string[] slots = new string[slotCount];
+						for (int i = 0; i < slotCount; i++)
+							slots[i] = reader.ReadString();
+
+						int unlockedCount = reader.ReadUInt16();
+						string[] unlocked = new string[unlockedCount];
+						for (int i = 0; i < unlockedCount; i++)
+							unlocked[i] = reader.ReadString();
+
+						OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+						omp.ApplyTransformationStateSync(slots, unlocked);
+						omp.SyncPlayer(whoAmI, -1, false);
+						break;
+					}
+					case MessageType.SyncTransformationState: {
+						if (Main.netMode != NetmodeID.MultiplayerClient)
+							return;
+
+						int playerIndex = reader.ReadByte();
+						if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+							return;
+
+						Player player = Main.player[playerIndex];
 						if (!player.active)
 							return;
 
