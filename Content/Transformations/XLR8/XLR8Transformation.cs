@@ -26,6 +26,7 @@ public class XLR8Transformation : Transformation {
         "Time-slowing ultimate field"
     };
 
+    public override string PrimaryAttackName => "Speed Strike";
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();

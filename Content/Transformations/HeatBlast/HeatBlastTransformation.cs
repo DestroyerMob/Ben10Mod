@@ -43,6 +43,11 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             "Flame aura rod sentry",
             "Large fireball attack - ultimate charged attack"
         };
+
+        public override string PrimaryAttackName => "Flame Jet";
+        public override string SecondaryAttackName => "Fire Bomb";
+        public override string PrimaryAbilityAttackName => "Flare Rod";
+        public override string UltimateAttackName => "Fireball";
         
         public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
             player.GetDamage<HeroDamage>() += 0.1f;

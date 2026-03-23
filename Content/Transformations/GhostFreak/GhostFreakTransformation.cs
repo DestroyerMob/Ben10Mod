@@ -26,6 +26,9 @@ public class GhostFreakTransformation : Transformation {
         "Enemy possession"
     };
 
+    public override string PrimaryAttackName => "Ecto Blast";
+    public override string SecondaryAttackName => "Ecto Blast";
+    public override string UltimateAttackName => "Possession";
     public override int PrimaryAttack => ModContent.ProjectileType<GhostFreakProjectile>();
     public override int PrimaryAttackSpeed => 14;
     public override int PrimaryShootSpeed => 12;

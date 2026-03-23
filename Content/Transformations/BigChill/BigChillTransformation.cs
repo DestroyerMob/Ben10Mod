@@ -37,6 +37,9 @@ public class BigChillTransformation : Transformation {
         "Phase-through freeze strike"
     };
 
+    public override string PrimaryAttackName => "Ice Volley";
+    public override string SecondaryAttackName => "Frost Breath";
+    public override string UltimateAttackName => "Phase Strike";
     public override int PrimaryAttack => ModContent.ProjectileType<BigChillProjectile>();
     public override int PrimaryAttackSpeed => 25;
     public override int PrimaryShootSpeed => 20;

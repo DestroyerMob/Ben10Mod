@@ -29,6 +29,8 @@ namespace Ben10Mod.Content.Transformations.Rath;
         "Battle rage"
     };
 
+    public override string PrimaryAttackName => "Claw Slash";
+    public override string SecondaryAttackName => "Pounce";
     public override int PrimaryAttack => ModContent.ProjectileType<RathClawProjectile>();
     public override int PrimaryAttackSpeed => 20;
     public override int PrimaryShootSpeed => 10;

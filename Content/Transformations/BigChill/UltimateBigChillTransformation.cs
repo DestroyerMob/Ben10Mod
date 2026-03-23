@@ -28,6 +28,8 @@ public class UltimateBigChillTransformation : BigChillTransformation {
         "Phase-through freeze strike"
     };
 
+    public override string PrimaryAttackName => "Ultimate Ice Volley";
+    public override string SecondaryAttackName => "Ultimate Frost Breath";
     public override float PrimaryAttackModifier => 1.25f;
     public override float SecondaryAttackModifier => 0.45f;
     public override int UltimateAbilityCost => 65;

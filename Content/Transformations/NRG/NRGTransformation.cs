@@ -38,6 +38,9 @@ public class NRGTransformation : Transformation {
         "Homing energy spheres"
     };
 
+    public override string PrimaryAttackName => "Containment Beam";
+    public override string SecondaryAttackName => "Radiant Seeker";
+    public override string PrimaryAbilityAttackName => "Containment Burst";
     public override int PrimaryAttack => ModContent.ProjectileType<NRGLaserProjectile>();
     public override int PrimaryAttackSpeed => 28;
     public override int PrimaryShootSpeed => 18;
@@ -56,12 +59,10 @@ public class NRGTransformation : Transformation {
     public override float PrimaryAbilityAttackModifier => ContainmentBurstDamageMultiplier;
     public override int PrimaryAbilityAttackEnergyCost => ContainmentBurstEnergyCost;
     public override bool PrimaryAbilityAttackSingleUse => true;
-    public override string PrimaryAbilityAttackDisplayName => "Containment Burst";
     public override bool HasUltimateAbility => true;
     public override int UltimateAbilityCost => UnboundCoreCost;
     public override int UltimateAbilityDuration => UnboundCoreDuration;
     public override int UltimateAbilityCooldown => UnboundCoreCooldown;
-    public override string SecondaryAttackDisplayName => "Radiant Seeker";
     public override int GetMoveSetIndex(OmnitrixPlayer omp) => omp.IsUltimateAbilityActive ? 1 : 0;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
@@ -97,7 +98,7 @@ public class NRGTransformation : Transformation {
         return CreateMoveSetProfiles(
             CreatePrimaryAttackProfile(),
             new TransformationAttackProfile {
-                DisplayName = PrimaryAttackDisplayName,
+                DisplayName = "Radiant Beam",
                 ProjectileType = PrimaryAttack,
                 DamageMultiplier = PrimaryAttackModifier,
                 UseTime = UnboundPrimaryAttackSpeed,
