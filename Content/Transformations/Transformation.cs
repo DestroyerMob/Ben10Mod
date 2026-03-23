@@ -126,6 +126,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
         public virtual string Description => "A mysterious alien from the Omnitrix database.";
         public virtual List<string> Abilities => new List<string> { "Unknown abilities" };
+        public virtual IReadOnlyList<TransformationPaletteChannel> PaletteChannels => Array.Empty<TransformationPaletteChannel>();
         public virtual string PrimaryAttackName => null;
         public virtual string SecondaryAttackName => null;
         public virtual string PrimaryAbilityAttackName => null;
@@ -215,6 +216,24 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetDisplayName(OmnitrixPlayer omp) => TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
+        public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) => PaletteChannels;
+        public virtual bool SupportsPaletteCustomization(OmnitrixPlayer omp) => GetPaletteChannels(omp).Count > 0;
+        public virtual TransformationPaletteChannel GetPaletteChannel(string channelId, OmnitrixPlayer omp) {
+            if (string.IsNullOrWhiteSpace(channelId))
+                return null;
+
+            IReadOnlyList<TransformationPaletteChannel> channels = GetPaletteChannels(omp);
+            for (int i = 0; i < channels.Count; i++) {
+                TransformationPaletteChannel channel = channels[i];
+                if (channel == null || !channel.IsValid)
+                    continue;
+
+                if (string.Equals(channel.Id, channelId, StringComparison.OrdinalIgnoreCase))
+                    return channel;
+            }
+
+            return null;
+        }
         public virtual int GetMoveSetIndex(OmnitrixPlayer omp) => 0;
         public virtual bool HasPrimaryAbilityActionForState(OmnitrixPlayer omp)
             => HasPrimaryAbilityForState(omp) || HasPrimaryAbilityAttackForState(omp);

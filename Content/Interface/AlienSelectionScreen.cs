@@ -42,6 +42,7 @@ namespace Ben10Mod.Content.Interface
     {
         internal UserInterface MyInterface;
         internal AlienSelectionScreen AS;
+        internal TransformationPaletteScreen TPS;
         private GameTime _lastUpdateUiGameTime;
 
         public override void Load()
@@ -51,10 +52,15 @@ namespace Ben10Mod.Content.Interface
                 MyInterface = new UserInterface();
                 AS = new AlienSelectionScreen();
                 AS.Activate();
+                TPS = new TransformationPaletteScreen();
+                TPS.Activate();
             }
         }
 
-        public override void Unload() => AS = null;
+        public override void Unload() {
+            AS = null;
+            TPS = null;
+        }
 
         public override void UpdateUI(GameTime gameTime)
         {
@@ -222,6 +228,7 @@ namespace Ben10Mod.Content.Interface
         }
 
         internal void ShowMyUI() => MyInterface?.SetState(AS);
+        internal void ShowPaletteUI() => MyInterface?.SetState(TPS);
         internal void HideMyUI() => MyInterface?.SetState(null);
     }
 

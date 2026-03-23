@@ -64,16 +64,18 @@ namespace Ben10Mod {
 			TransformationBranchRegistry.Clear();
 		}
 
-		public enum MessageType : byte {
-			UnlockTransformation,
-			RemoveTransformation,
-			RequestUnlockTransformation,
-			RequestRemoveTransformation,
-			RequestSyncTransformationState,
-			SyncTransformationState,
-			RequestAbsorbMaterial,
-			AbsorbMaterialFeedback,
-			SyncAbsorbedMaterial,
+			public enum MessageType : byte {
+				UnlockTransformation,
+				RemoveTransformation,
+				RequestUnlockTransformation,
+				RequestRemoveTransformation,
+				RequestSyncTransformationState,
+				SyncTransformationState,
+				RequestSyncTransformationPaletteState,
+				SyncTransformationPaletteState,
+				RequestAbsorbMaterial,
+				AbsorbMaterialFeedback,
+				SyncAbsorbedMaterial,
 			RelayDodgeVisual,
 			ExecuteBuzzShockTeleport,
 			RequestGhostFreakPossession,
@@ -189,9 +191,9 @@ namespace Ben10Mod {
 						omp.SyncTransformationState(toWho: whoAmI);
 						break;
 					}
-					case MessageType.SyncTransformationState: {
-						if (Main.netMode != NetmodeID.MultiplayerClient)
-							return;
+						case MessageType.SyncTransformationState: {
+							if (Main.netMode != NetmodeID.MultiplayerClient)
+								return;
 
 						int playerIndex = reader.ReadByte();
 						if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
@@ -211,12 +213,45 @@ namespace Ben10Mod {
 						for (int i = 0; i < unlockedCount; i++)
 							unlocked[i] = reader.ReadString();
 
-						player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationStateSync(slots, unlocked);
-						break;
-					}
-					case MessageType.RequestAbsorbMaterial: {
-						if (Main.netMode != NetmodeID.Server)
-							return;
+							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationStateSync(slots, unlocked);
+							break;
+						}
+						case MessageType.RequestSyncTransformationPaletteState: {
+							if (Main.netMode != NetmodeID.Server)
+								return;
+
+							if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+								return;
+
+							Player player = Main.player[whoAmI];
+							if (!player.active)
+								return;
+
+							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
+							OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+							omp.ApplyTransformationPaletteStateSync(entries);
+							omp.SyncTransformationPaletteState();
+							break;
+						}
+						case MessageType.SyncTransformationPaletteState: {
+							if (Main.netMode != NetmodeID.MultiplayerClient)
+								return;
+
+							int playerIndex = reader.ReadByte();
+							if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+								return;
+
+							Player player = Main.player[playerIndex];
+							if (!player.active)
+								return;
+
+							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
+							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries);
+							break;
+						}
+						case MessageType.RequestAbsorbMaterial: {
+							if (Main.netMode != NetmodeID.Server)
+								return;
 
 					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
 						return;
