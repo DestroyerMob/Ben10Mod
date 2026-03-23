@@ -69,6 +69,7 @@ namespace Ben10Mod {
 			RemoveTransformation,
 			RequestUnlockTransformation,
 			RequestRemoveTransformation,
+			RequestSyncTransformationState,
 			RequestAbsorbMaterial,
 			AbsorbMaterialFeedback,
 			SyncAbsorbedMaterial,
@@ -138,9 +139,9 @@ namespace Ben10Mod {
 						.UnlockTransformation(transformation.FullID, sync: true, showEffects: false);
 					break;
 				}
-				case MessageType.RequestRemoveTransformation: {
-					if (Main.netMode != NetmodeID.Server)
-						return;
+					case MessageType.RequestRemoveTransformation: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
 
 					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
 						return;
@@ -154,13 +155,37 @@ namespace Ben10Mod {
 					if (transformation == null)
 						return;
 
-					player.GetModPlayer<OmnitrixPlayer>()
-						.RemoveTransformation(transformation.FullID, sync: true, showEffects: false);
-					break;
-				}
-				case MessageType.RequestAbsorbMaterial: {
-					if (Main.netMode != NetmodeID.Server)
-						return;
+						player.GetModPlayer<OmnitrixPlayer>()
+							.RemoveTransformation(transformation.FullID, sync: true, showEffects: false);
+						break;
+					}
+					case MessageType.RequestSyncTransformationState: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
+
+						if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+							return;
+
+						Player player = Main.player[whoAmI];
+						if (!player.active)
+							return;
+
+						int slotCount = reader.ReadByte();
+						string[] slots = new string[slotCount];
+						for (int i = 0; i < slotCount; i++)
+							slots[i] = reader.ReadString();
+
+						int unlockedCount = reader.ReadUInt16();
+						string[] unlocked = new string[unlockedCount];
+						for (int i = 0; i < unlockedCount; i++)
+							unlocked[i] = reader.ReadString();
+
+						player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationStateSync(slots, unlocked);
+						break;
+					}
+					case MessageType.RequestAbsorbMaterial: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
 
 					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
 						return;

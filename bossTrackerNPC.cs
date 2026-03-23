@@ -110,34 +110,21 @@ namespace Ben10Mod {
             };
         }
 
-        private static int CountActiveNpcs(params int[] npcTypes) {
-            int count = 0;
+        private static bool IsEncounterComplete(NPC npc) {
+            string encounterKey = GetEncounterContributionKey(npc);
+            if (string.IsNullOrEmpty(encounterKey))
+                return true;
 
             for (int i = 0; i < Main.npc.Length; i++) {
                 NPC candidate = Main.npc[i];
-                if (!candidate.active)
+                if (!candidate.active || candidate.whoAmI == npc.whoAmI)
                     continue;
 
-                for (int j = 0; j < npcTypes.Length; j++) {
-                    if (candidate.type != npcTypes[j])
-                        continue;
-
-                    count++;
-                    break;
-                }
+                if (GetEncounterContributionKey(candidate) == encounterKey)
+                    return false;
             }
 
-            return count;
-        }
-
-        private static bool IsEncounterComplete(NPC npc) {
-            return GetEncounterContributionKey(npc) switch {
-                "EaterOfWorlds" => CountActiveNpcs(NPCID.EaterofWorldsHead, NPCID.EaterofWorldsBody, NPCID.EaterofWorldsTail) <= 0,
-                "Twins" => CountActiveNpcs(NPCID.Retinazer, NPCID.Spazmatism) <= 0,
-                "Destroyer" => CountActiveNpcs(NPCID.TheDestroyer, NPCID.TheDestroyerBody, NPCID.TheDestroyerTail) <= 0,
-                "Golem" => CountActiveNpcs(NPCID.Golem, NPCID.GolemHead, NPCID.GolemHeadFree, NPCID.GolemFistLeft, NPCID.GolemFistRight) <= 0,
-                _ => true
-            };
+            return true;
         }
 
         private int[] GetContributionByPlayer(NPC npc) {

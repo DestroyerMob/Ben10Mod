@@ -1218,7 +1218,65 @@ namespace Ben10Mod {
             if (!isTransformed)
                 currentTransformationId = "";
 
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer)
+                SyncTransformationStateToServer();
+
             CurrentTransformation?.OnEnterWorld(Player, this);
+        }
+
+        public void SyncTransformationStateToServer() {
+            if (Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI != Main.myPlayer)
+                return;
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.RequestSyncTransformationState);
+            packet.Write((byte)transformationSlots.Length);
+            for (int i = 0; i < transformationSlots.Length; i++)
+                packet.Write(transformationSlots[i] ?? string.Empty);
+
+            packet.Write((ushort)unlockedTransformations.Count);
+            for (int i = 0; i < unlockedTransformations.Count; i++)
+                packet.Write(unlockedTransformations[i] ?? string.Empty);
+
+            packet.Send();
+        }
+
+        public void ApplyTransformationStateSync(string[] slots, string[] unlocked) {
+            List<string> normalizedUnlocks = new();
+
+            if (unlocked != null) {
+                for (int i = 0; i < unlocked.Length; i++) {
+                    Transformation transformation = TransformationLoader.Resolve(unlocked[i]);
+                    if (transformation == null || normalizedUnlocks.Contains(transformation.FullID))
+                        continue;
+
+                    normalizedUnlocks.Add(transformation.FullID);
+                }
+            }
+
+            if (!normalizedUnlocks.Contains("Ben10Mod:HeatBlast"))
+                normalizedUnlocks.Insert(0, "Ben10Mod:HeatBlast");
+
+            unlockedTransformations.Clear();
+            unlockedTransformations.AddRange(normalizedUnlocks);
+
+            int slotCount = transformationSlots?.Length ?? 5;
+            string[] normalizedSlots = new string[slotCount];
+
+            if (slots != null) {
+                for (int i = 0; i < normalizedSlots.Length && i < slots.Length; i++) {
+                    Transformation transformation = TransformationLoader.Resolve(slots[i]);
+                    if (transformation == null || !unlockedTransformations.Contains(transformation.FullID))
+                        continue;
+
+                    normalizedSlots[i] = transformation.FullID;
+                }
+            }
+
+            transformationSlots = normalizedSlots;
+
+            if (!string.IsNullOrEmpty(currentTransformationId) && !unlockedTransformations.Contains(currentTransformationId))
+                currentTransformationId = "";
         }
 
         public void BeginPossession(int targetIndex, Vector2 returnPosition, int duration = PossessionDuration,

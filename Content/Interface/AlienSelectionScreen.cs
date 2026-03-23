@@ -360,6 +360,7 @@ namespace Ben10Mod.Content.Interface
             if (player.unlockedTransformations.Contains(currentlySelectedId))
             {
                 player.transformationSlots[slotIndex] = currentlySelectedId;
+                player.SyncTransformationStateToServer();
                 currentlySelectedId = "";
             }
         }
@@ -368,6 +369,7 @@ namespace Ben10Mod.Content.Interface
         {
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
             player.transformationSlots[slotIndex] = "";
+            player.SyncTransformationStateToServer();
         }
 
         public override void Update(GameTime gameTime)
