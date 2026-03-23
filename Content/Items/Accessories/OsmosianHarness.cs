@@ -18,16 +18,11 @@ public class OsmosianHarness : ModItem, IHeroAlterationAccessory {
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
         tooltips.Add(new TooltipLine(Mod, "OsmosianAbility", "Grants Osmosian material absorption"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianRestriction", "Cannot be equipped with an Omnitrix"));
         tooltips.Add(new TooltipLine(Mod, "OsmosianSlot", "Fits in the DNA Alteration slot"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         player.GetModPlayer<OmnitrixPlayer>().osmosianEquipped = true;
-    }
-
-    public override bool CanAccessoryBeEquippedWith(Item equippedItem, Item incomingItem, Player player) {
-        return equippedItem.ModItem is not Omnitrix && incomingItem.ModItem is not Omnitrix;
     }
 
     public override void AddRecipes() {

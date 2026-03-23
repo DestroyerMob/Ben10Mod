@@ -114,10 +114,6 @@ namespace Ben10Mod.Content.Items.Accessories
             }
         }
 
-        public override bool CanAccessoryBeEquippedWith(Item equippedItem, Item incomingItem, Player player) {
-            return equippedItem.ModItem is not OsmosianHarness && incomingItem.ModItem is not OsmosianHarness;
-        }
-
         public override void UpdateInventory(Player player)
         {
             base.UpdateInventory(player);
