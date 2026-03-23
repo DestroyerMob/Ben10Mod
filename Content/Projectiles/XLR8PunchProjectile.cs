@@ -13,4 +13,7 @@ public class XLR8PunchProjectile : PunchProjectile {
     protected override Vector3 LightEmission => new(0.08f, 0.28f, 0.75f);
     protected override int ImpactDustType => DustID.BlueCrystalShard;
     protected override Color ImpactDustColor => new(135, 210, 255);
+    protected override int SpawnDustBurstCount => 4;
+    protected override int TrailDustChance => 5;
+    protected override int ImpactDustBurstCount => 7;
 }
