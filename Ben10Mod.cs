@@ -67,7 +67,10 @@ namespace Ben10Mod {
 		public enum MessageType : byte {
 			UnlockTransformation,
 			RemoveTransformation,
+			RequestUnlockTransformation,
+			RequestRemoveTransformation,
 			RequestAbsorbMaterial,
+			AbsorbMaterialFeedback,
 			SyncAbsorbedMaterial,
 			RelayDodgeVisual,
 			ExecuteBuzzShockTeleport,
@@ -115,6 +118,46 @@ namespace Ben10Mod {
 						showEffects: playerIndex == Main.myPlayer);
 					break;
 				}
+				case MessageType.RequestUnlockTransformation: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[whoAmI];
+					if (!player.active)
+						return;
+
+					string transformationId = reader.ReadString();
+					Transformation transformation = TransformationLoader.Resolve(transformationId);
+					if (transformation == null)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>()
+						.UnlockTransformation(transformation.FullID, sync: true, showEffects: false);
+					break;
+				}
+				case MessageType.RequestRemoveTransformation: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[whoAmI];
+					if (!player.active)
+						return;
+
+					string transformationId = reader.ReadString();
+					Transformation transformation = TransformationLoader.Resolve(transformationId);
+					if (transformation == null)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>()
+						.RemoveTransformation(transformation.FullID, sync: true, showEffects: false);
+					break;
+				}
 				case MessageType.RequestAbsorbMaterial: {
 					if (Main.netMode != NetmodeID.Server)
 						return;
@@ -127,6 +170,18 @@ namespace Ben10Mod {
 						return;
 
 					player.GetModPlayer<OmnitrixPlayer>().HandleAbsorbMaterialRequest();
+					break;
+				}
+				case MessageType.AbsorbMaterialFeedback: {
+					if (Main.netMode != NetmodeID.MultiplayerClient)
+						return;
+
+					string message = reader.ReadString();
+					byte r = reader.ReadByte();
+					byte g = reader.ReadByte();
+					byte b = reader.ReadByte();
+
+					Main.NewText(message, new Color(r, g, b));
 					break;
 				}
 				case MessageType.SyncAbsorbedMaterial: {

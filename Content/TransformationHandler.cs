@@ -130,7 +130,28 @@ namespace Ben10Mod.Content
 
         public static void AddTransformation(Player player, string transformationId)
         {
+            if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer) {
+                ModPacket packet = ModContent.GetInstance<Ben10Mod>().GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.RequestUnlockTransformation);
+                packet.Write(transformationId);
+                packet.Send();
+                return;
+            }
+
             player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId);
+        }
+
+        public static void RemoveTransformation(Player player, string transformationId)
+        {
+            if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer) {
+                ModPacket packet = ModContent.GetInstance<Ben10Mod>().GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.RequestRemoveTransformation);
+                packet.Write(transformationId);
+                packet.Send();
+                return;
+            }
+
+            player.GetModPlayer<OmnitrixPlayer>().RemoveTransformation(transformationId);
         }
 
         public static bool HasTransformation(Player player, string transformationId)

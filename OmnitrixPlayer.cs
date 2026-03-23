@@ -1360,13 +1360,13 @@ namespace Ben10Mod {
         private void TryAbsorbHeldMaterial() {
             if (!osmosianEquipped) {
                 if (Player.whoAmI == Main.myPlayer)
-                    Main.NewText("You need an Osmosian Harness equipped to absorb materials.", new Color(230, 120, 120));
+                    ShowAbsorptionFeedback("You need an Osmosian Harness equipped to absorb materials.", new Color(230, 120, 120));
                 return;
             }
 
             if (omnitrixEquipped) {
                 if (Player.whoAmI == Main.myPlayer)
-                    Main.NewText("Osmosian absorption cannot be used while an Omnitrix is equipped.", new Color(230, 120, 120));
+                    ShowAbsorptionFeedback("Osmosian absorption cannot be used while an Omnitrix is equipped.", new Color(230, 120, 120));
                 return;
             }
 
@@ -1401,7 +1401,7 @@ namespace Ben10Mod {
                 if (absorbedMaterialTime > 0)
                     ClearAbsorbedMaterial();
                 else
-                    Main.NewText("That material cannot be absorbed.", new Color(230, 120, 120));
+                    ShowAbsorptionFeedback("That material cannot be absorbed.", new Color(230, 120, 120));
                 return;
             }
 
@@ -1409,7 +1409,7 @@ namespace Ben10Mod {
             int durationTicks = Math.Max(60, (int)Math.Round(profile.DurationTicks * absorptionDurationMultiplier));
 
             if (heldItem.stack < consumeAmount) {
-                Main.NewText($"You need {consumeAmount} {profile.DisplayName} to absorb it.", new Color(255, 210, 110));
+                ShowAbsorptionFeedback($"You need {consumeAmount} {profile.DisplayName} to absorb it.", new Color(255, 210, 110));
                 return;
             }
 
@@ -1501,6 +1501,25 @@ namespace Ben10Mod {
             packet.Write(absorbedMaterialTime);
             packet.Write(showEffects);
             packet.Send(toWho, ignoreClient);
+        }
+
+        private void ShowAbsorptionFeedback(string message, Color color) {
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            if (Main.netMode == NetmodeID.Server) {
+                ModPacket packet = Mod.GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.AbsorbMaterialFeedback);
+                packet.Write(message);
+                packet.Write(color.R);
+                packet.Write(color.G);
+                packet.Write(color.B);
+                packet.Send(Player.whoAmI);
+                return;
+            }
+
+            if (Player.whoAmI == Main.myPlayer)
+                Main.NewText(message, color);
         }
 
         public void RecordEventParticipation(NPC npc) {

@@ -13,9 +13,6 @@ public static class HeroAlterationSlotHelper {
     }
 
     public static bool CanEquipOnlyInHeroAlterationSlot(bool modded, int slot) {
-        if (!modded)
-            return false;
-
-        return slot == ModContent.GetInstance<OmnitrixSlot>().Type;
+        return modded;
     }
 }

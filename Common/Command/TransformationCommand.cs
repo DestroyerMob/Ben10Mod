@@ -30,6 +30,24 @@ public class TransformationCommand : ModCommand {
         }
 
         if (string.Equals(transformationId, "all", StringComparison.OrdinalIgnoreCase)) {
+            if (Main.netMode == Terraria.ID.NetmodeID.MultiplayerClient) {
+                if (mode == "add") {
+                    foreach (Transformation registeredTransformation in TransformationLoader.All
+                                 .OrderBy(transformation => transformation.FullID, StringComparer.OrdinalIgnoreCase))
+                        TransformationHandler.AddTransformation(caller.Player, registeredTransformation.FullID);
+
+                    Main.NewText("Requested unlock for all registered transformations.", Color.LimeGreen);
+                }
+                else {
+                    foreach (string unlockedId in omp.unlockedTransformations.ToList())
+                        TransformationHandler.RemoveTransformation(caller.Player, unlockedId);
+
+                    Main.NewText("Requested removal for all unlocked transformations.", Color.OrangeRed);
+                }
+
+                return;
+            }
+
             int changedCount = mode == "add"
                 ? TransformationLoader.All
                     .OrderBy(transformation => transformation.FullID, StringComparer.OrdinalIgnoreCase)
@@ -60,6 +78,19 @@ public class TransformationCommand : ModCommand {
         }
 
         string canonicalTransformationId = transformation.FullID;
+        if (Main.netMode == Terraria.ID.NetmodeID.MultiplayerClient) {
+            if (mode == "add") {
+                TransformationHandler.AddTransformation(caller.Player, canonicalTransformationId);
+                Main.NewText($"Requested unlock for {canonicalTransformationId}.", Color.LimeGreen);
+            }
+            else {
+                TransformationHandler.RemoveTransformation(caller.Player, canonicalTransformationId);
+                Main.NewText($"Requested removal for {canonicalTransformationId}.", Color.OrangeRed);
+            }
+
+            return;
+        }
+
         bool changed = mode switch {
             "add" => omp.UnlockTransformation(canonicalTransformationId),
             "remove" => omp.RemoveTransformation(canonicalTransformationId),
