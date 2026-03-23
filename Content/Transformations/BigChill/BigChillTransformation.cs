@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Buffs.Transformations;
@@ -11,7 +10,6 @@ using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -56,15 +54,14 @@ public class BigChillTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 60 * 60;
 
     public override bool HasUltimateAbility => false;
-    public override int UltimateAttack => ModContent.ProjectileType<BigChillProjectile>();
+    public override int UltimateAttack => ModContent.ProjectileType<BigChillPhaseStrikeProjectile>();
     public override int UltimateAttackSpeed => 18;
     public override int UltimateEnergyCost => 50;
     public override int UltimateAbilityCost => 50;
     public override int UltimateAbilityDuration => 30 * 60;
     public override int UltimateAbilityCooldown => 60 * 60;
 
-    private const int UltimateFreezeDuration = 10 * 60;
-    private const float UltimatePhaseWidth = 42f;
+    internal const int UltimateFreezeDuration = 10 * 60;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
@@ -114,7 +111,36 @@ public class BigChillTransformation : Transformation {
         if (!omp.ultimateAttack)
             return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 
-        ExecuteUltimatePhaseStrike(player, omp);
+        omp.ResetAttackToBaseSelection();
+        if (Main.netMode == NetmodeID.Server ||
+            (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+            return false;
+
+        Vector2 destination = Main.MouseWorld;
+        Vector2 direction = player.DirectionTo(destination);
+        if (direction == Vector2.Zero)
+            direction = new Vector2(player.direction, 0f);
+
+        float dashDistance = Vector2.Distance(player.Center, destination);
+        int dashFrames = Utils.Clamp((int)Math.Ceiling(dashDistance / BigChillPhaseStrikeProjectile.DashSpeed),
+            BigChillPhaseStrikeProjectile.MinDashFrames, BigChillPhaseStrikeProjectile.MaxDashFrames);
+
+        int projectileIndex = Projectile.NewProjectile(source, player.Center + direction * 18f,
+            direction * BigChillPhaseStrikeProjectile.DashSpeed, UltimateAttack, damage, knockback, player.whoAmI);
+        if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+            Projectile projectile = Main.projectile[projectileIndex];
+            projectile.timeLeft = dashFrames;
+            projectile.netUpdate = true;
+        }
+
+        if (!Main.dedServ) {
+            for (int i = 0; i < 18; i++) {
+                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(16f, 20f), DustID.Frost,
+                    Main.rand.NextVector2Circular(2.2f, 2.2f), 120, new Color(180, 240, 255), 1.15f);
+                dust.noGravity = true;
+            }
+        }
+
         return false;
     }
 
@@ -144,53 +170,4 @@ public class BigChillTransformation : Transformation {
         player.velocity = Vector2.Zero;
     }
 
-    private static void FreezeNPCsAlongPhasePath(Vector2 start, Vector2 end) {
-        foreach (NPC npc in Main.ActiveNPCs) {
-            if (!npc.CanBeChasedBy())
-                continue;
-
-            float collisionPoint = 0f;
-            bool intersects = Collision.CheckAABBvLineCollision(
-                npc.position,
-                npc.Size,
-                start,
-                end,
-                UltimatePhaseWidth,
-                ref collisionPoint);
-
-            if (!intersects)
-                continue;
-
-            npc.AddBuff(ModContent.BuffType<EnemyFrozen>(), UltimateFreezeDuration);
-            npc.AddBuff(BuffID.Frostburn2, UltimateFreezeDuration);
-        }
-    }
-
-    private static void EmitPhaseBurst(Vector2 center) {
-        for (int i = 0; i < 26; i++) {
-            Dust dust = Dust.NewDustPerfect(center + Main.rand.NextVector2Circular(22f, 32f), DustID.Frost,
-                Main.rand.NextVector2Circular(3.5f, 3.5f), 120, new Color(180, 240, 255), 1.35f);
-            dust.noGravity = true;
-        }
-    }
-
-    private static void ExecuteUltimatePhaseStrike(Player player, OmnitrixPlayer omp) {
-        Vector2 startCenter = player.Center;
-        Vector2 destination = Main.MouseWorld;
-
-        omp.ResetAttackToBaseSelection();
-
-        EmitPhaseBurst(startCenter);
-        FreezeNPCsAlongPhasePath(startCenter, destination);
-
-        SoundEngine.PlaySound(SoundID.Item8, player.position);
-        player.Teleport(destination, TeleportationStyleID.DebugTeleport);
-        player.velocity = Vector2.Zero;
-        player.immune = true;
-        player.immuneNoBlink = true;
-        player.immuneTime = Math.Max(player.immuneTime, 30);
-        player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), omp.CurrentTransformation.GetUltimateAbilityCooldown(omp));
-
-        EmitPhaseBurst(player.Center);
-    }
 }

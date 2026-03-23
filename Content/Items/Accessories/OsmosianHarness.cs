@@ -5,7 +5,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Items.Accessories;
 
-public class OsmosianHarness : ModItem {
+public class OsmosianHarness : ModItem, IHeroAlterationAccessory {
     public override string Texture => $"Terraria/Images/Item_{ItemID.Shackle}";
 
     public override void SetDefaults() {
@@ -19,6 +19,7 @@ public class OsmosianHarness : ModItem {
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
         tooltips.Add(new TooltipLine(Mod, "OsmosianAbility", "Grants Osmosian material absorption"));
         tooltips.Add(new TooltipLine(Mod, "OsmosianRestriction", "Cannot be equipped with an Omnitrix"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianSlot", "Fits in the DNA Alteration slot"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
@@ -26,7 +27,8 @@ public class OsmosianHarness : ModItem {
     }
 
     public override bool CanEquipAccessory(Player player, int slot, bool modded) {
-        return !player.GetModPlayer<OmnitrixPlayer>().HasAnyEquippedOmnitrix();
+        return HeroAlterationSlotHelper.CanEquipOnlyInHeroAlterationSlot(modded, slot) &&
+               !player.GetModPlayer<OmnitrixPlayer>().HasAnyEquippedOmnitrix();
     }
 
     public override bool CanAccessoryBeEquippedWith(Item equippedItem, Item incomingItem, Player player) {

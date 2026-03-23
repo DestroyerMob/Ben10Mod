@@ -80,6 +80,10 @@ public class DiamondHeadTransformation : Transformation {
         if (!omp.ultimateAttack)
             return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 
+        if (Main.netMode == NetmodeID.Server ||
+            (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+            return false;
+
         Projectile.NewProjectile(source, Main.MouseWorld, Vector2.Zero, UltimateAttack, (int)(damage * UltimateAttackModifier),
             knockback, player.whoAmI);
         return false;

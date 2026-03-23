@@ -878,6 +878,7 @@ Projectiles: {
 	FourArmsLandingShockwaveProjectile.DisplayName: Four Arms Landing Shockwave Projectile
 	XLR8PunchProjectile.DisplayName: X L R8 Punch Projectile
 	XLR8DashProjectile.DisplayName: X L R8 Dash Projectile
+	BigChillPhaseStrikeProjectile.DisplayName: Big Chill Phase Strike Projectile
 }
 
 Tiles: {

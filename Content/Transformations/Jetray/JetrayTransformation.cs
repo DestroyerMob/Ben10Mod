@@ -62,7 +62,11 @@ public class JetrayTransformation : Transformation {
         Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
 
         if (omp.altAttack) {
-            if (player.whoAmI == Main.myPlayer) {
+            if (Main.netMode == NetmodeID.Server ||
+                (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+                return false;
+
+            if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
                 Vector2 mouseDirection = player.DirectionTo(Main.MouseWorld);
                 if (mouseDirection != Vector2.Zero)
                     direction = mouseDirection;

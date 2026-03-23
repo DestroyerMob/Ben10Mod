@@ -106,6 +106,10 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             if (!omp.IsPrimaryAbilityAttackLoaded)
                 return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 
+            if (Main.netMode == NetmodeID.Server ||
+                (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+                return false;
+
             int rodType = ModContent.ProjectileType<HeatBlastAuraRodProjectile>();
             int maxRods = Math.Max(1, player.maxTurrets);
             int activeRodCount = 0;

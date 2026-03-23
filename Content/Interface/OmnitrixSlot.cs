@@ -1,13 +1,5 @@
 ﻿using Ben10Mod.Content.Items.Accessories;
-using Ben10Mod.Content.Items.Weapons;
-using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Terraria;
-using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Interface
@@ -18,21 +10,20 @@ namespace Ben10Mod.Content.Interface
         public override string FunctionalTexture => "Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix";
 
         public override bool CanAcceptItem(Item checkItem, AccessorySlotType context) {
-            var omp = Player.GetModPlayer<OmnitrixPlayer>();
-            if (omp.osmosianEquipped || omp.HasEquippedOsmosianHarness())
+            if (context == AccessorySlotType.DyeSlot)
                 return false;
 
-            return ModContent.GetModItem(checkItem.type) is Omnitrix;
+            return HeroAlterationSlotHelper.IsHeroAlterationAccessory(checkItem);
         }
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) {
-            return ModContent.GetModItem(item.type) is Omnitrix;
+            return HeroAlterationSlotHelper.IsHeroAlterationAccessory(item);
         }
 
         public override void OnMouseHover(AccessorySlotType context) {
             Main.hoverItemName = context switch { 
-                AccessorySlotType.FunctionalSlot => "Omnitrix",
-                AccessorySlotType.VanitySlot => "Vanity Omnitrix",
+                AccessorySlotType.FunctionalSlot => "DNA Alteration",
+                AccessorySlotType.VanitySlot => "Vanity DNA Alteration",
                 AccessorySlotType.DyeSlot => "Dye"
             };
             

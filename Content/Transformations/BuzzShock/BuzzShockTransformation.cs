@@ -60,23 +60,16 @@ public class BuzzShockTransformation : Transformation {
     }
 
     public override void PostUpdate(Player player, OmnitrixPlayer omp) {
-        if (!omp.PrimaryAbilityEnabled || Main.myPlayer != player.whoAmI)
+        if (!omp.PrimaryAbilityEnabled || omp.PrimaryAbilityWasEnabled || Main.myPlayer != player.whoAmI)
             return;
 
-        SoundEngine.PlaySound(SoundID.Item8, player.position);
-        for (int i = 0; i < 50; i++) {
-            int dustNum = Dust.NewDust(player.position - Vector2.One, player.width + 1, player.height + 1,
-                DustID.UltraBrightTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 2f);
-            Main.dust[dustNum].noGravity = true;
+        Vector2 destination = Main.MouseWorld;
+        if (Main.netMode == NetmodeID.MultiplayerClient) {
+            RequestPrimaryAbilityTeleport(destination);
+            return;
         }
 
-        player.Teleport(Main.MouseWorld, TeleportationStyleID.DebugTeleport);
-
-        for (int i = 0; i < 50; i++) {
-            int dustNum = Dust.NewDust(player.position - Vector2.One, player.width + 1, player.height + 1,
-                DustID.UltraBrightTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 2f);
-            Main.dust[dustNum].noGravity = true;
-        }
+        ExecutePrimaryAbilityTeleport(player, destination);
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
@@ -114,5 +107,38 @@ public class BuzzShockTransformation : Transformation {
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+    }
+
+    internal static void ExecutePrimaryAbilityTeleport(Player player, Vector2 destination) {
+        EmitTeleportBurst(player);
+        player.Teleport(destination, TeleportationStyleID.DebugTeleport);
+        player.velocity = Vector2.Zero;
+
+        if (Main.netMode == NetmodeID.Server) {
+            NetMessage.SendData(MessageID.TeleportEntity, -1, -1, null, 0, player.whoAmI, destination.X,
+                destination.Y, TeleportationStyleID.DebugTeleport);
+        }
+
+        EmitTeleportBurst(player);
+    }
+
+    private static void RequestPrimaryAbilityTeleport(Vector2 destination) {
+        ModPacket packet = ModContent.GetInstance<global::Ben10Mod.Ben10Mod>().GetPacket();
+        packet.Write((byte)global::Ben10Mod.Ben10Mod.MessageType.ExecuteBuzzShockTeleport);
+        packet.Write(destination.X);
+        packet.Write(destination.Y);
+        packet.Send();
+    }
+
+    private static void EmitTeleportBurst(Player player) {
+        if (Main.dedServ)
+            return;
+
+        SoundEngine.PlaySound(SoundID.Item8, player.position);
+        for (int i = 0; i < 50; i++) {
+            int dustNum = Dust.NewDust(player.position - Vector2.One, player.width + 1, player.height + 1,
+                DustID.UltraBrightTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 2f);
+            Main.dust[dustNum].noGravity = true;
+        }
     }
 }

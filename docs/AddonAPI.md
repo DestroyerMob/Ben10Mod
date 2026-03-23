@@ -19,7 +19,7 @@ Ben10Mod currently exposes three main extension surfaces:
 The important design rule is:
 
 - transformations own alien-specific behavior
-- Omnitrix items own energy/timing/evolution behavior
+- Omnitrix items own energy, timing, and branch behavior
 - badges stay generic and ask the current transformation what to do
 
 ## Mental Model
@@ -58,7 +58,7 @@ Example:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\tModLoader.targets" />
+  <Import Project="..\\tModLoader.targets" />
 
   <PropertyGroup>
     <AssemblyName>Ben10Addon</AssemblyName>
@@ -66,7 +66,7 @@ Example:
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ben10Mod\Ben10Mod.csproj" />
+    <ProjectReference Include="..\\Ben10Mod\\Ben10Mod.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -98,7 +98,7 @@ At minimum:
 Usually also:
 
 - icon texture
-- costume/equip content
+- costume or equip content
 - projectiles
 - unlock item or unlock progression hook
 
@@ -114,8 +114,6 @@ Do not use `Ben10Mod:...` for addon content.
 
 ## Current Action-Slot Model
 
-This is the most important current API change.
-
 The public action slots are:
 
 - primary
@@ -128,16 +126,18 @@ Each slot can be one of two things:
 - a timed ability
 - a badge attack loader
 
-That means `F`, `G`, `H`, and `U` are not just buff toggles anymore.
+That means `F`, `G`, `H`, and `U` are not just buff toggles.
 
 ### Timed Ability Slots
 
 Use properties such as:
 
-- `HasPrimaryAbility`
 - `PrimaryAbilityDuration`
 - `PrimaryAbilityCooldown`
 - `PrimaryAbilityCost`
+- `SecondaryAbilityDuration`
+- `TertiaryAbilityDuration`
+- `UltimateAbilityDuration`
 
 And optionally:
 
@@ -157,7 +157,7 @@ Use properties such as:
 - `TertiaryAbilityAttack`
 - `UltimateAttack`
 
-And the matching speed, style, channel, armor penetration, and energy-cost properties.
+And the matching timing, style, armor penetration, and cost properties.
 
 ### Important Rule
 
@@ -165,11 +165,59 @@ For a given slot, prefer one mode per state.
 
 If you define both a timed ability and an ability-attack on the same slot, the timed ability wins by default unless you override the activation hook and choose differently yourself.
 
+## Attack Naming
+
+The current-attack HUD no longer depends on projectile names.
+
+Use:
+
+- `PrimaryAttackName`
+- `SecondaryAttackName`
+- `PrimaryAbilityAttackName`
+- `SecondaryAbilityAttackName`
+- `TertiaryAbilityAttackName`
+- `UltimateAttackName`
+
+If a name changes by moveset, use the attack profile `DisplayName` for that state-specific version.
+
+## Moveset Profiles
+
+Ben10Mod now supports moveset-indexed attack profiles.
+
+Use this when one transformation should swap attack packages by state, for example:
+
+- powered versus unpowered
+- suit versus unbound
+- normal versus ultimate stance
+
+Current pattern:
+
+1. override `GetMoveSetIndex(OmnitrixPlayer omp)`
+2. return one or more `TransformationAttackProfile` entries from `GetPrimaryAttackProfiles()` or the equivalent slot method
+
+Each `TransformationAttackProfile` can define:
+
+- `DisplayName`
+- `ProjectileType`
+- `DamageMultiplier`
+- `UseTime`
+- `ShootSpeed`
+- `UseStyle`
+- `Channel`
+- `NoMelee`
+- `ArmorPenetration`
+- `EnergyCost`
+- `SustainEnergyCost`
+- `SustainInterval`
+- `SingleUse`
+
+If you do not need custom movesets, the base implementation already wraps the normal `PrimaryAttack`, `SecondaryAttack`, and related properties into a one-entry profile list for you.
+
 ## Attack Costs
 
 All badge attack profiles support optional energy costs.
 
-Current cost properties:
+Current upfront cost properties:
 
 - `PrimaryEnergyCost`
 - `SecondaryEnergyCost`
@@ -178,18 +226,32 @@ Current cost properties:
 - `TertiaryAbilityAttackEnergyCost`
 - `UltimateEnergyCost`
 
-Ben10Mod now handles this in the shared badge fire path:
+Current sustain cost properties:
 
-- `CanAffordCurrentAttack(...)`
-- `TryConsumeCurrentAttackCost(...)`
+- `PrimaryAttackSustainEnergyCost`
+- `SecondaryAttackSustainEnergyCost`
+- `PrimaryAbilityAttackSustainEnergyCost`
+- `SecondaryAbilityAttackSustainEnergyCost`
+- `TertiaryAbilityAttackSustainEnergyCost`
+- `UltimateAttackSustainEnergyCost`
 
-That means addon transformations usually should not manually subtract badge attack energy in `Shoot(...)`.
+With matching interval properties:
+
+- `PrimaryAttackSustainInterval`
+- `SecondaryAttackSustainInterval`
+- `PrimaryAbilityAttackSustainInterval`
+- `SecondaryAbilityAttackSustainInterval`
+- `TertiaryAbilityAttackSustainInterval`
+- `UltimateAttackSustainInterval`
+
+Ben10Mod handles upfront attack spending in the shared badge fire path. Most addon transformations should not manually subtract upfront badge attack energy inside `Shoot(...)`.
 
 ## Example Transformation
 
 ```csharp
 using System.Collections.Generic;
 using Ben10Mod;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Transformations;
 using Terraria;
 using Terraria.ID;
@@ -211,26 +273,26 @@ public class ShockRockTransformation : Transformation {
         "Lance storm ultimate"
     };
 
+    public override string PrimaryAttackName => "Crystal Bolt";
+    public override string SecondaryAttackName => "Charged Burst";
+    public override string PrimaryAbilityAttackName => "Shield Projector";
+    public override string UltimateAttackName => "Lance Storm";
+
     public override int PrimaryAttack => ModContent.ProjectileType<Projectiles.ShockRockBolt>();
     public override int PrimaryAttackSpeed => 16;
     public override int PrimaryShootSpeed => 12;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
-    public override string PrimaryAttackDisplayName => "Crystal Bolt";
-    public override int PrimaryEnergyCost => 0;
 
     public override int SecondaryAttack => ModContent.ProjectileType<Projectiles.ShockRockBurst>();
     public override int SecondaryAttackSpeed => 28;
     public override int SecondaryShootSpeed => 9;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override string SecondaryAttackDisplayName => "Charged Burst";
     public override int SecondaryEnergyCost => 4;
 
-    public override bool HasPrimaryAbility => false;
     public override int PrimaryAbilityAttack => ModContent.ProjectileType<Projectiles.ShockRockShieldNode>();
     public override int PrimaryAbilityAttackSpeed => 22;
     public override int PrimaryAbilityAttackShootSpeed => 0;
     public override int PrimaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
-    public override string PrimaryAbilityAttackDisplayName => "Shield Projector";
     public override int PrimaryAbilityAttackEnergyCost => 8;
     public override bool PrimaryAbilityAttackSingleUse => true;
 
@@ -238,19 +300,32 @@ public class ShockRockTransformation : Transformation {
     public override int UltimateAttackSpeed => 20;
     public override int UltimateShootSpeed => 0;
     public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
-    public override string UltimateAttackDisplayName => "Lance Storm";
     public override int UltimateEnergyCost => 35;
 
-    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
-        player.endurance += 0.06f;
-        player.GetDamage(DamageClass.Generic) += 0.08f;
+    public override int GetMoveSetIndex(OmnitrixPlayer omp) {
+        return omp.IsUltimateAbilityActive ? 1 : 0;
     }
 
-    public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-        var costume = ModContent.GetInstance<ShockRockCostume>();
-        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
-        player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+    protected override IReadOnlyList<TransformationAttackProfile> GetPrimaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreatePrimaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Overcharged Crystal Bolt",
+                ProjectileType = ModContent.ProjectileType<Projectiles.ShockRockBolt>(),
+                DamageMultiplier = 1.25f,
+                UseTime = 12,
+                ShootSpeed = 15f,
+                UseStyle = ItemUseStyleID.Shoot,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = 4
+            }
+        );
+    }
+
+    public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.endurance += 0.06f;
     }
 }
 ```
@@ -295,6 +370,7 @@ Remember:
 
 - shared attack cost handling already happens before `Shoot(...)`
 - loaded attack cleanup also happens outside your transformation
+- mouse-targeted and multiplayer-sensitive attacks often need owner-side guards or synced aim
 
 So your custom `Shoot(...)` usually only needs to worry about the actual attack behavior.
 
@@ -315,6 +391,7 @@ The badge itself is usually simple.
 - style
 - channeling
 - armor penetration
+- attack naming
 - attack energy cost
 
 ### Example Badge
@@ -356,7 +433,6 @@ The base `Omnitrix` class already supports:
 
 ```csharp
 using Ben10Mod.Content.Items.Accessories;
-using Terraria.ModLoader;
 
 namespace Ben10Addon.Content.Items.Accessories;
 
@@ -372,7 +448,7 @@ public class TacticalOmnitrix : Omnitrix {
 For real Omnitrix items you will usually also implement:
 
 - texture loading
-- hands-on texture registration
+- hand texture registration
 - `Clone`
 - `SaveData`
 - `LoadData`
@@ -431,8 +507,11 @@ Make sure:
 - the transformation buff sets `currentTransformationId`
 - your icon path exists
 - your attacks are defined on the transformation, not hardcoded into the badge
-- your action-slot design matches the current timed-ability vs badge-attack model
+- your action-slot design matches the current timed-ability versus badge-attack model
+- your attack names are set in the transformation API
+- your moveset-dependent attacks use the profile system
 - your attack costs use the built-in cost properties
+- your mouse-driven attacks are safe in multiplayer
 - your unlock path actually grants the transformation
 
 ## Practical Tip

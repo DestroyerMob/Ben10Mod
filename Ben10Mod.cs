@@ -5,6 +5,7 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Transformations;
+using Ben10Mod.Content.Transformations.BuzzShock;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -68,7 +69,10 @@ namespace Ben10Mod {
 			RemoveTransformation,
 			RequestAbsorbMaterial,
 			SyncAbsorbedMaterial,
-			RelayDodgeVisual
+			RelayDodgeVisual,
+			ExecuteBuzzShockTeleport,
+			RequestGhostFreakPossession,
+			SyncGhostFreakPossessionState
 		}
 
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
@@ -144,8 +148,8 @@ namespace Ben10Mod {
 					player.GetModPlayer<OmnitrixPlayer>().ApplyAbsorbedMaterialSync(itemType, timeLeft, showEffects);
 					break;
 				}
-				case MessageType.RelayDodgeVisual: {
-					int playerIndex = reader.ReadByte();
+					case MessageType.RelayDodgeVisual: {
+						int playerIndex = reader.ReadByte();
 
 					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
 						return;
@@ -162,11 +166,77 @@ namespace Ben10Mod {
 						return;
 					}
 
-					player.GetModPlayer<HeroPlumberArmorPlayer>().PlayRelayDodgeVisual(sync: false);
-					break;
+						player.GetModPlayer<HeroPlumberArmorPlayer>().PlayRelayDodgeVisual(sync: false);
+						break;
+					}
+					case MessageType.ExecuteBuzzShockTeleport: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
+
+						if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+							return;
+
+						Vector2 destination = new(reader.ReadSingle(), reader.ReadSingle());
+						Player player = Main.player[whoAmI];
+						if (!player.active || player.dead)
+							return;
+
+						OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+						if (omp.currentTransformationId != "Ben10Mod:BuzzShock" || !omp.IsPrimaryAbilityActive)
+							return;
+
+						BuzzShockTransformation.ExecutePrimaryAbilityTeleport(player, destination);
+						break;
+					}
+					case MessageType.RequestGhostFreakPossession: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
+
+						if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+							return;
+
+						int targetIndex = reader.ReadInt32();
+						if (targetIndex < 0 || targetIndex >= Main.maxNPCs)
+							return;
+
+						Player player = Main.player[whoAmI];
+						if (!player.active || player.dead)
+							return;
+
+						OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+						if (omp.currentTransformationId != "Ben10Mod:GhostFreak" || omp.inPossessionMode)
+							return;
+
+						NPC target = Main.npc[targetIndex];
+						if (!target.active || !target.CanBeChasedBy())
+							return;
+
+						omp.BeginPossession(targetIndex, player.position);
+						break;
+					}
+					case MessageType.SyncGhostFreakPossessionState: {
+						if (Main.netMode != NetmodeID.MultiplayerClient)
+							return;
+
+						int playerIndex = reader.ReadByte();
+						bool active = reader.ReadBoolean();
+						int targetIndex = reader.ReadInt32();
+						Vector2 returnPosition = new(reader.ReadSingle(), reader.ReadSingle());
+						int timer = reader.ReadInt32();
+
+						if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+							return;
+
+						Player player = Main.player[playerIndex];
+						if (!player.active)
+							return;
+
+						player.GetModPlayer<OmnitrixPlayer>()
+							.ApplyPossessionStateSync(active, targetIndex, returnPosition, timer);
+						break;
+					}
 				}
 			}
-		}
 
 		private static object CallRegisterAbsorbableMaterial(object[] args) {
 			if (args.Length < 6)

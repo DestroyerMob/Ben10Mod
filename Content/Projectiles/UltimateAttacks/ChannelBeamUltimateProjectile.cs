@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Utilities;
@@ -14,6 +15,9 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
     private SlotId _loopSlot;
     private bool _loopStarted;
     private int _sustainTimer;
+    private Vector2 _syncedAimDirection = Vector2.UnitX;
+    private bool _hasSyncedAimDirection;
+    private int _aimSyncTimer;
 
     protected float BeamHitLength {
         get => Projectile.localAI[0];
@@ -107,7 +111,7 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
                omp.omnitrixEnergy >= MinEnergyToSustain;
     }
 
-    protected virtual Vector2 GetAimDirection(Player owner) {
+    protected virtual Vector2 GetLocalAimDirection(Player owner) {
         Vector2 dir = Main.MouseWorld - owner.Center;
         if (dir.LengthSquared() < 0.0001f)
             dir = new Vector2(owner.direction, 0f);
@@ -116,7 +120,28 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
         return dir;
     }
 
+    protected virtual Vector2 GetAimDirection(Player owner) {
+        if (Main.netMode == NetmodeID.SinglePlayer || Projectile.owner == Main.myPlayer) {
+            Vector2 localDirection = GetLocalAimDirection(owner);
+            SyncAimDirection(localDirection);
+            return localDirection;
+        }
+
+        return GetSyncedAimDirection(owner);
+    }
+
     protected virtual void OnBeamUpdated(Player owner, OmnitrixPlayer omp, Vector2 start, Vector2 direction) { }
+
+    public override void SendExtraAI(BinaryWriter writer) {
+        writer.Write(_syncedAimDirection.X);
+        writer.Write(_syncedAimDirection.Y);
+        writer.Write(_hasSyncedAimDirection);
+    }
+
+    public override void ReceiveExtraAI(BinaryReader reader) {
+        _syncedAimDirection = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+        _hasSyncedAimDirection = reader.ReadBoolean();
+    }
 
     private bool TryConsumeSustainCost(Player owner, OmnitrixPlayer omp) {
         var trans = omp.CurrentTransformation;
@@ -191,6 +216,29 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
         }
 
         return best;
+    }
+
+    private void SyncAimDirection(Vector2 direction) {
+        bool changed = !_hasSyncedAimDirection || Vector2.DistanceSquared(direction, _syncedAimDirection) > 0.0004f;
+        _aimSyncTimer++;
+        if (!changed && _aimSyncTimer < 6)
+            return;
+
+        _syncedAimDirection = direction;
+        _hasSyncedAimDirection = true;
+        _aimSyncTimer = 0;
+        if (Main.netMode != NetmodeID.SinglePlayer)
+            Projectile.netUpdate = true;
+    }
+
+    private Vector2 GetSyncedAimDirection(Player owner) {
+        if (_hasSyncedAimDirection && _syncedAimDirection.LengthSquared() > 0.0001f)
+            return _syncedAimDirection;
+
+        Vector2 fallback = Projectile.velocity.LengthSquared() > 0.0001f
+            ? Projectile.velocity
+            : new Vector2(owner.direction, 0f);
+        return fallback.SafeNormalize(new Vector2(owner.direction, 0f));
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {

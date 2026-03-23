@@ -52,6 +52,10 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         if (omp.altAttack) {
+            if (Main.netMode == NetmodeID.Server ||
+                (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+                return false;
+
             int speakerType = ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
             int sentrySlots = Math.Max(1, player.maxTurrets);
             int maxSpeakers = sentrySlots * SpeakersPerSentrySlot;

@@ -31,6 +31,10 @@ public class HexCircle : ModItem {
 
     public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity,
         int type, int damage, float knockback) {
+        if (Main.netMode == NetmodeID.Server ||
+            (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
+            return false;
+
         Vector2 spawnPosition = Main.MouseWorld;
         Projectile.NewProjectile(source, spawnPosition, Vector2.Zero, type, damage, knockback, player.whoAmI);
         return false;

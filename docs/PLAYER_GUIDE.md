@@ -1,6 +1,6 @@
 # Ben10Mod Player Guide
 
-This guide is meant to get you into the mod quickly. It focuses on the current gameplay loop, the important controls, and the most useful progression tips.
+This guide is meant to get you playing quickly. It focuses on the current gameplay loop, the important controls, and the systems that matter when you are building a character.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ Your first goals are:
 4. Press `L` to open the roster and assign aliens to your five active slots.
 5. Press `P` to transform.
 
-There are two normal ways to get the `Prototype Omnitrix`:
+You can get the `Prototype Omnitrix` in two normal ways:
 
 - craft it directly
 - or open a `Plumber Capsule Pod` while holding a `Plumber's Badge`
@@ -31,7 +31,7 @@ There are two normal ways to get the `Prototype Omnitrix`:
 
 ### Capsule Meteors
 
-The world also generates buried codon meteors in the Cavern layer. These are rich in codon ore and try to place a `Plumber Capsule Pod` on top.
+The world also generates buried codon meteors in the Cavern layer. These are rich in codon ore and have a  `Plumber Capsule Pod` on top.
 
 To open a capsule:
 
@@ -50,7 +50,7 @@ To open a capsule:
 
 - `500` max Omnitrix energy
 - `3` energy regen
-- `1` energy drain while transformed
+- `4` energy drain while transformed
 - uses sustained energy management instead of the Prototype timeout model
 
 You can get it by:
@@ -62,9 +62,9 @@ You can get it by:
 
 - `750` max Omnitrix energy
 - `4` energy regen
-- `2` energy drain while transformed
+- `6` energy drain while transformed
 - `75` transformation swap cost
-- supports ultimate-form gameplay
+- supports child and ultimate-form gameplay
 
 Current recipe:
 
@@ -80,50 +80,65 @@ Default keybinds:
 
 - `P`: transform or detransform
 - `L`: open or close the alien roster
-- `F`: primary action
-- `G`: secondary action
-- `H`: tertiary action
-- `U`: ultimate action
+- `F`: primary action slot
+- `G`: secondary action slot
+- `H`: tertiary action slot
+- `U`: ultimate action slot
 - `K`: absorb material
 - `NumPad 1-5`: select a specific roster slot
 - `Left / Right Arrow`: cycle roster slots
-- `Right click` while holding a `Plumber's Badge`: swap between the base primary and secondary badge attacks
-
-`J` is still registered in the controls menu, but it is not part of the main public gameplay loop yet.
+- `Right click` with a `Plumber's Badge`: swap base fire modes and back out of loaded special attacks
 
 All keybinds can be rebound in Terraria's controls menu.
 
 ## How Combat Works
 
-Every transformation has three possible layers of gameplay:
+Combat is built from four layers:
 
-- passive stats and movement changes
-- action-key abilities
-- badge attacks
+- your `Plumber's Badge`
+- your current transformation's passive bonuses
+- your current transformation's loaded badge attacks
+- your Omnitrix energy and cooldown management
 
-The important thing to understand is that the action keys are now slot-based, not just buff toggles.
+### Badge Combat
 
-For `F`, `G`, `H`, and `U`, a transformation can decide that the slot is:
+The badge is the weapon shell for the class. Its base tier matters, but the current transformation changes what the badge actually does.
+
+Every transformation can define:
+
+- a normal `Primary` badge attack
+- a normal `Secondary` badge attack
+- up to four action-key slots on `F`, `G`, `H`, and `U`
+
+### Action Slots
+
+Each action key can be one of two things:
 
 - a timed ability
-- a badge attack that gets loaded and fired through the `Plumber's Badge`
+- a badge attack that gets loaded into the badge
 
 That means:
 
-- some forms use `F` to turn on a timed state
-- some forms use `F` to load a special badge attack
-- some forms mix timed abilities and badge attacks across different slots
+- some forms use `F` to turn on a buff or state
+- some forms use `F` to load a new attack
+- some forms mix ability slots and attack slots across the same transformation
 
-Badge attack rules:
+### Loaded Attacks
 
-- base badge combat always starts from primary or secondary fire
-- right click swaps between those two base modes
-- a loaded action-key attack temporarily replaces them
+If an action slot loads a badge attack:
+
+- you still need to be holding a `Plumber's Badge`
+- the loaded attack temporarily replaces your normal badge attack
 - some loaded attacks are single-use
-- some stay loaded until you clear them or replace them
-- attacks can have an energy cost per shot
+- some can be fired repeatedly until replaced
+- some attacks spend energy up front
+- some attacks also spend energy continuously while they channel or grow
 
-The current selected attack and its energy cost are shown under the Omnitrix energy bar.
+The HUD under the Omnitrix energy bar shows:
+
+- the current attack slot
+- the current attack name
+- the current attack energy cost
 
 ## Roster Menu
 
@@ -137,7 +152,7 @@ Press `L` while an Omnitrix is equipped to open the roster screen.
 
 ## Unlock Progression
 
-You do not unlock every form through crafting. Most of them come from boss and event progression.
+You do not unlock every form through crafting. Most of them come from bosses and events.
 
 Starting unlock:
 
@@ -172,55 +187,93 @@ Event unlocks:
 
 For event unlocks, you need to actually fight during the event. Just being present is not enough.
 
+## Building A Hero Character
+
+### Badge Tiers
+
+Your badge sets the baseline damage for the class. If your damage feels low, your badge tier is one of the first things to check.
+
+### Transformations
+
+Forms are not just active abilities anymore. They also carry strong passive identity:
+
+- mobility changes
+- defense and endurance changes
+- attack speed and crit bonuses
+- movement options like flight, phasing, dashes, or ground slams
+
+### Omnitrix Choice
+
+Your Omnitrix changes the resource model:
+
+- `Prototype` is about timeout management
+- `Recalibrated` is about active energy drain
+- `Ultimatrix` is the high-end energy form with branch and ultimate support
+
+### Armor
+
+The class now has real armor progression.
+
+Custom Plumber sets currently include:
+
+- early sets like `Vanguard`, `Recon`, `Assault`, and `Overclock`
+- hardmode sets like `Bulwark`, `Relay`, `Siege`, and `Magistrata`
+
+There are also Hero helmets for several vanilla hardmode armor families, so you can run Hero builds inside vanilla armor progressions instead of only using the custom sets.
+
 ## Good Early Picks
 
 If you are not sure what to build your roster around, these are strong early choices:
 
-- `Heatblast` for safe ranged fire pressure, lava immunity, and an extra jump
-- `Diamondhead` for durability and simple crystal ranged attacks
-- `XLR8` for movement, dashing, and his time-warp ultimate ability
-- `Four Arms` for direct close-range damage
-- `Buzzshock` if you want teleport mobility and projectile pressure
+- `Heatblast` for safe ranged pressure, lava immunity, and sentry support
+- `Diamondhead` for durability and straightforward ranged crystal attacks
+- `XLR8` for movement, speed pressure, and time-warp utility
+- `Four Arms` for direct close-range damage and fast-fall ground slams
+- `Buzzshock` for teleport mobility and electric control
 
-## Examples Of Current Form Playstyles
+## Example Current Playstyles
 
-These are a few current highlights, not a full transformation encyclopedia.
+These are a few highlights, not a full encyclopedia.
 
 ### Heatblast
 
-- rapid flamethrower primary fire
-- explosive fire bomb secondary fire
-- `F` loads a flame aura rod sentry attack
-- strong mobility through his flame-propelled extra jump
-- channeled fireball-style ultimate attack
+- rapid fire primary
+- explosive secondary
+- primary ability attack loads an aura rod sentry
+- channeled growing fireball ultimate
 
 ### XLR8
 
-- fast movement and strong acceleration
-- dash movement
-- ranged badge attacks
-- ultimate ability that creates a Flash-style time-slow state
-- projectiles caught in that state slow, freeze, then kick back out when it ends
+- fast movement and acceleration
+- punch-style primary
+- ram-style dash secondary
+- ultimate ability that creates a time-warp state where projectiles slow, freeze, then launch back out
 
 ### Big Chill
 
 - aerial movement and phasing-style mobility
 - ranged ice attacks
 - primary ability for free phasing movement
-- ultimate attack that phases to the mouse and freezes enemies passed through
+- ultimate attack is a real phase dash that freezes enemies you pass through
 
 ### Humungousaur
 
 - heavy bruiser gameplay
 - growth-based primary ability state
-- larger visual size and increased pressure while grown
-- stronger ultimate growth state with larger stat bonuses
+- stronger ultimate growth state
+- larger hit presence and attack scaling while grown
+
+### NRG
+
+- slower heavy primary while inside the suit
+- primary ability attack for the hot burst release
+- ultimate ability turns him into an unbound energy form with quicker attacks and flight
 
 ## Extra Systems
 
-There is also an Osmosian material absorption system in the mod.
+Ben10Mod also includes an Osmosian material absorption system.
 
-That system is not required for normal Ben 10 progression, so most players can ignore it until later.
+That system is optional for normal Ben 10 progression, so most players can ignore it until later.
 
 ## Troubleshooting
 
@@ -233,8 +286,9 @@ If you cannot transform:
 If a keyed attack does nothing:
 
 - check whether that slot loads a badge attack instead of activating immediately
-- hold a `Plumber's Badge`
+- make sure you are holding a `Plumber's Badge`
 - look at the current-attack HUD under the energy bar
+- make sure you have enough Omnitrix energy for the attack and any channel cost
 
 If you are missing event unlocks:
 
@@ -243,4 +297,4 @@ If you are missing event unlocks:
 
 ## Final Tip
 
-If you ever forget what a transformation does, hover it in the roster UI. The current description and ability list there are the best in-game summary of how that form is meant to play.
+If you ever forget what a transformation does, hover it in the roster UI. The description, ability list, and attack HUD together are the fastest in-game way to understand how a form is currently meant to play.

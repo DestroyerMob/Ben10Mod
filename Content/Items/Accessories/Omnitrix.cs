@@ -14,7 +14,7 @@ using Terraria.Audio;
 
 namespace Ben10Mod.Content.Items.Accessories
 {
-    public abstract class Omnitrix : ModItem
+    public abstract class Omnitrix : ModItem, IHeroAlterationAccessory
     {
         public virtual int  MaxOmnitrixEnergy          => 0;
         public virtual int  OmnitrixEnergyRegen        => 0;
@@ -119,7 +119,8 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override bool CanEquipAccessory(Player player, int slot, bool modded) {
-            return !player.GetModPlayer<OmnitrixPlayer>().HasEquippedOsmosianHarness();
+            return HeroAlterationSlotHelper.CanEquipOnlyInHeroAlterationSlot(modded, slot) &&
+                   !player.GetModPlayer<OmnitrixPlayer>().HasEquippedOsmosianHarness();
         }
 
         public override void UpdateInventory(Player player)

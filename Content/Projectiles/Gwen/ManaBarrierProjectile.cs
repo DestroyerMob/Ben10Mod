@@ -3,11 +3,16 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using System;
+using System.IO;
 
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class ManaBarrierProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
+
+    private Vector2 _syncedAimDirection = Vector2.UnitX;
+    private bool _hasSyncedAimDirection;
+    private int _aimSyncTimer;
 
     public override void SetDefaults() {
         Projectile.width = 112;
@@ -30,18 +35,29 @@ public class ManaBarrierProjectile : ModProjectile {
             return;
         }
 
-        Vector2 aimDirection = owner.DirectionTo(Main.MouseWorld);
-        if (aimDirection == Vector2.Zero)
-            aimDirection = new Vector2(owner.direction, 0f);
-
+        Vector2 aimDirection = GetAimDirection(owner);
         Projectile.rotation = aimDirection.ToRotation();
         Projectile.Center = owner.Center + aimDirection * 108f;
         owner.heldProj = Projectile.whoAmI;
 
         Lighting.AddLight(Projectile.Center, new Vector3(1.35f, 0.45f, 0.95f));
-        RepelNearbyNPCs(owner, aimDirection);
-        BlockHostileProjectiles();
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            RepelNearbyNPCs(owner, aimDirection);
+            BlockHostileProjectiles();
+        }
+
         SpawnBarrierDust();
+    }
+
+    public override void SendExtraAI(BinaryWriter writer) {
+        writer.Write(_syncedAimDirection.X);
+        writer.Write(_syncedAimDirection.Y);
+        writer.Write(_hasSyncedAimDirection);
+    }
+
+    public override void ReceiveExtraAI(BinaryReader reader) {
+        _syncedAimDirection = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+        _hasSyncedAimDirection = reader.ReadBoolean();
     }
 
     public override bool? CanHitNPC(NPC target) {
@@ -114,5 +130,34 @@ public class ManaBarrierProjectile : ModProjectile {
 
             other.Kill();
         }
+    }
+
+    private Vector2 GetAimDirection(Player owner) {
+        if (Main.netMode == NetmodeID.SinglePlayer || Projectile.owner == Main.myPlayer) {
+            Vector2 localAimDirection = owner.DirectionTo(Main.MouseWorld);
+            if (localAimDirection == Vector2.Zero)
+                localAimDirection = new Vector2(owner.direction, 0f);
+
+            SyncAimDirection(localAimDirection);
+            return localAimDirection;
+        }
+
+        if (_hasSyncedAimDirection && _syncedAimDirection.LengthSquared() > 0.0001f)
+            return _syncedAimDirection;
+
+        return new Vector2(owner.direction, 0f);
+    }
+
+    private void SyncAimDirection(Vector2 direction) {
+        bool changed = !_hasSyncedAimDirection || Vector2.DistanceSquared(direction, _syncedAimDirection) > 0.0004f;
+        _aimSyncTimer++;
+        if (!changed && _aimSyncTimer < 6)
+            return;
+
+        _syncedAimDirection = direction;
+        _hasSyncedAimDirection = true;
+        _aimSyncTimer = 0;
+        if (Main.netMode != NetmodeID.SinglePlayer)
+            Projectile.netUpdate = true;
     }
 }

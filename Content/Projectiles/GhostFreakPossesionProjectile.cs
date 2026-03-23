@@ -24,30 +24,25 @@ public class GhostFreakPossesionProjectile : ModProjectile {
 
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        Player player = Main.player[Projectile.owner];
+        var omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (omp.inPossessionMode)
+            return;
 
-        if (Main.myPlayer == Projectile.owner) {
-            Player player = Main.player[Projectile.owner];
-            var    omp    = player.GetModPlayer<OmnitrixPlayer>(); // Or CameraPlayer if separate
+        if (Main.netMode == NetmodeID.MultiplayerClient) {
+            if (Projectile.owner != Main.myPlayer)
+                return;
 
-            // Only start possession if not already in mode (prevent stacking)
-            if (!omp.inPossessionMode) {
-                omp.prePossessionPosition = player.position; // Save current pos
-                omp.possessedTargetIndex  = target.whoAmI;
-                omp.possessionTimer       = 360;
-                omp.inPossessionMode      = true;
+            omp.BeginPossession(target.whoAmI, player.position, shouldSync: false);
 
-                // Instant teleport player to NPC center
-                player.Center = target.Center;
-
-                // Initial effects
-                SoundEngine.PlaySound(SoundID.MaxMana with { Pitch = 0.5f, Volume = 0.8f }, player.Center);
-                for (int i = 0; i < 40; i++) {
-                    Dust d = Dust.NewDustPerfect(target.Center, DustID.PurpleTorch,
-                        Main.rand.NextVector2Circular(8f, 8f), Scale: 2f);
-                    d.noGravity = true;
-                }
-            }
+            ModPacket packet = ModContent.GetInstance<global::Ben10Mod.Ben10Mod>().GetPacket();
+            packet.Write((byte)global::Ben10Mod.Ben10Mod.MessageType.RequestGhostFreakPossession);
+            packet.Write(target.whoAmI);
+            packet.Send();
+            return;
         }
+
+        omp.BeginPossession(target.whoAmI, player.position);
     }
 
     public override bool PreDraw(ref Color lightColor) {
