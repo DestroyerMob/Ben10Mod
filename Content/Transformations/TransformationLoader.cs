@@ -14,6 +14,9 @@ namespace Ben10Mod.Content.Transformations
 
         public static Transformation Get(string fullID)
         {
+            if (string.IsNullOrWhiteSpace(fullID))
+                return null;
+
             return _transformations.TryGetValue(fullID, out var trans) ? trans : null;
         }
 

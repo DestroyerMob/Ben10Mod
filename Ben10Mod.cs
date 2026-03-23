@@ -98,8 +98,11 @@ namespace Ben10Mod {
 					if (!player.active)
 						return;
 
-					player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation(transformationId, sync: false,
+					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+					bool unlocked = omp.UnlockTransformation(transformationId, sync: false,
 						showEffects: playerIndex == Main.myPlayer);
+					if (!unlocked && playerIndex == Main.myPlayer)
+						omp.ShowTransformationUnlockFeedback(transformationId);
 					break;
 				}
 				case MessageType.RemoveTransformation: {
@@ -183,7 +186,7 @@ namespace Ben10Mod {
 
 						OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
 						omp.ApplyTransformationStateSync(slots, unlocked);
-						omp.SyncPlayer(whoAmI, -1, false);
+						omp.SyncTransformationState(toWho: whoAmI);
 						break;
 					}
 					case MessageType.SyncTransformationState: {
