@@ -98,6 +98,8 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override int  UltimateUseStyle        => ItemUseStyleID.HoldUp;
         public override bool UltimateChannel         => true;
         public override int  UltimateEnergyCost      => 10;
+        public override int  UltimateAttackSustainEnergyCost => UltimateEnergyCost;
+        public override int  UltimateAttackSustainInterval => UltimateAttackSpeed;
 
         public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int damage, float knockback) {

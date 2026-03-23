@@ -13,6 +13,7 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
 {
     private SlotId _loopSlot;
     private bool _loopStarted;
+    private int _sustainTimer;
 
     protected float BeamHitLength {
         get => Projectile.localAI[0];
@@ -74,6 +75,12 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
             return;
         }
 
+        if (!TryConsumeSustainCost(owner, omp)) {
+            owner.channel = false;
+            Projectile.Kill();
+            return;
+        }
+
         Projectile.timeLeft = 2;
 
         Vector2 dir = GetAimDirection(owner);
@@ -110,6 +117,24 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
     }
 
     protected virtual void OnBeamUpdated(Player owner, OmnitrixPlayer omp, Vector2 start, Vector2 direction) { }
+
+    private bool TryConsumeSustainCost(Player owner, OmnitrixPlayer omp) {
+        var trans = omp.CurrentTransformation;
+        if (trans == null)
+            return true;
+
+        int sustainInterval = trans.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        int sustainCost = trans.GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        if (sustainInterval <= 0 || sustainCost <= 0 || owner.whoAmI != Main.myPlayer)
+            return true;
+
+        _sustainTimer++;
+        if (_sustainTimer < sustainInterval)
+            return true;
+
+        _sustainTimer = 0;
+        return trans.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+    }
 
     private void UpdateLoopSound() {
         if (Projectile.owner != Main.myPlayer)

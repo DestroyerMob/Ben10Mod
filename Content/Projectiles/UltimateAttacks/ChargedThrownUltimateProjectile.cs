@@ -7,6 +7,7 @@ namespace Ben10Mod.Content.Projectiles.UltimateAttacks;
 public abstract class ChargedThrownUltimateProjectile : ModProjectile
 {
     private bool _launched;
+    private int _sustainTimer;
 
     protected virtual Vector2 ChargeOffset => new(0f, -78f);
     protected virtual float InitialScale => 0.3f;
@@ -36,6 +37,18 @@ public abstract class ChargedThrownUltimateProjectile : ModProjectile
 
         if (!_launched) {
             if (ShouldKeepCharging(owner)) {
+                if (!TryConsumeSustainCost(owner)) {
+                    owner.channel = false;
+                }
+
+                if (!ShouldKeepCharging(owner)) {
+                    _launched = true;
+                    Projectile.velocity = GetLaunchDirection(owner) * LaunchSpeed;
+                    OnLaunched(owner);
+                    UpdateReleased(owner);
+                    return;
+                }
+
                 Projectile.Center = owner.Center + ChargeOffset;
                 Projectile.rotation = GetChargingRotation(owner);
 
@@ -75,6 +88,28 @@ public abstract class ChargedThrownUltimateProjectile : ModProjectile
     protected virtual void OnLaunched(Player owner) { }
 
     protected virtual void UpdateReleased(Player owner) { }
+
+    private bool TryConsumeSustainCost(Player owner) {
+        if (owner.whoAmI != Main.myPlayer)
+            return true;
+
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        var trans = omp.CurrentTransformation;
+        if (trans == null)
+            return true;
+
+        int sustainInterval = trans.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        int sustainCost = trans.GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        if (sustainInterval <= 0 || sustainCost <= 0)
+            return true;
+
+        _sustainTimer++;
+        if (_sustainTimer < sustainInterval)
+            return true;
+
+        _sustainTimer = 0;
+        return trans.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+    }
 
     protected void ResizeHitboxToScale() {
         Projectile.width = (int)(128 * Projectile.scale);

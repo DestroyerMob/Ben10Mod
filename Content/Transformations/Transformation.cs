@@ -22,6 +22,8 @@ namespace Ben10Mod.Content.Transformations {
         public bool NoMelee { get; init; }
         public int ArmorPenetration { get; init; }
         public int EnergyCost { get; init; }
+        public int SustainEnergyCost { get; init; }
+        public int SustainInterval { get; init; }
         public bool SingleUse { get; init; }
     }
 
@@ -82,6 +84,18 @@ namespace Ben10Mod.Content.Transformations {
         public virtual int SecondaryAbilityAttackEnergyCost => 0;
         public virtual int TertiaryAbilityAttackEnergyCost => 0;
         public virtual int UltimateEnergyCost => 0;
+        public virtual int PrimaryAttackSustainEnergyCost => 0;
+        public virtual int SecondaryAttackSustainEnergyCost => 0;
+        public virtual int PrimaryAbilityAttackSustainEnergyCost => 0;
+        public virtual int SecondaryAbilityAttackSustainEnergyCost => 0;
+        public virtual int TertiaryAbilityAttackSustainEnergyCost => 0;
+        public virtual int UltimateAttackSustainEnergyCost => 0;
+        public virtual int PrimaryAttackSustainInterval => 0;
+        public virtual int SecondaryAttackSustainInterval => 0;
+        public virtual int PrimaryAbilityAttackSustainInterval => 0;
+        public virtual int SecondaryAbilityAttackSustainInterval => 0;
+        public virtual int TertiaryAbilityAttackSustainInterval => 0;
+        public virtual int UltimateAttackSustainInterval => 0;
         public virtual bool HasPrimaryAttack => PrimaryAttack > 0;
         public virtual bool HasSecondaryAttack => SecondaryAttack > 0;
         public virtual bool HasPrimaryAbilityAttack => PrimaryAbilityAttack > 0;
@@ -314,6 +328,23 @@ namespace Ben10Mod.Content.Transformations {
         }
         public virtual bool TryConsumeCurrentAttackCost(OmnitrixPlayer omp) {
             int energyCost = GetEnergyCost(omp);
+            if (energyCost <= 0)
+                return true;
+
+            if (omp.omnitrixEnergy < energyCost)
+                return false;
+
+            omp.omnitrixEnergy -= energyCost;
+            return true;
+        }
+        public virtual int GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return GetRawAttackProfile(selection, omp)?.SustainEnergyCost ?? 0;
+        }
+        public virtual int GetAttackSustainInterval(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return GetRawAttackProfile(selection, omp)?.SustainInterval ?? 0;
+        }
+        public virtual bool TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            int energyCost = GetAttackSustainEnergyCost(selection, omp);
             if (energyCost <= 0)
                 return true;
 
@@ -604,7 +635,9 @@ namespace Ben10Mod.Content.Transformations {
                 Channel = PrimaryChannel,
                 NoMelee = PrimaryNoMelee,
                 ArmorPenetration = PrimaryArmorPenetration,
-                EnergyCost = PrimaryEnergyCost
+                EnergyCost = PrimaryEnergyCost,
+                SustainEnergyCost = PrimaryAttackSustainEnergyCost,
+                SustainInterval = PrimaryAttackSustainInterval
             };
         }
 
@@ -619,7 +652,9 @@ namespace Ben10Mod.Content.Transformations {
                 Channel = SecondaryChannel,
                 NoMelee = SecondaryNoMelee,
                 ArmorPenetration = SecondaryArmorPenetration,
-                EnergyCost = SecondaryEnergyCost
+                EnergyCost = SecondaryEnergyCost,
+                SustainEnergyCost = SecondaryAttackSustainEnergyCost,
+                SustainInterval = SecondaryAttackSustainInterval
             };
         }
 
@@ -635,6 +670,8 @@ namespace Ben10Mod.Content.Transformations {
                 NoMelee = PrimaryAbilityAttackNoMelee,
                 ArmorPenetration = PrimaryAbilityAttackArmorPenetration,
                 EnergyCost = PrimaryAbilityAttackEnergyCost,
+                SustainEnergyCost = PrimaryAbilityAttackSustainEnergyCost,
+                SustainInterval = PrimaryAbilityAttackSustainInterval,
                 SingleUse = PrimaryAbilityAttackSingleUse
             };
         }
@@ -651,6 +688,8 @@ namespace Ben10Mod.Content.Transformations {
                 NoMelee = SecondaryAbilityAttackNoMelee,
                 ArmorPenetration = SecondaryAbilityAttackArmorPenetration,
                 EnergyCost = SecondaryAbilityAttackEnergyCost,
+                SustainEnergyCost = SecondaryAbilityAttackSustainEnergyCost,
+                SustainInterval = SecondaryAbilityAttackSustainInterval,
                 SingleUse = SecondaryAbilityAttackSingleUse
             };
         }
@@ -667,6 +706,8 @@ namespace Ben10Mod.Content.Transformations {
                 NoMelee = TertiaryAbilityAttackNoMelee,
                 ArmorPenetration = TertiaryAbilityAttackArmorPenetration,
                 EnergyCost = TertiaryAbilityAttackEnergyCost,
+                SustainEnergyCost = TertiaryAbilityAttackSustainEnergyCost,
+                SustainInterval = TertiaryAbilityAttackSustainInterval,
                 SingleUse = TertiaryAbilityAttackSingleUse
             };
         }
@@ -682,7 +723,9 @@ namespace Ben10Mod.Content.Transformations {
                 Channel = UltimateChannel,
                 NoMelee = UltimateNoMelee,
                 ArmorPenetration = UltimateArmorPenetration,
-                EnergyCost = UltimateEnergyCost
+                EnergyCost = UltimateEnergyCost,
+                SustainEnergyCost = UltimateAttackSustainEnergyCost,
+                SustainInterval = UltimateAttackSustainInterval
             };
         }
 

@@ -32,6 +32,8 @@ public class EyeGuyTransformation : Transformation {
     public override bool UltimateChannel => true;
     public override bool UltimateNoMelee => true;
     public override int UltimateEnergyCost => 10;
+    public override int UltimateAttackSustainEnergyCost => UltimateEnergyCost;
+    public override int UltimateAttackSustainInterval => UltimateAttackSpeed;
     public override int UltimateAbilityCooldown => 30 * 60;
     public override int PrimaryShootSpeed => 30;
     public override int PrimaryAttackSpeed => 15;
