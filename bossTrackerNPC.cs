@@ -1,4 +1,5 @@
-﻿using Ben10Mod.Content;
+﻿using System.Collections.Generic;
+using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
 using Terraria;
 using Terraria.ID;
@@ -10,6 +11,7 @@ namespace Ben10Mod {
 
         // Tracks per-player contribution on each boss instance so unlock rewards only go to participants.
         private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
+        private static readonly Dictionary<string, int[]> EncounterDamageByPlayer = new();
 
         private static bool CountsAsBoss(NPC npc) {
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
@@ -22,7 +24,7 @@ namespace Ben10Mod {
             return !string.IsNullOrEmpty(GetTransformationIdForBoss(npc.type));
         }
 
-        private void RecordDamage(int playerIndex, int damage) {
+        private void RecordDamage(NPC npc, int playerIndex, int damage) {
             if (damage <= 0) return;
             if (playerIndex < 0 || playerIndex >= Main.maxPlayers) return;
 
@@ -30,6 +32,17 @@ namespace Ben10Mod {
             if (!p.active) return;
 
             _damageByPlayer[playerIndex] += damage;
+
+            string encounterKey = GetEncounterContributionKey(npc);
+            if (string.IsNullOrEmpty(encounterKey))
+                return;
+
+            if (!EncounterDamageByPlayer.TryGetValue(encounterKey, out int[] encounterDamage)) {
+                encounterDamage = new int[Main.maxPlayers];
+                EncounterDamageByPlayer[encounterKey] = encounterDamage;
+            }
+
+            encounterDamage[playerIndex] += damage;
         }
 
 
@@ -42,7 +55,7 @@ namespace Ben10Mod {
 
             if (!CountsAsTrackedEncounter(npc)) return;
 
-            RecordDamage(player.whoAmI, damageDone);
+            RecordDamage(npc, player.whoAmI, damageDone);
         }
 
         public override void OnHitByProjectile(NPC npc, Projectile projectile, NPC.HitInfo hit, int damageDone) {
@@ -55,7 +68,7 @@ namespace Ben10Mod {
 
                 if (!CountsAsTrackedEncounter(npc)) return;
 
-                RecordDamage(owner, damageDone);
+                RecordDamage(npc, owner, damageDone);
             }
         }
 
@@ -63,42 +76,14 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
             if (!CountsAsTrackedEncounter(npc)) return;
 
-            int eaterCount = 0;
-
-            if (npc.type == NPCID.EaterofWorldsBody || npc.type == NPCID.EaterofWorldsHead ||
-                npc.type == NPCID.EaterofWorldsTail) {
-                for (int i = 0; i < Main.npc.Length; i++) {
-                    if (Main.npc[i].type == NPCID.EaterofWorldsBody || Main.npc[i].type == NPCID.EaterofWorldsHead ||
-                        Main.npc[i].type == NPCID.EaterofWorldsTail) {
-                        if (Main.npc[i].active) {
-                            eaterCount++;
-                        }
-                    }
-                }
-            }
-
-            if (eaterCount > 1)
-                return;
-
-            int twinsCount = 0;
-
-            if (npc.type == NPCID.Retinazer || npc.type == NPCID.Spazmatism) {
-                for (int i = 0; i < Main.npc.Length; i++) {
-                    if (Main.npc[i].type == NPCID.Retinazer || Main.npc[i].type == NPCID.Spazmatism) {
-                        if (Main.npc[i].active) {
-                            twinsCount++;
-                        }
-                    }
-                }
-            }
-
-            if (twinsCount > 1)
+            if (!IsEncounterComplete(npc))
                 return;
 
             string transformationId = GetTransformationIdForBoss(npc.type);
+            int[] contributionByPlayer = GetContributionByPlayer(npc);
 
             for (int i = 0; i < Main.maxPlayers; i++) {
-                if (_damageByPlayer[i] <= 0) continue;
+                if (contributionByPlayer[i] <= 0) continue;
 
                 Player player = Main.player[i];
                 if (!player.active) continue;
@@ -111,6 +96,63 @@ namespace Ben10Mod {
                 if (omp.equippedOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
                     omp.equippedOmnitrix.StartEvolution(player, omp);
             }
+
+            ClearEncounterContribution(npc);
+        }
+
+        private static string GetEncounterContributionKey(NPC npc) {
+            return npc.type switch {
+                NPCID.EaterofWorldsHead or NPCID.EaterofWorldsBody or NPCID.EaterofWorldsTail => "EaterOfWorlds",
+                NPCID.Retinazer or NPCID.Spazmatism => "Twins",
+                NPCID.TheDestroyer or NPCID.TheDestroyerBody or NPCID.TheDestroyerTail => "Destroyer",
+                NPCID.Golem or NPCID.GolemHead or NPCID.GolemHeadFree or NPCID.GolemFistLeft or NPCID.GolemFistRight => "Golem",
+                _ => string.Empty
+            };
+        }
+
+        private static int CountActiveNpcs(params int[] npcTypes) {
+            int count = 0;
+
+            for (int i = 0; i < Main.npc.Length; i++) {
+                NPC candidate = Main.npc[i];
+                if (!candidate.active)
+                    continue;
+
+                for (int j = 0; j < npcTypes.Length; j++) {
+                    if (candidate.type != npcTypes[j])
+                        continue;
+
+                    count++;
+                    break;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool IsEncounterComplete(NPC npc) {
+            return GetEncounterContributionKey(npc) switch {
+                "EaterOfWorlds" => CountActiveNpcs(NPCID.EaterofWorldsHead, NPCID.EaterofWorldsBody, NPCID.EaterofWorldsTail) <= 0,
+                "Twins" => CountActiveNpcs(NPCID.Retinazer, NPCID.Spazmatism) <= 0,
+                "Destroyer" => CountActiveNpcs(NPCID.TheDestroyer, NPCID.TheDestroyerBody, NPCID.TheDestroyerTail) <= 0,
+                "Golem" => CountActiveNpcs(NPCID.Golem, NPCID.GolemHead, NPCID.GolemHeadFree, NPCID.GolemFistLeft, NPCID.GolemFistRight) <= 0,
+                _ => true
+            };
+        }
+
+        private int[] GetContributionByPlayer(NPC npc) {
+            string encounterKey = GetEncounterContributionKey(npc);
+            if (!string.IsNullOrEmpty(encounterKey) &&
+                EncounterDamageByPlayer.TryGetValue(encounterKey, out int[] encounterDamage))
+                return encounterDamage;
+
+            return _damageByPlayer;
+        }
+
+        private static void ClearEncounterContribution(NPC npc) {
+            string encounterKey = GetEncounterContributionKey(npc);
+            if (!string.IsNullOrEmpty(encounterKey))
+                EncounterDamageByPlayer.Remove(encounterKey);
         }
 
         private static string GetTransformationIdForBoss(int npcType) {
@@ -152,6 +194,7 @@ namespace Ben10Mod {
                     return "Ben10Mod:Swampfire";
                 case NPCID.Golem:
                 case NPCID.GolemHead:
+                case NPCID.GolemHeadFree:
                 case NPCID.GolemFistLeft:
                 case NPCID.GolemFistRight:
                     return "Ben10Mod:Armodrillo";
