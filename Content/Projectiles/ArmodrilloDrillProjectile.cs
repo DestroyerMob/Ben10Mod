@@ -14,6 +14,12 @@ public class ArmodrilloDrillProjectile : ModProjectile {
     private const float MaxArmReach = 26f;
     private const float DrillTipLead = 26f;
     private const float HandNormalOffset = 5f;
+    private const int FrameCount = 4;
+    private const int FrameDuration = 4;
+
+    public override void SetStaticDefaults() {
+        Main.projFrames[Type] = FrameCount;
+    }
 
     public override void SetDefaults() {
         Projectile.width = 36;
@@ -42,6 +48,9 @@ public class ArmodrilloDrillProjectile : ModProjectile {
         Vector2 handPosition = GetHandPosition(owner, direction, thrust);
         Vector2 drillHeadPosition = handPosition + direction * DrillTipLead;
 
+        Projectile.frameCounter++;
+        Projectile.frame = (Projectile.frameCounter / FrameDuration) % FrameCount;
+
         Projectile.Center = drillHeadPosition;
         Projectile.rotation = direction.ToRotation();
         owner.itemRotation = direction.ToRotation() * owner.direction;
@@ -62,13 +71,14 @@ public class ArmodrilloDrillProjectile : ModProjectile {
         if (!owner.active)
             return false;
 
-        Texture2D texture = TextureAssets.Item[ItemID.ChlorophyteJackhammer].Value;
+        Texture2D texture = TextureAssets.Projectile[Type].Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Vector2 drawPosition = GetHandPosition(owner, direction, GetThrustAmount()) - Main.screenPosition;
-        Vector2 origin = new(8f, texture.Height - 8f);
-        float rotation = direction.ToRotation();
+        Rectangle frame = texture.Frame(1, FrameCount, 0, Projectile.frame);
+        Vector2 origin = new(frame.Width * 0.5f, frame.Height - 2f);
+        float rotation = direction.ToRotation() + MathHelper.PiOver2;
 
-        Main.EntitySpriteDraw(texture, drawPosition, null, Projectile.GetAlpha(lightColor), rotation, origin, Projectile.scale,
+        Main.EntitySpriteDraw(texture, drawPosition, frame, Projectile.GetAlpha(lightColor), rotation, origin, Projectile.scale,
             SpriteEffects.None, 0);
         return false;
     }
