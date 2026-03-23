@@ -826,6 +826,42 @@ namespace Ben10Mod {
             return CurrentTransformation?.GetAttackSelectionDisplayName(setAttack, this) ?? "No Attack";
         }
 
+        public int GetSelectedTransformationSlotIndex() {
+            Omnitrix activeOmnitrix = GetActiveOmnitrix();
+            if (activeOmnitrix == null || transformationSlots.Length == 0)
+                return -1;
+
+            return Utils.Clamp(activeOmnitrix.transformationNum, 0, transformationSlots.Length - 1);
+        }
+
+        public string GetSelectedTransformationId() {
+            int selectedSlot = GetSelectedTransformationSlotIndex();
+            if (selectedSlot < 0 || selectedSlot >= transformationSlots.Length)
+                return string.Empty;
+
+            return transformationSlots[selectedSlot] ?? string.Empty;
+        }
+
+        public string GetSelectedTransformationHudLabel() {
+            int selectedSlot = GetSelectedTransformationSlotIndex();
+            return selectedSlot >= 0 ? $"Slot {selectedSlot + 1}" : "No Slot";
+        }
+
+        public string GetSelectedTransformationDisplayName() {
+            string transformationId = GetSelectedTransformationId();
+            if (string.IsNullOrEmpty(transformationId))
+                return "Empty Slot";
+
+            Transformation selectedTransformation = TransformationLoader.Get(transformationId);
+            return selectedTransformation?.GetDisplayName(this) ?? "Unknown Form";
+        }
+
+        public Color GetSelectedTransformationAccentColor() {
+            return string.IsNullOrEmpty(GetSelectedTransformationId())
+                ? new Color(160, 170, 185)
+                : new Color(120, 255, 170);
+        }
+
         public Color GetCurrentAttackAccentColor() {
             return CurrentTransformation?.ResolveAttackSelection(setAttack, this) switch {
                 AttackSelection.Secondary => new Color(120, 200, 255),

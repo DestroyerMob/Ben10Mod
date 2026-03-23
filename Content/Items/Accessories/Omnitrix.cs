@@ -118,11 +118,6 @@ namespace Ben10Mod.Content.Items.Accessories
             return equippedItem.ModItem is not OsmosianHarness && incomingItem.ModItem is not OsmosianHarness;
         }
 
-        public override bool CanEquipAccessory(Player player, int slot, bool modded) {
-            return HeroAlterationSlotHelper.CanEquipOnlyInHeroAlterationSlot(modded, slot) &&
-                   !player.GetModPlayer<OmnitrixPlayer>().HasEquippedOsmosianHarness();
-        }
-
         public override void UpdateInventory(Player player)
         {
             base.UpdateInventory(player);

@@ -26,11 +26,6 @@ public class OsmosianHarness : ModItem, IHeroAlterationAccessory {
         player.GetModPlayer<OmnitrixPlayer>().osmosianEquipped = true;
     }
 
-    public override bool CanEquipAccessory(Player player, int slot, bool modded) {
-        return HeroAlterationSlotHelper.CanEquipOnlyInHeroAlterationSlot(modded, slot) &&
-               !player.GetModPlayer<OmnitrixPlayer>().HasAnyEquippedOmnitrix();
-    }
-
     public override bool CanAccessoryBeEquippedWith(Item equippedItem, Item incomingItem, Player player) {
         return equippedItem.ModItem is not Omnitrix && incomingItem.ModItem is not Omnitrix;
     }

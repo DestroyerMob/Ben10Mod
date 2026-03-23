@@ -168,18 +168,21 @@ namespace Ben10Mod.Content.Interface
 
         private void DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width)
         {
-            if (!omp.IsTransformed)
+            bool showAttackHud = omp.IsTransformed;
+            bool showSelectionHud = !omp.IsTransformed && omp.GetActiveOmnitrix() != null;
+
+            if (!showAttackHud && !showSelectionHud)
                 return;
 
             Transformation trans = omp.CurrentTransformation;
-            if (trans == null)
+            if (showAttackHud && trans == null)
                 return;
 
             Texture2D pixel = TextureAssets.MagicPixel.Value;
             Rectangle panelRect = new Rectangle(x, y, width, 66);
             bool holdingBadge = player.HeldItem.ModItem is PlumbersBadge;
             float pulse = MathHelper.Clamp(omp.AttackSelectionPulseProgress, 0f, 1f);
-            Color accent = omp.GetCurrentAttackAccentColor();
+            Color accent = showAttackHud ? omp.GetCurrentAttackAccentColor() : omp.GetSelectedTransformationAccentColor();
             Color borderColor = Color.Lerp(new Color(70, 90, 110), accent, 0.55f + pulse * 0.45f);
             Color fillColor = holdingBadge
                 ? new Color(10, 18, 24, 205)
@@ -197,11 +200,12 @@ namespace Ben10Mod.Content.Interface
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, 2, panelRect.Height), borderColor);
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
 
-            string slotLabel = omp.GetCurrentAttackSelectionLabel();
-            string attackName = omp.GetCurrentAttackDisplayName();
-            int energyCost = trans.GetEnergyCost(omp);
+            string title = showAttackHud ? "Attack" : "Selection";
+            string slotLabel = showAttackHud ? omp.GetCurrentAttackSelectionLabel() : omp.GetSelectedTransformationHudLabel();
+            string attackName = showAttackHud ? omp.GetCurrentAttackDisplayName() : omp.GetSelectedTransformationDisplayName();
+            int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
 
-            Utils.DrawBorderString(Main.spriteBatch, "Attack", new Vector2(panelRect.X + 10, panelRect.Y + 7),
+            Utils.DrawBorderString(Main.spriteBatch, title, new Vector2(panelRect.X + 10, panelRect.Y + 7),
                 new Color(220, 230, 240), 0.8f);
             Utils.DrawBorderString(Main.spriteBatch, slotLabel, new Vector2(panelRect.Right - 10, panelRect.Y + 7),
                 borderColor, 0.82f, 1f, 0f);
