@@ -287,11 +287,15 @@ public class TransformationPaletteScreen : UIState {
 
     public override void OnActivate() {
         base.OnActivate();
+        if (mainPanel == null)
+            return;
         RefreshPaletteContext(force: true);
     }
 
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
+        if (mainPanel == null)
+            return;
         RefreshPaletteContext(force: false);
 
         if (mainPanel.ContainsPoint(Main.MouseScreen))
@@ -513,6 +517,8 @@ public class TransformationPaletteScreen : UIState {
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {
         base.DrawSelf(spriteBatch);
+        if (mainPanel == null)
+            return;
 
         if (ContainsPoint(Main.MouseScreen))
             Main.LocalPlayer.mouseInterface = true;

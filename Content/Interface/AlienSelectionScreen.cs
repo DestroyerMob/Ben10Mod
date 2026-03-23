@@ -45,25 +45,38 @@ namespace Ben10Mod.Content.Interface
         internal TransformationPaletteScreen TPS;
         private GameTime _lastUpdateUiGameTime;
 
-        public override void Load()
+        private void EnsureInterfaceInitialized()
         {
-            if (!Main.dedServ)
-            {
-                MyInterface = new UserInterface();
+            if (Main.dedServ)
+                return;
+
+            MyInterface ??= new UserInterface();
+
+            if (AS == null) {
                 AS = new AlienSelectionScreen();
                 AS.Activate();
+            }
+
+            if (TPS == null) {
                 TPS = new TransformationPaletteScreen();
                 TPS.Activate();
             }
         }
 
+        public override void Load()
+        {
+            EnsureInterfaceInitialized();
+        }
+
         public override void Unload() {
+            MyInterface = null;
             AS = null;
             TPS = null;
         }
 
         public override void UpdateUI(GameTime gameTime)
         {
+            EnsureInterfaceInitialized();
             _lastUpdateUiGameTime = gameTime;
             if (MyInterface?.CurrentState != null)
                 MyInterface.Update(gameTime);
@@ -71,6 +84,7 @@ namespace Ben10Mod.Content.Interface
 
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
         {
+            EnsureInterfaceInitialized();
             int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Mouse Text"));
             if (mouseTextIndex != -1)
             {
@@ -227,8 +241,16 @@ namespace Ben10Mod.Content.Interface
             }
         }
 
-        internal void ShowMyUI() => MyInterface?.SetState(AS);
-        internal void ShowPaletteUI() => MyInterface?.SetState(TPS);
+        internal void ShowMyUI() {
+            EnsureInterfaceInitialized();
+            MyInterface?.SetState(AS);
+        }
+
+        internal void ShowPaletteUI() {
+            EnsureInterfaceInitialized();
+            MyInterface?.SetState(TPS);
+        }
+
         internal void HideMyUI() => MyInterface?.SetState(null);
     }
 
