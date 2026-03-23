@@ -118,12 +118,12 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string SecondaryAbilityAttackName => null;
         public virtual string TertiaryAbilityAttackName => null;
         public virtual string UltimateAttackName => null;
-        public virtual string PrimaryAttackDisplayName => ResolveAttackName(PrimaryAttackName, PrimaryAttack, "Primary Attack");
-        public virtual string SecondaryAttackDisplayName => ResolveAttackName(SecondaryAttackName, SecondaryAttack, "Secondary Attack");
-        public virtual string PrimaryAbilityAttackDisplayName => ResolveAttackName(PrimaryAbilityAttackName, PrimaryAbilityAttack, "Primary Ability");
-        public virtual string SecondaryAbilityAttackDisplayName => ResolveAttackName(SecondaryAbilityAttackName, SecondaryAbilityAttack, "Secondary Ability");
-        public virtual string TertiaryAbilityAttackDisplayName => ResolveAttackName(TertiaryAbilityAttackName, TertiaryAbilityAttack, "Tertiary Ability");
-        public virtual string UltimateAttackDisplayName => ResolveAttackName(UltimateAttackName, UltimateAttack, "Ultimate Attack");
+        public virtual string PrimaryAttackDisplayName => ResolveAttackName(PrimaryAttackName, "Primary Attack");
+        public virtual string SecondaryAttackDisplayName => ResolveAttackName(SecondaryAttackName, "Secondary Attack");
+        public virtual string PrimaryAbilityAttackDisplayName => ResolveAttackName(PrimaryAbilityAttackName, "Primary Ability");
+        public virtual string SecondaryAbilityAttackDisplayName => ResolveAttackName(SecondaryAbilityAttackName, "Secondary Ability");
+        public virtual string TertiaryAbilityAttackDisplayName => ResolveAttackName(TertiaryAbilityAttackName, "Tertiary Ability");
+        public virtual string UltimateAttackDisplayName => ResolveAttackName(UltimateAttackName, "Ultimate Attack");
         public virtual bool HasChildTransformation => ChildTransformation != null || ChildTransformations.Count > 0;
         public virtual Transformation ChildTransformation => null;
         public virtual IReadOnlyList<Transformation> ChildTransformations => System.Array.Empty<Transformation>();
@@ -346,11 +346,11 @@ namespace Ben10Mod.Content.Transformations {
             return string.IsNullOrWhiteSpace(displayName) ? fallback : displayName;
         }
 
-        protected static string ResolveAttackName(string configuredName, int projectileType, string fallback) {
+        protected static string ResolveAttackName(string configuredName, string fallback) {
             if (!string.IsNullOrWhiteSpace(configuredName))
                 return configuredName;
 
-            return ResolveProjectileDisplayName(projectileType, fallback);
+            return fallback;
         }
 
         protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {
@@ -579,7 +579,7 @@ namespace Ben10Mod.Content.Transformations {
             if (!string.IsNullOrWhiteSpace(profile.DisplayName))
                 return profile.DisplayName;
 
-            return ResolveProjectileDisplayName(profile.ProjectileType, fallback);
+            return fallback;
         }
 
         protected virtual bool ShootAttackProfile(Player player, EntitySource_ItemUse_WithAmmo source,
