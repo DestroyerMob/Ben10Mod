@@ -15,8 +15,6 @@ public class ArmodrilloDrillProjectile : ModProjectile {
     private const float DrillTipLead = 26f;
     private const float HandNormalOffset = 5f;
 
-    public override string Texture => $"Terraria/Images/Item_{ItemID.ChlorophyteJackhammer}";
-
     public override void SetDefaults() {
         Projectile.width = 36;
         Projectile.height = 36;
