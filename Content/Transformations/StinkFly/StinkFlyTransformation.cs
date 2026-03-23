@@ -24,6 +24,8 @@ public class StinkFlyTransformation : Transformation {
         "Flight"
     };
 
+    public override string PrimaryAttackName => "Slime Shot";
+    public override string SecondaryAttackName => "Poison Spit";
     public override int PrimaryAttack => ModContent.ProjectileType<StinkFlySlowProjectile>();
     public override int PrimaryAttackSpeed => 30;
     public override int PrimaryShootSpeed => 25;

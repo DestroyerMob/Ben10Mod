@@ -25,6 +25,8 @@ public class ArmodrilloTransformation : Transformation {
         "Seismic slam ultimate attack"
     };
 
+    public override string PrimaryAttackName => "Piston Drill";
+    public override string UltimateAttackName => "Seismic Slam";
     public override int PrimaryAttack => ModContent.ProjectileType<ArmodrilloDrillProjectile>();
     public override int PrimaryAttackSpeed => 24;
     public override int PrimaryShootSpeed => 10;

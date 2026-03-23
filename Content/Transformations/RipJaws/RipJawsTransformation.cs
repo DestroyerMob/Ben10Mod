@@ -36,6 +36,8 @@ public class RipJawsTransformation : Transformation {
         "Amphibious survival pressure"
     };
 
+    public override string PrimaryAttackName => "Razor Bite";
+    public override string SecondaryAttackName => "Bite Dash";
     public override int PrimaryAttack => ModContent.ProjectileType<RipJawsProjectile>();
     public override int PrimaryAttackSpeed => 28;
     public override int PrimaryShootSpeed => 6;

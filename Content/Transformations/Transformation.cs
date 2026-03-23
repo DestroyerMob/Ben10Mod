@@ -112,12 +112,18 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
         public virtual string Description => "A mysterious alien from the Omnitrix database.";
         public virtual List<string> Abilities => new List<string> { "Unknown abilities" };
-        public virtual string PrimaryAttackDisplayName => ResolveProjectileDisplayName(PrimaryAttack, "Primary Attack");
-        public virtual string SecondaryAttackDisplayName => ResolveProjectileDisplayName(SecondaryAttack, "Secondary Attack");
-        public virtual string PrimaryAbilityAttackDisplayName => ResolveProjectileDisplayName(PrimaryAbilityAttack, "Primary Ability");
-        public virtual string SecondaryAbilityAttackDisplayName => ResolveProjectileDisplayName(SecondaryAbilityAttack, "Secondary Ability");
-        public virtual string TertiaryAbilityAttackDisplayName => ResolveProjectileDisplayName(TertiaryAbilityAttack, "Tertiary Ability");
-        public virtual string UltimateAttackDisplayName => ResolveProjectileDisplayName(UltimateAttack, "Ultimate Attack");
+        public virtual string PrimaryAttackName => null;
+        public virtual string SecondaryAttackName => null;
+        public virtual string PrimaryAbilityAttackName => null;
+        public virtual string SecondaryAbilityAttackName => null;
+        public virtual string TertiaryAbilityAttackName => null;
+        public virtual string UltimateAttackName => null;
+        public virtual string PrimaryAttackDisplayName => ResolveAttackName(PrimaryAttackName, PrimaryAttack, "Primary Attack");
+        public virtual string SecondaryAttackDisplayName => ResolveAttackName(SecondaryAttackName, SecondaryAttack, "Secondary Attack");
+        public virtual string PrimaryAbilityAttackDisplayName => ResolveAttackName(PrimaryAbilityAttackName, PrimaryAbilityAttack, "Primary Ability");
+        public virtual string SecondaryAbilityAttackDisplayName => ResolveAttackName(SecondaryAbilityAttackName, SecondaryAbilityAttack, "Secondary Ability");
+        public virtual string TertiaryAbilityAttackDisplayName => ResolveAttackName(TertiaryAbilityAttackName, TertiaryAbilityAttack, "Tertiary Ability");
+        public virtual string UltimateAttackDisplayName => ResolveAttackName(UltimateAttackName, UltimateAttack, "Ultimate Attack");
         public virtual bool HasChildTransformation => ChildTransformation != null || ChildTransformations.Count > 0;
         public virtual Transformation ChildTransformation => null;
         public virtual IReadOnlyList<Transformation> ChildTransformations => System.Array.Empty<Transformation>();
@@ -338,6 +344,13 @@ namespace Ben10Mod.Content.Transformations {
 
             string displayName = Lang.GetProjectileName(projectileType).Value;
             return string.IsNullOrWhiteSpace(displayName) ? fallback : displayName;
+        }
+
+        protected static string ResolveAttackName(string configuredName, int projectileType, string fallback) {
+            if (!string.IsNullOrWhiteSpace(configuredName))
+                return configuredName;
+
+            return ResolveProjectileDisplayName(projectileType, fallback);
         }
 
         protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {

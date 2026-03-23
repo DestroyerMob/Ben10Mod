@@ -27,6 +27,7 @@ public class ChromaStoneTransformation : Transformation {
         "Chromatic empowered glow"
     };
 
+    public override string PrimaryAttackName => "Crystal Bolt";
     public override int PrimaryAttack => ModContent.ProjectileType<ChromaStoneProjectile>();
 
     public override int PrimaryAbilityDuration => 60 * 60;

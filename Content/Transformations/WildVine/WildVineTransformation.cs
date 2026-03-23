@@ -21,6 +21,8 @@ public class WildVineTransformation : Transformation {
         "Plant grapple"
     };
 
+    public override string PrimaryAttackName => "Vine Lash";
+    public override string SecondaryAttackName => "Vine Grapple";
     public override int PrimaryAttack => ModContent.ProjectileType<WildVineProjectile>();
     public override int PrimaryAttackSpeed => 32;
     public override int PrimaryShootSpeed => 10;

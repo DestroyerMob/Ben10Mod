@@ -30,6 +30,8 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
         "Resonance overclock"
     };
 
+    public override string PrimaryAttackName => "Resonance Burst";
+    public override string SecondaryAttackName => "Speaker Deployment";
     public override float PrimaryAttackModifier => 1.15f;
     public override int SecondaryAttack => ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
     public override int SecondaryAttackSpeed => 22;

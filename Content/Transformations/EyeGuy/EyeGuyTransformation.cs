@@ -22,6 +22,8 @@ public class EyeGuyTransformation : Transformation {
         "Channeled ultimate eye beam"
     };
 
+    public override string PrimaryAttackName => "Eye Laser";
+    public override string UltimateAttackName => "Optic Beam";
     public override int PrimaryAttack => ModContent.ProjectileType<EyeGuyLaserbeam>();
     public override int UltimateAttack => ModContent.ProjectileType<EyeGuyUltimateBeam>();
     public override int UltimateAttackSpeed => 10;

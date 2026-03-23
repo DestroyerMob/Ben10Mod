@@ -26,6 +26,8 @@ public class DiamondHeadTransformation : Transformation {
         "Falling giant diamond ultimate"
     };
 
+    public override string PrimaryAttackName => "Crystal Shard";
+    public override string UltimateAttackName => "Giant Diamond";
     public override int PrimaryAttack => ModContent.ProjectileType<DiamondHeadProjectile>();
     public override float PrimaryAttackModifier => 0.5f;
     public override int PrimaryAttackSpeed => 8;

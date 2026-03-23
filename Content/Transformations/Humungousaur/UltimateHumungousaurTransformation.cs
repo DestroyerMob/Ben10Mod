@@ -27,6 +27,8 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         "Heavy durability"
     };
 
+    public override string PrimaryAttackName => "Rocket Punch";
+    public override string SecondaryAttackName => "Rocket Barrage";
     public override int PrimaryAttack => ProjectileID.RocketIII;
     public override int PrimaryAttackSpeed => 20;
     public override int PrimaryShootSpeed => 14;

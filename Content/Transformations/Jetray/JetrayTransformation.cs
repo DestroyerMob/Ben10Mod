@@ -27,6 +27,8 @@ public class JetrayTransformation : Transformation {
         "Quick aerial flight"
     };
 
+    public override string PrimaryAttackName => "Neuro Laser";
+    public override string SecondaryAttackName => "Jet Dash";
     public override int PrimaryAttack => ModContent.ProjectileType<JetrayLaserProjectile>();
     public override int PrimaryAttackSpeed => 15;
     public override int PrimaryShootSpeed => 30;

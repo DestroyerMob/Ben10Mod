@@ -28,6 +28,8 @@ public class EchoEchoTransformation : Transformation {
         "Ultimate evolution"
     };
 
+    public override string PrimaryAttackName => "Sonic Burst";
+    public override string SecondaryAttackName => "Echo Clone";
     public override int PrimaryAttack => ModContent.ProjectileType<EchoEchoSonicBlastProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 14;

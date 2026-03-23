@@ -23,6 +23,8 @@ public class FourArmsTransformation : Transformation {
         "High leap and fall resistance"
     };
 
+    public override string PrimaryAttackName => "Power Punch";
+    public override string SecondaryAttackName => "Shockwave Clap";
     public override int PrimaryAttack => ModContent.ProjectileType<FourArmsPunchProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 25;
