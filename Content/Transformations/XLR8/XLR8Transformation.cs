@@ -27,12 +27,18 @@ public class XLR8Transformation : Transformation {
     };
 
     public override string PrimaryAttackName       => "Speed Strike";
+    public override string SecondaryAttackName     => "Velocity Dash";
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
     public override int    PrimaryAttackSpeed      => 12;
     public override int    PrimaryShootSpeed       => 30;
     public override float  PrimaryAttackModifier   => 0.75f;
+    public override int    SecondaryAttack         => ModContent.ProjectileType<XLR8DashProjectile>();
+    public override int    SecondaryAttackSpeed    => 120;
+    public override int    SecondaryShootSpeed     => 14;
+    public override int    SecondaryUseStyle       => ItemUseStyleID.Shoot;
+    public override float  SecondaryAttackModifier => 1.35f;
     public override bool   HasUltimateAbility      => true;
     public override int    UltimateAbilityCost     => 100;
     public override int    UltimateAbilityDuration => 4 * 60;
