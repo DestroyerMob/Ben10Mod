@@ -3,15 +3,16 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.DataStructures;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsGroundSlamPlayer : ModPlayer {
     private const string TransformationId = "Ben10Mod:FourArms";
-    private const float FastFallAcceleration = 0.72f;
+    private const float FastFallAcceleration = 5f;
     private const float FastFallMinimumSpeed = 9.5f;
-    private const float FastFallSpeedCap = 17.5f;
+    private const float FastFallSpeedCap = 55f;
     private const float MinimumImpactSpeed = 8f;
     private const float ShockwaveDamageMultiplier = 0.8f;
     private const int FallbackBaseDamage = 28;
@@ -98,16 +99,35 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     }
 
     private static bool IsGrounded(Player player) {
-        if (player.velocity.Y < 0f)
+        if (player.velocity.Y < 0f || !player.active || player.dead)
             return false;
 
-        int tileY = (int)Math.Floor((player.position.Y + player.height) / 16f);
+        if (Collision.SolidCollision(player.position + new Vector2(0f, player.height - 2f), player.width, 8))
+            return true;
+
+        float feetY = player.position.Y + player.height;
+        int tileY = (int)Math.Floor((feetY + 2f) / 16f);
         int leftTileX = (int)Math.Floor((player.position.X + 2f) / 16f);
         int centerTileX = (int)Math.Floor(player.Center.X / 16f);
         int rightTileX = (int)Math.Floor((player.position.X + player.width - 2f) / 16f);
 
-        return WorldGen.SolidTileAllowBottomSlope(leftTileX, tileY) ||
-               WorldGen.SolidTileAllowBottomSlope(centerTileX, tileY) ||
-               WorldGen.SolidTileAllowBottomSlope(rightTileX, tileY);
+        return IsLandingSurface(leftTileX, tileY, feetY) ||
+               IsLandingSurface(centerTileX, tileY, feetY) ||
+               IsLandingSurface(rightTileX, tileY, feetY);
+    }
+
+    private static bool IsLandingSurface(int tileX, int tileY, float feetY) {
+        Tile tile = Framing.GetTileSafely(tileX, tileY);
+        if (!tile.HasTile)
+            return false;
+
+        if (WorldGen.SolidTileAllowBottomSlope(tileX, tileY))
+            return true;
+
+        if (!Main.tileSolidTop[tile.TileType])
+            return false;
+
+        float tileTop = tileY * 16f;
+        return feetY <= tileTop + 8f;
     }
 }

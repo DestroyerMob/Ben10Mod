@@ -41,6 +41,7 @@ public class BuzzShockTransformation : Transformation {
     public override int UltimateShootSpeed => 25;
     public override int UltimateEnergyCost => 25;
     public override float UltimateAttackModifier => 2.5f;
+    public override int UltimateAbilityCooldown => 30 * 60;
 
     public override int SecondaryAttack => -1;
 

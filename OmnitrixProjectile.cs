@@ -278,7 +278,7 @@ public class OmnitrixProjectile : GlobalProjectile {
     }
 
     private static bool ShouldDrawMagistrataOutline(Projectile projectile) {
-        if (!ShouldApplyMagistrataVisuals(projectile) || projectile.hide || IsDustOnlyProjectile(projectile))
+        if (!ShouldApplyMagistrataVisuals(projectile) || IsDustOnlyProjectile(projectile))
             return false;
 
         return true;
@@ -302,9 +302,9 @@ public class OmnitrixProjectile : GlobalProjectile {
     }
 
     private static bool IsDustOnlyProjectile(Projectile projectile) {
-        string texturePath = projectile.ModProjectile?.Texture;
+        string texturePath = GetProjectileTexturePath(projectile);
         if (string.IsNullOrEmpty(texturePath))
-            return projectile.hide;
+            return true;
 
         foreach (string texturelessPath in TexturelessProjectilePaths) {
             if (string.Equals(texturePath, texturelessPath, StringComparison.Ordinal))
@@ -312,6 +312,16 @@ public class OmnitrixProjectile : GlobalProjectile {
         }
 
         return projectile.hide && string.Equals(texturePath, $"Terraria/Images/Projectile_{ProjectileID.None}", StringComparison.Ordinal);
+    }
+
+    private static string GetProjectileTexturePath(Projectile projectile) {
+        if (!string.IsNullOrEmpty(projectile.ModProjectile?.Texture))
+            return projectile.ModProjectile.Texture;
+
+        if (projectile.type >= 0)
+            return $"Terraria/Images/Projectile_{projectile.type}";
+
+        return string.Empty;
     }
 
     private static bool TryGetMagistrataOutlineDrawData(Projectile projectile, out MagistrataOutlineDrawData drawData) {

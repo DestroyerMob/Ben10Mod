@@ -1,6 +1,5 @@
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Debuffs;
-using Ben10Mod.Content.Transformations.HeatBlast;
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,7 +16,7 @@ public class NpcEffects : GlobalNPC {
     private const int ElectrocutedMovingDamagePerSecond = 16;
     private const int EnergyOverloadedDamagePerSecond = 45;
     
-    public bool IsPossessed(NPC npc) {
+    private static bool IsPossessed(NPC npc) {
         foreach (Player p in Main.ActivePlayers) {
             var omp = p.GetModPlayer<OmnitrixPlayer>();
             if (omp.inPossessionMode && omp.possessedTargetIndex == npc.whoAmI) return true;
@@ -51,29 +50,18 @@ public class NpcEffects : GlobalNPC {
     }
 
     public override bool PreAI(NPC npc) {
-        var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
         if (ShouldHardFreeze(npc)) {
             npc.velocity = Vector2.Zero;
             npc.position = npc.oldPosition;
             return false;
         }
 
-        if (omp.IsUltimateAbilityActive && omp.CurrentTransformation == ModContent.GetInstance<HeatBlastTransformation>()) {
-            npc.velocity = Vector2.Zero;
-        }
         return base.PreAI(npc);
     }
 
     public override void AI(NPC npc) {
-        var omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-        
-        if (IsPossessed(npc)) {
+        if (IsPossessed(npc))
             npc.velocity *= 0.68f;
-        }
-
-        // if (omp.currTransformation == TransformationEnum.BigChill && omp.UltimateAbilityEnabled && npc.active && !npc.friendly) {
-        //     npc.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
-        // }
     }
 
     public override void UpdateLifeRegen(NPC npc, ref int damage) {

@@ -42,6 +42,7 @@ public class GhostFreakTransformation : Transformation {
     public override int UltimateAttackSpeed => 14;
     public override int UltimateShootSpeed => 12;
     public override int UltimateEnergyCost => 50;
+    public override int UltimateAbilityCooldown => 30 * 60;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);

@@ -44,6 +44,7 @@ public class DiamondHeadTransformation : Transformation {
     public override int UltimateUseStyle => ItemUseStyleID.Shoot;
     public override int UltimateArmorPenetration => 25;
     public override int UltimateEnergyCost => 25;
+    public override int UltimateAbilityCooldown => 30 * 60;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);

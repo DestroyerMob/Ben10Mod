@@ -12,8 +12,8 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
-        Projectile.width = 84;
-        Projectile.height = 26;
+        Projectile.width = 128;
+        Projectile.height = 52;
         Projectile.friendly = true;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
@@ -33,7 +33,7 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
     }
 
     private void SpawnImpactDust() {
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 24; i++) {
             float completion = i / 11f;
             float direction = MathHelper.Lerp(-1f, 1f, completion);
             Vector2 position = Projectile.Center + new Vector2(direction * DustRadius, Main.rand.NextFloat(-4f, 4f));
@@ -44,7 +44,7 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
             dust.noGravity = true;
         }
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 16; i++) {
             float direction = Main.rand.NextBool() ? -1f : 1f;
             Vector2 velocity = new Vector2(direction * Main.rand.NextFloat(0.9f, 2.4f), Main.rand.NextFloat(-1.4f, -0.2f));
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(10f, 5f), DustID.Stone, velocity, 90,
