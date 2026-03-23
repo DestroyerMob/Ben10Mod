@@ -91,6 +91,7 @@ namespace Ben10Mod {
         public const int DashCooldown = 15;
         public const int DashDuration = 15;
 
+        public const int TransformationSlotCount = 5;
         public string[] transformationSlots = { "Ben10Mod:HeatBlast", "", "", "", "" };
         public string currentTransformationId = "";
         public List<string> unlockedTransformations = new() { "Ben10Mod:HeatBlast" };
@@ -260,6 +261,8 @@ namespace Ben10Mod {
 
             if (!unlockedTransformations.Contains("Ben10Mod:HeatBlast"))
                 unlockedTransformations.Insert(0, "Ben10Mod:HeatBlast");
+
+            transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
         }
 
         private static string MapOldTransformationId(TransformationEnumOld transformation) {
@@ -1230,9 +1233,10 @@ namespace Ben10Mod {
 
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.RequestSyncTransformationState);
-            packet.Write((byte)transformationSlots.Length);
-            for (int i = 0; i < transformationSlots.Length; i++)
-                packet.Write(transformationSlots[i] ?? string.Empty);
+            string[] normalizedSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
+            packet.Write((byte)normalizedSlots.Length);
+            for (int i = 0; i < normalizedSlots.Length; i++)
+                packet.Write(normalizedSlots[i] ?? string.Empty);
 
             packet.Write((ushort)unlockedTransformations.Count);
             for (int i = 0; i < unlockedTransformations.Count; i++)
@@ -1260,20 +1264,7 @@ namespace Ben10Mod {
             unlockedTransformations.Clear();
             unlockedTransformations.AddRange(normalizedUnlocks);
 
-            int slotCount = transformationSlots?.Length ?? 5;
-            string[] normalizedSlots = new string[slotCount];
-
-            if (slots != null) {
-                for (int i = 0; i < normalizedSlots.Length && i < slots.Length; i++) {
-                    Transformation transformation = TransformationLoader.Resolve(slots[i]);
-                    if (transformation == null || !unlockedTransformations.Contains(transformation.FullID))
-                        continue;
-
-                    normalizedSlots[i] = transformation.FullID;
-                }
-            }
-
-            transformationSlots = normalizedSlots;
+            transformationSlots = NormalizeTransformationSlots(slots, unlockedTransformations);
 
             if (!string.IsNullOrEmpty(currentTransformationId) && !unlockedTransformations.Contains(currentTransformationId))
                 currentTransformationId = "";
@@ -1687,27 +1678,50 @@ namespace Ben10Mod {
             if (Main.netMode != NetmodeID.Server)
                 return;
 
+            string[] normalizedSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
+            transformationSlots = normalizedSlots;
+
             if (!Main.dedServ && Player.whoAmI == Main.myPlayer) {
                 Player localPlayer = Main.LocalPlayer;
                 if (localPlayer != null && localPlayer.active) {
                     OmnitrixPlayer localOmnitrixPlayer = localPlayer.GetModPlayer<OmnitrixPlayer>();
                     if (!ReferenceEquals(localOmnitrixPlayer, this))
-                        localOmnitrixPlayer.ApplyTransformationStateSync((string[])transformationSlots.Clone(), unlockedTransformations.ToArray());
+                        localOmnitrixPlayer.ApplyTransformationStateSync((string[])normalizedSlots.Clone(), unlockedTransformations.ToArray());
                 }
             }
 
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.SyncTransformationState);
             packet.Write((byte)Player.whoAmI);
-            packet.Write((byte)transformationSlots.Length);
-            for (int i = 0; i < transformationSlots.Length; i++)
-                packet.Write(transformationSlots[i] ?? string.Empty);
+            packet.Write((byte)normalizedSlots.Length);
+            for (int i = 0; i < normalizedSlots.Length; i++)
+                packet.Write(normalizedSlots[i] ?? string.Empty);
 
             packet.Write((ushort)unlockedTransformations.Count);
             for (int i = 0; i < unlockedTransformations.Count; i++)
                 packet.Write(unlockedTransformations[i] ?? string.Empty);
 
             packet.Send(toWho, ignoreClient);
+        }
+
+        private static string[] NormalizeTransformationSlots(string[] slots, IList<string> unlocked) {
+            string[] normalizedSlots = new string[TransformationSlotCount];
+
+            if (slots == null)
+                return normalizedSlots;
+
+            for (int i = 0; i < normalizedSlots.Length && i < slots.Length; i++) {
+                Transformation transformation = TransformationLoader.Resolve(slots[i]);
+                if (transformation == null)
+                    continue;
+
+                if (unlocked != null && !unlocked.Contains(transformation.FullID))
+                    continue;
+
+                normalizedSlots[i] = transformation.FullID;
+            }
+
+            return normalizedSlots;
         }
 
         private void UpdateEventTransformationUnlocks() {

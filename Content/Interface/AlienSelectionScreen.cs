@@ -273,7 +273,10 @@ namespace Ben10Mod.Content.Interface
                 slot.OnMouseOver += (_, _) =>
                 {
                     var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-                    UpdateInfoPanelFromTransformationId(player.transformationSlots[index]);
+                    string transformationId = index < player.transformationSlots.Length
+                        ? player.transformationSlots[index]
+                        : string.Empty;
+                    UpdateInfoPanelFromTransformationId(transformationId);
                 };
 
                 mainPanel.Append(slot);
@@ -380,7 +383,7 @@ namespace Ben10Mod.Content.Interface
 
             for (int i = 0; i < rosterSlots.Count; i++)
             {
-                string id = player.transformationSlots[i];
+                string id = i < player.transformationSlots.Length ? player.transformationSlots[i] : string.Empty;
                 var trans = TransformationLoader.Get(id);
                 rosterSlots[i].SetImage(trans?.GetTransformationIcon() ?? ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
             }
