@@ -26,15 +26,16 @@ public class XLR8Transformation : Transformation {
         "Time-slowing ultimate field"
     };
 
-    public override int    PrimaryAbilityDuration  => 10 * 60;
-    public override int    PrimaryAbilityCooldown  => 30 * 60;
-    public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
-    public override int    PrimaryAttackSpeed      => 12;
-    public override int    PrimaryShootSpeed       => 30;
-    public override bool   HasUltimateAbility      => true;
-    public override int    UltimateAbilityCost     => 100;
-    public override int    UltimateAbilityDuration => 4 * 60;
-    public override int    UltimateAbilityCooldown => 60 * 60;
+    public override int   PrimaryAbilityDuration  => 10 * 60;
+    public override int   PrimaryAbilityCooldown  => 30 * 60;
+    public override int   PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
+    public override int   PrimaryAttackSpeed      => 12;
+    public override int   PrimaryShootSpeed       => 30;
+    public override float PrimaryAttackModifier   => 0.75f;
+    public override bool  HasUltimateAbility      => true;
+    public override int   UltimateAbilityCost     => 100;
+    public override int   UltimateAbilityDuration => 4 * 60;
+    public override int   UltimateAbilityCooldown => 60 * 60;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
