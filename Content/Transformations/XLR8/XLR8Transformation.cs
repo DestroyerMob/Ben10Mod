@@ -26,12 +26,13 @@ public class XLR8Transformation : Transformation {
         "Time-slowing ultimate field"
     };
 
-    public override string PrimaryAttackName => "Speed Strike";
+    public override string PrimaryAttackName       => "Speed Strike";
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
     public override int    PrimaryAttackSpeed      => 12;
     public override int    PrimaryShootSpeed       => 30;
+    public override float  PrimaryAttackModifier   => 0.75f;
     public override bool   HasUltimateAbility      => true;
     public override int    UltimateAbilityCost     => 100;
     public override int    UltimateAbilityDuration => 4 * 60;
