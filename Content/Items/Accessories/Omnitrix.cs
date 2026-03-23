@@ -339,6 +339,10 @@ namespace Ben10Mod.Content.Items.Accessories
             if (string.IsNullOrEmpty(textureKey))
                 return;
 
+            var heroSlot = ModContent.GetInstance<OmnitrixSlot>();
+            int handShader = heroSlot?.DyeItem?.dye ?? 0;
+            player.cHandOn = handShader;
+            player.cHandOff = handShader;
             player.handon = EquipLoader.GetEquipSlot(Mod, textureKey, EquipType.HandsOn);
         }
 

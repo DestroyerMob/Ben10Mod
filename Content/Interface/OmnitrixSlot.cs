@@ -11,13 +11,13 @@ namespace Ben10Mod.Content.Interface
 
         public override bool CanAcceptItem(Item checkItem, AccessorySlotType context) {
             if (context == AccessorySlotType.DyeSlot)
-                return false;
+                return checkItem.IsAir || checkItem.dye > 0;
 
             return HeroAlterationSlotHelper.IsHeroAlterationAccessory(checkItem);
         }
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) {
-            return HeroAlterationSlotHelper.IsHeroAlterationAccessory(item);
+            return HeroAlterationSlotHelper.IsHeroAlterationAccessory(item) || item.dye > 0;
         }
 
         public override void OnMouseHover(AccessorySlotType context) {
