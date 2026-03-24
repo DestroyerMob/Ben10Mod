@@ -11,6 +11,7 @@ namespace Ben10Mod.Common.CustomVisuals;
 
 public class TransformationPaletteLayer : PlayerDrawLayer {
     private static readonly Dictionary<string, Texture2D> MaskedBaseTextureCache = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, Texture2D> IntersectedMaskTextureCache = new(StringComparer.Ordinal);
 
     private readonly struct ResolvedOverlay {
         public ResolvedOverlay(Texture2D baseTexture, Texture2D maskTexture, Color color) {
@@ -61,7 +62,8 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
                 if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
                     continue;
 
-                overlays.Add(new ResolvedOverlay(baseTexture, maskTexture, channelColor));
+                Texture2D intersectedMaskTexture = GetIntersectedMaskTexture(baseTexture, maskTexture);
+                overlays.Add(new ResolvedOverlay(baseTexture, intersectedMaskTexture, channelColor));
             }
         }
 
@@ -164,6 +166,42 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
         maskedBaseTexture.SetData(baseData);
         MaskedBaseTextureCache[cacheKey] = maskedBaseTexture;
         return maskedBaseTexture;
+    }
+
+    private static Texture2D GetIntersectedMaskTexture(Texture2D baseTexture, Texture2D maskTexture) {
+        if (baseTexture == null || maskTexture == null)
+            return maskTexture;
+
+        if (baseTexture.Width != maskTexture.Width || baseTexture.Height != maskTexture.Height)
+            return maskTexture;
+
+        string cacheKey = $"{baseTexture.GetHashCode()}:{maskTexture.GetHashCode()}";
+        if (IntersectedMaskTextureCache.TryGetValue(cacheKey, out Texture2D cachedTexture) &&
+            cachedTexture != null && !cachedTexture.IsDisposed) {
+            return cachedTexture;
+        }
+
+        Color[] baseData = new Color[baseTexture.Width * baseTexture.Height];
+        Color[] maskData = new Color[maskTexture.Width * maskTexture.Height];
+        baseTexture.GetData(baseData);
+        maskTexture.GetData(maskData);
+
+        bool changed = false;
+        for (int i = 0; i < maskData.Length; i++) {
+            byte intersectedAlpha = (byte)(maskData[i].A * baseData[i].A / 255);
+            if (intersectedAlpha != maskData[i].A || maskData[i].R != 255 || maskData[i].G != 255 || maskData[i].B != 255)
+                changed = true;
+
+            maskData[i] = new Color(255, 255, 255, intersectedAlpha);
+        }
+
+        if (!changed)
+            return maskTexture;
+
+        Texture2D intersectedMaskTexture = new(baseTexture.GraphicsDevice, maskTexture.Width, maskTexture.Height);
+        intersectedMaskTexture.SetData(maskData);
+        IntersectedMaskTextureCache[cacheKey] = intersectedMaskTexture;
+        return intersectedMaskTexture;
     }
 
     private static string BuildMaskedBaseTextureCacheKey(Texture2D baseTexture, IReadOnlyList<Texture2D> maskTextures) {
