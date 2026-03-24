@@ -672,8 +672,8 @@ Buffs: {
 	}
 
 	EyeGuy_Buff: {
+		DisplayName: Eye Guy
 		Description: Opticoid
-		DisplayName: Opticoid
 	}
 
 	OmnitrixUpdating: {
@@ -728,37 +728,37 @@ Buffs: {
 
 	BigChill_Buff: {
 		Description: Necrofriggian
-		DisplayName: Big Chill
+		DisplayName: Bigchill
 	}
 
 	UltimateBigChill_Buff: {
-		Description: Mods.Ben10Mod.Buffs.UltimateBigChill_Buff.Description
-		DisplayName: Ultimate Big Chill_ Buff
+		DisplayName: Ultimate Bigchill
+		Description: Evolved Necrofriggian
 	}
 
 	UltraBigChill_Buff: {
-		DisplayName: Ultra Big Chill_ Buff
-		Description: Mods.Ben10Mod.Buffs.UltraBigChill_Buff.Description
+		DisplayName: Ultra Big Chill
+		Description: Evolved Necrofriggian
 	}
 
 	UltimateHumungousaur_Buff: {
-		Description: Mods.Ben10Mod.Buffs.UltimateHumungousaur_Buff.Description
-		DisplayName: Ultimate Humungousaur_ Buff
+		DisplayName: Ultimate Humungousaur
+		Description: Evolved Vaxasaurian
 	}
 
 	UltimateEchoEcho_Buff: {
-		Description: Mods.Ben10Mod.Buffs.UltimateEchoEcho_Buff.Description
-		DisplayName: Ultimate Echo Echo_ Buff
+		DisplayName: Ultimate Echo Echo
+		Description: Evolved Sonorosian
 	}
 
 	Humungousaur_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Humungousaur_Buff.Description
-		DisplayName: Humungousaur_ Buff
+		DisplayName: Humungousaur
+		Description: Vaxasaurian
 	}
 
 	EchoEcho_Buff: {
-		Description: Mods.Ben10Mod.Buffs.EchoEcho_Buff.Description
-		DisplayName: Echo Echo_ Buff
+		DisplayName: Echo Echo
+		Description: Sonorosian
 	}
 
 	EchoEchoCloneBuff: {
@@ -777,28 +777,28 @@ Buffs: {
 	}
 
 	Swampfire_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Swampfire_Buff.Description
-		DisplayName: Swampfire_ Buff
+		DisplayName: Swampfire
+		Description: Methanosian
 	}
 
 	Rath_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Rath_Buff.Description
-		DisplayName: Rath_ Buff
+		DisplayName: Rath
+		Description: Appoplexian
 	}
 
 	Armodrillo_Buff: {
-		DisplayName: Armodrillo_ Buff
-		Description: Mods.Ben10Mod.Buffs.Armodrillo_Buff.Description
+		DisplayName: Armodrillo
+		Description: Talpaedan
 	}
 
 	Jetray_Buff: {
-		DisplayName: Jetray_ Buff
-		Description: Mods.Ben10Mod.Buffs.Jetray_Buff.Description
+		DisplayName: Jetray
+		Description: Aerophibian
 	}
 
 	NRG_Buff: {
-		DisplayName: N R G_ Buff
-		Description: Mods.Ben10Mod.Buffs.NRG_Buff.Description
+		DisplayName: NRG
+		Description: Prypiatosian-B
 	}
 
 	EnemyFrozen: {
@@ -817,93 +817,93 @@ Buffs: {
 	}
 
 	Blitzwolfer_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Blitzwolfer_Buff.Description
-		DisplayName: Blitzwolfer_ Buff
+		DisplayName: Blitzwolfer
+		Description: Loboan
 	}
 
 	Astrodactyl_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Astrodactyl_Buff.Description
-		DisplayName: Astrodactyl_ Buff
+		DisplayName: Astrodactyl
+		Description: Astrodactyl
 	}
 
 	Arctiguana_Buff: {
-		Description: Mods.Ben10Mod.Buffs.Arctiguana_Buff.Description
-		DisplayName: Arctiguana_ Buff
+		DisplayName: Arctiguana
+		Description: Polar Manzardill
 	}
 
 	AmpFibian_Buff: {
-		Description: Mods.Ben10Mod.Buffs.AmpFibian_Buff.Description
-		DisplayName: Amp Fibian_ Buff
+		DisplayName: AmpFibian
+		Description: Amperi
 	}
 
 	AlienX_Buff: {
-		Description: Mods.Ben10Mod.Buffs.AlienX_Buff.Description
-		DisplayName: Alien X_ Buff
+		DisplayName: Alien X
+		Description: Celestialsapien
 	}
 
 	Cannonbolt_Buff: {
-		DisplayName: Cannonbolt_ Buff
-		Description: Mods.Ben10Mod.Buffs.Cannonbolt_Buff.Description
+		DisplayName: Cannonbolt
+		Description: Arburian Pelarota
 	}
 
 	Clockwork_Buff: {
-		DisplayName: Clockwork_ Buff
-		Description: Mods.Ben10Mod.Buffs.Clockwork_Buff.Description
+		DisplayName: Clockwork
+		Description: Chronosapien
 	}
 
 	Fasttrack_Buff: {
-		DisplayName: Fasttrack_ Buff
-		Description: Mods.Ben10Mod.Buffs.Fasttrack_Buff.Description
+		DisplayName: Fasttrack
+		Description: Citrakayah
 	}
 
 	Frankenstrike_Buff: {
-		DisplayName: Frankenstrike_ Buff
-		Description: Mods.Ben10Mod.Buffs.Frankenstrike_Buff.Description
+		DisplayName: Frankenstrike
+		Description: Transylian
 	}
 
 	Goop_Buff: {
-		DisplayName: Goop_ Buff
-		Description: Mods.Ben10Mod.Buffs.Goop_Buff.Description
+		DisplayName: Goop
+		Description: Polymorph
 	}
 
 	Lodestar_Buff: {
-		DisplayName: Lodestar_ Buff
-		Description: Mods.Ben10Mod.Buffs.Lodestar_Buff.Description
+		DisplayName: Lodestar
+		Description: Biosovortian
 	}
 
 	PeskyDust_Buff: {
-		DisplayName: Pesky Dust_ Buff
-		Description: Mods.Ben10Mod.Buffs.PeskyDust_Buff.Description
+		DisplayName: Pesky Dust
+		Description: Nemuina
 	}
 
 	SnareOh_Buff: {
-		DisplayName: Snare Oh_ Buff
-		Description: Mods.Ben10Mod.Buffs.SnareOh_Buff.Description
+		DisplayName: Snare-Oh
+		Description: Thep Khufan
 	}
 
 	Terraspin_Buff: {
-		DisplayName: Terraspin_ Buff
-		Description: Mods.Ben10Mod.Buffs.Terraspin_Buff.Description
+		DisplayName: Terraspin
+		Description: Geochelone Aerio
 	}
 
 	Upgrade_Buff: {
-		DisplayName: Upgrade_ Buff
-		Description: Mods.Ben10Mod.Buffs.Upgrade_Buff.Description
+		DisplayName: Upgrade
+		Description: Galvanic Mechamorph
 	}
 
 	WaterHazard_Buff: {
-		DisplayName: Water Hazard_ Buff
-		Description: Mods.Ben10Mod.Buffs.WaterHazard_Buff.Description
+		DisplayName: Water Hazard
+		Description: Orishan
 	}
 
 	WayBig_Buff: {
-		DisplayName: Way Big_ Buff
-		Description: Mods.Ben10Mod.Buffs.WayBig_Buff.Description
+		DisplayName: Way Big
+		Description: To'kustar
 	}
 
 	Whampire_Buff: {
-		DisplayName: Whampire_ Buff
-		Description: Mods.Ben10Mod.Buffs.Whampire_Buff.Description
+		DisplayName: Whampire
+		Description: Vladat
 	}
 }
 
