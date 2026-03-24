@@ -9,13 +9,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinBurstProjectile.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinGustProjectile.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinUltimateProjectile.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinVortexFieldProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/SnareOh/SnareOhTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/SnareOh/SnareOhTransformation.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -165,7 +160,7 @@
       <workItem from="1774328924821" duration="25000" />
       <workItem from="1774328982342" duration="1000" />
       <workItem from="1774328986275" duration="20000" />
-      <workItem from="1774329050089" duration="17678000" />
+      <workItem from="1774329050089" duration="19417000" />
     </task>
     <servers />
   </component>
