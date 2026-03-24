@@ -204,6 +204,10 @@ Event unlocks:
 
 For event unlocks, you need to actually fight during the event. Just being present is not enough.
 
+Special postgame unlock:
+
+- `Alien X`: craft and use a `Celestialsapien DNA Sample` after `Moon Lord`
+
 ## Building A Hero Character
 
 ### Badge Tiers
