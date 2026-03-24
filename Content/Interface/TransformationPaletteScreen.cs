@@ -328,7 +328,12 @@ public class TransformationPaletteScreen : UIState {
     }
 
     private void RefreshPaletteContext(bool force) {
-        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || Main.gameMenu || Main.myPlayer < 0 || Main.myPlayer >= Main.maxPlayers ||
+            !localPlayer.active)
+            return;
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
         Transformation targetTransformation = omp.GetPaletteTargetTransformation();
         string targetTransformationId = targetTransformation?.FullID ?? string.Empty;
         IReadOnlyList<TransformationPaletteChannel> channels = targetTransformation?.GetPaletteChannels(omp)
