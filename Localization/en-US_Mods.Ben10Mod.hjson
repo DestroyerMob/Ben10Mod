@@ -575,6 +575,11 @@ Items: {
 		DisplayName: Jetray Wings
 		Tooltip: ""
 	}
+
+	DnaPaletteKit: {
+		DisplayName: Dna Palette Kit
+		Tooltip: ""
+	}
 }
 
 Keybinds: {

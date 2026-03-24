@@ -20,6 +20,7 @@ public sealed class PaletteByteSlider : UIElement {
     public string Label { get; set; } = string.Empty;
     public Color AccentColor { get; set; } = Color.White;
     public bool IsInteractive { get; set; } = true;
+    public Func<int, string> ValueFormatter { get; set; }
     public event Action<int> ValueChanged;
 
     public int Value => _value;
@@ -76,7 +77,8 @@ public sealed class PaletteByteSlider : UIElement {
 
         Utils.DrawBorderString(spriteBatch, Label, new Vector2(dims.X + 10f, dims.Y + 6f),
             new Color(220, 230, 240), 0.8f);
-        Utils.DrawBorderString(spriteBatch, _value.ToString(), new Vector2(dims.X + dims.Width - 10f, dims.Y + 6f),
+        string valueText = ValueFormatter?.Invoke(_value) ?? _value.ToString();
+        Utils.DrawBorderString(spriteBatch, valueText, new Vector2(dims.X + dims.Width - 10f, dims.Y + 6f),
             Color.White, 0.8f, 1f, 0f);
 
         Rectangle track = new Rectangle(outer.X + 10, outer.Y + 28, outer.Width - 20, 10);
@@ -156,22 +158,27 @@ public sealed class PalettePreviewSwatch : UIElement {
     }
 
     private readonly struct ResolvedPreviewOverlay {
-        public ResolvedPreviewOverlay(string texturePath, Texture2D maskTexture, Color color) {
+        public ResolvedPreviewOverlay(string texturePath, Texture2D baseTexture, Texture2D maskTexture,
+            TransformationPaletteChannelSettings settings, bool usePaletteColor) {
             TexturePath = texturePath ?? string.Empty;
+            BaseTexture = baseTexture;
             MaskTexture = maskTexture;
-            Color = color;
+            Settings = settings;
+            UsePaletteColor = usePaletteColor;
         }
 
         public string TexturePath { get; }
+        public Texture2D BaseTexture { get; }
         public Texture2D MaskTexture { get; }
-        public Color Color { get; }
+        public TransformationPaletteChannelSettings Settings { get; }
+        public bool UsePaletteColor { get; }
     }
 
     public Func<Color> ResolveColor { get; set; }
     public Func<string> ResolveLabel { get; set; }
     public Func<IReadOnlyList<string>> ResolveBaseTexturePaths { get; set; }
     public Func<IReadOnlyList<TransformationPaletteChannel>> ResolveChannels { get; set; }
-    public Func<string, Color> ResolveChannelColor { get; set; }
+    public Func<string, TransformationPaletteChannelSettings> ResolveChannelSettings { get; set; }
     public Func<string, bool> ResolveChannelEnabled { get; set; }
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {
@@ -228,8 +235,9 @@ public sealed class PalettePreviewSwatch : UIElement {
             if (channel == null || !channel.IsValid)
                 continue;
 
-            Color overlayColor = ResolveChannelColor?.Invoke(channel.Id) ?? channel.DefaultColor;
             bool channelEnabled = ResolveChannelEnabled?.Invoke(channel.Id) ?? true;
+            TransformationPaletteChannelSettings settings = ResolveChannelSettings?.Invoke(channel.Id) ??
+                new TransformationPaletteChannelSettings(channel.DefaultColor);
             for (int j = 0; j < channel.Overlays.Count; j++) {
                 TransformationPaletteOverlay overlay = channel.Overlays[j];
                 if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
@@ -238,8 +246,8 @@ public sealed class PalettePreviewSwatch : UIElement {
                 if (seenBasePaths.Add(overlay.BaseTexturePath))
                     baseLayers.Add(new ResolvedPreviewBase(overlay.BaseTexturePath, baseTexture));
 
-                if (channelEnabled)
-                    overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, maskTexture, overlayColor));
+                overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, baseTexture, maskTexture,
+                    settings, channelEnabled));
             }
         }
 
@@ -265,21 +273,42 @@ public sealed class PalettePreviewSwatch : UIElement {
         spriteBatch.Draw(TextureAssets.MagicPixel.Value, shadow, new Color(0, 0, 0, 105));
 
         for (int i = 0; i < baseLayers.Count; i++) {
-            Texture2D texture = baseLayers[i].Texture;
+            ResolvedPreviewBase previewBase = baseLayers[i];
+            Texture2D texture = previewBase.Texture;
             if (texture == null)
                 continue;
 
-            spriteBatch.Draw(texture, drawPosition, ResolvePreviewFrame(texture),
+            List<Texture2D> masksForBase = new();
+            for (int overlayIndex = 0; overlayIndex < overlays.Count; overlayIndex++) {
+                ResolvedPreviewOverlay overlay = overlays[overlayIndex];
+                if (overlay.BaseTexture == texture)
+                    masksForBase.Add(overlay.MaskTexture);
+            }
+
+            Texture2D baseToDraw = masksForBase.Count > 0
+                ? TransformationPaletteTextureCache.GetMaskedBaseTexture(texture, masksForBase)
+                : texture;
+
+            spriteBatch.Draw(baseToDraw, drawPosition, ResolvePreviewFrame(baseToDraw),
                 Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
         }
 
         for (int i = 0; i < overlays.Count; i++) {
             ResolvedPreviewOverlay overlay = overlays[i];
-            if (overlay.MaskTexture == null)
+            if (overlay.MaskTexture == null || overlay.BaseTexture == null)
                 continue;
 
-            spriteBatch.Draw(overlay.MaskTexture, drawPosition, ResolvePreviewFrame(overlay.MaskTexture),
-                overlay.Color, 0f, origin, scale, SpriteEffects.None, 0f);
+            Texture2D processedOverlay = TransformationPaletteTextureCache.GetProcessedOverlayTexture(
+                overlay.BaseTexture,
+                overlay.MaskTexture,
+                overlay.Settings,
+                overlay.UsePaletteColor
+            );
+            if (processedOverlay == null)
+                continue;
+
+            spriteBatch.Draw(processedOverlay, drawPosition, ResolvePreviewFrame(processedOverlay),
+                Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
         }
     }
 
@@ -352,9 +381,13 @@ public class TransformationPaletteScreen : UIState {
     private UIScrollbar channelScrollbar;
     private UIText selectedChannelText;
     private PalettePreviewSwatch previewSwatch;
+    private UIList sliderList;
+    private UIScrollbar sliderScrollbar;
     private PaletteByteSlider redSlider;
     private PaletteByteSlider greenSlider;
     private PaletteByteSlider blueSlider;
+    private PaletteByteSlider hueSlider;
+    private PaletteByteSlider saturationSlider;
     private UITextPanel<string> paletteToggleButton;
     private UITextPanel<string> applyButton;
     private UITextPanel<string> resetChannelButton;
@@ -367,9 +400,12 @@ public class TransformationPaletteScreen : UIState {
     private string _selectedChannelId = string.Empty;
     private bool _selectedChannelPaletteEnabled = true;
     private bool _suppressSliderCallbacks;
+    private bool _hasPendingPaletteChanges;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
     private readonly List<string> _activePreviewBaseTexturePaths = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, byte> _pendingHueValues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, byte> _pendingSaturationValues = new(StringComparer.OrdinalIgnoreCase);
 
     public override void OnInitialize() {
         mainPanel = new UIPanel();
@@ -438,32 +474,63 @@ public class TransformationPaletteScreen : UIState {
             ResolveLabel = GetSelectedChannelPreviewLabel,
             ResolveBaseTexturePaths = () => _activePreviewBaseTexturePaths,
             ResolveChannels = () => _activeChannels,
-            ResolveChannelColor = GetPendingColor,
+            ResolveChannelSettings = GetPendingSettings,
             ResolveChannelEnabled = IsPaletteChannelEnabled
         };
         previewSwatch.Left.Set(18f, 0f);
         previewSwatch.Top.Set(54f, 0f);
         previewSwatch.Width.Set(554f, 0f);
-        previewSwatch.Height.Set(188f, 0f);
+        previewSwatch.Height.Set(156f, 0f);
         controlsPanel.Append(previewSwatch);
 
-        redSlider = CreateColorSlider("Red", new Color(225, 80, 80), 258f);
-        greenSlider = CreateColorSlider("Green", new Color(90, 220, 120), 322f);
-        blueSlider = CreateColorSlider("Blue", new Color(90, 155, 245), 386f);
-        controlsPanel.Append(redSlider);
-        controlsPanel.Append(greenSlider);
-        controlsPanel.Append(blueSlider);
+        UIPanel sliderPanel = new UIPanel();
+        sliderPanel.Left.Set(18f, 0f);
+        sliderPanel.Top.Set(226f, 0f);
+        sliderPanel.Width.Set(554f, 0f);
+        sliderPanel.Height.Set(188f, 0f);
+        sliderPanel.PaddingTop = 8f;
+        sliderPanel.PaddingBottom = 8f;
+        sliderPanel.PaddingLeft = 8f;
+        sliderPanel.PaddingRight = 8f;
+        controlsPanel.Append(sliderPanel);
 
-        paletteToggleButton = CreateActionButton("Use Original", 18f, 454f, (_, _) => TogglePaletteEnabled(), width: 131f);
-        applyButton = CreateActionButton("Apply Changes", 159f, 454f, (_, _) => ApplyPendingColors(), width: 131f);
-        resetChannelButton = CreateActionButton("Reset Part", 300f, 454f, (_, _) => ResetSelectedPendingColor(), width: 131f);
-        resetAllButton = CreateActionButton("Reset All", 441f, 454f, (_, _) => ResetAllPendingColors(), width: 131f);
+        sliderList = new UIList();
+        sliderList.Left.Set(0f, 0f);
+        sliderList.Top.Set(0f, 0f);
+        sliderList.Width.Set(-24f, 1f);
+        sliderList.Height.Set(0f, 1f);
+        sliderList.ListPadding = 8f;
+        sliderPanel.Append(sliderList);
+
+        sliderScrollbar = new UIScrollbar();
+        sliderScrollbar.Left.Set(-20f, 1f);
+        sliderScrollbar.Top.Set(0f, 0f);
+        sliderScrollbar.Height.Set(0f, 1f);
+        sliderPanel.Append(sliderScrollbar);
+        sliderList.SetScrollbar(sliderScrollbar);
+
+        redSlider = CreateColorSlider("Red", new Color(225, 80, 80), value => value.ToString());
+        greenSlider = CreateColorSlider("Green", new Color(90, 220, 120), value => value.ToString());
+        blueSlider = CreateColorSlider("Blue", new Color(90, 155, 245), value => value.ToString());
+        hueSlider = CreateColorSlider("Hue", new Color(110, 210, 255), FormatHueValue);
+        saturationSlider = CreateColorSlider("Saturation", new Color(255, 210, 120), FormatSaturationValue);
+        sliderList.Add(redSlider);
+        sliderList.Add(greenSlider);
+        sliderList.Add(blueSlider);
+        sliderList.Add(hueSlider);
+        sliderList.Add(saturationSlider);
+
+        paletteToggleButton = CreateActionButton("Use Original", 18f, 442f, (_, _) => TogglePaletteEnabled(), width: 131f);
+        applyButton = CreateActionButton("Apply Changes", 159f, 442f, (_, _) => ApplyPendingColors(), width: 131f);
+        resetChannelButton = CreateActionButton("Reset Part", 300f, 442f, (_, _) => ResetSelectedPendingColor(), width: 131f);
+        resetAllButton = CreateActionButton("Reset All", 441f, 442f, (_, _) => ResetAllPendingColors(), width: 131f);
         controlsPanel.Append(paletteToggleButton);
         controlsPanel.Append(applyButton);
         controlsPanel.Append(resetChannelButton);
         controlsPanel.Append(resetAllButton);
 
         UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 654f, (_, _) => {
+            CommitPendingColors();
             ModContent.GetInstance<UISystem>().HideMyUI();
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
         }, width: 170f);
@@ -477,6 +544,11 @@ public class TransformationPaletteScreen : UIState {
         RefreshPaletteContext(force: true);
     }
 
+    public override void OnDeactivate() {
+        CommitPendingColors();
+        base.OnDeactivate();
+    }
+
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
         if (mainPanel == null)
@@ -487,15 +559,14 @@ public class TransformationPaletteScreen : UIState {
             Main.LocalPlayer.mouseInterface = true;
     }
 
-    private PaletteByteSlider CreateColorSlider(string label, Color accentColor, float top) {
+    private PaletteByteSlider CreateColorSlider(string label, Color accentColor, Func<int, string> valueFormatter) {
         PaletteByteSlider slider = new() {
             Label = label,
-            AccentColor = accentColor
+            AccentColor = accentColor,
+            ValueFormatter = valueFormatter
         };
-        slider.Left.Set(18f, 0f);
-        slider.Top.Set(top, 0f);
-        slider.Width.Set(554f, 0f);
-        slider.Height.Set(50f, 0f);
+        slider.Width.Set(0f, 1f);
+        slider.Height.Set(42f, 0f);
         slider.ValueChanged += _ => UpdatePendingColorFromSliders();
         return slider;
     }
@@ -548,11 +619,16 @@ public class TransformationPaletteScreen : UIState {
             _activeChannels.Clear();
             _activeChannels.AddRange(channels);
             _pendingColors.Clear();
+            _pendingHueValues.Clear();
+            _pendingSaturationValues.Clear();
+            _hasPendingPaletteChanges = false;
 
             if (targetTransformation != null) {
                 for (int i = 0; i < _activeChannels.Count; i++) {
                     TransformationPaletteChannel channel = _activeChannels[i];
                     _pendingColors[channel.Id] = omp.GetPaletteColor(targetTransformation, channel.Id);
+                    _pendingHueValues[channel.Id] = omp.GetPaletteHue(targetTransformation.FullID, channel.Id);
+                    _pendingSaturationValues[channel.Id] = omp.GetPaletteSaturation(targetTransformation.FullID, channel.Id);
                 }
             }
 
@@ -601,7 +677,7 @@ public class TransformationPaletteScreen : UIState {
 
         statusText.SetText(_selectedChannelPaletteEnabled
             ? "Select a custom part, adjust the sliders, then apply your changes."
-            : $"{GetSelectedChannelDisplayName()} is using the original texture right now. Saved colors stay stored until you switch this part back to palette.");
+            : $"{GetSelectedChannelDisplayName()} is using the original texture. Hue and saturation still apply while custom RGB stays stored for later.");
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
         SetControlsInteractive(true);
     }
@@ -610,6 +686,8 @@ public class TransformationPaletteScreen : UIState {
         redSlider.IsInteractive = interactive;
         greenSlider.IsInteractive = interactive;
         blueSlider.IsInteractive = interactive;
+        hueSlider.IsInteractive = interactive;
+        saturationSlider.IsInteractive = interactive;
         paletteToggleButton.BackgroundColor = interactive
             ? (_selectedChannelPaletteEnabled ? new Color(76, 118, 83) : new Color(122, 88, 60))
             : new Color(40, 44, 54);
@@ -655,10 +733,12 @@ public class TransformationPaletteScreen : UIState {
 
     private void LoadSelectedChannelIntoSliders() {
         _suppressSliderCallbacks = true;
-        Color color = GetSelectedPendingColor();
-        redSlider.SetValue(color.R, invoke: false);
-        greenSlider.SetValue(color.G, invoke: false);
-        blueSlider.SetValue(color.B, invoke: false);
+        TransformationPaletteChannelSettings settings = GetSelectedPendingSettings();
+        redSlider.SetValue(settings.Color.R, invoke: false);
+        greenSlider.SetValue(settings.Color.G, invoke: false);
+        blueSlider.SetValue(settings.Color.B, invoke: false);
+        hueSlider.SetValue(settings.Hue, invoke: false);
+        saturationSlider.SetValue(settings.Saturation, invoke: false);
         _suppressSliderCallbacks = false;
     }
 
@@ -666,11 +746,34 @@ public class TransformationPaletteScreen : UIState {
         if (_suppressSliderCallbacks || string.IsNullOrWhiteSpace(_selectedChannelId))
             return;
 
-        _pendingColors[_selectedChannelId] = new Color(redSlider.Value, greenSlider.Value, blueSlider.Value);
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation transformation = omp.GetPaletteTargetTransformation();
+        TransformationPaletteChannel channel = transformation?.GetPaletteChannel(_selectedChannelId, omp);
+        if (channel == null)
+            return;
+
+        Color pendingColor = new(redSlider.Value, greenSlider.Value, blueSlider.Value);
+        byte pendingHue = (byte)hueSlider.Value;
+        byte pendingSaturation = (byte)saturationSlider.Value;
+
+        _pendingColors[_selectedChannelId] = pendingColor;
+        _pendingHueValues[channel.Id] = pendingHue;
+        _pendingSaturationValues[channel.Id] = pendingSaturation;
+        omp.SetPaletteColor(_currentTransformationId, channel.Id, pendingColor, sync: false);
+        omp.SetPaletteHue(_currentTransformationId, channel.Id, pendingHue, sync: false);
+        omp.SetPaletteSaturation(_currentTransformationId, channel.Id, pendingSaturation, sync: false);
+        _hasPendingPaletteChanges = true;
     }
 
     private void ApplyPendingColors() {
+        CommitPendingColors(forceSync: true);
+    }
+
+    private void CommitPendingColors(bool forceSync = false) {
         if (string.IsNullOrWhiteSpace(_currentTransformationId) || _activeChannels.Count == 0)
+            return;
+
+        if (!_hasPendingPaletteChanges && !forceSync)
             return;
 
         OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
@@ -679,10 +782,14 @@ public class TransformationPaletteScreen : UIState {
             TransformationPaletteChannel channel = _activeChannels[i];
             Color pendingColor = GetPendingColor(channel.Id);
             changed |= omp.SetPaletteColor(_currentTransformationId, channel.Id, pendingColor, sync: false);
+            changed |= omp.SetPaletteHue(_currentTransformationId, channel.Id, GetPendingHue(channel.Id), sync: false);
+            changed |= omp.SetPaletteSaturation(_currentTransformationId, channel.Id, GetPendingSaturation(channel.Id), sync: false);
         }
 
-        if (changed)
+        if (changed || forceSync)
             omp.SyncTransformationPaletteStateToServerOrClients();
+
+        _hasPendingPaletteChanges = false;
     }
 
     private void TogglePaletteEnabled() {
@@ -711,15 +818,32 @@ public class TransformationPaletteScreen : UIState {
             return;
 
         _pendingColors[channel.Id] = channel.DefaultColor;
+        _pendingHueValues[channel.Id] = TransformationPaletteColorEntry.NeutralHue;
+        _pendingSaturationValues[channel.Id] = TransformationPaletteColorEntry.NeutralSaturation;
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        omp.SetPaletteColor(_currentTransformationId, channel.Id, channel.DefaultColor, sync: false);
+        omp.SetPaletteHue(_currentTransformationId, channel.Id, TransformationPaletteColorEntry.NeutralHue, sync: false);
+        omp.SetPaletteSaturation(_currentTransformationId, channel.Id,
+            TransformationPaletteColorEntry.NeutralSaturation, sync: false);
+        _hasPendingPaletteChanges = true;
         LoadSelectedChannelIntoSliders();
     }
 
     private void ResetAllPendingColors() {
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
         for (int i = 0; i < _activeChannels.Count; i++) {
             TransformationPaletteChannel channel = _activeChannels[i];
             _pendingColors[channel.Id] = channel.DefaultColor;
+            _pendingHueValues[channel.Id] = TransformationPaletteColorEntry.NeutralHue;
+            _pendingSaturationValues[channel.Id] = TransformationPaletteColorEntry.NeutralSaturation;
+            omp.SetPaletteColor(_currentTransformationId, channel.Id, channel.DefaultColor, sync: false);
+            omp.SetPaletteHue(_currentTransformationId, channel.Id, TransformationPaletteColorEntry.NeutralHue,
+                sync: false);
+            omp.SetPaletteSaturation(_currentTransformationId, channel.Id,
+                TransformationPaletteColorEntry.NeutralSaturation, sync: false);
         }
 
+        _hasPendingPaletteChanges = true;
         LoadSelectedChannelIntoSliders();
     }
 
@@ -737,6 +861,42 @@ public class TransformationPaletteScreen : UIState {
 
     private Color GetSelectedPendingColor() {
         return GetPendingColor(_selectedChannelId);
+    }
+
+    private TransformationPaletteChannelSettings GetSelectedPendingSettings() {
+        if (string.IsNullOrWhiteSpace(_selectedChannelId) || string.IsNullOrWhiteSpace(_currentTransformationId))
+            return new TransformationPaletteChannelSettings(Color.White);
+
+        return GetPendingSettings(_selectedChannelId);
+    }
+
+    private TransformationPaletteChannelSettings GetPendingSettings(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(_currentTransformationId))
+            return new TransformationPaletteChannelSettings(Color.White);
+
+        return new TransformationPaletteChannelSettings(
+            GetPendingColor(channelId),
+            GetPendingHue(channelId),
+            GetPendingSaturation(channelId)
+        );
+    }
+
+    private byte GetPendingHue(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return TransformationPaletteColorEntry.NeutralHue;
+
+        return _pendingHueValues.TryGetValue(channelId, out byte hue)
+            ? hue
+            : TransformationPaletteColorEntry.NeutralHue;
+    }
+
+    private byte GetPendingSaturation(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return TransformationPaletteColorEntry.NeutralSaturation;
+
+        return _pendingSaturationValues.TryGetValue(channelId, out byte saturation)
+            ? saturation
+            : TransformationPaletteColorEntry.NeutralSaturation;
     }
 
     private string GetSelectedChannelDisplayName() {
@@ -800,6 +960,16 @@ public class TransformationPaletteScreen : UIState {
         }
 
         return builder.ToString();
+    }
+
+    private static string FormatHueValue(int value) {
+        float hue = TransformationPaletteMath.GetHueShiftDegrees((byte)value);
+        return $"{Math.Round(hue):+0;-0;0} deg";
+    }
+
+    private static string FormatSaturationValue(int value) {
+        float saturation = TransformationPaletteMath.GetSaturationMultiplier((byte)value);
+        return $"{Math.Round(saturation * 100f)}%";
     }
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {

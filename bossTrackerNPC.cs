@@ -240,34 +240,34 @@ namespace Ben10Mod {
                 case NPCID.DukeFishron:
                     return "Ben10Mod:Jetray";
                 case NPCID.HallowBoss:
-                    return string.Empty;
+                    return "Ben10Mod:AmpFibian";
                 case NPCID.CultistBoss:
-                    return string.Empty;
+                    return "Ben10Mod:Terraspin";
                 case NPCID.MoonLordCore:
                 case NPCID.MoonLordHead:
                 case NPCID.MoonLordHand:
                 case NPCID.MoonLordFreeEye:
-                    return string.Empty;
+                    return "Ben10Mod:WayBig";
 
                 // Old One's Army bosses / minibosses
                 case NPCID.DD2DarkMageT1:
                 case NPCID.DD2DarkMageT3:
-                    return string.Empty;
+                    return "Ben10Mod:PeskyDust";
                 case NPCID.DD2OgreT2:
                 case NPCID.DD2OgreT3:
-                    return string.Empty;
+                    return "Ben10Mod:Cannonbolt";
                 case NPCID.DD2Betsy:
-                    return string.Empty;
+                    return "Ben10Mod:Astrodactyl";
 
                 // Pumpkin Moon minibosses
                 case NPCID.MourningWood:
-                    return string.Empty;
+                    return "Ben10Mod:SnareOh";
                 case NPCID.Pumpking:
-                    return string.Empty;
+                    return "Ben10Mod:Blitzwolfer";
 
                 // Frost Moon minibosses
                 case NPCID.Everscream:
-                    return string.Empty;
+                    return "Ben10Mod:Arctiguana";
                 case NPCID.SantaNK1:
                     return "Ben10Mod:NRG";
                 case NPCID.IceQueen:

@@ -140,9 +140,9 @@ namespace Ben10Mod {
 
         private readonly HashSet<int> participatedEvents = new();
         private readonly HashSet<int> activeEvents = new();
-        private readonly Dictionary<string, Dictionary<string, Color>> transformationPaletteOverrides =
+        private readonly Dictionary<string, Dictionary<string, TransformationPaletteChannelSettings>> transformationPaletteOverrides =
             new(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> paletteDisabledChannels =
+        private readonly HashSet<string> paletteEnabledChannels =
             new(StringComparer.OrdinalIgnoreCase);
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
@@ -226,12 +226,14 @@ namespace Ben10Mod {
                     ["channelId"] = entry.ChannelId,
                     ["r"] = (int)entry.Color.R,
                     ["g"] = (int)entry.Color.G,
-                    ["b"] = (int)entry.Color.B
+                    ["b"] = (int)entry.Color.B,
+                    ["hue"] = (int)entry.Hue,
+                    ["saturation"] = (int)entry.Saturation
                 });
             }
 
             tag["transformationPalette"] = paletteEntries;
-            tag["paletteDisabledChannels"] = BuildNormalizedPaletteDisabledChannelKeys().ToArray();
+            tag["paletteEnabledChannels"] = BuildNormalizedPaletteEnabledChannelKeys().ToArray();
         }
 
         public override void LoadData(TagCompound tag) {
@@ -272,7 +274,7 @@ namespace Ben10Mod {
                 unlockedTransformations.AddRange(unlockedArray);
 
             transformationPaletteOverrides.Clear();
-            paletteDisabledChannels.Clear();
+            paletteEnabledChannels.Clear();
             if (tag.TryGet("transformationPalette", out List<TagCompound> paletteEntries)) {
                 foreach (TagCompound paletteEntry in paletteEntries) {
                     string transformationId = paletteEntry.GetString("transformationId");
@@ -280,24 +282,35 @@ namespace Ben10Mod {
                     byte r = (byte)paletteEntry.GetInt("r");
                     byte g = (byte)paletteEntry.GetInt("g");
                     byte b = (byte)paletteEntry.GetInt("b");
+                    byte hue = paletteEntry.ContainsKey("hue")
+                        ? (byte)paletteEntry.GetInt("hue")
+                        : TransformationPaletteColorEntry.NeutralHue;
+                    byte saturation = paletteEntry.ContainsKey("saturation")
+                        ? (byte)paletteEntry.GetInt("saturation")
+                        : TransformationPaletteColorEntry.NeutralSaturation;
                     AddNormalizedTransformationPaletteEntry(new TransformationPaletteColorEntry(
                         transformationId,
                         channelId,
-                        new Color(r, g, b)
+                        new Color(r, g, b),
+                        hue,
+                        saturation
                     ));
                 }
             }
 
-            if (tag.TryGet("paletteDisabledChannels", out string[] disabledPaletteArray)) {
-                for (int i = 0; i < disabledPaletteArray.Length; i++) {
-                    if (TryNormalizePaletteDisabledChannelKey(disabledPaletteArray[i], out string disabledChannelKey))
-                        paletteDisabledChannels.Add(disabledChannelKey);
+            if (tag.TryGet("paletteEnabledChannels", out string[] enabledPaletteArray)) {
+                for (int i = 0; i < enabledPaletteArray.Length; i++) {
+                    if (TryNormalizePaletteChannelKey(enabledPaletteArray[i], out string enabledChannelKey))
+                        paletteEnabledChannels.Add(enabledChannelKey);
                 }
+            }
+            else if (tag.TryGet("paletteDisabledChannels", out string[] disabledPaletteArray)) {
+                LoadLegacyPaletteDisabledChannels(disabledPaletteArray);
             }
 
             if (tag.TryGet("paletteDisabledTransformations", out string[] disabledTransformationArray)) {
                 for (int i = 0; i < disabledTransformationArray.Length; i++)
-                    DisableAllPaletteChannels(disabledTransformationArray[i]);
+                    SetAllPaletteChannelsEnabled(disabledTransformationArray[i], false);
             }
 
             if (tag.TryGet("unlockedRoster", out oldUnlockedRoster)) {
@@ -940,7 +953,7 @@ namespace Ben10Mod {
             if (channel == null || !channel.IsValid)
                 return false;
 
-            return !paletteDisabledChannels.Contains(BuildPaletteDisabledChannelKey(transformation.FullID, channel.Id));
+            return paletteEnabledChannels.Contains(BuildPaletteChannelKey(transformation.FullID, channel.Id));
         }
 
         public bool IsPaletteChannelEnabled(string transformationId, string channelId) {
@@ -956,10 +969,10 @@ namespace Ben10Mod {
             if (channel == null || !channel.IsValid)
                 return false;
 
-            string key = BuildPaletteDisabledChannelKey(transformation.FullID, channel.Id);
+            string key = BuildPaletteChannelKey(transformation.FullID, channel.Id);
             bool changed = enabled
-                ? paletteDisabledChannels.Remove(key)
-                : paletteDisabledChannels.Add(key);
+                ? paletteEnabledChannels.Add(key)
+                : paletteEnabledChannels.Remove(key);
 
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
@@ -967,20 +980,33 @@ namespace Ben10Mod {
             return changed;
         }
 
-        public Color GetPaletteColor(Transformation transformation, string channelId) {
+        public TransformationPaletteChannelSettings GetPaletteSettings(Transformation transformation, string channelId) {
             if (transformation == null || string.IsNullOrWhiteSpace(channelId))
-                return Color.White;
+                return new TransformationPaletteChannelSettings(Color.White);
 
             TransformationPaletteChannel channel = transformation.GetPaletteChannel(channelId, this);
             if (channel == null)
-                return Color.White;
+                return new TransformationPaletteChannelSettings(Color.White);
 
-            if (transformationPaletteOverrides.TryGetValue(transformation.FullID, out Dictionary<string, Color> channelColors) &&
-                channelColors.TryGetValue(channel.Id, out Color storedColor)) {
-                return NormalizePaletteColor(storedColor);
+            if (transformationPaletteOverrides.TryGetValue(transformation.FullID,
+                    out Dictionary<string, TransformationPaletteChannelSettings> channelSettings) &&
+                channelSettings.TryGetValue(channel.Id, out TransformationPaletteChannelSettings storedSettings)) {
+                return NormalizePaletteSettings(storedSettings);
             }
 
-            return channel.DefaultColor;
+            return new TransformationPaletteChannelSettings(channel.DefaultColor);
+        }
+
+        public Color GetPaletteColor(Transformation transformation, string channelId) {
+            return GetPaletteSettings(transformation, channelId).Color;
+        }
+
+        public byte GetPaletteHue(string transformationId, string channelId) {
+            return GetPaletteSettings(TransformationLoader.Resolve(transformationId), channelId).Hue;
+        }
+
+        public byte GetPaletteSaturation(string transformationId, string channelId) {
+            return GetPaletteSettings(TransformationLoader.Resolve(transformationId), channelId).Saturation;
         }
 
         public bool SetPaletteColor(string transformationId, string channelId, Color color, bool sync = true) {
@@ -992,23 +1018,9 @@ namespace Ben10Mod {
             if (channel == null || !channel.IsValid)
                 return false;
 
-            color = NormalizePaletteColor(color);
-            bool changed = false;
-
-            if (color == channel.DefaultColor) {
-                changed = RemovePaletteOverride(transformation.FullID, channel.Id);
-            }
-            else {
-                if (!transformationPaletteOverrides.TryGetValue(transformation.FullID, out Dictionary<string, Color> channelColors)) {
-                    channelColors = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase);
-                    transformationPaletteOverrides[transformation.FullID] = channelColors;
-                }
-
-                if (!channelColors.TryGetValue(channel.Id, out Color existingColor) || NormalizePaletteColor(existingColor) != color) {
-                    channelColors[channel.Id] = color;
-                    changed = true;
-                }
-            }
+            TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
+            TransformationPaletteChannelSettings newSettings = new(color, currentSettings.Hue, currentSettings.Saturation);
+            bool changed = SetPaletteSettings(transformation.FullID, channel, newSettings);
 
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
@@ -1025,7 +1037,46 @@ namespace Ben10Mod {
             if (channel == null)
                 return false;
 
-            bool changed = RemovePaletteOverride(transformation.FullID, channel.Id);
+            TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
+            TransformationPaletteChannelSettings newSettings = new(channel.DefaultColor, currentSettings.Hue,
+                currentSettings.Saturation);
+            bool changed = SetPaletteSettings(transformation.FullID, channel, newSettings);
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetPaletteHue(string transformationId, string channelId, byte hue, bool sync = true) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null || string.IsNullOrWhiteSpace(channelId))
+                return false;
+
+            TransformationPaletteChannel channel = transformation.GetPaletteChannel(channelId, this);
+            if (channel == null || !channel.IsValid)
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
+            bool changed = SetPaletteSettings(transformation.FullID, channel,
+                new TransformationPaletteChannelSettings(currentSettings.Color, hue, currentSettings.Saturation));
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetPaletteSaturation(string transformationId, string channelId, byte saturation, bool sync = true) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null || string.IsNullOrWhiteSpace(channelId))
+                return false;
+
+            TransformationPaletteChannel channel = transformation.GetPaletteChannel(channelId, this);
+            if (channel == null || !channel.IsValid)
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
+            bool changed = SetPaletteSettings(transformation.FullID, channel,
+                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue, saturation));
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
 
@@ -1440,30 +1491,30 @@ namespace Ben10Mod {
                 return;
 
             List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
-            List<string> disabledChannelKeys = BuildNormalizedPaletteDisabledChannelKeys();
+            List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.RequestSyncTransformationPaletteState);
             WriteTransformationPaletteEntries(packet, entries);
-            WritePaletteDisabledChannelKeys(packet, disabledChannelKeys);
+            WritePaletteChannelKeys(packet, enabledChannelKeys);
             packet.Send();
         }
 
         public void ApplyTransformationPaletteStateSync(IReadOnlyList<TransformationPaletteColorEntry> entries,
-            IReadOnlyList<string> disabledChannelKeys = null) {
+            IReadOnlyList<string> enabledChannelKeys = null) {
             transformationPaletteOverrides.Clear();
-            paletteDisabledChannels.Clear();
+            paletteEnabledChannels.Clear();
 
             if (entries != null) {
                 for (int i = 0; i < entries.Count; i++)
                     AddNormalizedTransformationPaletteEntry(entries[i]);
             }
 
-            if (disabledChannelKeys == null)
+            if (enabledChannelKeys == null)
                 return;
 
-            for (int i = 0; i < disabledChannelKeys.Count; i++) {
-                if (TryNormalizePaletteDisabledChannelKey(disabledChannelKeys[i], out string normalizedKey))
-                    paletteDisabledChannels.Add(normalizedKey);
+            for (int i = 0; i < enabledChannelKeys.Count; i++) {
+                if (TryNormalizePaletteChannelKey(enabledChannelKeys[i], out string normalizedKey))
+                    paletteEnabledChannels.Add(normalizedKey);
             }
         }
 
@@ -1930,13 +1981,13 @@ namespace Ben10Mod {
                 return;
 
             List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
-            List<string> disabledChannelKeys = BuildNormalizedPaletteDisabledChannelKeys();
+            List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
 
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.SyncTransformationPaletteState);
             packet.Write((byte)Player.whoAmI);
             WriteTransformationPaletteEntries(packet, entries);
-            WritePaletteDisabledChannelKeys(packet, disabledChannelKeys);
+            WritePaletteChannelKeys(packet, enabledChannelKeys);
             packet.Send(toWho, ignoreClient);
         }
 
@@ -1952,35 +2003,37 @@ namespace Ben10Mod {
 
         private void NormalizeTransformationPaletteState() {
             List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
-            List<string> disabledChannelKeys = BuildNormalizedPaletteDisabledChannelKeys();
+            List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
             transformationPaletteOverrides.Clear();
-            paletteDisabledChannels.Clear();
+            paletteEnabledChannels.Clear();
 
             for (int i = 0; i < entries.Count; i++)
                 AddNormalizedTransformationPaletteEntry(entries[i]);
 
-            for (int i = 0; i < disabledChannelKeys.Count; i++)
-                paletteDisabledChannels.Add(disabledChannelKeys[i]);
+            for (int i = 0; i < enabledChannelKeys.Count; i++)
+                paletteEnabledChannels.Add(enabledChannelKeys[i]);
         }
 
         private List<TransformationPaletteColorEntry> BuildNormalizedTransformationPaletteEntries() {
             List<TransformationPaletteColorEntry> entries = new();
 
-            foreach ((string transformationId, Dictionary<string, Color> channelColors) in transformationPaletteOverrides) {
+            foreach ((string transformationId, Dictionary<string, TransformationPaletteChannelSettings> channelSettings) in transformationPaletteOverrides) {
                 Transformation transformation = TransformationLoader.Resolve(transformationId);
-                if (transformation == null || channelColors == null)
+                if (transformation == null || channelSettings == null)
                     continue;
 
-                foreach ((string channelId, Color color) in channelColors) {
+                foreach ((string channelId, TransformationPaletteChannelSettings settings) in channelSettings) {
                     TransformationPaletteChannel channel = transformation.GetPaletteChannel(channelId, this);
                     if (channel == null || !channel.IsValid)
                         continue;
 
-                    Color normalizedColor = NormalizePaletteColor(color);
-                    if (normalizedColor == channel.DefaultColor)
+                    TransformationPaletteChannelSettings normalizedSettings =
+                        NormalizePaletteSettings(settings, channel.DefaultColor);
+                    if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
                         continue;
 
-                    entries.Add(new TransformationPaletteColorEntry(transformation.FullID, channel.Id, normalizedColor));
+                    entries.Add(new TransformationPaletteColorEntry(transformation.FullID, channel.Id,
+                        normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation));
                 }
             }
 
@@ -1995,19 +2048,19 @@ namespace Ben10Mod {
             return entries;
         }
 
-        private List<string> BuildNormalizedPaletteDisabledChannelKeys() {
-            List<string> disabledChannelKeys = new();
+        private List<string> BuildNormalizedPaletteEnabledChannelKeys() {
+            List<string> enabledChannelKeys = new();
 
-            foreach (string disabledChannelKey in paletteDisabledChannels) {
-                if (TryNormalizePaletteDisabledChannelKey(disabledChannelKey, out string normalizedKey))
-                    disabledChannelKeys.Add(normalizedKey);
+            foreach (string enabledChannelKey in paletteEnabledChannels) {
+                if (TryNormalizePaletteChannelKey(enabledChannelKey, out string normalizedKey))
+                    enabledChannelKeys.Add(normalizedKey);
             }
 
-            disabledChannelKeys.Sort(StringComparer.OrdinalIgnoreCase);
-            return disabledChannelKeys;
+            enabledChannelKeys.Sort(StringComparer.OrdinalIgnoreCase);
+            return enabledChannelKeys;
         }
 
-        private void DisableAllPaletteChannels(string transformationId) {
+        private void SetAllPaletteChannelsEnabled(string transformationId, bool enabled) {
             Transformation transformation = TransformationLoader.Resolve(transformationId);
             if (transformation == null)
                 return;
@@ -2018,20 +2071,24 @@ namespace Ben10Mod {
                 if (channel == null || !channel.IsValid)
                     continue;
 
-                paletteDisabledChannels.Add(BuildPaletteDisabledChannelKey(transformation.FullID, channel.Id));
+                string key = BuildPaletteChannelKey(transformation.FullID, channel.Id);
+                if (enabled)
+                    paletteEnabledChannels.Add(key);
+                else
+                    paletteEnabledChannels.Remove(key);
             }
         }
 
-        private bool TryNormalizePaletteDisabledChannelKey(string key, out string normalizedKey) {
+        private bool TryNormalizePaletteChannelKey(string key, out string normalizedKey) {
             normalizedKey = string.Empty;
-            if (!TrySplitPaletteDisabledChannelKey(key, out string transformationId, out string channelId))
+            if (!TrySplitPaletteChannelKey(key, out string transformationId, out string channelId))
                 return false;
 
             if (!TryResolvePaletteChannel(transformationId, channelId, out Transformation transformation,
                     out TransformationPaletteChannel channel))
                 return false;
 
-            normalizedKey = BuildPaletteDisabledChannelKey(transformation.FullID, channel.Id);
+            normalizedKey = BuildPaletteChannelKey(transformation.FullID, channel.Id);
             return true;
         }
 
@@ -2051,14 +2108,14 @@ namespace Ben10Mod {
             return channel != null && channel.IsValid;
         }
 
-        private static string BuildPaletteDisabledChannelKey(string transformationId, string channelId) {
+        private static string BuildPaletteChannelKey(string transformationId, string channelId) {
             if (string.IsNullOrWhiteSpace(transformationId) || string.IsNullOrWhiteSpace(channelId))
                 return string.Empty;
 
             return transformationId.Trim() + "|" + channelId.Trim();
         }
 
-        private static bool TrySplitPaletteDisabledChannelKey(string key, out string transformationId,
+        private static bool TrySplitPaletteChannelKey(string key, out string transformationId,
             out string channelId) {
             transformationId = string.Empty;
             channelId = string.Empty;
@@ -2087,20 +2144,24 @@ namespace Ben10Mod {
             if (channel == null || !channel.IsValid)
                 return;
 
-            Color normalizedColor = NormalizePaletteColor(entry.Color);
-            if (normalizedColor == channel.DefaultColor)
+            TransformationPaletteChannelSettings normalizedSettings =
+                NormalizePaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue,
+                    entry.Saturation), channel.DefaultColor);
+            if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
                 return;
 
-            if (!transformationPaletteOverrides.TryGetValue(transformation.FullID, out Dictionary<string, Color> channelColors)) {
-                channelColors = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase);
-                transformationPaletteOverrides[transformation.FullID] = channelColors;
+            if (!transformationPaletteOverrides.TryGetValue(transformation.FullID,
+                    out Dictionary<string, TransformationPaletteChannelSettings> channelSettings)) {
+                channelSettings = new Dictionary<string, TransformationPaletteChannelSettings>(StringComparer.OrdinalIgnoreCase);
+                transformationPaletteOverrides[transformation.FullID] = channelSettings;
             }
 
-            channelColors[channel.Id] = normalizedColor;
+            channelSettings[channel.Id] = normalizedSettings;
         }
 
         private bool RemovePaletteOverride(string transformationId, string channelId) {
-            if (!transformationPaletteOverrides.TryGetValue(transformationId, out Dictionary<string, Color> channelColors))
+            if (!transformationPaletteOverrides.TryGetValue(transformationId,
+                    out Dictionary<string, TransformationPaletteChannelSettings> channelColors))
                 return false;
 
             bool removed = channelColors.Remove(channelId);
@@ -2112,6 +2173,36 @@ namespace Ben10Mod {
 
         private static Color NormalizePaletteColor(Color color) {
             return new Color(color.R, color.G, color.B, 255);
+        }
+
+        private static TransformationPaletteChannelSettings NormalizePaletteSettings(
+            TransformationPaletteChannelSettings settings, Color? fallbackColor = null) {
+            return new TransformationPaletteChannelSettings(
+                NormalizePaletteColor(settings.Color == default && fallbackColor.HasValue ? fallbackColor.Value : settings.Color),
+                settings.Hue,
+                settings.Saturation
+            );
+        }
+
+        private bool SetPaletteSettings(string transformationId, TransformationPaletteChannel channel,
+            TransformationPaletteChannelSettings settings) {
+            settings = NormalizePaletteSettings(settings, channel.DefaultColor);
+            bool isDefault = settings.Color == channel.DefaultColor && settings.HasNeutralAdjustments;
+            if (isDefault)
+                return RemovePaletteOverride(transformationId, channel.Id);
+
+            if (!transformationPaletteOverrides.TryGetValue(transformationId,
+                    out Dictionary<string, TransformationPaletteChannelSettings> channelSettings)) {
+                channelSettings = new Dictionary<string, TransformationPaletteChannelSettings>(StringComparer.OrdinalIgnoreCase);
+                transformationPaletteOverrides[transformationId] = channelSettings;
+            }
+
+            if (channelSettings.TryGetValue(channel.Id, out TransformationPaletteChannelSettings existingSettings) &&
+                NormalizePaletteSettings(existingSettings, channel.DefaultColor).Equals(settings))
+                return false;
+
+            channelSettings[channel.Id] = settings;
+            return true;
         }
 
         internal static void WriteTransformationPaletteEntries(BinaryWriter writer,
@@ -2126,16 +2217,18 @@ namespace Ben10Mod {
                 writer.Write(entry.Color.R);
                 writer.Write(entry.Color.G);
                 writer.Write(entry.Color.B);
+                writer.Write(entry.Hue);
+                writer.Write(entry.Saturation);
             }
         }
 
-        internal static void WritePaletteDisabledChannelKeys(BinaryWriter writer,
-            IReadOnlyList<string> disabledChannelKeys) {
-            ushort count = (ushort)Math.Min(disabledChannelKeys?.Count ?? 0, ushort.MaxValue);
+        internal static void WritePaletteChannelKeys(BinaryWriter writer,
+            IReadOnlyList<string> channelKeys) {
+            ushort count = (ushort)Math.Min(channelKeys?.Count ?? 0, ushort.MaxValue);
             writer.Write(count);
 
             for (int i = 0; i < count; i++)
-                writer.Write(disabledChannelKeys[i] ?? string.Empty);
+                writer.Write(channelKeys[i] ?? string.Empty);
         }
 
         internal static TransformationPaletteColorEntry[] ReadTransformationPaletteEntries(BinaryReader reader) {
@@ -2148,20 +2241,50 @@ namespace Ben10Mod {
                 byte r = reader.ReadByte();
                 byte g = reader.ReadByte();
                 byte b = reader.ReadByte();
-                entries[i] = new TransformationPaletteColorEntry(transformationId, channelId, new Color(r, g, b));
+                byte hue = reader.ReadByte();
+                byte saturation = reader.ReadByte();
+                entries[i] = new TransformationPaletteColorEntry(transformationId, channelId, new Color(r, g, b),
+                    hue, saturation);
             }
 
             return entries;
         }
 
-        internal static string[] ReadPaletteDisabledChannelKeys(BinaryReader reader) {
+        internal static string[] ReadPaletteChannelKeys(BinaryReader reader) {
             ushort count = reader.ReadUInt16();
-            string[] disabledChannelKeys = new string[count];
+            string[] channelKeys = new string[count];
 
             for (int i = 0; i < count; i++)
-                disabledChannelKeys[i] = reader.ReadString();
+                channelKeys[i] = reader.ReadString();
 
-            return disabledChannelKeys;
+            return channelKeys;
+        }
+
+        private void LoadLegacyPaletteDisabledChannels(string[] disabledPaletteArray) {
+            if (disabledPaletteArray == null)
+                return;
+
+            HashSet<string> normalizedDisabledKeys = new(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < disabledPaletteArray.Length; i++) {
+                if (TryNormalizePaletteChannelKey(disabledPaletteArray[i], out string normalizedDisabledKey))
+                    normalizedDisabledKeys.Add(normalizedDisabledKey);
+            }
+
+            foreach (Transformation transformation in TransformationLoader.All) {
+                if (transformation == null)
+                    continue;
+
+                IReadOnlyList<TransformationPaletteChannel> channels = transformation.GetPaletteChannels(this);
+                for (int i = 0; i < channels.Count; i++) {
+                    TransformationPaletteChannel channel = channels[i];
+                    if (channel == null || !channel.IsValid)
+                        continue;
+
+                    string key = BuildPaletteChannelKey(transformation.FullID, channel.Id);
+                    if (!normalizedDisabledKeys.Contains(key))
+                        paletteEnabledChannels.Add(key);
+                }
+            }
         }
 
         private void NormalizeStoredTransformationData() {
@@ -2311,23 +2434,23 @@ namespace Ben10Mod {
                 case EventBloodMoon:
                     return "Ben10Mod:GhostFreak";
                 case EventSolarEclipse:
-                    return string.Empty;
+                    return "Ben10Mod:Frankenstrike";
                 case EventSlimeRain:
-                    return string.Empty;
+                    return "Ben10Mod:Goop";
                 case EventPumpkinMoon:
-                    return string.Empty;
+                    return "Ben10Mod:Whampire";
                 case EventFrostMoon:
-                    return string.Empty;
+                    return "Ben10Mod:Lodestar";
                 case InvasionID.GoblinArmy:
                     return "Ben10Mod:RipJaws";
                 case InvasionID.SnowLegion:
-                    return string.Empty;
+                    return "Ben10Mod:Fasttrack";
                 case InvasionID.PirateInvasion:
-                    return string.Empty;
+                    return "Ben10Mod:WaterHazard";
                 case InvasionID.MartianMadness:
-                    return string.Empty;
+                    return "Ben10Mod:Upgrade";
                 case EventOldOnesArmy:
-                    return string.Empty;
+                    return "Ben10Mod:Clockwork";
                 default:
                     return string.Empty;
             }

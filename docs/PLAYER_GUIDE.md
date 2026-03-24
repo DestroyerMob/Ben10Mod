@@ -177,13 +177,30 @@ Hardmode unlocks:
 - `Swampfire`: `Plantera`
 - `Armodrillo`: `Golem`
 - `Jetray`: `Duke Fishron`
+- `AmpFibian`: `Empress of Light`
+- `Terraspin`: `Lunatic Cultist`
+- `Way Big`: `Moon Lord`
+- `Pesky Dust`: `Dark Mage`
+- `Cannonbolt`: `Ogre`
+- `Astrodactyl`: `Betsy`
+- `Snare-Oh`: `Mourning Wood`
+- `Blitzwolfer`: `Pumpking`
+- `Arctiguana`: `Everscream`
 - `NRG`: `Santa-NK1`
 - `Big Chill`: `Ice Queen`
 
 Event unlocks:
 
 - `Ghostfreak`: complete a `Blood Moon` after participating
+- `Frankenstrike`: complete a `Solar Eclipse` after participating
+- `Goop`: complete `Slime Rain` after participating
+- `Whampire`: complete `Pumpkin Moon` after participating
+- `Lodestar`: complete `Frost Moon` after participating
 - `Ripjaws`: complete a `Goblin Army` after participating
+- `Fasttrack`: complete the `Snow Legion` after participating
+- `Water Hazard`: complete a `Pirate Invasion` after participating
+- `Upgrade`: complete `Martian Madness` after participating
+- `Clockwork`: complete the `Old One's Army` after participating
 
 For event unlocks, you need to actually fight during the event. Just being present is not enough.
 

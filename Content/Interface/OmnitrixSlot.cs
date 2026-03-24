@@ -17,6 +17,10 @@ namespace Ben10Mod.Content.Interface
         }
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) {
+            var omp = Player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.isTransformed)
+                return false;
+
             return HeroAlterationSlotHelper.IsHeroAlterationAccessory(item) || item.dye > 0;
         }
 

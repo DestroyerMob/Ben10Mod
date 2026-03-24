@@ -18,6 +18,10 @@ public class ShopNPC : GlobalNPC {
             shop.Add(ModContent.ItemType<AdvancedCircuitMatrix>());
         }
 
+        if (shop.NpcType == NPCID.DyeTrader) {
+            shop.Add(ModContent.ItemType<DnaPaletteKit>());
+        }
+
         if (shop.NpcType == NPCID.Clothier) {
             shop.Add(ModContent.ItemType<Ben10Shirt>());
             shop.Add(ModContent.ItemType<Ben10Pants>());

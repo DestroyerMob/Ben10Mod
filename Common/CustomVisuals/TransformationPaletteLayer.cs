@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Transformations;
 using Microsoft.Xna.Framework;
@@ -11,15 +10,18 @@ namespace Ben10Mod.Common.CustomVisuals;
 
 public class TransformationPaletteLayer : PlayerDrawLayer {
     private readonly struct ResolvedOverlay {
-        public ResolvedOverlay(Texture2D baseTexture, Texture2D maskTexture, Color color) {
+        public ResolvedOverlay(Texture2D baseTexture, Texture2D maskTexture,
+            TransformationPaletteChannelSettings settings, bool usePaletteColor) {
             BaseTexture = baseTexture;
             MaskTexture = maskTexture;
-            Color = color;
+            Settings = settings;
+            UsePaletteColor = usePaletteColor;
         }
 
         public Texture2D BaseTexture { get; }
         public Texture2D MaskTexture { get; }
-        public Color Color { get; }
+        public TransformationPaletteChannelSettings Settings { get; }
+        public bool UsePaletteColor { get; }
     }
 
     public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
@@ -35,7 +37,11 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
         IReadOnlyList<TransformationPaletteChannel> channels = transformation.GetPaletteChannels(omp);
         for (int i = 0; i < channels.Count; i++) {
             TransformationPaletteChannel channel = channels[i];
-            if (channel != null && channel.IsValid && omp.IsPaletteChannelEnabled(transformation, channel.Id))
+            if (channel == null || !channel.IsValid)
+                continue;
+
+            TransformationPaletteChannelSettings settings = omp.GetPaletteSettings(transformation, channel.Id);
+            if (omp.IsPaletteChannelEnabled(transformation, channel.Id) || !settings.HasNeutralAdjustments)
                 return true;
         }
 
@@ -60,16 +66,20 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
         List<ResolvedOverlay> overlays = new();
         for (int i = 0; i < channels.Count; i++) {
             TransformationPaletteChannel channel = channels[i];
-            if (channel == null || !channel.IsValid || !omp.IsPaletteChannelEnabled(transformation, channel.Id))
+            if (channel == null || !channel.IsValid)
                 continue;
 
-            Color channelColor = omp.GetPaletteColor(transformation, channel.Id);
+            TransformationPaletteChannelSettings settings = omp.GetPaletteSettings(transformation, channel.Id);
+            bool usePaletteColor = omp.IsPaletteChannelEnabled(transformation, channel.Id);
+            if (!usePaletteColor && settings.HasNeutralAdjustments)
+                continue;
+
             for (int j = 0; j < channel.Overlays.Count; j++) {
                 TransformationPaletteOverlay overlay = channel.Overlays[j];
                 if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
                     continue;
 
-                overlays.Add(new ResolvedOverlay(baseTexture, maskTexture, channelColor));
+                overlays.Add(new ResolvedOverlay(baseTexture, maskTexture, settings, usePaletteColor));
             }
         }
 
@@ -82,26 +92,43 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
             if (source.texture == null || source.color.A == 0)
                 continue;
 
+            List<Texture2D> masksForBase = null;
             for (int j = 0; j < overlays.Count; j++) {
                 ResolvedOverlay overlay = overlays[j];
                 if (overlay.BaseTexture != source.texture)
                     continue;
 
+                masksForBase ??= new List<Texture2D>();
+                masksForBase.Add(overlay.MaskTexture);
+            }
+
+            if (masksForBase == null || masksForBase.Count == 0)
+                continue;
+
+            DrawData maskedBaseDraw = source;
+            maskedBaseDraw.texture = TransformationPaletteTextureCache.GetMaskedBaseTexture(source.texture, masksForBase);
+            drawInfo.DrawDataCache[i] = maskedBaseDraw;
+
+            for (int j = 0; j < overlays.Count; j++) {
+                ResolvedOverlay overlay = overlays[j];
+                if (overlay.BaseTexture != source.texture)
+                    continue;
+
+                Texture2D overlayTexture = TransformationPaletteTextureCache.GetProcessedOverlayTexture(
+                    overlay.BaseTexture,
+                    overlay.MaskTexture,
+                    overlay.Settings,
+                    overlay.UsePaletteColor
+                );
+
+                if (overlayTexture == null)
+                    continue;
+
                 DrawData overlayDraw = source;
-                overlayDraw.texture = overlay.MaskTexture;
-                overlayDraw.color = MultiplyColor(source.color, overlay.Color);
-                overlayDraw.shader = source.shader;
+                overlayDraw.texture = overlayTexture;
+                overlayDraw.color = Color.White;
                 drawInfo.DrawDataCache.Add(overlayDraw);
             }
         }
-    }
-
-    private static Color MultiplyColor(Color source, Color tint) {
-        return new Color(
-            (byte)(source.R * tint.R / 255),
-            (byte)(source.G * tint.G / 255),
-            (byte)(source.B * tint.B / 255),
-            source.A
-        );
     }
 }

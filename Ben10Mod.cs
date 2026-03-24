@@ -228,9 +228,9 @@ namespace Ben10Mod {
 							return;
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
-							string[] disabledChannelKeys = OmnitrixPlayer.ReadPaletteDisabledChannelKeys(reader);
+							string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
 							OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-							omp.ApplyTransformationPaletteStateSync(entries, disabledChannelKeys);
+							omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys);
 							omp.SyncTransformationPaletteState();
 							break;
 						}
@@ -247,8 +247,8 @@ namespace Ben10Mod {
 								return;
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
-							string[] disabledChannelKeys = OmnitrixPlayer.ReadPaletteDisabledChannelKeys(reader);
-							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries, disabledChannelKeys);
+							string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
+							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries, enabledChannelKeys);
 							break;
 						}
 						case MessageType.RequestAbsorbMaterial: {
