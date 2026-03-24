@@ -5,6 +5,7 @@ using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Transformations;
+using Ben10Mod.Content.Transformations.AmpFibian;
 using Ben10Mod.Content.Transformations.BuzzShock;
 using Ben10Mod.Content.Items.Vanity.ShaderDyes;
 using Microsoft.Xna.Framework;
@@ -77,6 +78,7 @@ namespace Ben10Mod {
 				AbsorbMaterialFeedback,
 				SyncAbsorbedMaterial,
 			RelayDodgeVisual,
+			ExecuteAmpFibianPhaseShift,
 			ExecuteBuzzShockTeleport,
 			RequestGhostFreakPossession,
 			SyncGhostFreakPossessionState
@@ -334,6 +336,25 @@ namespace Ben10Mod {
 							return;
 
 						BuzzShockTransformation.ExecutePrimaryAbilityTeleport(player, destination);
+						break;
+					}
+					case MessageType.ExecuteAmpFibianPhaseShift: {
+						if (Main.netMode != NetmodeID.Server)
+							return;
+
+						if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+							return;
+
+						Vector2 destination = new(reader.ReadSingle(), reader.ReadSingle());
+						Player player = Main.player[whoAmI];
+						if (!player.active || player.dead)
+							return;
+
+						OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+						if (omp.currentTransformationId != "Ben10Mod:AmpFibian")
+							return;
+
+						AmpFibianTransformation.ExecutePhaseShift(player, destination);
 						break;
 					}
 					case MessageType.RequestGhostFreakPossession: {

@@ -90,9 +90,8 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
         Vector2 dir = GetAimDirection(owner);
         Projectile.velocity = dir;
         Projectile.rotation = dir.ToRotation();
-        Projectile.Center = owner.Center + dir * StartOffset;
-
-        Vector2 start = owner.Center + dir * StartOffset;
+        Vector2 start = GetBeamStart(owner, dir);
+        Projectile.Center = start;
         BeamHitLength = GetBeamLength(start, dir);
         BeamDrawLength = MathHelper.Clamp(BeamHitLength - EndCapPadding, 16f, BeamHitLength);
 
@@ -128,6 +127,10 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
         }
 
         return GetSyncedAimDirection(owner);
+    }
+
+    protected virtual Vector2 GetBeamStart(Player owner, Vector2 direction) {
+        return owner.Center + direction * StartOffset;
     }
 
     protected virtual void OnBeamUpdated(Player owner, OmnitrixPlayer omp, Vector2 start, Vector2 direction) { }
@@ -248,7 +251,7 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
         if (dir.LengthSquared() < 0.0001f)
             return false;
 
-        Vector2 start = owner.Center + dir * StartOffset;
+        Vector2 start = GetBeamStart(owner, dir);
         Vector2 end = start + dir * BeamHitLength;
         float collisionPoint = 0f;
 
@@ -278,7 +281,7 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
 
         dir.Normalize();
 
-        Vector2 start = owner.Center + dir * StartOffset;
+        Vector2 start = GetBeamStart(owner, dir);
         float length = BeamDrawLength;
 
         Texture2D texture = TextureAssets.Projectile[Type].Value;

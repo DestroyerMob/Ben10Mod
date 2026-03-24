@@ -24,6 +24,19 @@ public class PunchProjectile : ModProjectile {
     protected virtual int SpawnDustBurstCount => 14;
     protected virtual int TrailDustChance => 2;
     protected virtual int ImpactDustBurstCount => 16;
+
+    protected virtual Vector2 GetPunchAnchor(Player owner, Vector2 direction, float scale) {
+        return owner.MountedCenter + GetShoulderOffset(owner, direction, scale);
+    }
+
+    protected virtual Vector2 GetShoulderOffset(Player owner, Vector2 direction, float scale) {
+        return new Vector2(owner.direction * 8f * scale, -4f * scale);
+    }
+
+    protected virtual float GetExtension(float progress, float scale) {
+        float extensionCurve = progress < 0.38f ? progress / 0.38f : 1f - (progress - 0.38f) / 0.62f * 0.55f;
+        return MathHelper.Lerp(12f, 34f * scale, MathHelper.Clamp(extensionCurve, 0f, 1f));
+    }
     
 
     public override void SetDefaults() {
@@ -54,19 +67,18 @@ public class PunchProjectile : ModProjectile {
             owner.direction = direction.X > 0f ? 1 : -1;
 
         float progress = 1f - Projectile.timeLeft / (float)PunchLifetime;
-        float extensionCurve = progress < 0.38f ? progress / 0.38f : 1f - (progress - 0.38f) / 0.62f * 0.55f;
-        float extension = MathHelper.Lerp(12f, 34f * Projectile.scale, MathHelper.Clamp(extensionCurve, 0f, 1f));
-        Vector2 shoulderOffset = new(owner.direction * 8f * Projectile.scale, -4f * Projectile.scale);
+        float extension = GetExtension(progress, Projectile.scale);
+        Vector2 punchAnchor = GetPunchAnchor(owner, direction, Projectile.scale);
 
         Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
-        Projectile.Center = owner.MountedCenter + shoulderOffset + direction * extension;
+        Projectile.Center = punchAnchor + direction * extension;
         owner.heldProj = Projectile.whoAmI;
         owner.itemRotation = direction.ToRotation() * owner.direction;
 
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
             for (int i = 0; i < SpawnDustBurstCount; i++) {
-                Dust dust = Dust.NewDustPerfect(owner.MountedCenter + shoulderOffset + direction * 30f, SpawnDustType,
+                Dust dust = Dust.NewDustPerfect(punchAnchor + direction * (18f + 1.2f * Projectile.scale), SpawnDustType,
                     direction.RotatedByRandom(0.5f) * Main.rand.NextFloat(2f, 5f), 140, SpawnDustColor, 1.15f);
                 dust.noGravity = true;
             }
@@ -103,8 +115,7 @@ public class PunchProjectile : ModProjectile {
             return false;
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        Vector2 shoulderOffset = new(owner.direction * 8f * Projectile.scale, -4f * Projectile.scale);
-        Vector2 lineStart = owner.MountedCenter + shoulderOffset;
+        Vector2 lineStart = GetPunchAnchor(owner, direction, Projectile.scale);
         Vector2 lineEnd = Projectile.Center + direction * (10f * Projectile.scale);
         float collisionPoint = 0f;
 

@@ -2,7 +2,6 @@ using Ben10Mod.Content.Transformations.Humungousaur;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
-using Terraria.GameContent;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Common.CustomVisuals;
@@ -30,16 +29,11 @@ public class GrowthLayer : PlayerDrawLayer {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         Vector2 pivot = player.Bottom - Main.screenPosition;
         Vector2 scale = new(omp.CurrentTransformationScale, omp.CurrentTransformationScale);
-        var heldItemTexture = !player.HeldItem.IsAir ? TextureAssets.Item[player.HeldItem.type].Value : null;
 
         for (int i = 0; i < originalCount; i++) {
             DrawData data = drawInfo.DrawDataCache[i];
             if (data.texture == null)
                 continue;
-
-            Vector2 currentPivot = pivot;
-            if (heldItemTexture != null && data.texture == heldItemTexture)
-                currentPivot = player.itemLocation - Main.screenPosition;
 
             Vector2 originalScale = data.scale;
             Vector2 scaledSize = originalScale * scale;
@@ -48,8 +42,8 @@ public class GrowthLayer : PlayerDrawLayer {
             // Scale the rendered sprite position around the feet pivot, then rebuild position
             // from the original origin so the player grows in place instead of drifting sideways.
             Vector2 renderedTopLeft = data.position - data.origin * originalScale;
-            Vector2 offsetFromPivot = renderedTopLeft - currentPivot;
-            Vector2 scaledTopLeft = currentPivot + offsetFromPivot * scale;
+            Vector2 offsetFromPivot = renderedTopLeft - pivot;
+            Vector2 scaledTopLeft = pivot + offsetFromPivot * scale;
 
             data.position = scaledTopLeft + data.origin * scaledSize;
             data.scale = scaledSize;

@@ -988,6 +988,13 @@ Projectiles: {
 	ClockworkTimeTrapProjectile.DisplayName: Clockwork Time Trap Projectile
 	ClockworkTimeFieldProjectile.DisplayName: Clockwork Time Field Projectile
 	ClockworkChronoLockProjectile.DisplayName: Clockwork Chrono Lock Projectile
+	AmpFibianBarrierProjectile.DisplayName: Amp Fibian Barrier Projectile
+	AmpFibianBoltProjectile.DisplayName: Amp Fibian Bolt Projectile
+	AmpFibianBurstProjectile.DisplayName: Amp Fibian Burst Projectile
+	AmpFibianPhaseShiftMarkerProjectile.DisplayName: Amp Fibian Phase Shift Marker Projectile
+	AlienXBlackHoleProjectile.DisplayName: Alien X Black Hole Projectile
+	WayBigCosmicRayProjectile.DisplayName: Way Big Cosmic Ray Projectile
+	WayBigShockwaveProjectile.DisplayName: Way Big Shockwave Projectile
 }
 
 Tiles: {
