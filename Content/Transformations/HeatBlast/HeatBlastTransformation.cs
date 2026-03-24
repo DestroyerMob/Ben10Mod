@@ -16,6 +16,9 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
     public class HeatBlastTransformation : Transformation {
         private const float AuraRodDamageMultiplier = 0.1f;
         private const int AuraRodEnergyCost = 100;
+        private const float SupernovaDamageMultiplier = 1.8f;
+        private const int SupernovaEnergyCost = 60;
+        private const int SupernovaCooldown = 30 * 60;
 
         public override string FullID             => "Ben10Mod:HeatBlast";
         public override string TransformationName => "Heatblast";
@@ -34,6 +37,14 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override float PrimaryAbilityAttackModifier => AuraRodDamageMultiplier;
         public override int PrimaryAbilityAttackEnergyCost => AuraRodEnergyCost;
         public override bool PrimaryAbilityAttackSingleUse => false;
+        public override int SecondaryAbilityAttack => ModContent.ProjectileType<HeatBlastSupernovaProjectile>();
+        public override int SecondaryAbilityAttackSpeed => 30;
+        public override int SecondaryAbilityAttackShootSpeed => 0;
+        public override int SecondaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
+        public override float SecondaryAbilityAttackModifier => SupernovaDamageMultiplier;
+        public override int SecondaryAbilityAttackEnergyCost => SupernovaEnergyCost;
+        public override int SecondaryAbilityCooldown => SupernovaCooldown;
+        public override bool SecondaryAbilityAttackSingleUse => true;
 
         public override List<string> Abilities => new List<string> {
             "Flamethrower blast",
@@ -41,12 +52,14 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             "Flame-boosted jump",
             "Fire & lava immunity",
             "Flame aura rod sentry",
+            "Supernova heat wave",
             "Large fireball attack - ultimate charged attack"
         };
 
         public override string PrimaryAttackName => "Flame Jet";
         public override string SecondaryAttackName => "Fire Bomb";
         public override string PrimaryAbilityAttackName => "Flare Rod";
+        public override string SecondaryAbilityAttackName => "Supernova";
         public override string UltimateAttackName => "Fireball";
         
         public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
@@ -103,6 +116,17 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int damage, float knockback) {
+            if (omp.IsSecondaryAbilityAttackLoaded) {
+                TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+                if (profile == null || profile.ProjectileType <= 0)
+                    return false;
+
+                int supernovaDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
+                Projectile.NewProjectile(source, player.Center, Vector2.Zero, profile.ProjectileType,
+                    supernovaDamage, knockback + 2f, player.whoAmI);
+                return false;
+            }
+
             if (!omp.IsPrimaryAbilityAttackLoaded)
                 return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 

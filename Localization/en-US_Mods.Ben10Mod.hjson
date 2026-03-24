@@ -995,6 +995,14 @@ Projectiles: {
 	AlienXBlackHoleProjectile.DisplayName: Alien X Black Hole Projectile
 	WayBigCosmicRayProjectile.DisplayName: Way Big Cosmic Ray Projectile
 	WayBigShockwaveProjectile.DisplayName: Way Big Shockwave Projectile
+	DiamondHeadSpireProjectile.DisplayName: Diamond Head Spire Projectile
+	HeatBlastSupernovaProjectile.DisplayName: Heat Blast Supernova Projectile
+	CannonboltImpactBurstProjectile.DisplayName: Cannonbolt Impact Burst Projectile
+	CannonboltRollProjectile.DisplayName: Cannonbolt Roll Projectile
+	WaterHazardUltimateProjectile.DisplayName: Water Hazard Ultimate Projectile
+	WaterHazardSnareProjectile.DisplayName: Water Hazard Snare Projectile
+	WaterHazardPressureProjectile.DisplayName: Water Hazard Pressure Projectile
+	WaterHazardBurstProjectile.DisplayName: Water Hazard Burst Projectile
 }
 
 Tiles: {

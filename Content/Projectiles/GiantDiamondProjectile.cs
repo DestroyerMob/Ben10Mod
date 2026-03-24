@@ -1,50 +1,74 @@
-﻿using Microsoft.Xna.Framework;
+using Ben10Mod.Content.DamageClasses;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace Ben10Mod.Content.Projectiles {
-    public class GiantDiamondProjectile : ModProjectile {
-        private int timeAlive = 0;
-        
-        public override void SetDefaults() {
-            Projectile.width = 64;
-            Projectile.height = 128;
+namespace Ben10Mod.Content.Projectiles;
 
-            Projectile.friendly = true;
-            Projectile.hostile = false;
+public class GiantDiamondProjectile : ModProjectile {
+    private const float SideDiamondOffset = 72f;
 
-            Projectile.DamageType  = DamageClass.Ranged;
-            Projectile.penetrate   = -1;
-            Projectile.tileCollide = true;
-            Projectile.ignoreWater = true;
+    public override void SetDefaults() {
+        Projectile.width = 64;
+        Projectile.height = 128;
+        Projectile.friendly = true;
+        Projectile.hostile = false;
+        Projectile.tileCollide = true;
+        Projectile.ignoreWater = true;
+        Projectile.penetrate = -1;
+        Projectile.timeLeft = 180;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
+        Projectile.usesLocalNPCImmunity = true;
+        Projectile.localNPCHitCooldown = 12;
+    }
+
+    public override void OnSpawn(IEntitySource source) {
+        if (Projectile.ai[0] != 0f)
+            return;
+
+        SpawnSideDiamond(source, -SideDiamondOffset, 0.82f);
+        SpawnSideDiamond(source, SideDiamondOffset, 0.82f);
+    }
+
+    public override void AI() {
+        Projectile.velocity.X *= 0.98f;
+        Projectile.velocity.Y = MathHelper.Clamp(Projectile.velocity.Y + 0.7f, 10f, 24f);
+        Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
+        Lighting.AddLight(Projectile.Center, 0.22f, 0.34f, 0.46f);
+
+        if (Main.rand.NextBool(2)) {
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(16f, 34f), DustID.GemDiamond,
+                Projectile.velocity * Main.rand.NextFloat(0.08f, 0.18f), 105, new Color(210, 255, 255), Main.rand.NextFloat(1.1f, 1.45f));
+            dust.noGravity = true;
         }
+    }
 
-        public override void OnSpawn(IEntitySource source) {
-            if (Projectile.ai[0] == 0) {
-                Projectile.NewProjectile(source, Projectile.position + new Vector2(Projectile.width + Main.rand.Next(15, 25), 0), Projectile.velocity, this.Type, Projectile.damage, 0, Projectile.owner, 1);
-                Projectile.NewProjectile(source, Projectile.position - new Vector2(Projectile.width - Main.rand.Next(15, 25), 0), Projectile.velocity, this.Type, Projectile.damage, 0, Projectile.owner, 1);
-            }
+    public override void OnKill(int timeLeft) {
+        for (int i = 0; i < 18; i++) {
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(18f, 38f), DustID.GemDiamond,
+                Main.rand.NextVector2Circular(4.5f, 4.5f), 95, new Color(225, 255, 255), Main.rand.NextFloat(1.15f, 1.7f));
+            dust.noGravity = true;
         }
+    }
 
-        public override void AI() {
-            timeAlive++;
-            Projectile.velocity.Y = (float)Math.Pow(timeAlive / 10f, 2);
-        }
+    private void SpawnSideDiamond(IEntitySource source, float horizontalOffset, float damageMultiplier) {
+        int projectileIndex = Projectile.NewProjectile(source,
+            Projectile.Center + new Vector2(horizontalOffset, 0f),
+            new Vector2(horizontalOffset * 0.015f, Projectile.velocity.Y),
+            Type,
+            Math.Max(1, (int)(Projectile.damage * damageMultiplier)),
+            Projectile.knockBack,
+            Projectile.owner,
+            1f);
 
-        public override void OnKill(int timeLeft) {
-            for (int i = 0; i < 10; i++) {
-                int dustNum = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.GemDiamond,
-                    1, 1, 0, Color.White, 2);
-                Main.dust[dustNum].noGravity = true;
-            }
-        }
+        if (projectileIndex < 0 || projectileIndex >= Main.maxProjectiles)
+            return;
+
+        Main.projectile[projectileIndex].scale = 0.85f;
+        Main.projectile[projectileIndex].rotation = horizontalOffset < 0f ? -0.15f : 0.15f;
+        Main.projectile[projectileIndex].netUpdate = true;
     }
 }

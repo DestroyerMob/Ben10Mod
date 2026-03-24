@@ -12,10 +12,11 @@ namespace Ben10Mod.Content.Transformations.HeatBlast
 {
     public class HeatBlast : ModItem {
         public static string TransformationDescription =>
-            "A Pyronite built for constant pressure. Heat Blast controls fire, shrugs off lava, and uses rocket-like bursts to stay mobile while burning everything nearby.";
+            "A Pyronite built for constant pressure. Heat Blast controls fire, shrugs off lava, and can erupt into a devastating supernova while burning everything nearby.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Primary ability: ignite a burning aura around yourself that scorches nearby enemies.",
+            "Primary ability: deploy a flare rod sentry that scorches nearby enemies.",
+            "Secondary ability: unleash a supernova heat wave that expands from your body and ignites everything it touches.",
             "Main attack: rapid flamethrower stream.",
             "Alt attack: explosive fire bomb.",
             "Passive: lava immunity, fire walking, and fiery melee hits.",

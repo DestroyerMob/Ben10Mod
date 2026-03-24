@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Terraria.ID;
 using Terraria;
 using Terraria.ModLoader;
-using Ben10Mod.Content.Items.Placeables;
 
 namespace Ben10Mod.Content.Transformations.DiamondHead
 {
     public class DiamondHead : ModItem {
         public static string TransformationDescription =>
-            "A durable Petrosapien focused on defense and piercing crystal attacks. Diamondhead trades mobility for survivability, armor penetration, and hard-hitting crystal finishers.";
+            "A durable Petrosapien built to anchor fights with piercing crystal fire, fortified bulk, and punishing prism strikes.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Primary ability: crystal bulwark stance with heavy defense, life regen, and reduced movement.",
-            "Main attack: fast crystal shard volleys with armor penetration.",
-            "Passive: large defense boost at all times.",
-            "Ultimate attack: summon a giant crystal strike at the cursor.",
-            "Role: tanky ranged bruiser that excels at standing ground."
+            "Main attack: precise crystal shard shot with strong armor penetration.",
+            "Secondary attack: shard barrage for wide close-range pressure.",
+            "Primary ability: bulwark stance with huge defense, damage reduction, and retaliatory shards when struck.",
+            "Secondary ability: summon prism spires at the cursor to lock down space.",
+            "Ultimate attack: call a giant diamond strike from above.",
+            "Role: tanky ranged bruiser that dominates while holding ground."
         };
 
         public override void Load() {
