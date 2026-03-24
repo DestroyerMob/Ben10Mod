@@ -7,8 +7,10 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations;
 
 public abstract class SimpleRangedTransformationBase : Transformation {
-    protected abstract string CostumeItemName { get; }
     protected abstract string BasicDescription { get; }
+    protected virtual int HeadSlot => -1;
+    protected virtual int BodySlot => -1;
+    protected virtual int LegSlot => -1;
 
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
     public override string Description => BasicDescription;
@@ -27,11 +29,11 @@ public abstract class SimpleRangedTransformationBase : Transformation {
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-        if (string.IsNullOrWhiteSpace(CostumeItemName))
-            return;
-
-        player.head = EquipLoader.GetEquipSlot(Mod, CostumeItemName, EquipType.Head);
-        player.body = EquipLoader.GetEquipSlot(Mod, CostumeItemName, EquipType.Body);
-        player.legs = EquipLoader.GetEquipSlot(Mod, CostumeItemName, EquipType.Legs);
+        if (HeadSlot >= 0)
+            player.head = HeadSlot;
+        if (BodySlot >= 0)
+            player.body = BodySlot;
+        if (LegSlot >= 0)
+            player.legs = LegSlot;
     }
 }
