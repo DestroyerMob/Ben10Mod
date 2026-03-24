@@ -580,6 +580,11 @@ Items: {
 		DisplayName: Dna Palette Kit
 		Tooltip: ""
 	}
+
+	CelestialsapienDnaSample: {
+		DisplayName: Celestialsapien Dna Sample
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -810,6 +815,96 @@ Buffs: {
 		Description: Mods.Ben10Mod.Buffs.EnergyOverloaded.Description
 		DisplayName: Energy Overloaded
 	}
+
+	Blitzwolfer_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Blitzwolfer_Buff.Description
+		DisplayName: Blitzwolfer_ Buff
+	}
+
+	Astrodactyl_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Astrodactyl_Buff.Description
+		DisplayName: Astrodactyl_ Buff
+	}
+
+	Arctiguana_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Arctiguana_Buff.Description
+		DisplayName: Arctiguana_ Buff
+	}
+
+	AmpFibian_Buff: {
+		Description: Mods.Ben10Mod.Buffs.AmpFibian_Buff.Description
+		DisplayName: Amp Fibian_ Buff
+	}
+
+	AlienX_Buff: {
+		Description: Mods.Ben10Mod.Buffs.AlienX_Buff.Description
+		DisplayName: Alien X_ Buff
+	}
+
+	Cannonbolt_Buff: {
+		DisplayName: Cannonbolt_ Buff
+		Description: Mods.Ben10Mod.Buffs.Cannonbolt_Buff.Description
+	}
+
+	Clockwork_Buff: {
+		DisplayName: Clockwork_ Buff
+		Description: Mods.Ben10Mod.Buffs.Clockwork_Buff.Description
+	}
+
+	Fasttrack_Buff: {
+		DisplayName: Fasttrack_ Buff
+		Description: Mods.Ben10Mod.Buffs.Fasttrack_Buff.Description
+	}
+
+	Frankenstrike_Buff: {
+		DisplayName: Frankenstrike_ Buff
+		Description: Mods.Ben10Mod.Buffs.Frankenstrike_Buff.Description
+	}
+
+	Goop_Buff: {
+		DisplayName: Goop_ Buff
+		Description: Mods.Ben10Mod.Buffs.Goop_Buff.Description
+	}
+
+	Lodestar_Buff: {
+		DisplayName: Lodestar_ Buff
+		Description: Mods.Ben10Mod.Buffs.Lodestar_Buff.Description
+	}
+
+	PeskyDust_Buff: {
+		DisplayName: Pesky Dust_ Buff
+		Description: Mods.Ben10Mod.Buffs.PeskyDust_Buff.Description
+	}
+
+	SnareOh_Buff: {
+		DisplayName: Snare Oh_ Buff
+		Description: Mods.Ben10Mod.Buffs.SnareOh_Buff.Description
+	}
+
+	Terraspin_Buff: {
+		DisplayName: Terraspin_ Buff
+		Description: Mods.Ben10Mod.Buffs.Terraspin_Buff.Description
+	}
+
+	Upgrade_Buff: {
+		DisplayName: Upgrade_ Buff
+		Description: Mods.Ben10Mod.Buffs.Upgrade_Buff.Description
+	}
+
+	WaterHazard_Buff: {
+		DisplayName: Water Hazard_ Buff
+		Description: Mods.Ben10Mod.Buffs.WaterHazard_Buff.Description
+	}
+
+	WayBig_Buff: {
+		DisplayName: Way Big_ Buff
+		Description: Mods.Ben10Mod.Buffs.WayBig_Buff.Description
+	}
+
+	Whampire_Buff: {
+		DisplayName: Whampire_ Buff
+		Description: Mods.Ben10Mod.Buffs.Whampire_Buff.Description
+	}
 }
 
 Projectiles: {
@@ -884,6 +979,7 @@ Projectiles: {
 	XLR8PunchProjectile.DisplayName: X L R8 Punch Projectile
 	XLR8DashProjectile.DisplayName: X L R8 Dash Projectile
 	BigChillPhaseStrikeProjectile.DisplayName: Big Chill Phase Strike Projectile
+	WayBigPunchProjectile.DisplayName: Way Big Punch Projectile
 }
 
 Tiles: {

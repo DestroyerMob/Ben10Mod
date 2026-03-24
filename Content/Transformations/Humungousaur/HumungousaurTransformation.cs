@@ -59,7 +59,6 @@ public class HumungousaurTransformation : Transformation {
         bool growthActive = growthBonusMultiplier > 0f;
 
         omp.SetTransformationScale(growthScale, GrowthRampDuration, 1f, growthScale);
-
         player.statDefense += 8;
         player.GetDamage<HeroDamage>() += 0.12f;
         player.GetKnockback<HeroDamage>() += 0.25f;

@@ -433,6 +433,14 @@ namespace Ben10Mod {
             }
         }
 
+        public Vector2 GetScaledVisualPoint(Vector2 worldPoint) {
+            if (CurrentTransformationScale <= 1f)
+                return worldPoint;
+
+            Vector2 pivot = Player.Bottom;
+            return pivot + (worldPoint - pivot) * CurrentTransformationScale;
+        }
+
         private void UpdateTransformationScale(bool forceReset) {
             if (forceReset) {
                 requestedTransformationScale = 1f;

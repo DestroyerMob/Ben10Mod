@@ -7,14 +7,13 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Common.CustomVisuals;
 
-public class HumungousaurGrowthLayer : PlayerDrawLayer {
+public class GrowthLayer : PlayerDrawLayer {
     public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
         var omp = player.GetModPlayer<OmnitrixPlayer>();
 
         return !player.dead &&
                !player.invis &&
-               omp.currentTransformationId == "Ben10Mod:Humungousaur" &&
                omp.CurrentTransformationScale > 1f;
     }
 
