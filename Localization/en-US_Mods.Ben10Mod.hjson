@@ -1003,6 +1003,10 @@ Projectiles: {
 	WaterHazardSnareProjectile.DisplayName: Water Hazard Snare Projectile
 	WaterHazardPressureProjectile.DisplayName: Water Hazard Pressure Projectile
 	WaterHazardBurstProjectile.DisplayName: Water Hazard Burst Projectile
+	TerraspinVortexFieldProjectile.DisplayName: Terraspin Vortex Field Projectile
+	TerraspinUltimateProjectile.DisplayName: Terraspin Ultimate Projectile
+	TerraspinGustProjectile.DisplayName: Terraspin Gust Projectile
+	TerraspinBurstProjectile.DisplayName: Terraspin Burst Projectile
 }
 
 Tiles: {

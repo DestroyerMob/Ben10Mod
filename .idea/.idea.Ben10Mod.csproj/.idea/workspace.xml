@@ -9,19 +9,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="79244cbb-b7ed-40b1-a193-393e3418b1c3" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinBurstProjectile.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinGustProjectile.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinUltimateProjectile.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/TerraspinVortexFieldProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.csproj/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/DiamondHeadProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/DiamondHeadProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/GiantDiamondProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/GiantDiamondProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayBoltProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayBoltProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayLaserProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayLaserProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Cannonbolt/CannonboltTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Cannonbolt/CannonboltTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHead.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHead.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlast.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlast.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/WaterHazard/WaterHazardTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/WaterHazard/WaterHazardTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -172,7 +165,7 @@
       <workItem from="1774328924821" duration="25000" />
       <workItem from="1774328982342" duration="1000" />
       <workItem from="1774328986275" duration="20000" />
-      <workItem from="1774329050089" duration="13986000" />
+      <workItem from="1774329050089" duration="17678000" />
     </task>
     <servers />
   </component>
