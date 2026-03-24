@@ -257,7 +257,7 @@ namespace Ben10Mod {
                 case NPCID.DD2OgreT3:
                     return "Ben10Mod:Cannonbolt";
                 case NPCID.DD2Betsy:
-                    return "Ben10Mod:Astrodactyl";
+                    return "Ben10Mod:Clockwork";
 
                 // Pumpkin Moon minibosses
                 case NPCID.MourningWood:

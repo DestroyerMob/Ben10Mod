@@ -182,7 +182,7 @@ Hardmode unlocks:
 - `Way Big`: `Moon Lord`
 - `Pesky Dust`: `Dark Mage`
 - `Cannonbolt`: `Ogre`
-- `Astrodactyl`: `Betsy`
+- `Clockwork`: `Betsy`
 - `Snare-Oh`: `Mourning Wood`
 - `Blitzwolfer`: `Pumpking`
 - `Arctiguana`: `Everscream`
@@ -200,7 +200,7 @@ Event unlocks:
 - `Fasttrack`: complete the `Snow Legion` after participating
 - `Water Hazard`: complete a `Pirate Invasion` after participating
 - `Upgrade`: complete `Martian Madness` after participating
-- `Clockwork`: complete the `Old One's Army` after participating
+- `Astrodactyl`: complete the `Old One's Army` after participating
 
 For event unlocks, you need to actually fight during the event. Just being present is not enough.
 

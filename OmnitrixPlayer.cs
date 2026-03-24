@@ -67,6 +67,7 @@ namespace Ben10Mod {
         public int transformationTime = 300;
         public float CurrentTransformationScale = 1f;
         public Vector2 CurrentTransformationHitboxScale = Vector2.One;
+        public Vector2 GoopVisualScale = Vector2.One;
 
         public bool PrimaryAbilityEnabled = false;
         public bool PrimaryAbilityWasEnabled = false;
@@ -152,6 +153,10 @@ namespace Ben10Mod {
         private Vector2 requestedTransformationHitboxScale = Vector2.One;
         private float lastExpandedTransformationScale = 1f;
         private Vector2 lastExpandedTransformationHitboxScale = Vector2.One;
+        internal bool goopWasGrounded = false;
+        internal float goopPreviousVerticalVelocity = 0f;
+        internal float goopLandingSquish = 0f;
+        internal int goopLandingSplashTime = 0;
         private string lastAttackUiTransformationId = "";
         private bool skipAutomaticForcedDetransformHandling = false;
 
@@ -352,6 +357,13 @@ namespace Ben10Mod {
             advancedCircuitMatrix = false;
             snowflake = false;
             transformationFailsafeEquipped = false;
+            if (currentTransformationId != "Ben10Mod:Goop") {
+                GoopVisualScale = Vector2.One;
+                goopWasGrounded = false;
+                goopPreviousVerticalVelocity = 0f;
+                goopLandingSquish = 0f;
+                goopLandingSplashTime = 0;
+            }
 
             omnitrixEnergyMax = 0;
             omnitrixEnergyRegen = 0;
@@ -2458,7 +2470,7 @@ namespace Ben10Mod {
                 case InvasionID.MartianMadness:
                     return "Ben10Mod:Upgrade";
                 case EventOldOnesArmy:
-                    return "Ben10Mod:Clockwork";
+                    return "Ben10Mod:Astrodactyl";
                 default:
                     return string.Empty;
             }

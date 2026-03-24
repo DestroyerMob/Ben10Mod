@@ -980,6 +980,14 @@ Projectiles: {
 	XLR8DashProjectile.DisplayName: X L R8 Dash Projectile
 	BigChillPhaseStrikeProjectile.DisplayName: Big Chill Phase Strike Projectile
 	WayBigPunchProjectile.DisplayName: Way Big Punch Projectile
+	GoopGlobProjectile.DisplayName: Goop Glob Projectile
+	GoopDelugeProjectile.DisplayName: Goop Deluge Projectile
+	GoopPuddleBombProjectile.DisplayName: Goop Puddle Bomb Projectile
+	GoopPuddleProjectile.DisplayName: Goop Puddle Projectile
+	ClockworkBoltProjectile.DisplayName: Clockwork Bolt Projectile
+	ClockworkTimeTrapProjectile.DisplayName: Clockwork Time Trap Projectile
+	ClockworkTimeFieldProjectile.DisplayName: Clockwork Time Field Projectile
+	ClockworkChronoLockProjectile.DisplayName: Clockwork Chrono Lock Projectile
 }
 
 Tiles: {
