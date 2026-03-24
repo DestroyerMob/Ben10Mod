@@ -217,6 +217,31 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
         public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) => PaletteChannels;
+        public virtual IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) {
+            IReadOnlyList<TransformationPaletteChannel> channels = GetPaletteChannels(omp);
+            if (channels == null || channels.Count == 0)
+                return Array.Empty<string>();
+
+            List<string> previewBaseTexturePaths = new();
+            HashSet<string> seenPaths = new(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < channels.Count; i++) {
+                TransformationPaletteChannel channel = channels[i];
+                if (channel == null || !channel.IsValid)
+                    continue;
+
+                for (int j = 0; j < channel.Overlays.Count; j++) {
+                    TransformationPaletteOverlay overlay = channel.Overlays[j];
+                    if (overlay == null || string.IsNullOrWhiteSpace(overlay.BaseTexturePath))
+                        continue;
+
+                    if (seenPaths.Add(overlay.BaseTexturePath))
+                        previewBaseTexturePaths.Add(overlay.BaseTexturePath);
+                }
+            }
+
+            return previewBaseTexturePaths;
+        }
         public virtual bool SupportsPaletteCustomization(OmnitrixPlayer omp) => GetPaletteChannels(omp).Count > 0;
         public virtual TransformationPaletteChannel GetPaletteChannel(string channelId, OmnitrixPlayer omp) {
             if (string.IsNullOrWhiteSpace(channelId))

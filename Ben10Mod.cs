@@ -223,13 +223,14 @@ namespace Ben10Mod {
 							if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
 								return;
 
-							Player player = Main.player[whoAmI];
-							if (!player.active)
-								return;
+						Player player = Main.player[whoAmI];
+						if (!player.active)
+							return;
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
+							string[] disabledChannelKeys = OmnitrixPlayer.ReadPaletteDisabledChannelKeys(reader);
 							OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-							omp.ApplyTransformationPaletteStateSync(entries);
+							omp.ApplyTransformationPaletteStateSync(entries, disabledChannelKeys);
 							omp.SyncTransformationPaletteState();
 							break;
 						}
@@ -246,7 +247,8 @@ namespace Ben10Mod {
 								return;
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
-							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries);
+							string[] disabledChannelKeys = OmnitrixPlayer.ReadPaletteDisabledChannelKeys(reader);
+							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries, disabledChannelKeys);
 							break;
 						}
 						case MessageType.RequestAbsorbMaterial: {

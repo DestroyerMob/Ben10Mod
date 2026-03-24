@@ -169,8 +169,10 @@ public sealed class PalettePreviewSwatch : UIElement {
 
     public Func<Color> ResolveColor { get; set; }
     public Func<string> ResolveLabel { get; set; }
+    public Func<IReadOnlyList<string>> ResolveBaseTexturePaths { get; set; }
     public Func<IReadOnlyList<TransformationPaletteChannel>> ResolveChannels { get; set; }
     public Func<string, Color> ResolveChannelColor { get; set; }
+    public Func<string, bool> ResolveChannelEnabled { get; set; }
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {
         CalculatedStyle dims = GetDimensions();
@@ -178,6 +180,8 @@ public sealed class PalettePreviewSwatch : UIElement {
         Rectangle outer = dims.ToRectangle();
         Color color = ResolveColor?.Invoke() ?? Color.Transparent;
         string label = ResolveLabel?.Invoke() ?? "Preview";
+        IReadOnlyList<string> previewBaseTexturePaths = ResolveBaseTexturePaths?.Invoke() ??
+            Array.Empty<string>();
         IReadOnlyList<TransformationPaletteChannel> channels = ResolveChannels?.Invoke() ??
             Array.Empty<TransformationPaletteChannel>();
 
@@ -192,7 +196,7 @@ public sealed class PalettePreviewSwatch : UIElement {
         spriteBatch.Draw(pixel, new Rectangle(previewArea.X, previewArea.Bottom - 18, previewArea.Width, 18),
             new Color(20, 28, 34, 245));
 
-        DrawPreviewFigure(spriteBatch, previewArea, channels);
+        DrawPreviewFigure(spriteBatch, previewArea, previewBaseTexturePaths, channels);
 
         Rectangle swatch = new Rectangle(outer.Right - 62, outer.Bottom - 38, 30, 18);
         spriteBatch.Draw(pixel, swatch, color);
@@ -206,10 +210,18 @@ public sealed class PalettePreviewSwatch : UIElement {
     }
 
     private void DrawPreviewFigure(SpriteBatch spriteBatch, Rectangle previewArea,
-        IReadOnlyList<TransformationPaletteChannel> channels) {
+        IReadOnlyList<string> previewBaseTexturePaths, IReadOnlyList<TransformationPaletteChannel> channels) {
         List<ResolvedPreviewBase> baseLayers = new();
         List<ResolvedPreviewOverlay> overlays = new();
         HashSet<string> seenBasePaths = new(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
+            string texturePath = previewBaseTexturePaths[i];
+            if (!seenBasePaths.Add(texturePath) || !TryGetPreviewTexture(texturePath, out Texture2D baseTexture))
+                continue;
+
+            baseLayers.Add(new ResolvedPreviewBase(texturePath, baseTexture));
+        }
 
         for (int i = 0; i < channels.Count; i++) {
             TransformationPaletteChannel channel = channels[i];
@@ -217,6 +229,7 @@ public sealed class PalettePreviewSwatch : UIElement {
                 continue;
 
             Color overlayColor = ResolveChannelColor?.Invoke(channel.Id) ?? channel.DefaultColor;
+            bool channelEnabled = ResolveChannelEnabled?.Invoke(channel.Id) ?? true;
             for (int j = 0; j < channel.Overlays.Count; j++) {
                 TransformationPaletteOverlay overlay = channel.Overlays[j];
                 if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
@@ -225,7 +238,8 @@ public sealed class PalettePreviewSwatch : UIElement {
                 if (seenBasePaths.Add(overlay.BaseTexturePath))
                     baseLayers.Add(new ResolvedPreviewBase(overlay.BaseTexturePath, baseTexture));
 
-                overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, maskTexture, overlayColor));
+                if (channelEnabled)
+                    overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, maskTexture, overlayColor));
             }
         }
 
@@ -266,6 +280,20 @@ public sealed class PalettePreviewSwatch : UIElement {
 
             spriteBatch.Draw(overlay.MaskTexture, drawPosition, ResolvePreviewFrame(overlay.MaskTexture),
                 overlay.Color, 0f, origin, scale, SpriteEffects.None, 0f);
+        }
+    }
+
+    private static bool TryGetPreviewTexture(string texturePath, out Texture2D texture) {
+        texture = null;
+        if (Main.dedServ || string.IsNullOrWhiteSpace(texturePath))
+            return false;
+
+        try {
+            texture = ModContent.Request<Texture2D>(texturePath).Value;
+            return texture != null;
+        }
+        catch {
+            return false;
         }
     }
 
@@ -327,15 +355,20 @@ public class TransformationPaletteScreen : UIState {
     private PaletteByteSlider redSlider;
     private PaletteByteSlider greenSlider;
     private PaletteByteSlider blueSlider;
+    private UITextPanel<string> paletteToggleButton;
     private UITextPanel<string> applyButton;
     private UITextPanel<string> resetChannelButton;
     private UITextPanel<string> resetAllButton;
 
     private string _currentTransformationId = string.Empty;
     private string _currentChannelSignature = string.Empty;
+    private string _currentPreviewBaseSignature = string.Empty;
+    private string _currentChannelEnabledSignature = string.Empty;
     private string _selectedChannelId = string.Empty;
+    private bool _selectedChannelPaletteEnabled = true;
     private bool _suppressSliderCallbacks;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
+    private readonly List<string> _activePreviewBaseTexturePaths = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
 
     public override void OnInitialize() {
@@ -403,8 +436,10 @@ public class TransformationPaletteScreen : UIState {
         previewSwatch = new PalettePreviewSwatch {
             ResolveColor = GetSelectedPendingColor,
             ResolveLabel = GetSelectedChannelPreviewLabel,
+            ResolveBaseTexturePaths = () => _activePreviewBaseTexturePaths,
             ResolveChannels = () => _activeChannels,
-            ResolveChannelColor = GetPendingColor
+            ResolveChannelColor = GetPendingColor,
+            ResolveChannelEnabled = IsPaletteChannelEnabled
         };
         previewSwatch.Left.Set(18f, 0f);
         previewSwatch.Top.Set(54f, 0f);
@@ -419,9 +454,11 @@ public class TransformationPaletteScreen : UIState {
         controlsPanel.Append(greenSlider);
         controlsPanel.Append(blueSlider);
 
-        applyButton = CreateActionButton("Apply Changes", 18f, 454f, (_, _) => ApplyPendingColors());
-        resetChannelButton = CreateActionButton("Reset Part", 210f, 454f, (_, _) => ResetSelectedPendingColor());
-        resetAllButton = CreateActionButton("Reset All", 402f, 454f, (_, _) => ResetAllPendingColors());
+        paletteToggleButton = CreateActionButton("Use Original", 18f, 454f, (_, _) => TogglePaletteEnabled(), width: 131f);
+        applyButton = CreateActionButton("Apply Changes", 159f, 454f, (_, _) => ApplyPendingColors(), width: 131f);
+        resetChannelButton = CreateActionButton("Reset Part", 300f, 454f, (_, _) => ResetSelectedPendingColor(), width: 131f);
+        resetAllButton = CreateActionButton("Reset All", 441f, 454f, (_, _) => ResetAllPendingColors(), width: 131f);
+        controlsPanel.Append(paletteToggleButton);
         controlsPanel.Append(applyButton);
         controlsPanel.Append(resetChannelButton);
         controlsPanel.Append(resetAllButton);
@@ -487,36 +524,60 @@ public class TransformationPaletteScreen : UIState {
         IReadOnlyList<TransformationPaletteChannel> channels = targetTransformation?.GetPaletteChannels(omp)
             ?.Where(channel => channel != null && channel.IsValid)
             .ToArray() ?? Array.Empty<TransformationPaletteChannel>();
+        IReadOnlyList<string> previewBaseTexturePaths = targetTransformation?.GetPalettePreviewBaseTexturePaths(omp)
+            ?.Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray() ?? Array.Empty<string>();
         string channelSignature = BuildChannelSignature(channels);
+        string previewBaseSignature = BuildPreviewBaseSignature(previewBaseTexturePaths);
+        string channelEnabledSignature = BuildChannelEnabledSignature(targetTransformation, channels, omp);
+        bool channelContentChanged = force || targetTransformationId != _currentTransformationId ||
+            channelSignature != _currentChannelSignature;
+        bool previewChanged = channelContentChanged || previewBaseSignature != _currentPreviewBaseSignature;
+        bool channelStateChanged = channelContentChanged || channelEnabledSignature != _currentChannelEnabledSignature;
 
-        if (!force && targetTransformationId == _currentTransformationId && channelSignature == _currentChannelSignature)
+        if (!previewChanged && !channelStateChanged)
             return;
 
         _currentTransformationId = targetTransformationId;
         _currentChannelSignature = channelSignature;
-        _activeChannels.Clear();
-        _activeChannels.AddRange(channels);
-        _pendingColors.Clear();
+        _currentPreviewBaseSignature = previewBaseSignature;
+        _currentChannelEnabledSignature = channelEnabledSignature;
 
-        if (targetTransformation != null) {
-            for (int i = 0; i < _activeChannels.Count; i++) {
-                TransformationPaletteChannel channel = _activeChannels[i];
-                _pendingColors[channel.Id] = omp.GetPaletteColor(targetTransformation, channel.Id);
+        if (channelContentChanged) {
+            _activeChannels.Clear();
+            _activeChannels.AddRange(channels);
+            _pendingColors.Clear();
+
+            if (targetTransformation != null) {
+                for (int i = 0; i < _activeChannels.Count; i++) {
+                    TransformationPaletteChannel channel = _activeChannels[i];
+                    _pendingColors[channel.Id] = omp.GetPaletteColor(targetTransformation, channel.Id);
+                }
+            }
+
+            if (_activeChannels.Count > 0) {
+                _selectedChannelId = _activeChannels.Any(channel => channel.Id == _selectedChannelId)
+                    ? _selectedChannelId
+                    : _activeChannels[0].Id;
+            }
+            else {
+                _selectedChannelId = string.Empty;
             }
         }
 
-        if (_activeChannels.Count > 0) {
-            _selectedChannelId = _activeChannels.Any(channel => channel.Id == _selectedChannelId)
-                ? _selectedChannelId
-                : _activeChannels[0].Id;
-        }
-        else {
-            _selectedChannelId = string.Empty;
+        if (previewChanged) {
+            _activePreviewBaseTexturePaths.Clear();
+            _activePreviewBaseTexturePaths.AddRange(previewBaseTexturePaths);
         }
 
-        RebuildChannelButtons();
+        _selectedChannelPaletteEnabled = IsPaletteChannelEnabled(_selectedChannelId);
+        if (channelStateChanged)
+            RebuildChannelButtons();
+
         UpdateHeaderState(omp, targetTransformation);
-        LoadSelectedChannelIntoSliders();
+        if (channelContentChanged)
+            LoadSelectedChannelIntoSliders();
     }
 
     private void UpdateHeaderState(OmnitrixPlayer omp, Transformation targetTransformation) {
@@ -538,7 +599,9 @@ public class TransformationPaletteScreen : UIState {
             return;
         }
 
-        statusText.SetText("Select a custom part, adjust the sliders, then apply your changes.");
+        statusText.SetText(_selectedChannelPaletteEnabled
+            ? "Select a custom part, adjust the sliders, then apply your changes."
+            : $"{GetSelectedChannelDisplayName()} is using the original texture right now. Saved colors stay stored until you switch this part back to palette.");
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
         SetControlsInteractive(true);
     }
@@ -547,6 +610,13 @@ public class TransformationPaletteScreen : UIState {
         redSlider.IsInteractive = interactive;
         greenSlider.IsInteractive = interactive;
         blueSlider.IsInteractive = interactive;
+        paletteToggleButton.BackgroundColor = interactive
+            ? (_selectedChannelPaletteEnabled ? new Color(76, 118, 83) : new Color(122, 88, 60))
+            : new Color(40, 44, 54);
+        paletteToggleButton.BorderColor = interactive
+            ? (_selectedChannelPaletteEnabled ? new Color(140, 220, 170) : new Color(228, 188, 120))
+            : new Color(62, 68, 80);
+        paletteToggleButton.SetText(_selectedChannelPaletteEnabled ? "Use Original" : "Use Palette");
         applyButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
         resetChannelButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
         resetAllButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
@@ -557,7 +627,10 @@ public class TransformationPaletteScreen : UIState {
 
         for (int i = 0; i < _activeChannels.Count; i++) {
             TransformationPaletteChannel channel = _activeChannels[i];
-            PaletteChannelButton button = new(channel.DisplayName, () => GetPendingColor(channel.Id),
+            string displayName = IsPaletteChannelEnabled(channel.Id)
+                ? channel.DisplayName
+                : $"{channel.DisplayName} (Original)";
+            PaletteChannelButton button = new(displayName, () => GetPendingColor(channel.Id),
                 () => string.Equals(_selectedChannelId, channel.Id, StringComparison.OrdinalIgnoreCase));
             button.Width.Set(0f, 1f);
             button.Height.Set(40f, 0f);
@@ -572,8 +645,12 @@ public class TransformationPaletteScreen : UIState {
             return;
 
         _selectedChannelId = channelId;
+        _selectedChannelPaletteEnabled = IsPaletteChannelEnabled(_selectedChannelId);
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
+        UpdateHeaderState(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>(),
+            Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().GetPaletteTargetTransformation());
         LoadSelectedChannelIntoSliders();
+        RebuildChannelButtons();
     }
 
     private void LoadSelectedChannelIntoSliders() {
@@ -604,6 +681,22 @@ public class TransformationPaletteScreen : UIState {
             changed |= omp.SetPaletteColor(_currentTransformationId, channel.Id, pendingColor, sync: false);
         }
 
+        if (changed)
+            omp.SyncTransformationPaletteStateToServerOrClients();
+    }
+
+    private void TogglePaletteEnabled() {
+        if (string.IsNullOrWhiteSpace(_currentTransformationId) || string.IsNullOrWhiteSpace(_selectedChannelId))
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        bool newPaletteEnabled = !_selectedChannelPaletteEnabled;
+        bool changed = omp.SetPaletteChannelEnabled(_currentTransformationId, _selectedChannelId, newPaletteEnabled,
+            sync: false);
+        _selectedChannelPaletteEnabled = omp.IsPaletteChannelEnabled(_currentTransformationId, _selectedChannelId);
+        _currentChannelEnabledSignature = BuildChannelEnabledSignature(omp.GetPaletteTargetTransformation(), _activeChannels, omp);
+        RebuildChannelButtons();
+        UpdateHeaderState(omp, omp.GetPaletteTargetTransformation());
         if (changed)
             omp.SyncTransformationPaletteStateToServerOrClients();
     }
@@ -658,6 +751,27 @@ public class TransformationPaletteScreen : UIState {
             : $"{GetSelectedChannelDisplayName()} Preview";
     }
 
+    private bool IsPaletteChannelEnabled(string channelId) {
+        if (string.IsNullOrWhiteSpace(_currentTransformationId) || string.IsNullOrWhiteSpace(channelId))
+            return false;
+
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || !localPlayer.active)
+            return true;
+
+        return localPlayer.GetModPlayer<OmnitrixPlayer>().IsPaletteChannelEnabled(_currentTransformationId, channelId);
+    }
+
+    private static string BuildPreviewBaseSignature(IReadOnlyList<string> previewBaseTexturePaths) {
+        if (previewBaseTexturePaths == null || previewBaseTexturePaths.Count == 0)
+            return string.Empty;
+
+        StringBuilder builder = new();
+        for (int i = 0; i < previewBaseTexturePaths.Count; i++)
+            builder.Append(previewBaseTexturePaths[i]).Append('|');
+        return builder.ToString();
+    }
+
     private static string BuildChannelSignature(IReadOnlyList<TransformationPaletteChannel> channels) {
         if (channels == null || channels.Count == 0)
             return string.Empty;
@@ -665,6 +779,26 @@ public class TransformationPaletteScreen : UIState {
         StringBuilder builder = new();
         for (int i = 0; i < channels.Count; i++)
             builder.Append(channels[i].Id).Append('|');
+        return builder.ToString();
+    }
+
+    private static string BuildChannelEnabledSignature(Transformation transformation,
+        IReadOnlyList<TransformationPaletteChannel> channels, OmnitrixPlayer omp) {
+        if (transformation == null || channels == null || channels.Count == 0 || omp == null)
+            return string.Empty;
+
+        StringBuilder builder = new();
+        for (int i = 0; i < channels.Count; i++) {
+            TransformationPaletteChannel channel = channels[i];
+            if (channel == null || !channel.IsValid)
+                continue;
+
+            builder.Append(channel.Id)
+                .Append('=')
+                .Append(omp.IsPaletteChannelEnabled(transformation, channel.Id) ? '1' : '0')
+                .Append('|');
+        }
+
         return builder.ToString();
     }
 

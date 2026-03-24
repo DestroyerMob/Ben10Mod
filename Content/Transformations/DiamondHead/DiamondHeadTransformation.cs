@@ -96,4 +96,33 @@ public class DiamondHeadTransformation : Transformation {
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
         player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
     }
+
+    public override IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) => new[] {
+        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Back",
+        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Legs",
+        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Body",
+        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Head"
+    };
+    
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => new[] {
+        new TransformationPaletteChannel(
+            "eyes",
+            "Eyes",
+            new Color(255, 255, 255),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Head",
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadEyesMask_Head")
+        ),
+        new TransformationPaletteChannel(
+            "diamond",
+            "Diamond",
+            new Color(255, 255, 255),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Head",
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Body",
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Body")
+        ),
+    };
 }
