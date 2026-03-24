@@ -145,8 +145,32 @@ public sealed class PaletteChannelButton : UIPanel {
 }
 
 public sealed class PalettePreviewSwatch : UIElement {
+    private readonly struct ResolvedPreviewBase {
+        public ResolvedPreviewBase(string texturePath, Texture2D texture) {
+            TexturePath = texturePath ?? string.Empty;
+            Texture = texture;
+        }
+
+        public string TexturePath { get; }
+        public Texture2D Texture { get; }
+    }
+
+    private readonly struct ResolvedPreviewOverlay {
+        public ResolvedPreviewOverlay(string texturePath, Texture2D maskTexture, Color color) {
+            TexturePath = texturePath ?? string.Empty;
+            MaskTexture = maskTexture;
+            Color = color;
+        }
+
+        public string TexturePath { get; }
+        public Texture2D MaskTexture { get; }
+        public Color Color { get; }
+    }
+
     public Func<Color> ResolveColor { get; set; }
     public Func<string> ResolveLabel { get; set; }
+    public Func<IReadOnlyList<TransformationPaletteChannel>> ResolveChannels { get; set; }
+    public Func<string, Color> ResolveChannelColor { get; set; }
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {
         CalculatedStyle dims = GetDimensions();
@@ -154,6 +178,8 @@ public sealed class PalettePreviewSwatch : UIElement {
         Rectangle outer = dims.ToRectangle();
         Color color = ResolveColor?.Invoke() ?? Color.Transparent;
         string label = ResolveLabel?.Invoke() ?? "Preview";
+        IReadOnlyList<TransformationPaletteChannel> channels = ResolveChannels?.Invoke() ??
+            Array.Empty<TransformationPaletteChannel>();
 
         spriteBatch.Draw(pixel, outer, new Color(18, 22, 28, 220));
         spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Y, outer.Width, 2), new Color(110, 140, 160));
@@ -161,11 +187,131 @@ public sealed class PalettePreviewSwatch : UIElement {
         spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Y, 2, outer.Height), new Color(110, 140, 160));
         spriteBatch.Draw(pixel, new Rectangle(outer.Right - 2, outer.Y, 2, outer.Height), new Color(110, 140, 160));
 
-        Rectangle swatch = new Rectangle(outer.X + 14, outer.Y + 14, outer.Width - 28, outer.Height - 48);
-        spriteBatch.Draw(pixel, swatch, color);
+        Rectangle previewArea = new Rectangle(outer.X + 18, outer.Y + 18, outer.Width - 36, outer.Height - 68);
+        spriteBatch.Draw(pixel, previewArea, new Color(11, 14, 18, 235));
+        spriteBatch.Draw(pixel, new Rectangle(previewArea.X, previewArea.Bottom - 18, previewArea.Width, 18),
+            new Color(20, 28, 34, 245));
 
-        Utils.DrawBorderString(spriteBatch, label, new Vector2(dims.X + 12f, dims.Y + dims.Height - 24f),
+        DrawPreviewFigure(spriteBatch, previewArea, channels);
+
+        Rectangle swatch = new Rectangle(outer.Right - 62, outer.Bottom - 38, 30, 18);
+        spriteBatch.Draw(pixel, swatch, color);
+        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Y, swatch.Width, 1), Color.Black);
+        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Bottom - 1, swatch.Width, 1), Color.Black);
+        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Y, 1, swatch.Height), Color.Black);
+        spriteBatch.Draw(pixel, new Rectangle(swatch.Right - 1, swatch.Y, 1, swatch.Height), Color.Black);
+
+        Utils.DrawBorderString(spriteBatch, label, new Vector2(dims.X + 12f, dims.Y + dims.Height - 28f),
             Color.White, 0.82f);
+    }
+
+    private void DrawPreviewFigure(SpriteBatch spriteBatch, Rectangle previewArea,
+        IReadOnlyList<TransformationPaletteChannel> channels) {
+        List<ResolvedPreviewBase> baseLayers = new();
+        List<ResolvedPreviewOverlay> overlays = new();
+        HashSet<string> seenBasePaths = new(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < channels.Count; i++) {
+            TransformationPaletteChannel channel = channels[i];
+            if (channel == null || !channel.IsValid)
+                continue;
+
+            Color overlayColor = ResolveChannelColor?.Invoke(channel.Id) ?? channel.DefaultColor;
+            for (int j = 0; j < channel.Overlays.Count; j++) {
+                TransformationPaletteOverlay overlay = channel.Overlays[j];
+                if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
+                    continue;
+
+                if (seenBasePaths.Add(overlay.BaseTexturePath))
+                    baseLayers.Add(new ResolvedPreviewBase(overlay.BaseTexturePath, baseTexture));
+
+                overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, maskTexture, overlayColor));
+            }
+        }
+
+        if (baseLayers.Count == 0) {
+            Utils.DrawBorderString(spriteBatch, "No preview available", new Vector2(previewArea.X + 14f, previewArea.Y + 14f),
+                new Color(160, 170, 182), 0.82f);
+            return;
+        }
+
+        baseLayers.Sort(static (left, right) => ComparePreviewLayerOrder(left.TexturePath, right.TexturePath));
+        overlays.Sort(static (left, right) => ComparePreviewLayerOrder(left.TexturePath, right.TexturePath));
+
+        const int previewFrameWidth = 40;
+        const int previewFrameHeight = 56;
+        float scale = Math.Min((previewArea.Width - 40f) / previewFrameWidth, (previewArea.Height - 26f) / previewFrameHeight);
+        scale = MathHelper.Clamp(scale, 1.6f, 4.2f);
+
+        Vector2 drawPosition = new(previewArea.Center.X, previewArea.Center.Y + 6f);
+        Vector2 origin = new(previewFrameWidth * 0.5f, previewFrameHeight * 0.5f);
+
+        int shadowWidth = (int)(previewFrameWidth * scale * 0.7f);
+        Rectangle shadow = new(previewArea.Center.X - shadowWidth / 2, previewArea.Bottom - 20, shadowWidth, 10);
+        spriteBatch.Draw(TextureAssets.MagicPixel.Value, shadow, new Color(0, 0, 0, 105));
+
+        for (int i = 0; i < baseLayers.Count; i++) {
+            Texture2D texture = baseLayers[i].Texture;
+            if (texture == null)
+                continue;
+
+            spriteBatch.Draw(texture, drawPosition, ResolvePreviewFrame(texture),
+                Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
+        }
+
+        for (int i = 0; i < overlays.Count; i++) {
+            ResolvedPreviewOverlay overlay = overlays[i];
+            if (overlay.MaskTexture == null)
+                continue;
+
+            spriteBatch.Draw(overlay.MaskTexture, drawPosition, ResolvePreviewFrame(overlay.MaskTexture),
+                overlay.Color, 0f, origin, scale, SpriteEffects.None, 0f);
+        }
+    }
+
+    private static Rectangle ResolvePreviewFrame(Texture2D texture) {
+        if (texture == null)
+            return Rectangle.Empty;
+
+        const int previewFrameWidth = 40;
+        const int previewFrameHeight = 56;
+        if (texture.Width >= previewFrameWidth && texture.Height >= previewFrameHeight &&
+            texture.Width % previewFrameWidth == 0 && texture.Height % previewFrameHeight == 0) {
+            return new Rectangle(0, 0, previewFrameWidth, previewFrameHeight);
+        }
+
+        return new Rectangle(0, 0, texture.Width, texture.Height);
+    }
+
+    private static int ComparePreviewLayerOrder(string leftPath, string rightPath) {
+        int leftOrder = GetPreviewLayerOrder(leftPath);
+        int rightOrder = GetPreviewLayerOrder(rightPath);
+        if (leftOrder != rightOrder)
+            return leftOrder.CompareTo(rightOrder);
+
+        return string.Compare(leftPath, rightPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int GetPreviewLayerOrder(string texturePath) {
+        if (string.IsNullOrWhiteSpace(texturePath))
+            return 99;
+
+        if (texturePath.EndsWith("_Back", StringComparison.OrdinalIgnoreCase))
+            return 0;
+
+        if (texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase))
+            return 1;
+
+        if (texturePath.EndsWith("_Legs", StringComparison.OrdinalIgnoreCase))
+            return 2;
+
+        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase))
+            return 3;
+
+        if (texturePath.EndsWith("_Head", StringComparison.OrdinalIgnoreCase))
+            return 4;
+
+        return 5;
     }
 }
 
@@ -195,7 +341,7 @@ public class TransformationPaletteScreen : UIState {
     public override void OnInitialize() {
         mainPanel = new UIPanel();
         mainPanel.Width.Set(980f, 0f);
-        mainPanel.Height.Set(620f, 0f);
+        mainPanel.Height.Set(714f, 0f);
         mainPanel.HAlign = 0.5f;
         mainPanel.VAlign = 0.5f;
         Append(mainPanel);
@@ -217,7 +363,7 @@ public class TransformationPaletteScreen : UIState {
 
         UIPanel channelsPanel = new UIPanel();
         channelsPanel.Width.Set(320f, 0f);
-        channelsPanel.Height.Set(454f, 0f);
+        channelsPanel.Height.Set(512f, 0f);
         channelsPanel.Left.Set(24f, 0f);
         channelsPanel.Top.Set(126f, 0f);
         mainPanel.Append(channelsPanel);
@@ -244,7 +390,7 @@ public class TransformationPaletteScreen : UIState {
 
         UIPanel controlsPanel = new UIPanel();
         controlsPanel.Width.Set(590f, 0f);
-        controlsPanel.Height.Set(454f, 0f);
+        controlsPanel.Height.Set(512f, 0f);
         controlsPanel.Left.Set(366f, 0f);
         controlsPanel.Top.Set(126f, 0f);
         mainPanel.Append(controlsPanel);
@@ -256,32 +402,34 @@ public class TransformationPaletteScreen : UIState {
 
         previewSwatch = new PalettePreviewSwatch {
             ResolveColor = GetSelectedPendingColor,
-            ResolveLabel = GetSelectedChannelPreviewLabel
+            ResolveLabel = GetSelectedChannelPreviewLabel,
+            ResolveChannels = () => _activeChannels,
+            ResolveChannelColor = GetPendingColor
         };
         previewSwatch.Left.Set(18f, 0f);
-        previewSwatch.Top.Set(50f, 0f);
-        previewSwatch.Width.Set(180f, 0f);
-        previewSwatch.Height.Set(180f, 0f);
+        previewSwatch.Top.Set(54f, 0f);
+        previewSwatch.Width.Set(554f, 0f);
+        previewSwatch.Height.Set(188f, 0f);
         controlsPanel.Append(previewSwatch);
 
-        redSlider = CreateColorSlider("Red", new Color(225, 80, 80), 220f);
-        greenSlider = CreateColorSlider("Green", new Color(90, 220, 120), 288f);
-        blueSlider = CreateColorSlider("Blue", new Color(90, 155, 245), 356f);
+        redSlider = CreateColorSlider("Red", new Color(225, 80, 80), 258f);
+        greenSlider = CreateColorSlider("Green", new Color(90, 220, 120), 322f);
+        blueSlider = CreateColorSlider("Blue", new Color(90, 155, 245), 386f);
         controlsPanel.Append(redSlider);
         controlsPanel.Append(greenSlider);
         controlsPanel.Append(blueSlider);
 
-        applyButton = CreateActionButton("Apply Changes", 18f, 410f, (_, _) => ApplyPendingColors());
-        resetChannelButton = CreateActionButton("Reset Part", 208f, 410f, (_, _) => ResetSelectedPendingColor());
-        resetAllButton = CreateActionButton("Reset All", 398f, 410f, (_, _) => ResetAllPendingColors());
+        applyButton = CreateActionButton("Apply Changes", 18f, 454f, (_, _) => ApplyPendingColors());
+        resetChannelButton = CreateActionButton("Reset Part", 210f, 454f, (_, _) => ResetSelectedPendingColor());
+        resetAllButton = CreateActionButton("Reset All", 402f, 454f, (_, _) => ResetAllPendingColors());
         controlsPanel.Append(applyButton);
         controlsPanel.Append(resetChannelButton);
         controlsPanel.Append(resetAllButton);
 
-        UITextPanel<string> closeButton = CreateActionButton("Close", 760f, 580f, (_, _) => {
+        UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 654f, (_, _) => {
             ModContent.GetInstance<UISystem>().HideMyUI();
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
-        }, width: 180f);
+        }, width: 170f);
         mainPanel.Append(closeButton);
     }
 
@@ -307,9 +455,9 @@ public class TransformationPaletteScreen : UIState {
             Label = label,
             AccentColor = accentColor
         };
-        slider.Left.Set(220f, 0f);
+        slider.Left.Set(18f, 0f);
         slider.Top.Set(top, 0f);
-        slider.Width.Set(340f, 0f);
+        slider.Width.Set(554f, 0f);
         slider.Height.Set(50f, 0f);
         slider.ValueChanged += _ => UpdatePendingColorFromSliders();
         return slider;

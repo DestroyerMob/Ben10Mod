@@ -157,5 +157,22 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
             player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
         }
+
+        public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => new[] {
+            new TransformationPaletteChannel(
+                "flames",
+                "Flames",
+                new Color(255, 145, 50),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Head",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastFlameMask_Head"),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Body",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastFlameMask_Body"),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Legs",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastFlameMask_Legs")
+            )
+        };
     }
 }

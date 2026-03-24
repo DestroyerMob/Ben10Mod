@@ -23,6 +23,7 @@ public readonly struct TransformationPaletteColorEntry {
 public sealed class TransformationPaletteOverlay {
     private Asset<Texture2D> _baseTextureAsset;
     private Asset<Texture2D> _maskTextureAsset;
+    private Texture2D _preparedMaskTexture;
     private bool _loadFailed;
 
     public TransformationPaletteOverlay(string baseTexturePath, string maskTexturePath) {
@@ -44,13 +45,39 @@ public sealed class TransformationPaletteOverlay {
             _baseTextureAsset ??= ModContent.Request<Texture2D>(BaseTexturePath);
             _maskTextureAsset ??= ModContent.Request<Texture2D>(MaskTexturePath);
             baseTexture = _baseTextureAsset.Value;
-            maskTexture = _maskTextureAsset.Value;
+            maskTexture = PrepareMaskTexture(_maskTextureAsset.Value);
             return baseTexture != null && maskTexture != null;
         }
         catch {
             _loadFailed = true;
             return false;
         }
+    }
+
+    private Texture2D PrepareMaskTexture(Texture2D sourceMaskTexture) {
+        if (sourceMaskTexture == null)
+            return null;
+
+        if (_preparedMaskTexture != null && !_preparedMaskTexture.IsDisposed)
+            return _preparedMaskTexture;
+
+        GraphicsDevice graphicsDevice = Main.instance?.GraphicsDevice;
+        if (graphicsDevice == null || graphicsDevice.IsDisposed)
+            return sourceMaskTexture;
+
+        Color[] sourceData = new Color[sourceMaskTexture.Width * sourceMaskTexture.Height];
+        sourceMaskTexture.GetData(sourceData);
+
+        for (int i = 0; i < sourceData.Length; i++) {
+            Color pixel = sourceData[i];
+            byte brightness = Math.Max(pixel.R, Math.Max(pixel.G, pixel.B));
+            byte coverage = (byte)(brightness * pixel.A / 255);
+            sourceData[i] = new Color(255, 255, 255, coverage);
+        }
+
+        _preparedMaskTexture = new Texture2D(graphicsDevice, sourceMaskTexture.Width, sourceMaskTexture.Height);
+        _preparedMaskTexture.SetData(sourceData);
+        return _preparedMaskTexture;
     }
 }
 
