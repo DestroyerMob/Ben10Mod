@@ -21,7 +21,7 @@ public class ClockworkTransformation : Transformation {
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
 
     public override string Description =>
-        "A Chronosapien who manipulates time with slowing bolts, suspended traps, bursts of temporal acceleration, and paradox dodges.";
+        "A Chronosapien who manipulates time with scrambling bolts, suspended traps, bursts of temporal acceleration, and paradox dodges.";
 
     public override List<string> Abilities => new() {
         "Chrono Bolt primary",
