@@ -162,7 +162,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             new TransformationPaletteChannel(
                 "flames",
                 "Flames",
-                new Color(255, 145, 50),
+                new Color(255, 255, 255),
                 new TransformationPaletteOverlay(
                     "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Head",
                     "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastFlameMask_Head"),
@@ -172,6 +172,20 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 new TransformationPaletteOverlay(
                     "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Legs",
                     "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastFlameMask_Legs")
+            ),
+            new TransformationPaletteChannel(
+                "rock",
+                "Rock",
+                new Color(255, 255, 255),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Head",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastRockMask_Head"),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Body",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastRockMask_Body"),
+                new TransformationPaletteOverlay(
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlast_Legs",
+                    "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastRockMask_Legs")
             )
         };
     }
