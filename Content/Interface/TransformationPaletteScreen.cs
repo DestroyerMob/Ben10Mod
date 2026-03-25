@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Ben10Mod.Content.Transformations;
 using Microsoft.Xna.Framework;
@@ -143,6 +144,126 @@ public sealed class PaletteChannelButton : UIPanel {
         spriteBatch.Draw(pixel, new Rectangle(swatch.Right - 1, swatch.Y, 1, swatch.Height), Color.Black);
 
         Utils.DrawBorderString(spriteBatch, Label, new Vector2(dims.X + 42f, dims.Y + 8f), Color.White, 0.82f);
+    }
+}
+
+public sealed class CustomNameTextInputPanel : UIElement {
+    private readonly object _innerInputObject;
+    private readonly UIElement _innerInputElement;
+    private readonly FieldInfo _focusField;
+    private readonly FieldInfo _currentStringField;
+    private readonly MethodInfo _setTextMethod;
+    private bool _suppressEvents;
+
+    public CustomNameTextInputPanel(string placeholderText) {
+        Type inputType = ResolveInputType();
+        _innerInputObject = Activator.CreateInstance(inputType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            binder: null,
+            args: new object[] { placeholderText },
+            culture: null);
+        _innerInputElement = (UIElement)_innerInputObject;
+        _focusField = inputType.GetField("Focused", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        _currentStringField = inputType.GetField("CurrentString", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) ??
+                              inputType.GetField("_currentString", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        _setTextMethod = inputType.GetMethod("SetText", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null, types: new[] { typeof(string) }, modifiers: null);
+
+        _innerInputElement.Left.Set(0f, 0f);
+        _innerInputElement.Top.Set(0f, 0f);
+        _innerInputElement.Width.Set(0f, 1f);
+        _innerInputElement.Height.Set(0f, 1f);
+        Append(_innerInputElement);
+
+        BindInnerEvent(inputType, "OnTextChange", nameof(HandleInnerTextChanged));
+        BindInnerEvent(inputType, "OnUnfocus", nameof(HandleInnerUnfocus));
+    }
+
+    public int MaxLength { get; set; } = OmnitrixPlayer.MaxCustomTransformationNameLength;
+    public bool IsInteractive { get; set; } = true;
+    public event Action<string> TextChanged;
+    public event Action<string> Submitted;
+    public bool IsFocused => _focusField != null && (bool)(_focusField.GetValue(_innerInputObject) ?? false);
+    public string Text => (_currentStringField?.GetValue(_innerInputObject) as string) ?? string.Empty;
+
+    public void SetText(string text, bool invoke = true) {
+        string sanitizedText = SanitizeText(text);
+        if (string.Equals(Text, sanitizedText, StringComparison.Ordinal))
+            return;
+
+        _suppressEvents = true;
+        _setTextMethod?.Invoke(_innerInputObject, new object[] { sanitizedText });
+        _currentStringField?.SetValue(_innerInputObject, sanitizedText);
+        _suppressEvents = false;
+
+        if (invoke)
+            TextChanged?.Invoke(Text);
+    }
+
+    public void SetFocused(bool focused) {
+        _focusField?.SetValue(_innerInputObject, focused && IsInteractive);
+        if (focused && IsInteractive)
+            Main.clrInput();
+    }
+
+    public override void Update(GameTime gameTime) {
+        IgnoresMouseInteraction = !IsInteractive;
+        _innerInputElement.IgnoresMouseInteraction = !IsInteractive;
+        if (!IsInteractive && IsFocused)
+            _focusField?.SetValue(_innerInputObject, false);
+
+        base.Update(gameTime);
+    }
+
+    private string SanitizeText(string text) {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        string sanitizedText = text
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Replace('\t', ' ');
+
+        if (sanitizedText.Length > MaxLength)
+            sanitizedText = sanitizedText[..MaxLength];
+
+        return sanitizedText;
+    }
+
+    private static Type ResolveInputType() {
+        Assembly uiAssembly = typeof(UIElement).Assembly;
+        Type inputType = uiAssembly.GetType("Terraria.ModLoader.UI.UIFocusInputTextField", throwOnError: false) ??
+                         uiAssembly.GetType("Terraria.ModLoader.UI.UIInputTextField", throwOnError: false);
+        if (inputType == null)
+            throw new InvalidOperationException("Unable to locate the internal tModLoader text input control.");
+
+        return inputType;
+    }
+
+    private void BindInnerEvent(Type inputType, string eventName, string handlerMethodName) {
+        EventInfo eventInfo = inputType.GetEvent(eventName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        MethodInfo handlerMethod = GetType().GetMethod(handlerMethodName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (eventInfo == null || handlerMethod == null)
+            return;
+
+        Delegate handler = Delegate.CreateDelegate(eventInfo.EventHandlerType, this, handlerMethod);
+        eventInfo.AddEventHandler(_innerInputObject, handler);
+    }
+
+    private void HandleInnerTextChanged(object sender, EventArgs args) {
+        if (_suppressEvents)
+            return;
+
+        string sanitizedText = SanitizeText(Text);
+        if (!string.Equals(Text, sanitizedText, StringComparison.Ordinal))
+            SetText(sanitizedText, invoke: false);
+
+        TextChanged?.Invoke(Text);
+    }
+
+    private void HandleInnerUnfocus(object sender, EventArgs args) {
+        if (!_suppressEvents)
+            Submitted?.Invoke(Text);
     }
 }
 
@@ -373,10 +494,19 @@ public sealed class PalettePreviewSwatch : UIElement {
 }
 
 public class TransformationPaletteScreen : UIState {
+    private enum CustomizationTab {
+        Palette,
+        CustomNames
+    }
+
     private UIPanel mainPanel;
     private UIText titleText;
     private UIText targetText;
     private UIText statusText;
+    private UITextPanel<string> paletteTabButton;
+    private UITextPanel<string> customNamesTabButton;
+    private UIElement paletteContentRoot;
+    private UIElement customNamesContentRoot;
     private UIList channelList;
     private UIScrollbar channelScrollbar;
     private UIText selectedChannelText;
@@ -392,17 +522,33 @@ public class TransformationPaletteScreen : UIState {
     private UITextPanel<string> applyButton;
     private UITextPanel<string> resetChannelButton;
     private UITextPanel<string> resetAllButton;
+    private UIList customNameList;
+    private UIScrollbar customNameScrollbar;
+    private UIText selectedNameText;
+    private UIText originalNameText;
+    private UIText customNamePreviewText;
+    private UIText customNameHintText;
+    private CustomNameTextInputPanel customNameInput;
+    private UITextPanel<string> applyNameButton;
+    private UITextPanel<string> resetNameButton;
 
+    private CustomizationTab _activeTab = CustomizationTab.Palette;
     private string _currentTransformationId = string.Empty;
     private string _currentChannelSignature = string.Empty;
     private string _currentPreviewBaseSignature = string.Empty;
     private string _currentChannelEnabledSignature = string.Empty;
+    private string _currentCustomNameSignature = string.Empty;
     private string _selectedChannelId = string.Empty;
+    private string _selectedCustomNameTransformationId = string.Empty;
+    private string _loadedCustomNameValue = string.Empty;
     private bool _selectedChannelPaletteEnabled = true;
     private bool _suppressSliderCallbacks;
     private bool _hasPendingPaletteChanges;
+    private bool _suppressCustomNameCallbacks;
+    private bool _hasPendingCustomNameChanges;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
     private readonly List<string> _activePreviewBaseTexturePaths = new();
+    private readonly List<string> _availableCustomNameTransformationIds = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingHueValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingSaturationValues = new(StringComparer.OrdinalIgnoreCase);
@@ -415,10 +561,28 @@ public class TransformationPaletteScreen : UIState {
         mainPanel.VAlign = 0.5f;
         Append(mainPanel);
 
-        titleText = new UIText("Transformation Palette", 1.35f);
+        paletteContentRoot = new UIElement();
+        paletteContentRoot.Width.Set(0f, 1f);
+        paletteContentRoot.Height.Set(0f, 1f);
+        paletteContentRoot.Left.Set(0f, 0f);
+        mainPanel.Append(paletteContentRoot);
+
+        customNamesContentRoot = new UIElement();
+        customNamesContentRoot.Width.Set(0f, 1f);
+        customNamesContentRoot.Height.Set(0f, 1f);
+        customNamesContentRoot.Left.Set(-1600f, 0f);
+        mainPanel.Append(customNamesContentRoot);
+
+        titleText = new UIText("Alien Customization", 1.35f);
         titleText.Left.Set(24f, 0f);
         titleText.Top.Set(20f, 0f);
         mainPanel.Append(titleText);
+
+        paletteTabButton = CreateActionButton("Palette", 686f, 20f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
+        customNamesTabButton = CreateActionButton("Custom Names", 816f, 20f,
+            (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: 140f);
+        mainPanel.Append(paletteTabButton);
+        mainPanel.Append(customNamesTabButton);
 
         targetText = new UIText("No transformation selected", 1f);
         targetText.Left.Set(24f, 0f);
@@ -435,7 +599,7 @@ public class TransformationPaletteScreen : UIState {
         channelsPanel.Height.Set(512f, 0f);
         channelsPanel.Left.Set(24f, 0f);
         channelsPanel.Top.Set(126f, 0f);
-        mainPanel.Append(channelsPanel);
+        paletteContentRoot.Append(channelsPanel);
 
         UIText channelsHeader = new UIText("Custom Parts", 1.05f);
         channelsHeader.Left.Set(16f, 0f);
@@ -462,7 +626,7 @@ public class TransformationPaletteScreen : UIState {
         controlsPanel.Height.Set(512f, 0f);
         controlsPanel.Left.Set(366f, 0f);
         controlsPanel.Top.Set(126f, 0f);
-        mainPanel.Append(controlsPanel);
+        paletteContentRoot.Append(controlsPanel);
 
         selectedChannelText = new UIText("No part selected", 1.05f);
         selectedChannelText.Left.Set(18f, 0f);
@@ -529,12 +693,106 @@ public class TransformationPaletteScreen : UIState {
         controlsPanel.Append(resetChannelButton);
         controlsPanel.Append(resetAllButton);
 
+        UIPanel customNameListPanel = new UIPanel();
+        customNameListPanel.Width.Set(320f, 0f);
+        customNameListPanel.Height.Set(512f, 0f);
+        customNameListPanel.Left.Set(24f, 0f);
+        customNameListPanel.Top.Set(126f, 0f);
+        customNamesContentRoot.Append(customNameListPanel);
+
+        UIText customNameListHeader = new UIText("Transformations", 1.05f);
+        customNameListHeader.Left.Set(16f, 0f);
+        customNameListHeader.Top.Set(12f, 0f);
+        customNameListPanel.Append(customNameListHeader);
+
+        customNameList = new UIList();
+        customNameList.Width.Set(-30f, 1f);
+        customNameList.Height.Set(-52f, 1f);
+        customNameList.Left.Set(10f, 0f);
+        customNameList.Top.Set(40f, 0f);
+        customNameList.ListPadding = 8f;
+        customNameListPanel.Append(customNameList);
+
+        customNameScrollbar = new UIScrollbar();
+        customNameScrollbar.Height.Set(-52f, 1f);
+        customNameScrollbar.Left.Set(-20f, 1f);
+        customNameScrollbar.Top.Set(40f, 0f);
+        customNameListPanel.Append(customNameScrollbar);
+        customNameList.SetScrollbar(customNameScrollbar);
+
+        UIPanel customNameControlsPanel = new UIPanel();
+        customNameControlsPanel.Width.Set(590f, 0f);
+        customNameControlsPanel.Height.Set(512f, 0f);
+        customNameControlsPanel.Left.Set(366f, 0f);
+        customNameControlsPanel.Top.Set(126f, 0f);
+        customNamesContentRoot.Append(customNameControlsPanel);
+
+        selectedNameText = new UIText("No transformation selected", 1.05f);
+        selectedNameText.Left.Set(18f, 0f);
+        selectedNameText.Top.Set(16f, 0f);
+        customNameControlsPanel.Append(selectedNameText);
+
+        originalNameText = new UIText("Original Name: --", 0.92f);
+        originalNameText.Left.Set(18f, 0f);
+        originalNameText.Top.Set(48f, 0f);
+        customNameControlsPanel.Append(originalNameText);
+
+        UIPanel customNamePreviewPanel = new UIPanel();
+        customNamePreviewPanel.Left.Set(18f, 0f);
+        customNamePreviewPanel.Top.Set(82f, 0f);
+        customNamePreviewPanel.Width.Set(554f, 0f);
+        customNamePreviewPanel.Height.Set(118f, 0f);
+        customNameControlsPanel.Append(customNamePreviewPanel);
+
+        UIText previewLabel = new UIText("Current Display", 0.95f);
+        previewLabel.Left.Set(14f, 0f);
+        previewLabel.Top.Set(12f, 0f);
+        customNamePreviewPanel.Append(previewLabel);
+
+        customNamePreviewText = new UIText("No name selected", 1.2f);
+        customNamePreviewText.Left.Set(14f, 0f);
+        customNamePreviewText.Top.Set(48f, 0f);
+        customNamePreviewPanel.Append(customNamePreviewText);
+
+        UIText inputLabel = new UIText("Custom Name", 0.95f);
+        inputLabel.Left.Set(18f, 0f);
+        inputLabel.Top.Set(222f, 0f);
+        customNameControlsPanel.Append(inputLabel);
+
+        customNameInput = new CustomNameTextInputPanel("Leave blank to use the original alien name") {
+            MaxLength = OmnitrixPlayer.MaxCustomTransformationNameLength
+        };
+        customNameInput.Left.Set(18f, 0f);
+        customNameInput.Top.Set(250f, 0f);
+        customNameInput.Width.Set(554f, 0f);
+        customNameInput.Height.Set(52f, 0f);
+        customNameInput.TextChanged += _ => OnCustomNameInputChanged();
+        customNameInput.Submitted += _ => CommitSelectedCustomName();
+        customNameControlsPanel.Append(customNameInput);
+
+        customNameHintText = new UIText("Custom names save with your player data. Press Enter, Apply Name, or close the screen to save.",
+            0.88f);
+        customNameHintText.Left.Set(18f, 0f);
+        customNameHintText.Top.Set(318f, 0f);
+        customNameHintText.Width.Set(540f, 0f);
+        customNameHintText.IsWrapped = true;
+        customNameControlsPanel.Append(customNameHintText);
+
+        applyNameButton = CreateActionButton("Apply Name", 18f, 442f, (_, _) => CommitSelectedCustomName(), width: 170f);
+        resetNameButton = CreateActionButton("Use Original Name", 198f, 442f,
+            (_, _) => ResetSelectedCustomName(), width: 190f);
+        customNameControlsPanel.Append(applyNameButton);
+        customNameControlsPanel.Append(resetNameButton);
+
         UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 654f, (_, _) => {
             CommitPendingColors();
+            CommitSelectedCustomName();
             ModContent.GetInstance<UISystem>().HideMyUI();
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
         }, width: 170f);
         mainPanel.Append(closeButton);
+
+        UpdateTabButtonState();
     }
 
     public override void OnActivate() {
@@ -542,10 +800,14 @@ public class TransformationPaletteScreen : UIState {
         if (mainPanel == null)
             return;
         RefreshPaletteContext(force: true);
+        RefreshCustomNameContext(force: true);
+        SetActiveTab(_activeTab, refreshState: true);
     }
 
     public override void OnDeactivate() {
         CommitPendingColors();
+        CommitSelectedCustomName();
+        customNameInput?.SetFocused(false);
         base.OnDeactivate();
     }
 
@@ -553,10 +815,49 @@ public class TransformationPaletteScreen : UIState {
         base.Update(gameTime);
         if (mainPanel == null)
             return;
+
         RefreshPaletteContext(force: false);
+        RefreshCustomNameContext(force: false);
 
         if (mainPanel.ContainsPoint(Main.MouseScreen))
             Main.LocalPlayer.mouseInterface = true;
+    }
+
+    private void SetActiveTab(CustomizationTab tab, bool refreshState = true) {
+        if (_activeTab == tab && !refreshState)
+            return;
+
+        CommitSelectedCustomName();
+        customNameInput?.SetFocused(false);
+        _activeTab = tab;
+
+        float paletteLeft = tab == CustomizationTab.Palette ? 0f : -1600f;
+        float customNamesLeft = tab == CustomizationTab.CustomNames ? 0f : -1600f;
+        paletteContentRoot.Left.Set(paletteLeft, 0f);
+        customNamesContentRoot.Left.Set(customNamesLeft, 0f);
+        paletteContentRoot.Recalculate();
+        customNamesContentRoot.Recalculate();
+
+        UpdateTabButtonState();
+
+        if (!refreshState)
+            return;
+
+        RefreshPaletteContext(force: true);
+        RefreshCustomNameContext(force: true);
+    }
+
+    private void UpdateTabButtonState() {
+        UpdateTabButtonVisual(paletteTabButton, _activeTab == CustomizationTab.Palette);
+        UpdateTabButtonVisual(customNamesTabButton, _activeTab == CustomizationTab.CustomNames);
+    }
+
+    private static void UpdateTabButtonVisual(UITextPanel<string> button, bool selected) {
+        if (button == null)
+            return;
+
+        button.BackgroundColor = selected ? new Color(42, 84, 76) : new Color(40, 44, 54);
+        button.BorderColor = selected ? new Color(140, 220, 170) : new Color(72, 78, 90);
     }
 
     private PaletteByteSlider CreateColorSlider(string label, Color accentColor, Func<int, string> valueFormatter) {
@@ -651,12 +952,14 @@ public class TransformationPaletteScreen : UIState {
         if (channelStateChanged)
             RebuildChannelButtons();
 
-        UpdateHeaderState(omp, targetTransformation);
+        if (_activeTab == CustomizationTab.Palette)
+            UpdatePaletteHeaderState(omp, targetTransformation);
+
         if (channelContentChanged)
             LoadSelectedChannelIntoSliders();
     }
 
-    private void UpdateHeaderState(OmnitrixPlayer omp, Transformation targetTransformation) {
+    private void UpdatePaletteHeaderState(OmnitrixPlayer omp, Transformation targetTransformation) {
         if (targetTransformation == null) {
             targetText.SetText("No active transformation context");
             statusText.SetText("Transform, or select an Omnitrix slot first, to customize palette parts.");
@@ -682,6 +985,66 @@ public class TransformationPaletteScreen : UIState {
         SetControlsInteractive(true);
     }
 
+    private void RefreshCustomNameContext(bool force) {
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || Main.gameMenu || Main.myPlayer < 0 || Main.myPlayer >= Main.maxPlayers ||
+            !localPlayer.active)
+            return;
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
+        List<string> availableTransformationIds = BuildCustomNameTransformationIds(omp);
+        string customNameSignature = BuildCustomNameSignature(availableTransformationIds, omp);
+        bool customNameContentChanged = force || customNameSignature != _currentCustomNameSignature;
+        if (!customNameContentChanged && _activeTab != CustomizationTab.CustomNames)
+            return;
+
+        if (customNameContentChanged) {
+            _currentCustomNameSignature = customNameSignature;
+            _availableCustomNameTransformationIds.Clear();
+            _availableCustomNameTransformationIds.AddRange(availableTransformationIds);
+
+            if (_availableCustomNameTransformationIds.Count == 0) {
+                CommitSelectedCustomName();
+                _selectedCustomNameTransformationId = string.Empty;
+            }
+            else if (!_availableCustomNameTransformationIds.Contains(_selectedCustomNameTransformationId, StringComparer.OrdinalIgnoreCase)) {
+                CommitSelectedCustomName();
+                _selectedCustomNameTransformationId = ResolvePreferredCustomNameSelection(omp, _availableCustomNameTransformationIds);
+            }
+
+            RebuildCustomNameButtons();
+            LoadSelectedCustomNameIntoInput();
+        }
+
+        if (_activeTab == CustomizationTab.CustomNames)
+            UpdateCustomNameHeaderState(omp);
+    }
+
+    private void UpdateCustomNameHeaderState(OmnitrixPlayer omp) {
+        Transformation targetTransformation = TransformationLoader.Resolve(_selectedCustomNameTransformationId);
+        if (targetTransformation == null) {
+            targetText.SetText("No transformation selected");
+            statusText.SetText("Unlock or select a transformation to customize its display name.");
+            selectedNameText.SetText("No transformation selected");
+            originalNameText.SetText("Original Name: --");
+            customNamePreviewText.SetText("No name selected");
+            customNameHintText.SetText("Custom names save with your player data. Leave the field blank to use the original name.");
+            SetCustomNameControlsInteractive(false);
+            return;
+        }
+
+        string pendingName = GetPendingCustomNamePreview(targetTransformation);
+        targetText.SetText($"Custom Name: {pendingName}");
+        statusText.SetText(_hasPendingCustomNameChanges
+            ? "Press Apply Name, Enter, switch tabs, or close the screen to save the pending alias."
+            : "Custom names save with your player data and show across the roster, HUD, and transformation feedback.");
+        selectedNameText.SetText(pendingName);
+        originalNameText.SetText($"Original Name: {targetTransformation.TransformationName}");
+        customNamePreviewText.SetText(pendingName);
+        customNameHintText.SetText($"Leave the field blank to use the original name. Max {OmnitrixPlayer.MaxCustomTransformationNameLength} characters.");
+        SetCustomNameControlsInteractive(true);
+    }
+
     private void SetControlsInteractive(bool interactive) {
         redSlider.IsInteractive = interactive;
         greenSlider.IsInteractive = interactive;
@@ -698,6 +1061,192 @@ public class TransformationPaletteScreen : UIState {
         applyButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
         resetChannelButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
         resetAllButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
+    }
+
+    private void SetCustomNameControlsInteractive(bool interactive) {
+        if (customNameInput != null) {
+            customNameInput.IsInteractive = interactive;
+            if (!interactive)
+                customNameInput.SetFocused(false);
+        }
+
+        if (applyNameButton != null) {
+            applyNameButton.BackgroundColor = interactive
+                ? (_hasPendingCustomNameChanges ? new Color(63, 82, 151) : new Color(54, 64, 88))
+                : new Color(40, 44, 54);
+            applyNameButton.BorderColor = interactive
+                ? (_hasPendingCustomNameChanges ? new Color(130, 165, 255) : new Color(78, 90, 120))
+                : new Color(62, 68, 80);
+        }
+
+        if (resetNameButton != null) {
+            resetNameButton.BackgroundColor = interactive ? new Color(84, 70, 44) : new Color(40, 44, 54);
+            resetNameButton.BorderColor = interactive ? new Color(224, 190, 118) : new Color(62, 68, 80);
+        }
+    }
+
+    private List<string> BuildCustomNameTransformationIds(OmnitrixPlayer omp) {
+        List<string> transformationIds = new();
+        HashSet<string> seenTransformationIds = new(StringComparer.OrdinalIgnoreCase);
+
+        if (omp?.unlockedTransformations != null) {
+            for (int i = 0; i < omp.unlockedTransformations.Count; i++) {
+                Transformation transformation = TransformationLoader.Resolve(omp.unlockedTransformations[i]);
+                if (transformation != null && seenTransformationIds.Add(transformation.FullID))
+                    transformationIds.Add(transformation.FullID);
+            }
+        }
+
+        Transformation targetTransformation = omp?.GetPaletteTargetTransformation();
+        if (targetTransformation != null && seenTransformationIds.Add(targetTransformation.FullID))
+            transformationIds.Add(targetTransformation.FullID);
+
+        return transformationIds;
+    }
+
+    private static string ResolvePreferredCustomNameSelection(OmnitrixPlayer omp, IReadOnlyList<string> availableTransformationIds) {
+        if (availableTransformationIds == null || availableTransformationIds.Count == 0)
+            return string.Empty;
+
+        string preferredTransformationId = omp?.GetPaletteTargetTransformationId() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(preferredTransformationId)) {
+            for (int i = 0; i < availableTransformationIds.Count; i++) {
+                if (string.Equals(availableTransformationIds[i], preferredTransformationId, StringComparison.OrdinalIgnoreCase))
+                    return availableTransformationIds[i];
+            }
+        }
+
+        return availableTransformationIds[0];
+    }
+
+    private static string BuildCustomNameSignature(IReadOnlyList<string> transformationIds, OmnitrixPlayer omp) {
+        if (transformationIds == null || transformationIds.Count == 0 || omp == null)
+            return string.Empty;
+
+        StringBuilder builder = new();
+        for (int i = 0; i < transformationIds.Count; i++) {
+            string transformationId = transformationIds[i];
+            builder.Append(transformationId)
+                .Append('=')
+                .Append(omp.GetCustomTransformationName(transformationId))
+                .Append('|');
+        }
+
+        return builder.ToString();
+    }
+
+    private void RebuildCustomNameButtons() {
+        customNameList.Clear();
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+
+        for (int i = 0; i < _availableCustomNameTransformationIds.Count; i++) {
+            string transformationId = _availableCustomNameTransformationIds[i];
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                continue;
+
+            string buttonLabel = BuildCustomNameButtonLabel(transformation, omp);
+            UITextPanel<string> button = new(buttonLabel, 0.88f, large: false);
+            button.Width.Set(0f, 1f);
+            button.Height.Set(44f, 0f);
+            bool isSelected = string.Equals(_selectedCustomNameTransformationId, transformation.FullID, StringComparison.OrdinalIgnoreCase);
+            button.BackgroundColor = isSelected ? new Color(28, 44, 62, 235) : new Color(18, 24, 30, 215);
+            button.BorderColor = isSelected ? new Color(120, 220, 170) : new Color(85, 100, 115);
+            string selectedTransformationId = transformation.FullID;
+            button.OnLeftClick += (_, _) => SelectCustomNameTransformation(selectedTransformationId);
+            customNameList.Add(button);
+        }
+    }
+
+    private static string BuildCustomNameButtonLabel(Transformation transformation, OmnitrixPlayer omp) {
+        string customName = omp?.GetCustomTransformationName(transformation) ?? string.Empty;
+        return string.IsNullOrWhiteSpace(customName)
+            ? transformation.TransformationName
+            : $"{customName} ({transformation.TransformationName})";
+    }
+
+    private void SelectCustomNameTransformation(string transformationId) {
+        if (string.IsNullOrWhiteSpace(transformationId))
+            return;
+
+        CommitSelectedCustomName();
+        _selectedCustomNameTransformationId = transformationId;
+        RebuildCustomNameButtons();
+        LoadSelectedCustomNameIntoInput();
+
+        if (_activeTab == CustomizationTab.CustomNames)
+            UpdateCustomNameHeaderState(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>());
+    }
+
+    private void LoadSelectedCustomNameIntoInput() {
+        OmnitrixPlayer omp = Main.LocalPlayer?.GetModPlayer<OmnitrixPlayer>();
+        if (omp == null || customNameInput == null)
+            return;
+
+        _suppressCustomNameCallbacks = true;
+        _loadedCustomNameValue = string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId)
+            ? string.Empty
+            : omp.GetCustomTransformationName(_selectedCustomNameTransformationId);
+        customNameInput.SetText(_loadedCustomNameValue, invoke: false);
+        _hasPendingCustomNameChanges = false;
+        _suppressCustomNameCallbacks = false;
+        SetCustomNameControlsInteractive(!string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId));
+    }
+
+    private void OnCustomNameInputChanged() {
+        if (_suppressCustomNameCallbacks || customNameInput == null)
+            return;
+
+        _hasPendingCustomNameChanges = !string.Equals(customNameInput.Text, _loadedCustomNameValue, StringComparison.Ordinal);
+        if (_activeTab == CustomizationTab.CustomNames)
+            UpdateCustomNameHeaderState(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>());
+        else
+            SetCustomNameControlsInteractive(!string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId));
+    }
+
+    private void CommitSelectedCustomName() {
+        if (string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId) || customNameInput == null)
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        if (_hasPendingCustomNameChanges)
+            omp.SetCustomTransformationName(_selectedCustomNameTransformationId, customNameInput.Text);
+
+        _loadedCustomNameValue = omp.GetCustomTransformationName(_selectedCustomNameTransformationId);
+        _suppressCustomNameCallbacks = true;
+        customNameInput.SetText(_loadedCustomNameValue, invoke: false);
+        _hasPendingCustomNameChanges = false;
+        _suppressCustomNameCallbacks = false;
+
+        _currentCustomNameSignature = BuildCustomNameSignature(_availableCustomNameTransformationIds, omp);
+        RebuildCustomNameButtons();
+        if (_activeTab == CustomizationTab.CustomNames)
+            UpdateCustomNameHeaderState(omp);
+        else
+            SetCustomNameControlsInteractive(!string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId));
+    }
+
+    private void ResetSelectedCustomName() {
+        if (customNameInput == null)
+            return;
+
+        customNameInput.SetText(string.Empty);
+        CommitSelectedCustomName();
+    }
+
+    private string GetPendingCustomNamePreview(Transformation transformation) {
+        if (transformation == null)
+            return "No transformation selected";
+
+        if (string.Equals(_selectedCustomNameTransformationId, transformation.FullID, StringComparison.OrdinalIgnoreCase) &&
+            customNameInput != null) {
+            string pendingName = customNameInput.Text?.Trim() ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(pendingName))
+                return pendingName;
+        }
+
+        string savedCustomName = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().GetCustomTransformationName(transformation);
+        return string.IsNullOrWhiteSpace(savedCustomName) ? transformation.TransformationName : savedCustomName;
     }
 
     private void RebuildChannelButtons() {
@@ -725,7 +1274,7 @@ public class TransformationPaletteScreen : UIState {
         _selectedChannelId = channelId;
         _selectedChannelPaletteEnabled = IsPaletteChannelEnabled(_selectedChannelId);
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
-        UpdateHeaderState(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>(),
+        UpdatePaletteHeaderState(Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>(),
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().GetPaletteTargetTransformation());
         LoadSelectedChannelIntoSliders();
         RebuildChannelButtons();
@@ -803,7 +1352,7 @@ public class TransformationPaletteScreen : UIState {
         _selectedChannelPaletteEnabled = omp.IsPaletteChannelEnabled(_currentTransformationId, _selectedChannelId);
         _currentChannelEnabledSignature = BuildChannelEnabledSignature(omp.GetPaletteTargetTransformation(), _activeChannels, omp);
         RebuildChannelButtons();
-        UpdateHeaderState(omp, omp.GetPaletteTargetTransformation());
+        UpdatePaletteHeaderState(omp, omp.GetPaletteTargetTransformation());
         if (changed)
             omp.SyncTransformationPaletteStateToServerOrClients();
     }

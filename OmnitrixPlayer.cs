@@ -94,6 +94,7 @@ namespace Ben10Mod {
         public const int DashDuration = 15;
 
         public const int TransformationSlotCount = 5;
+        public const int MaxCustomTransformationNameLength = 24;
         public string[] transformationSlots = { "Ben10Mod:HeatBlast", "", "", "", "" };
         public string currentTransformationId = "";
         public List<string> unlockedTransformations = new() { "Ben10Mod:HeatBlast" };
@@ -144,6 +145,8 @@ namespace Ben10Mod {
         private readonly Dictionary<string, Dictionary<string, TransformationPaletteChannelSettings>> transformationPaletteOverrides =
             new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> paletteEnabledChannels =
+            new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> customTransformationNames =
             new(StringComparer.OrdinalIgnoreCase);
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
@@ -239,6 +242,16 @@ namespace Ben10Mod {
 
             tag["transformationPalette"] = paletteEntries;
             tag["paletteEnabledChannels"] = BuildNormalizedPaletteEnabledChannelKeys().ToArray();
+
+            List<TagCompound> customNameEntries = new();
+            foreach (KeyValuePair<string, string> entry in BuildNormalizedCustomTransformationNames()) {
+                customNameEntries.Add(new TagCompound {
+                    ["transformationId"] = entry.Key,
+                    ["customName"] = entry.Value
+                });
+            }
+
+            tag["customTransformationNames"] = customNameEntries;
         }
 
         public override void LoadData(TagCompound tag) {
@@ -280,6 +293,7 @@ namespace Ben10Mod {
 
             transformationPaletteOverrides.Clear();
             paletteEnabledChannels.Clear();
+            customTransformationNames.Clear();
             if (tag.TryGet("transformationPalette", out List<TagCompound> paletteEntries)) {
                 foreach (TagCompound paletteEntry in paletteEntries) {
                     string transformationId = paletteEntry.GetString("transformationId");
@@ -316,6 +330,14 @@ namespace Ben10Mod {
             if (tag.TryGet("paletteDisabledTransformations", out string[] disabledTransformationArray)) {
                 for (int i = 0; i < disabledTransformationArray.Length; i++)
                     SetAllPaletteChannelsEnabled(disabledTransformationArray[i], false);
+            }
+
+            if (tag.TryGet("customTransformationNames", out List<TagCompound> customNameEntries)) {
+                foreach (TagCompound customNameEntry in customNameEntries) {
+                    string transformationId = customNameEntry.GetString("transformationId");
+                    string customName = customNameEntry.GetString("customName");
+                    SetCustomTransformationName(transformationId, customName);
+                }
             }
 
             if (tag.TryGet("unlockedRoster", out oldUnlockedRoster)) {
@@ -963,6 +985,50 @@ namespace Ben10Mod {
 
         public string GetPaletteTargetDisplayName() {
             return GetPaletteTargetTransformation()?.GetDisplayName(this) ?? "No Transformation";
+        }
+
+        public string GetCustomTransformationName(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return string.Empty;
+
+            return customTransformationNames.TryGetValue(transformation.FullID, out string customName)
+                ? customName
+                : string.Empty;
+        }
+
+        public string GetCustomTransformationName(Transformation transformation) {
+            return transformation == null ? string.Empty : GetCustomTransformationName(transformation.FullID);
+        }
+
+        public string GetTransformationBaseName(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return GetTransformationBaseName(transformation);
+        }
+
+        public string GetTransformationBaseName(Transformation transformation) {
+            if (transformation == null)
+                return "Unknown Form";
+
+            string customName = GetCustomTransformationName(transformation.FullID);
+            return string.IsNullOrWhiteSpace(customName) ? transformation.TransformationName : customName;
+        }
+
+        public bool SetCustomTransformationName(string transformationId, string customName) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return false;
+
+            string normalizedName = NormalizeCustomTransformationName(customName);
+            if (string.IsNullOrWhiteSpace(normalizedName))
+                return customTransformationNames.Remove(transformation.FullID);
+
+            if (customTransformationNames.TryGetValue(transformation.FullID, out string existingName) &&
+                string.Equals(existingName, normalizedName, StringComparison.Ordinal))
+                return false;
+
+            customTransformationNames[transformation.FullID] = normalizedName;
+            return true;
         }
 
         public bool IsPaletteChannelEnabled(Transformation transformation, string channelId) {
@@ -1922,7 +1988,7 @@ namespace Ben10Mod {
             if (transformation == null || Main.netMode == NetmodeID.Server || Player.whoAmI != Main.myPlayer)
                 return;
 
-            string name = transformation.TransformationName;
+            string name = GetTransformationBaseName(transformation);
             Main.NewText($"{name} has been unlocked!", Color.LimeGreen);
             CombatText.NewText(Player.getRect(), Color.LimeGreen, $"{name}!", dramatic: true);
         }
@@ -1950,7 +2016,7 @@ namespace Ben10Mod {
             NormalizeStoredTransformationData();
 
             if (showEffects && Main.netMode != NetmodeID.Server && Player.whoAmI == Main.myPlayer) {
-                string name = transformation.TransformationName;
+                string name = GetTransformationBaseName(transformation);
                 Main.NewText($"{name} has been removed.", Color.OrangeRed);
             }
 
@@ -2314,6 +2380,7 @@ namespace Ben10Mod {
 
             transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
             NormalizeTransformationPaletteState();
+            NormalizeCustomTransformationNames();
 
             Transformation currentTransformation = TransformationLoader.Resolve(currentTransformationId);
             currentTransformationId = currentTransformation != null &&
@@ -2361,6 +2428,48 @@ namespace Ben10Mod {
             }
 
             return normalizedSlots;
+        }
+
+        private void NormalizeCustomTransformationNames() {
+            Dictionary<string, string> normalizedNames = new(StringComparer.OrdinalIgnoreCase);
+            foreach (KeyValuePair<string, string> entry in customTransformationNames) {
+                Transformation transformation = TransformationLoader.Resolve(entry.Key);
+                if (transformation == null)
+                    continue;
+
+                string normalizedName = NormalizeCustomTransformationName(entry.Value);
+                if (string.IsNullOrWhiteSpace(normalizedName))
+                    continue;
+
+                normalizedNames[transformation.FullID] = normalizedName;
+            }
+
+            customTransformationNames.Clear();
+            foreach (KeyValuePair<string, string> entry in normalizedNames)
+                customTransformationNames[entry.Key] = entry.Value;
+        }
+
+        private IEnumerable<KeyValuePair<string, string>> BuildNormalizedCustomTransformationNames() {
+            NormalizeCustomTransformationNames();
+            foreach (KeyValuePair<string, string> entry in customTransformationNames)
+                yield return entry;
+        }
+
+        private static string NormalizeCustomTransformationName(string customName) {
+            if (string.IsNullOrWhiteSpace(customName))
+                return string.Empty;
+
+            string sanitizedName = customName
+                .Replace('\r', ' ')
+                .Replace('\n', ' ')
+                .Replace('\t', ' ')
+                .Trim();
+
+            sanitizedName = string.Join(" ", sanitizedName.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            if (sanitizedName.Length > MaxCustomTransformationNameLength)
+                sanitizedName = sanitizedName[..MaxCustomTransformationNameLength].TrimEnd();
+
+            return sanitizedName;
         }
 
         private void UpdateEventTransformationUnlocks() {

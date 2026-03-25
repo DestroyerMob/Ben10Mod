@@ -1007,6 +1007,18 @@ Projectiles: {
 	TerraspinUltimateProjectile.DisplayName: Terraspin Ultimate Projectile
 	TerraspinGustProjectile.DisplayName: Terraspin Gust Projectile
 	TerraspinBurstProjectile.DisplayName: Terraspin Burst Projectile
+	SnareOhBandageProjectile.DisplayName: Snare Oh Bandage Projectile
+	SnareOhBindFieldProjectile.DisplayName: Snare Oh Bind Field Projectile
+	SnareOhUltimateProjectile.DisplayName: Snare Oh Ultimate Projectile
+	SnareOhWrapProjectile.DisplayName: Snare Oh Wrap Projectile
+	UpgradeAssimilationPulseProjectile.DisplayName: Upgrade Assimilation Pulse Projectile
+	UpgradeConstructProjectile.DisplayName: Upgrade Construct Projectile
+	UpgradeOpticRayProjectile.DisplayName: Upgrade Optic Ray Projectile
+	UpgradePulseRoundProjectile.DisplayName: Upgrade Pulse Round Projectile
+	UpgradeMagicOrbProjectile.DisplayName: Upgrade Magic Orb Projectile
+	UpgradeDirectiveSpikeProjectile.DisplayName: Upgrade Directive Spike Projectile
+	UpgradeBladeWaveProjectile.DisplayName: Upgrade Blade Wave Projectile
+	UpgradeIntegrationMatrixProjectile.DisplayName: Upgrade Integration Matrix Projectile
 }
 
 Tiles: {
@@ -1016,3 +1028,4 @@ Tiles: {
 
 DamageClasses.HeroDamage.DisplayName: Hero Damage
 NPCs.AlbedoBoss.DisplayName: Albedo Boss
+RecipeConditions.MustBeTransformedAs: Must be transformed as {0}

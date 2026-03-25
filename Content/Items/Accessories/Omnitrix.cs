@@ -180,7 +180,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 {
                     var trans = TransformationLoader.Get(transformationSlots[transformationNum]);
                     if (trans != null)
-                        name = trans.TransformationName;
+                        name = player.GetModPlayer<OmnitrixPlayer>().GetTransformationBaseName(trans);
                 }
 
                 Main.NewText($"Transformation {transformationNum + 1}: {name}!", Color.Green);

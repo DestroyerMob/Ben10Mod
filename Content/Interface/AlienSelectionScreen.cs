@@ -284,6 +284,10 @@ namespace Ben10Mod.Content.Interface
 
         private static string GetSafeTransformationName(Transformation trans)
         {
+            var player = Main.LocalPlayer?.GetModPlayer<OmnitrixPlayer>();
+            if (player != null && trans != null)
+                return player.GetTransformationBaseName(trans);
+
             return string.IsNullOrWhiteSpace(trans?.TransformationName) ? "Unknown Alien" : trans.TransformationName;
         }
 

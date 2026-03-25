@@ -1,3 +1,4 @@
+using Ben10Mod.Common.Systems;
 using Ben10Mod.Keybinds;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -82,6 +83,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 .AddIngredient(ItemID.SoulofMight, 8)
                 .AddIngredient(ItemID.SoulofSight, 8)
                 .AddTile(TileID.MythrilAnvil)
+                .AddTransformationCondition("Ben10Mod:Upgrade")
                 .Register();
         }
     }

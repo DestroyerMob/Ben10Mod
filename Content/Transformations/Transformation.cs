@@ -213,7 +213,7 @@ namespace Ben10Mod.Content.Transformations {
             return false;
         }
 
-        public virtual string GetDisplayName(OmnitrixPlayer omp) => TransformationName;
+        public virtual string GetDisplayName(OmnitrixPlayer omp) => omp?.GetTransformationBaseName(this) ?? TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
         public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) => PaletteChannels;
