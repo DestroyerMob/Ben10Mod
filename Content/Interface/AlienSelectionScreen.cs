@@ -43,6 +43,7 @@ namespace Ben10Mod.Content.Interface
         internal UserInterface MyInterface;
         internal AlienSelectionScreen AS;
         internal TransformationPaletteScreen TPS;
+        internal TransformationRadialMenu TRM;
         private GameTime _lastUpdateUiGameTime;
 
         private void EnsureInterfaceInitialized()
@@ -61,6 +62,8 @@ namespace Ben10Mod.Content.Interface
                 TPS = new TransformationPaletteScreen();
                 TPS.Activate();
             }
+
+            TRM ??= new TransformationRadialMenu();
         }
 
         public override void Load()
@@ -72,12 +75,14 @@ namespace Ben10Mod.Content.Interface
             MyInterface = null;
             AS = null;
             TPS = null;
+            TRM = null;
         }
 
         public override void UpdateUI(GameTime gameTime)
         {
             EnsureInterfaceInitialized();
             _lastUpdateUiGameTime = gameTime;
+            TRM?.Update(this);
             if (MyInterface?.CurrentState != null)
                 MyInterface.Update(gameTime);
         }
@@ -89,6 +94,15 @@ namespace Ben10Mod.Content.Interface
             if (mouseTextIndex != -1)
             {
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
+                    "Ben10Mod: OmnitrixEnergyBar",
+                    delegate {
+                        DrawOmnitrixEnergyBar();
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
+                mouseTextIndex++;
+
+                layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
                     "Ben10Mod: AlienSelection",
                     delegate {
                         if (_lastUpdateUiGameTime != null && MyInterface?.CurrentState != null)
@@ -96,11 +110,12 @@ namespace Ben10Mod.Content.Interface
                         return true;
                     },
                     InterfaceScaleType.UI));
+                mouseTextIndex++;
 
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
-                    "Ben10Mod: OmnitrixEnergyBar",
+                    "Ben10Mod: TransformationRadialMenu",
                     delegate {
-                        DrawOmnitrixEnergyBar();
+                        TRM?.Draw(Main.spriteBatch);
                         return true;
                     },
                     InterfaceScaleType.UI));
