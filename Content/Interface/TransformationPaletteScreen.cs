@@ -522,6 +522,8 @@ public class TransformationPaletteScreen : UIState {
     private UITextPanel<string> applyButton;
     private UITextPanel<string> resetChannelButton;
     private UITextPanel<string> resetAllButton;
+    private UIText palettePresetHintText;
+    private readonly List<UITextPanel<string>> palettePresetButtons = new();
     private UIList customNameList;
     private UIScrollbar customNameScrollbar;
     private UIText selectedNameText;
@@ -649,9 +651,9 @@ public class TransformationPaletteScreen : UIState {
 
         UIPanel sliderPanel = new UIPanel();
         sliderPanel.Left.Set(18f, 0f);
-        sliderPanel.Top.Set(226f, 0f);
+        sliderPanel.Top.Set(222f, 0f);
         sliderPanel.Width.Set(554f, 0f);
-        sliderPanel.Height.Set(188f, 0f);
+        sliderPanel.Height.Set(164f, 0f);
         sliderPanel.PaddingTop = 8f;
         sliderPanel.PaddingBottom = 8f;
         sliderPanel.PaddingLeft = 8f;
@@ -684,14 +686,33 @@ public class TransformationPaletteScreen : UIState {
         sliderList.Add(hueSlider);
         sliderList.Add(saturationSlider);
 
-        paletteToggleButton = CreateActionButton("Use Original", 18f, 442f, (_, _) => TogglePaletteEnabled(), width: 131f);
-        applyButton = CreateActionButton("Apply Changes", 159f, 442f, (_, _) => ApplyPendingColors(), width: 131f);
-        resetChannelButton = CreateActionButton("Reset Part", 300f, 442f, (_, _) => ResetSelectedPendingColor(), width: 131f);
-        resetAllButton = CreateActionButton("Reset All", 441f, 442f, (_, _) => ResetAllPendingColors(), width: 131f);
+        paletteToggleButton = CreateActionButton("Use Original", 18f, 398f, (_, _) => TogglePaletteEnabled(), width: 131f);
+        applyButton = CreateActionButton("Apply Changes", 159f, 398f, (_, _) => ApplyPendingColors(), width: 131f);
+        resetChannelButton = CreateActionButton("Reset Part", 300f, 398f, (_, _) => ResetSelectedPendingColor(), width: 131f);
+        resetAllButton = CreateActionButton("Reset All", 441f, 398f, (_, _) => ResetAllPendingColors(), width: 131f);
         controlsPanel.Append(paletteToggleButton);
         controlsPanel.Append(applyButton);
         controlsPanel.Append(resetChannelButton);
         controlsPanel.Append(resetAllButton);
+
+        palettePresetHintText = new UIText(
+            "Left click loads a preset. Right click saves the current colours and mask toggles.",
+            0.74f);
+        palettePresetHintText.Left.Set(18f, 0f);
+        palettePresetHintText.Top.Set(438f, 0f);
+        palettePresetHintText.Width.Set(554f, 0f);
+        controlsPanel.Append(palettePresetHintText);
+
+        const float presetButtonWidth = 176f;
+        const float presetButtonSpacing = 13f;
+        for (int presetIndex = 0; presetIndex < OmnitrixPlayer.PalettePresetSlotCount; presetIndex++) {
+            int capturedPresetIndex = presetIndex;
+            UITextPanel<string> presetButton = CreateActionButton($"Preset {presetIndex + 1}", 18f + presetIndex * (presetButtonWidth + presetButtonSpacing),
+                464f, (_, _) => LoadPalettePreset(capturedPresetIndex), width: presetButtonWidth);
+            presetButton.OnRightClick += (_, _) => SavePalettePreset(capturedPresetIndex);
+            palettePresetButtons.Add(presetButton);
+            controlsPanel.Append(presetButton);
+        }
 
         UIPanel customNameListPanel = new UIPanel();
         customNameListPanel.Width.Set(320f, 0f);
@@ -965,6 +986,7 @@ public class TransformationPaletteScreen : UIState {
             statusText.SetText("Transform, or select an Omnitrix slot first, to customize palette parts.");
             selectedChannelText.SetText("No part selected");
             SetControlsInteractive(false);
+            UpdatePalettePresetButtons(omp, null, interactive: false);
             return;
         }
 
@@ -975,6 +997,7 @@ public class TransformationPaletteScreen : UIState {
             statusText.SetText("This transformation has no custom mask parts configured.");
             selectedChannelText.SetText("No part selected");
             SetControlsInteractive(false);
+            UpdatePalettePresetButtons(omp, targetTransformation, interactive: false);
             return;
         }
 
@@ -983,6 +1006,7 @@ public class TransformationPaletteScreen : UIState {
             : $"{GetSelectedChannelDisplayName()} is using the original texture. Hue and saturation still apply while custom RGB stays stored for later.");
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
         SetControlsInteractive(true);
+        UpdatePalettePresetButtons(omp, targetTransformation, interactive: true);
     }
 
     private void RefreshCustomNameContext(bool force) {
@@ -1394,6 +1418,57 @@ public class TransformationPaletteScreen : UIState {
 
         _hasPendingPaletteChanges = true;
         LoadSelectedChannelIntoSliders();
+    }
+
+    private void LoadPalettePreset(int presetIndex) {
+        if (string.IsNullOrWhiteSpace(_currentTransformationId))
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.ApplyPalettePreset(_currentTransformationId, presetIndex))
+            return;
+
+        _hasPendingPaletteChanges = false;
+        RefreshPaletteContext(force: true);
+    }
+
+    private void SavePalettePreset(int presetIndex) {
+        if (string.IsNullOrWhiteSpace(_currentTransformationId))
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.SavePalettePreset(_currentTransformationId, presetIndex))
+            return;
+
+        UpdatePalettePresetButtons(omp, omp.GetPaletteTargetTransformation(), interactive: _activeChannels.Count > 0);
+    }
+
+    private void UpdatePalettePresetButtons(OmnitrixPlayer omp, Transformation targetTransformation, bool interactive) {
+        string transformationId = targetTransformation?.FullID ?? string.Empty;
+        bool hasPresetTarget = interactive && !string.IsNullOrWhiteSpace(transformationId) && omp != null;
+
+        if (palettePresetHintText != null) {
+            palettePresetHintText.SetText(hasPresetTarget
+                ? "Left click loads a preset. Right click saves the current colours and mask toggles."
+                : "Palette presets become available when the selected transformation has custom mask parts.");
+        }
+
+        for (int presetIndex = 0; presetIndex < palettePresetButtons.Count; presetIndex++) {
+            UITextPanel<string> presetButton = palettePresetButtons[presetIndex];
+            if (presetButton == null)
+                continue;
+
+            bool hasPreset = hasPresetTarget && omp.HasPalettePreset(transformationId, presetIndex);
+            presetButton.SetText(hasPresetTarget
+                ? omp.GetPalettePresetLabel(transformationId, presetIndex)
+                : $"Preset {presetIndex + 1}");
+            presetButton.BackgroundColor = hasPresetTarget
+                ? (hasPreset ? new Color(56, 78, 118) : new Color(50, 58, 78))
+                : new Color(40, 44, 54);
+            presetButton.BorderColor = hasPresetTarget
+                ? (hasPreset ? new Color(136, 190, 255) : new Color(82, 98, 128))
+                : new Color(62, 68, 80);
+        }
     }
 
     private Color GetPendingColor(string channelId) {

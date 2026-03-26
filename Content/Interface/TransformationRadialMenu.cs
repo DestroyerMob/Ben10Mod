@@ -21,6 +21,7 @@ namespace Ben10Mod.Content.Interface {
         private const float BackdropSize = 396f;
 
         private bool isOpen;
+        private bool leftMouseWasDown;
         private int previewSlotIndex = -1;
         private int lastHoveredSlotIndex = -1;
         private Vector2 menuCenter;
@@ -56,8 +57,10 @@ namespace Ben10Mod.Content.Interface {
             Main.LocalPlayer.mouseInterface = true;
             UpdatePreviewSlot();
 
-            if (Main.mouseLeft && Main.mouseLeftRelease) {
-                Main.mouseLeftRelease = false;
+            bool leftMouseJustPressed = Main.mouseLeft && !leftMouseWasDown;
+            leftMouseWasDown = Main.mouseLeft;
+
+            if (leftMouseJustPressed) {
                 ConfirmSelection(player, omp, activeOmnitrix);
                 return;
             }
@@ -93,7 +96,6 @@ namespace Ben10Mod.Content.Interface {
                 Rectangle slotRect = BuildRect(slotCenter, SlotSize, SlotSize);
                 Color accent = GetSlotAccent(activeOmnitrix, i);
 
-                DrawConnection(spriteBatch, pixel, menuCenter, slotCenter, accent * 0.32f, 2f);
                 DrawPanel(spriteBatch, pixel, slotRect,
                     i == previewSlotIndex ? new Color(22, 34, 42, 245) : new Color(12, 18, 24, 220),
                     accent, i == previewSlotIndex ? 3 : 2);
@@ -113,9 +115,13 @@ namespace Ben10Mod.Content.Interface {
                 ? "Empty Slot"
                 : previewTransformation?.GetDisplayName(omp) ?? "Unknown Form";
             string slotLabel = previewSlotIndex >= 0 ? $"Slot {previewSlotIndex + 1}" : "No Slot";
-            string hintText = string.IsNullOrEmpty(transformationId)
-                ? "No transformation assigned"
-                : "Release Q or left click to transform";
+            string hintText;
+            if (omp.onCooldown)
+                hintText = $"Omnitrix cooling down. {omp.GetTransformationCooldownDisplayText()}";
+            else if (string.IsNullOrEmpty(transformationId))
+                hintText = "No transformation assigned";
+            else
+                hintText = "Release Q or left click to transform";
 
             Utils.DrawBorderString(spriteBatch, slotLabel, new Vector2(centerPanel.Center.X, centerPanel.Y + 10),
                 new Color(180, 210, 225), 0.78f, 0.5f, 0f);
@@ -127,6 +133,7 @@ namespace Ben10Mod.Content.Interface {
 
         private void Open(OmnitrixPlayer omp) {
             isOpen = true;
+            leftMouseWasDown = Main.mouseLeft;
             menuCenter = ClampToScreen(Main.MouseScreen);
             previewSlotIndex = ResolveInitialPreviewSlot(omp);
             lastHoveredSlotIndex = previewSlotIndex;
@@ -135,6 +142,7 @@ namespace Ben10Mod.Content.Interface {
 
         private void Close() {
             isOpen = false;
+            leftMouseWasDown = Main.mouseLeft;
             previewSlotIndex = -1;
             lastHoveredSlotIndex = -1;
         }
@@ -208,27 +216,6 @@ namespace Ben10Mod.Content.Interface {
             spriteBatch.Draw(pixel, new Rectangle(rect.Right - borderThickness, rect.Y, borderThickness, rect.Height), borderColor);
         }
 
-        private static void DrawConnection(SpriteBatch spriteBatch, Texture2D pixel, Vector2 start, Vector2 end, Color color,
-            float thickness) {
-            Vector2 edge = end - start;
-            float fullLength = edge.Length();
-            if (fullLength <= 0.001f)
-                return;
-
-            Vector2 direction = edge / fullLength;
-            Vector2 trimmedStart = start + direction * 74f;
-            Vector2 trimmedEnd = end - direction * (SlotSize * 0.5f + 8f);
-            Vector2 trimmedEdge = trimmedEnd - trimmedStart;
-            float trimmedLength = trimmedEdge.Length();
-            if (trimmedLength <= 0.001f)
-                return;
-
-            float rotation = trimmedEdge.ToRotation();
-            Vector2 midpoint = trimmedStart + trimmedEdge * 0.5f;
-            spriteBatch.Draw(pixel, midpoint, null, color, rotation, Vector2.One * 0.5f,
-                new Vector2(trimmedLength, thickness), SpriteEffects.None, 0f);
-        }
-
         private static void DrawSlotIcon(SpriteBatch spriteBatch, Rectangle slotRect, Asset<Texture2D> iconAsset) {
             Texture2D texture = iconAsset.Value;
             float availableWidth = slotRect.Width - 16f;
@@ -263,7 +250,11 @@ namespace Ben10Mod.Content.Interface {
             if (slotIndex == activeOmnitrix.transformationNum)
                 return new Color(120, 190, 255);
 
-            return string.IsNullOrEmpty(activeOmnitrix.transformationSlots[slotIndex])
+            string transformationId = activeOmnitrix.transformationSlots[slotIndex];
+            if (Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().IsFavoriteTransformation(transformationId))
+                return new Color(232, 205, 110);
+
+            return string.IsNullOrEmpty(transformationId)
                 ? new Color(108, 112, 124)
                 : new Color(92, 122, 138);
         }

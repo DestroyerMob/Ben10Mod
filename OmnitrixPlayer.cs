@@ -2,6 +2,7 @@
 using Ben10Mod.Keybinds;
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Terraria;
@@ -13,6 +14,7 @@ using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Accessories;
 using Terraria.Audio;
@@ -25,6 +27,11 @@ using Terraria.GameContent.Events;
 
 namespace Ben10Mod {
     public class OmnitrixPlayer : ModPlayer {
+        private sealed class PalettePresetData {
+            public List<TransformationPaletteColorEntry> Entries { get; } = new();
+            public List<string> EnabledChannelKeys { get; } = new();
+        }
+
         public enum AttackSelection {
             Primary,
             Secondary,
@@ -94,6 +101,7 @@ namespace Ben10Mod {
         public const int DashDuration = 15;
 
         public const int TransformationSlotCount = 5;
+        public const int PalettePresetSlotCount = 3;
         public const int MaxCustomTransformationNameLength = 24;
         public string[] transformationSlots = { "Ben10Mod:HeatBlast", "", "", "", "" };
         public string currentTransformationId = "";
@@ -148,9 +156,14 @@ namespace Ben10Mod {
             new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> customTransformationNames =
             new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> favoriteTransformations =
+            new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, PalettePresetData[]> palettePresets =
+            new(StringComparer.OrdinalIgnoreCase);
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
         private const int AttackSelectionPulseDuration = 24;
+        private const int TransformFailureFeedbackCooldownTicks = 30;
         private float requestedTransformationScale = 1f;
         private int requestedTransformationScaleTime = 1;
         private Vector2 requestedTransformationHitboxScale = Vector2.One;
@@ -161,6 +174,8 @@ namespace Ben10Mod {
         internal float goopLandingSquish = 0f;
         internal int goopLandingSplashTime = 0;
         private string lastAttackUiTransformationId = "";
+        private string lastTransformFailureMessage = "";
+        private ulong lastTransformFailureTick = 0;
         private bool skipAutomaticForcedDetransformHandling = false;
 
         private const int EventBloodMoon = -1;
@@ -226,6 +241,7 @@ namespace Ben10Mod {
 
             tag["transformationRoster"] = transformationSlots;
             tag["unlockedTransformationRoster"] = unlockedTransformations.ToArray();
+            tag["favoriteTransformationRoster"] = BuildNormalizedFavoriteTransformations().ToArray();
 
             List<TagCompound> paletteEntries = new();
             foreach (TransformationPaletteColorEntry entry in BuildNormalizedTransformationPaletteEntries()) {
@@ -252,6 +268,11 @@ namespace Ben10Mod {
             }
 
             tag["customTransformationNames"] = customNameEntries;
+
+            List<TagCompound> palettePresetEntries = new();
+            foreach (TagCompound presetEntry in BuildPalettePresetTagEntries())
+                palettePresetEntries.Add(presetEntry);
+            tag["transformationPalettePresets"] = palettePresetEntries;
         }
 
         public override void LoadData(TagCompound tag) {
@@ -291,9 +312,19 @@ namespace Ben10Mod {
             if (tag.TryGet("unlockedTransformationRoster", out string[] unlockedArray))
                 unlockedTransformations.AddRange(unlockedArray);
 
+            favoriteTransformations.Clear();
+            if (tag.TryGet("favoriteTransformationRoster", out string[] favoriteArray)) {
+                for (int i = 0; i < favoriteArray.Length; i++) {
+                    Transformation favoriteTransformation = TransformationLoader.Resolve(favoriteArray[i]);
+                    if (favoriteTransformation != null)
+                        favoriteTransformations.Add(favoriteTransformation.FullID);
+                }
+            }
+
             transformationPaletteOverrides.Clear();
             paletteEnabledChannels.Clear();
             customTransformationNames.Clear();
+            palettePresets.Clear();
             if (tag.TryGet("transformationPalette", out List<TagCompound> paletteEntries)) {
                 foreach (TagCompound paletteEntry in paletteEntries) {
                     string transformationId = paletteEntry.GetString("transformationId");
@@ -338,6 +369,11 @@ namespace Ben10Mod {
                     string customName = customNameEntry.GetString("customName");
                     SetCustomTransformationName(transformationId, customName);
                 }
+            }
+
+            if (tag.TryGet("transformationPalettePresets", out List<TagCompound> palettePresetEntries)) {
+                foreach (TagCompound presetEntry in palettePresetEntries)
+                    LoadPalettePresetTagEntry(presetEntry);
             }
 
             if (tag.TryGet("unlockedRoster", out oldUnlockedRoster)) {
@@ -965,8 +1001,12 @@ namespace Ben10Mod {
         }
 
         public Color GetSelectedTransformationAccentColor() {
-            return string.IsNullOrEmpty(GetSelectedTransformationId())
-                ? new Color(160, 170, 185)
+            string selectedTransformationId = GetSelectedTransformationId();
+            if (string.IsNullOrEmpty(selectedTransformationId))
+                return new Color(160, 170, 185);
+
+            return IsFavoriteTransformation(selectedTransformationId)
+                ? new Color(232, 205, 110)
                 : new Color(120, 255, 170);
         }
 
@@ -1013,6 +1053,163 @@ namespace Ben10Mod {
 
             string customName = GetCustomTransformationName(transformation.FullID);
             return string.IsNullOrWhiteSpace(customName) ? transformation.TransformationName : customName;
+        }
+
+        public bool IsFavoriteTransformation(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return transformation != null && favoriteTransformations.Contains(transformation.FullID);
+        }
+
+        public bool IsFavoriteTransformation(Transformation transformation) {
+            return transformation != null && favoriteTransformations.Contains(transformation.FullID);
+        }
+
+        public bool SetFavoriteTransformation(string transformationId, bool isFavorite) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return false;
+
+            if (isFavorite)
+                return favoriteTransformations.Add(transformation.FullID);
+
+            return favoriteTransformations.Remove(transformation.FullID);
+        }
+
+        public bool ToggleFavoriteTransformation(string transformationId) {
+            return SetFavoriteTransformation(transformationId, !IsFavoriteTransformation(transformationId));
+        }
+
+        public IReadOnlyList<string> GetUnlockedTransformationsForDisplay() {
+            List<string> favoriteDisplayTransformations = new();
+            List<string> allDisplayTransformations = new();
+
+            for (int i = 0; i < unlockedTransformations.Count; i++) {
+                string transformationId = unlockedTransformations[i];
+                Transformation transformation = TransformationLoader.Resolve(transformationId);
+                if (transformation == null)
+                    continue;
+
+                string resolvedTransformationId = transformation.FullID;
+                allDisplayTransformations.Add(resolvedTransformationId);
+                if (IsFavoriteTransformation(resolvedTransformationId))
+                    favoriteDisplayTransformations.Add(resolvedTransformationId);
+            }
+
+            favoriteDisplayTransformations.Sort(CompareTransformationDisplayName);
+            allDisplayTransformations.Sort(CompareTransformationDisplayName);
+
+            List<string> displayTransformations = new();
+            HashSet<string> seenTransformations = new(StringComparer.OrdinalIgnoreCase);
+
+            for (int i = 0; i < favoriteDisplayTransformations.Count; i++) {
+                string transformationId = favoriteDisplayTransformations[i];
+                if (seenTransformations.Add(transformationId))
+                    displayTransformations.Add(transformationId);
+            }
+
+            for (int i = 0; i < allDisplayTransformations.Count; i++) {
+                string transformationId = allDisplayTransformations[i];
+                if (seenTransformations.Add(transformationId))
+                    displayTransformations.Add(transformationId);
+            }
+
+            return displayTransformations;
+        }
+
+        private int CompareTransformationDisplayName(string leftTransformationId, string rightTransformationId) {
+            Transformation leftTransformation = TransformationLoader.Resolve(leftTransformationId);
+            Transformation rightTransformation = TransformationLoader.Resolve(rightTransformationId);
+            string leftName = leftTransformation?.GetDisplayName(this) ?? string.Empty;
+            string rightName = rightTransformation?.GetDisplayName(this) ?? string.Empty;
+            int nameComparison = string.Compare(leftName, rightName, StringComparison.CurrentCultureIgnoreCase);
+            if (nameComparison != 0)
+                return nameComparison;
+
+            string leftKey = leftTransformation?.FullID ?? leftTransformationId ?? string.Empty;
+            string rightKey = rightTransformation?.FullID ?? rightTransformationId ?? string.Empty;
+            return string.Compare(leftKey, rightKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public int GetBuffRemainingTicks(int buffType) {
+            if (buffType <= 0)
+                return 0;
+
+            for (int i = 0; i < Player.buffType.Length; i++) {
+                if (Player.buffType[i] == buffType)
+                    return Math.Max(0, Player.buffTime[i]);
+            }
+
+            return 0;
+        }
+
+        public int GetTransformationCooldownTicks() {
+            return GetBuffRemainingTicks(ModContent.BuffType<TransformationCooldown_Buff>());
+        }
+
+        public int GetAttackActionCooldownTicks(AttackSelection selection) {
+            return selection switch {
+                AttackSelection.PrimaryAbility => GetBuffRemainingTicks(ModContent.BuffType<PrimaryAbilityCooldown>()),
+                AttackSelection.SecondaryAbility => GetBuffRemainingTicks(ModContent.BuffType<SecondaryAbilityCooldown>()),
+                AttackSelection.TertiaryAbility => GetBuffRemainingTicks(ModContent.BuffType<TertiaryAbilityCooldown>()),
+                AttackSelection.Ultimate => GetBuffRemainingTicks(ModContent.BuffType<UltimateAbilityCooldown>()),
+                _ => 0
+            };
+        }
+
+        public static string FormatCooldownTicks(int ticks) {
+            if (ticks <= 0)
+                return "Ready";
+
+            return $"{ticks / 60f:0.#}s";
+        }
+
+        public string GetTransformationCooldownDisplayText() {
+            int ticks = GetTransformationCooldownTicks();
+            return ticks > 0 ? $"Cooldown {FormatCooldownTicks(ticks)}" : "Ready";
+        }
+
+        public string GetAttackHudCooldownSummary() {
+            List<string> parts = new();
+            int transformCooldown = GetTransformationCooldownTicks();
+            if (transformCooldown > 0)
+                parts.Add($"Transform {FormatCooldownTicks(transformCooldown)}");
+
+            Transformation transformation = CurrentTransformation;
+            if (transformation == null)
+                return parts.Count == 0 ? string.Empty : string.Join("  ", parts);
+
+            if (transformation.HasPrimaryAbilityActionForState(this))
+                parts.Add($"P {FormatCooldownTicks(GetAttackActionCooldownTicks(AttackSelection.PrimaryAbility))}");
+            if (transformation.HasSecondaryAbilityActionForState(this))
+                parts.Add($"S {FormatCooldownTicks(GetAttackActionCooldownTicks(AttackSelection.SecondaryAbility))}");
+            if (transformation.HasTertiaryAbilityActionForState(this))
+                parts.Add($"T {FormatCooldownTicks(GetAttackActionCooldownTicks(AttackSelection.TertiaryAbility))}");
+            if (transformation.HasUltimateAbilityForState(this) || transformation.HasUltimateAttack)
+                parts.Add($"U {FormatCooldownTicks(GetAttackActionCooldownTicks(AttackSelection.Ultimate))}");
+
+            return string.Join("  ", parts);
+        }
+
+        public string GetSelectionHudCooldownSummary() {
+            int transformCooldown = GetTransformationCooldownTicks();
+            return transformCooldown > 0 ? $"Transform {FormatCooldownTicks(transformCooldown)}" : string.Empty;
+        }
+
+        public void ShowTransformFailureFeedback(string message, Color? color = null) {
+            if (string.IsNullOrWhiteSpace(message) || Main.netMode == NetmodeID.Server || Player.whoAmI != Main.myPlayer)
+                return;
+
+            ulong now = Main.GameUpdateCount;
+            if (string.Equals(message, lastTransformFailureMessage, StringComparison.Ordinal) &&
+                now - lastTransformFailureTick < TransformFailureFeedbackCooldownTicks)
+                return;
+
+            if (now - lastTransformFailureTick < 10)
+                return;
+
+            lastTransformFailureMessage = message;
+            lastTransformFailureTick = now;
+            Main.NewText(message, color ?? new Color(255, 150, 90));
         }
 
         public bool SetCustomTransformationName(string transformationId, string customName) {
@@ -1180,6 +1377,67 @@ namespace Ben10Mod {
                 SyncTransformationPaletteStateToServerOrClients();
 
             return changed;
+        }
+
+        public bool HasPalettePreset(string transformationId, int presetIndex) {
+            return TryGetPalettePreset(transformationId, presetIndex, out _);
+        }
+
+        public string GetPalettePresetLabel(string transformationId, int presetIndex) {
+            int displayIndex = Utils.Clamp(presetIndex, 0, PalettePresetSlotCount - 1) + 1;
+            return HasPalettePreset(transformationId, presetIndex)
+                ? $"Preset {displayIndex}"
+                : $"Preset {displayIndex} (Empty)";
+        }
+
+        public bool SavePalettePreset(string transformationId, int presetIndex) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null || presetIndex < 0 || presetIndex >= PalettePresetSlotCount)
+                return false;
+
+            if (!palettePresets.TryGetValue(transformation.FullID, out PalettePresetData[] presets) || presets == null ||
+                presets.Length != PalettePresetSlotCount) {
+                presets = new PalettePresetData[PalettePresetSlotCount];
+                palettePresets[transformation.FullID] = presets;
+            }
+
+            PalettePresetData preset = new();
+            List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntriesFor(transformation.FullID);
+            for (int i = 0; i < entries.Count; i++)
+                preset.Entries.Add(entries[i]);
+
+            List<string> enabledKeys = BuildNormalizedPaletteEnabledChannelKeysFor(transformation.FullID);
+            for (int i = 0; i < enabledKeys.Count; i++)
+                preset.EnabledChannelKeys.Add(enabledKeys[i]);
+
+            presets[presetIndex] = preset;
+            return true;
+        }
+
+        public bool ApplyPalettePreset(string transformationId, int presetIndex, bool sync = true) {
+            if (!TryGetPalettePreset(transformationId, presetIndex, out PalettePresetData preset))
+                return false;
+
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return false;
+
+            transformationPaletteOverrides.Remove(transformation.FullID);
+            SetAllPaletteChannelsEnabled(transformation.FullID, false);
+
+            for (int i = 0; i < preset.Entries.Count; i++)
+                AddNormalizedTransformationPaletteEntry(preset.Entries[i]);
+
+            for (int i = 0; i < preset.EnabledChannelKeys.Count; i++) {
+                if (TryNormalizePaletteChannelKey(preset.EnabledChannelKeys[i], out string normalizedKey))
+                    paletteEnabledChannels.Add(normalizedKey);
+            }
+
+            NormalizeTransformationPaletteState();
+            if (sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return true;
         }
 
         public Color GetCurrentAttackAccentColor() {
@@ -2147,6 +2405,16 @@ namespace Ben10Mod {
             return entries;
         }
 
+        private List<TransformationPaletteColorEntry> BuildNormalizedTransformationPaletteEntriesFor(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return new List<TransformationPaletteColorEntry>();
+
+            List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
+            entries.RemoveAll(entry => !string.Equals(entry.TransformationId, transformation.FullID, StringComparison.OrdinalIgnoreCase));
+            return entries;
+        }
+
         private List<string> BuildNormalizedPaletteEnabledChannelKeys() {
             List<string> enabledChannelKeys = new();
 
@@ -2157,6 +2425,108 @@ namespace Ben10Mod {
 
             enabledChannelKeys.Sort(StringComparer.OrdinalIgnoreCase);
             return enabledChannelKeys;
+        }
+
+        private List<string> BuildNormalizedPaletteEnabledChannelKeysFor(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return new List<string>();
+
+            List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
+            enabledChannelKeys.RemoveAll(key => !key.StartsWith(transformation.FullID + "|", StringComparison.OrdinalIgnoreCase));
+            return enabledChannelKeys;
+        }
+
+        private IEnumerable<TagCompound> BuildPalettePresetTagEntries() {
+            NormalizePalettePresets();
+
+            foreach ((string transformationId, PalettePresetData[] presets) in palettePresets) {
+                if (presets == null)
+                    continue;
+
+                for (int presetIndex = 0; presetIndex < presets.Length; presetIndex++) {
+                    PalettePresetData preset = presets[presetIndex];
+                    if (preset == null)
+                        continue;
+
+                    List<TagCompound> entryTags = new();
+                    for (int i = 0; i < preset.Entries.Count; i++) {
+                        TransformationPaletteColorEntry entry = preset.Entries[i];
+                        entryTags.Add(new TagCompound {
+                            ["transformationId"] = entry.TransformationId,
+                            ["channelId"] = entry.ChannelId,
+                            ["r"] = (int)entry.Color.R,
+                            ["g"] = (int)entry.Color.G,
+                            ["b"] = (int)entry.Color.B,
+                            ["hue"] = (int)entry.Hue,
+                            ["saturation"] = (int)entry.Saturation
+                        });
+                    }
+
+                    yield return new TagCompound {
+                        ["transformationId"] = transformationId,
+                        ["presetIndex"] = presetIndex,
+                        ["entries"] = entryTags,
+                        ["enabledChannels"] = preset.EnabledChannelKeys.ToArray()
+                    };
+                }
+            }
+        }
+
+        private void LoadPalettePresetTagEntry(TagCompound presetEntry) {
+            if (presetEntry == null)
+                return;
+
+            string transformationId = presetEntry.GetString("transformationId");
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            int presetIndex = presetEntry.GetInt("presetIndex");
+            if (transformation == null || presetIndex < 0 || presetIndex >= PalettePresetSlotCount)
+                return;
+
+            PalettePresetData preset = new();
+            if (presetEntry.TryGet("entries", out List<TagCompound> entryTags)) {
+                for (int i = 0; i < entryTags.Count; i++) {
+                    TagCompound entryTag = entryTags[i];
+                    string entryTransformationId = entryTag.GetString("transformationId");
+                    string channelId = entryTag.GetString("channelId");
+                    byte r = (byte)entryTag.GetInt("r");
+                    byte g = (byte)entryTag.GetInt("g");
+                    byte b = (byte)entryTag.GetInt("b");
+                    byte hue = entryTag.ContainsKey("hue")
+                        ? (byte)entryTag.GetInt("hue")
+                        : TransformationPaletteColorEntry.NeutralHue;
+                    byte saturation = entryTag.ContainsKey("saturation")
+                        ? (byte)entryTag.GetInt("saturation")
+                        : TransformationPaletteColorEntry.NeutralSaturation;
+                    preset.Entries.Add(new TransformationPaletteColorEntry(entryTransformationId, channelId,
+                        new Color(r, g, b), hue, saturation));
+                }
+            }
+
+            if (presetEntry.TryGet("enabledChannels", out string[] enabledChannels)) {
+                for (int i = 0; i < enabledChannels.Length; i++)
+                    preset.EnabledChannelKeys.Add(enabledChannels[i] ?? string.Empty);
+            }
+
+            if (!palettePresets.TryGetValue(transformation.FullID, out PalettePresetData[] presets) || presets == null ||
+                presets.Length != PalettePresetSlotCount) {
+                presets = new PalettePresetData[PalettePresetSlotCount];
+                palettePresets[transformation.FullID] = presets;
+            }
+
+            presets[presetIndex] = preset;
+        }
+
+        private bool TryGetPalettePreset(string transformationId, int presetIndex, out PalettePresetData preset) {
+            preset = null;
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null || presetIndex < 0 || presetIndex >= PalettePresetSlotCount)
+                return false;
+
+            return palettePresets.TryGetValue(transformation.FullID, out PalettePresetData[] presets) &&
+                   presets != null &&
+                   presetIndex < presets.Length &&
+                   (preset = presets[presetIndex]) != null;
         }
 
         private void SetAllPaletteChannelsEnabled(string transformationId, bool enabled) {
@@ -2390,9 +2760,11 @@ namespace Ben10Mod {
             string[] normalizedUnlocks = NormalizeUnlockedTransformations(unlockedTransformations);
             unlockedTransformations.Clear();
             unlockedTransformations.AddRange(normalizedUnlocks);
+            NormalizeFavoriteTransformations();
 
             transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
             NormalizeTransformationPaletteState();
+            NormalizePalettePresets();
             NormalizeCustomTransformationNames();
 
             Transformation currentTransformation = TransformationLoader.Resolve(currentTransformationId);
@@ -2441,6 +2813,89 @@ namespace Ben10Mod {
             }
 
             return normalizedSlots;
+        }
+
+        private void NormalizeFavoriteTransformations() {
+            HashSet<string> normalizedFavorites = new(StringComparer.OrdinalIgnoreCase);
+            foreach (string favoriteTransformationId in favoriteTransformations) {
+                Transformation transformation = TransformationLoader.Resolve(favoriteTransformationId);
+                if (transformation != null)
+                    normalizedFavorites.Add(transformation.FullID);
+            }
+
+            favoriteTransformations.Clear();
+            foreach (string favoriteTransformationId in normalizedFavorites)
+                favoriteTransformations.Add(favoriteTransformationId);
+        }
+
+        private IReadOnlyList<string> BuildNormalizedFavoriteTransformations() {
+            NormalizeFavoriteTransformations();
+            List<string> normalizedFavorites = new();
+            foreach (string transformationId in favoriteTransformations)
+                normalizedFavorites.Add(transformationId);
+            normalizedFavorites.Sort(StringComparer.OrdinalIgnoreCase);
+            return normalizedFavorites;
+        }
+
+        private void NormalizePalettePresets() {
+            Dictionary<string, PalettePresetData[]> normalizedPresets = new(StringComparer.OrdinalIgnoreCase);
+
+            foreach ((string transformationId, PalettePresetData[] presets) in palettePresets) {
+                Transformation transformation = TransformationLoader.Resolve(transformationId);
+                if (transformation == null || presets == null)
+                    continue;
+
+                PalettePresetData[] normalizedPresetArray = new PalettePresetData[PalettePresetSlotCount];
+                for (int presetIndex = 0; presetIndex < Math.Min(presets.Length, PalettePresetSlotCount); presetIndex++) {
+                    PalettePresetData preset = presets[presetIndex];
+                    if (preset == null)
+                        continue;
+
+                    PalettePresetData normalizedPreset = new();
+                    for (int i = 0; i < preset.Entries.Count; i++) {
+                        TransformationPaletteColorEntry entry = preset.Entries[i];
+                        if (!string.Equals(entry.TransformationId, transformation.FullID, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        if (!TryResolvePaletteChannel(entry.TransformationId, entry.ChannelId, out Transformation resolvedTransformation,
+                                out TransformationPaletteChannel channel))
+                            continue;
+
+                        TransformationPaletteChannelSettings normalizedSettings =
+                            NormalizePaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue, entry.Saturation),
+                                channel.DefaultColor);
+                        if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
+                            continue;
+
+                        normalizedPreset.Entries.Add(new TransformationPaletteColorEntry(resolvedTransformation.FullID, channel.Id,
+                            normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation));
+                    }
+
+                    for (int i = 0; i < preset.EnabledChannelKeys.Count; i++) {
+                        if (TryNormalizePaletteChannelKey(preset.EnabledChannelKeys[i], out string normalizedKey) &&
+                            normalizedKey.StartsWith(transformation.FullID + "|", StringComparison.OrdinalIgnoreCase) &&
+                            !normalizedPreset.EnabledChannelKeys.Contains(normalizedKey))
+                            normalizedPreset.EnabledChannelKeys.Add(normalizedKey);
+                    }
+
+                    normalizedPresetArray[presetIndex] = normalizedPreset;
+                }
+
+                bool hasAnyPreset = false;
+                for (int i = 0; i < normalizedPresetArray.Length; i++) {
+                    if (normalizedPresetArray[i] != null) {
+                        hasAnyPreset = true;
+                        break;
+                    }
+                }
+
+                if (hasAnyPreset)
+                    normalizedPresets[transformation.FullID] = normalizedPresetArray;
+            }
+
+            palettePresets.Clear();
+            foreach ((string transformationId, PalettePresetData[] presets) in normalizedPresets)
+                palettePresets[transformationId] = presets;
         }
 
         private void NormalizeCustomTransformationNames() {

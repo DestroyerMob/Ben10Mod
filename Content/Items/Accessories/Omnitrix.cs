@@ -197,22 +197,67 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public bool TryTransformToSlot(Player player, OmnitrixPlayer omp, int slotIndex) {
-            if (!TrySelectRosterSlot(player, slotIndex, playSound: false, showText: false))
+            if (!TrySelectRosterSlot(player, slotIndex, playSound: false, showText: false)) {
+                omp?.ShowTransformFailureFeedback("That Omnitrix slot is unavailable.");
                 return false;
+            }
 
             return TryTransformSelectedSlot(player, omp);
         }
 
+        public bool TryTransformToTransformationId(Player player, OmnitrixPlayer omp, string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null) {
+                omp?.ShowTransformFailureFeedback("That transformation is unavailable.");
+                return false;
+            }
+
+            return TryTransformToTransformation(player, omp, transformation.FullID);
+        }
+
         public bool TryTransformSelectedSlot(Player player, OmnitrixPlayer omp) {
-            if (player == null || omp == null || omp.onCooldown)
+            if (player == null || omp == null)
                 return false;
 
             if (transformationNum < 0 || transformationNum >= transformationSlots.Length)
                 return false;
 
             string desiredId = transformationSlots[transformationNum];
-            if (string.IsNullOrEmpty(desiredId))
+            if (string.IsNullOrEmpty(desiredId)) {
+                omp.ShowTransformFailureFeedback($"Slot {transformationNum + 1} is empty.");
                 return false;
+            }
+
+            return TryTransformToTransformation(player, omp, desiredId);
+        }
+
+        private bool TryTransformToTransformation(Player player, OmnitrixPlayer omp, string desiredId) {
+            if (player == null || omp == null)
+                return false;
+
+            if (omp.onCooldown) {
+                omp.ShowTransformFailureFeedback($"Omnitrix cooling down. {omp.GetTransformationCooldownDisplayText()}");
+                return false;
+            }
+
+            Transformation desiredTransformation = TransformationLoader.Resolve(desiredId);
+            if (desiredTransformation == null) {
+                omp.ShowTransformFailureFeedback("That transformation is unavailable.");
+                return false;
+            }
+
+            desiredId = desiredTransformation.FullID;
+            if (!omp.unlockedTransformations.Contains(desiredId)) {
+                omp.ShowTransformFailureFeedback($"{omp.GetTransformationBaseName(desiredTransformation)} is not unlocked.");
+                return false;
+            }
+
+            for (int i = 0; i < transformationSlots.Length; i++) {
+                if (string.Equals(transformationSlots[i], desiredId, StringComparison.OrdinalIgnoreCase)) {
+                    transformationNum = i;
+                    break;
+                }
+            }
 
             if (!omp.isTransformed) {
                 TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
@@ -224,8 +269,15 @@ namespace Ben10Mod.Content.Items.Accessories
                 if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
                     return true;
 
-                if (!omp.masterControl && (!UseEnergyForTransformation || omp.omnitrixEnergy < TranformationSwapCost))
+                if (!omp.masterControl && !UseEnergyForTransformation) {
+                    omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to switch forms.");
                     return false;
+                }
+
+                if (!omp.masterControl && UseEnergyForTransformation && omp.omnitrixEnergy < TranformationSwapCost) {
+                    omp.ShowTransformFailureFeedback($"Need {TranformationSwapCost} OE to swap forms.");
+                    return false;
+                }
 
                 if (!omp.masterControl && UseEnergyForTransformation)
                     omp.omnitrixEnergy -= TranformationSwapCost;
@@ -243,8 +295,10 @@ namespace Ben10Mod.Content.Items.Accessories
             if (activeTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
                 return true;
 
-            if (!UseEnergyForTransformation && !omp.masterControl)
+            if (!UseEnergyForTransformation && !omp.masterControl) {
+                omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
                 return false;
+            }
 
             TransformationHandler.Detransform(player, 0, addCooldown: false);
             return true;
