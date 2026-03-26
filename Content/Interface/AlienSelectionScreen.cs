@@ -35,6 +35,53 @@ namespace Ben10Mod.Content.Interface {
         }
     }
 
+    public class FittedTransformationIcon : UIElement {
+        private const float IconPadding = 8f;
+        private readonly Asset<Texture2D> texture;
+        private readonly Func<bool> isFavoriteProvider;
+
+        public FittedTransformationIcon(Asset<Texture2D> texture, Func<bool> isFavoriteProvider) {
+            this.texture = texture;
+            this.isFavoriteProvider = isFavoriteProvider;
+        }
+
+        protected override void DrawSelf(SpriteBatch spriteBatch) {
+            base.DrawSelf(spriteBatch);
+
+            Texture2D iconTexture = texture?.Value;
+            if (iconTexture == null)
+                return;
+
+            Rectangle iconRect = GetIconDrawRectangle(iconTexture);
+            spriteBatch.Draw(iconTexture, iconRect, Color.White);
+
+            if (ContainsPoint(Main.MouseScreen)) {
+                Texture2D pixel = TextureAssets.MagicPixel.Value;
+                spriteBatch.Draw(pixel, new Rectangle(iconRect.X, iconRect.Y, iconRect.Width, 1), Color.White);
+                spriteBatch.Draw(pixel, new Rectangle(iconRect.X, iconRect.Bottom - 1, iconRect.Width, 1), Color.White);
+                spriteBatch.Draw(pixel, new Rectangle(iconRect.X, iconRect.Y, 1, iconRect.Height), Color.White);
+                spriteBatch.Draw(pixel, new Rectangle(iconRect.Right - 1, iconRect.Y, 1, iconRect.Height), Color.White);
+            }
+
+            if (isFavoriteProvider?.Invoke() == true) {
+                Vector2 favoritePosition = new(iconRect.Right - 2f, iconRect.Y - 2f);
+                Utils.DrawBorderString(spriteBatch, "★", favoritePosition, new Color(255, 220, 110), 0.92f, 1f, 0f);
+            }
+        }
+
+        private Rectangle GetIconDrawRectangle(Texture2D iconTexture) {
+            CalculatedStyle dims = GetDimensions();
+            float availableWidth = Math.Max(1f, dims.Width - IconPadding * 2f);
+            float availableHeight = Math.Max(1f, dims.Height - IconPadding * 2f);
+            float scale = Math.Min(availableWidth / iconTexture.Width, availableHeight / iconTexture.Height);
+            int drawWidth = Math.Max(1, (int)Math.Round(iconTexture.Width * scale));
+            int drawHeight = Math.Max(1, (int)Math.Round(iconTexture.Height * scale));
+            int drawX = (int)Math.Round(dims.X + (dims.Width - drawWidth) * 0.5f);
+            int drawY = (int)Math.Round(dims.Y + (dims.Height - drawHeight) * 0.5f);
+            return new Rectangle(drawX, drawY, drawWidth, drawHeight);
+        }
+    }
+
     public class UISystem : ModSystem {
         internal UserInterface               MyInterface;
         internal AlienSelectionScreen        AS;
@@ -402,6 +449,7 @@ namespace Ben10Mod.Content.Interface {
             unlockedGrid.Left.Set(65f, 0f);
             unlockedGrid.Top.Set(rosterY + slotSize + 102f, 0f);
             unlockedGrid.ListPadding = 26f;
+            unlockedGrid.ManualSortMethod = _ => { };
             mainPanel.Append(unlockedGrid);
 
             var gridScrollbar = new UIScrollbar();
@@ -510,14 +558,11 @@ namespace Ben10Mod.Content.Interface {
                 slot.Width.Set(92f, 0f);
                 slot.Height.Set(92f, 0f);
 
-                var btn = new HoverOutlineImage(icon);
-                btn.Width.Set(76f, 0f);
-                btn.Height.Set(76f, 0f);
-                btn.HAlign = 0.5f;
-                btn.VAlign = 0.5f;
-                btn.IgnoresMouseInteraction = true;
-
                 string transformationId = id;
+                var btn = new FittedTransformationIcon(icon, () => player.IsFavoriteTransformation(transformationId));
+                btn.Width.Set(92f, 0f);
+                btn.Height.Set(92f, 0f);
+                btn.IgnoresMouseInteraction = true;
                 slot.OnLeftClick += (_, _) => {
                     currentlySelectedId = transformationId;
                     UpdateInfoPanel(TransformationLoader.Get(transformationId));
@@ -534,15 +579,6 @@ namespace Ben10Mod.Content.Interface {
                 slot.OnMouseOver += (_, _) => UpdateInfoPanel(TransformationLoader.Get(transformationId));
 
                 slot.Append(btn);
-
-                if (player.IsFavoriteTransformation(transformationId)) {
-                    UIText favoriteMarker = new("★", 1.05f);
-                    favoriteMarker.HAlign = 1f;
-                    favoriteMarker.Left.Set(-18f, 0f);
-                    favoriteMarker.Top.Set(2f, 0f);
-                    favoriteMarker.IgnoresMouseInteraction = true;
-                    slot.Append(favoriteMarker);
-                }
 
                 unlockedGrid.Add(slot);
             }
