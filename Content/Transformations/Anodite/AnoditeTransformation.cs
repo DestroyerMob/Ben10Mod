@@ -114,6 +114,16 @@ public class AnoditeTransformation : Transformation {
         drawInfo.colorEyes = TintDrawColor(drawInfo.colorEyes, new Color(255, 220, 250), 0.48f, targetAlpha);
     }
 
+    public override bool TryGetTransformationTint(Player player, OmnitrixPlayer omp, out Color tint,
+        out float blendStrength, out bool forceFullBright) {
+        tint = omp.IsUltimateAbilityActive
+            ? new Color(255, 105, 225)
+            : new Color(255, 135, 220);
+        blendStrength = omp.IsUltimateAbilityActive ? 0.94f : 0.86f;
+        forceFullBright = true;
+        return true;
+    }
+
     public override void DrawEffects(ref PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();

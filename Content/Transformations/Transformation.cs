@@ -179,6 +179,13 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void ModifyHurt(Player player, OmnitrixPlayer omp, ref Player.HurtModifiers modifiers) { }
         public virtual bool FreeDodge(Player player, OmnitrixPlayer omp, Player.HurtInfo info) => false;
         public virtual void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) { }
+        public virtual bool TryGetTransformationTint(Player player, OmnitrixPlayer omp, out Color tint,
+            out float blendStrength, out bool forceFullBright) {
+            tint = Color.White;
+            blendStrength = 0f;
+            forceFullBright = false;
+            return false;
+        }
         public virtual void DrawEffects(ref PlayerDrawSet drawInfo) { }
         public virtual void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
             SpawnDustBurst(player, DustID.GreenTorch, Color.White);

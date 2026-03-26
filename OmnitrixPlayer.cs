@@ -1469,6 +1469,18 @@ namespace Ben10Mod {
             }
 
             var trans = CurrentTransformation;
+            if (trans != null && trans.TryGetTransformationTint(Player, this, out Color transformationTint,
+                    out float tintBlendStrength, out bool forceTransformationFullBright)) {
+                Vector3 vividTint = Color.Lerp(transformationTint, Color.White, 0.16f).ToVector3();
+                float safeBlendStrength = MathHelper.Clamp(tintBlendStrength, 0f, 1f);
+                r = MathHelper.Lerp(r, MathHelper.Clamp(vividTint.X * 1.65f, 0f, 1f), safeBlendStrength);
+                g = MathHelper.Lerp(g, MathHelper.Clamp(vividTint.Y * 1.65f, 0f, 1f), safeBlendStrength);
+                b = MathHelper.Lerp(b, MathHelper.Clamp(vividTint.Z * 1.65f, 0f, 1f), safeBlendStrength);
+                a = 1f;
+                if (forceTransformationFullBright)
+                    fullBright = true;
+            }
+
             if (trans != null)
                 trans.DrawEffects(ref drawInfo);
         }
