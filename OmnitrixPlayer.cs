@@ -1080,8 +1080,8 @@ namespace Ben10Mod {
         }
 
         public IReadOnlyList<string> GetUnlockedTransformationsForDisplay() {
-            List<string> favoriteDisplayTransformations = new();
-            List<string> allDisplayTransformations = new();
+            List<string> displayTransformations = new();
+            HashSet<string> seenTransformations = new(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < unlockedTransformations.Count; i++) {
                 string transformationId = unlockedTransformations[i];
@@ -1090,30 +1090,21 @@ namespace Ben10Mod {
                     continue;
 
                 string resolvedTransformationId = transformation.FullID;
-                allDisplayTransformations.Add(resolvedTransformationId);
-                if (IsFavoriteTransformation(resolvedTransformationId))
-                    favoriteDisplayTransformations.Add(resolvedTransformationId);
+                if (seenTransformations.Add(resolvedTransformationId))
+                    displayTransformations.Add(resolvedTransformationId);
             }
 
-            favoriteDisplayTransformations.Sort(CompareTransformationDisplayName);
-            allDisplayTransformations.Sort(CompareTransformationDisplayName);
-
-            List<string> displayTransformations = new();
-            HashSet<string> seenTransformations = new(StringComparer.OrdinalIgnoreCase);
-
-            for (int i = 0; i < favoriteDisplayTransformations.Count; i++) {
-                string transformationId = favoriteDisplayTransformations[i];
-                if (seenTransformations.Add(transformationId))
-                    displayTransformations.Add(transformationId);
-            }
-
-            for (int i = 0; i < allDisplayTransformations.Count; i++) {
-                string transformationId = allDisplayTransformations[i];
-                if (seenTransformations.Add(transformationId))
-                    displayTransformations.Add(transformationId);
-            }
-
+            displayTransformations.Sort(CompareUnlockedTransformationDisplayOrder);
             return displayTransformations;
+        }
+
+        private int CompareUnlockedTransformationDisplayOrder(string leftTransformationId, string rightTransformationId) {
+            bool leftIsFavorite = IsFavoriteTransformation(leftTransformationId);
+            bool rightIsFavorite = IsFavoriteTransformation(rightTransformationId);
+            if (leftIsFavorite != rightIsFavorite)
+                return leftIsFavorite ? -1 : 1;
+
+            return CompareTransformationDisplayName(leftTransformationId, rightTransformationId);
         }
 
         private int CompareTransformationDisplayName(string leftTransformationId, string rightTransformationId) {

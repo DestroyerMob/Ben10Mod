@@ -511,10 +511,10 @@ namespace Ben10Mod.Content.Interface {
                 slot.Height.Set(92f, 0f);
 
                 var btn = new HoverOutlineImage(icon);
-                btn.Width.Set(icon.Width(), 0f);
-                btn.Height.Set(icon.Height(), 0f);
-                btn.Left.Set(0f, 0f);
-                btn.VAlign                  = 0.5f;
+                btn.Width.Set(76f, 0f);
+                btn.Height.Set(76f, 0f);
+                btn.HAlign = 0.5f;
+                btn.VAlign = 0.5f;
                 btn.IgnoresMouseInteraction = true;
 
                 string transformationId = id;
@@ -537,7 +537,8 @@ namespace Ben10Mod.Content.Interface {
 
                 if (player.IsFavoriteTransformation(transformationId)) {
                     UIText favoriteMarker = new("★", 1.05f);
-                    favoriteMarker.Left.Set(64f, 0f);
+                    favoriteMarker.HAlign = 1f;
+                    favoriteMarker.Left.Set(-18f, 0f);
                     favoriteMarker.Top.Set(2f, 0f);
                     favoriteMarker.IgnoresMouseInteraction = true;
                     slot.Append(favoriteMarker);
@@ -561,9 +562,12 @@ namespace Ben10Mod.Content.Interface {
             System.Text.StringBuilder builder = new();
             for (int i = 0; i < displayIds.Count; i++) {
                 string transformationId = displayIds[i];
+                Transformation transformation = TransformationLoader.Get(transformationId);
                 builder.Append(transformationId)
                     .Append('=')
                     .Append(player.IsFavoriteTransformation(transformationId) ? '1' : '0')
+                    .Append('=')
+                    .Append(transformation?.GetDisplayName(player) ?? string.Empty)
                     .Append('|');
             }
 
