@@ -211,9 +211,22 @@ namespace Ben10Mod.Content.Interface {
         private static void DrawConnection(SpriteBatch spriteBatch, Texture2D pixel, Vector2 start, Vector2 end, Color color,
             float thickness) {
             Vector2 edge = end - start;
-            float rotation = edge.ToRotation();
-            spriteBatch.Draw(pixel, start, null, color, rotation, Vector2.Zero, new Vector2(edge.Length(), thickness),
-                SpriteEffects.None, 0f);
+            float fullLength = edge.Length();
+            if (fullLength <= 0.001f)
+                return;
+
+            Vector2 direction = edge / fullLength;
+            Vector2 trimmedStart = start + direction * 74f;
+            Vector2 trimmedEnd = end - direction * (SlotSize * 0.5f + 8f);
+            Vector2 trimmedEdge = trimmedEnd - trimmedStart;
+            float trimmedLength = trimmedEdge.Length();
+            if (trimmedLength <= 0.001f)
+                return;
+
+            float rotation = trimmedEdge.ToRotation();
+            Vector2 midpoint = trimmedStart + trimmedEdge * 0.5f;
+            spriteBatch.Draw(pixel, midpoint, null, color, rotation, Vector2.One * 0.5f,
+                new Vector2(trimmedLength, thickness), SpriteEffects.None, 0f);
         }
 
         private static void DrawSlotIcon(SpriteBatch spriteBatch, Rectangle slotRect, Asset<Texture2D> iconAsset) {
