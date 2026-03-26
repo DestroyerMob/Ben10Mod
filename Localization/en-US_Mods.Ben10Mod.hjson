@@ -590,6 +590,11 @@ Items: {
 		Tooltip: ""
 		DisplayName: Anodite Catalyst
 	}
+
+	Anodite: {
+		Tooltip: ""
+		DisplayName: Anodite
+	}
 }
 
 Keybinds: {
