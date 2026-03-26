@@ -792,6 +792,7 @@ namespace Ben10Mod {
                 static (transformation, omp) => transformation.GetUltimateAbilityCooldown(omp));
             UltimateAbilityWasEnabled = UltimateAbilityEnabled;
 
+            UpdateProgressionTransformationUnlocks();
             UpdateEventTransformationUnlocks();
         }
 
@@ -2499,6 +2500,14 @@ namespace Ben10Mod {
             }
         }
 
+        private void UpdateProgressionTransformationUnlocks() {
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+                return;
+
+            if (NPC.downedMechBoss1 && NPC.downedMechBoss2 && NPC.downedMechBoss3)
+                UnlockTransformation("Ben10Mod:Upgrade");
+        }
+
         private static IEnumerable<int> GetActiveTrackedEvents() {
             if (Main.bloodMoon)
                 yield return EventBloodMoon;
@@ -2576,8 +2585,6 @@ namespace Ben10Mod {
                     return "Ben10Mod:Fasttrack";
                 case InvasionID.PirateInvasion:
                     return "Ben10Mod:WaterHazard";
-                case InvasionID.MartianMadness:
-                    return "Ben10Mod:Upgrade";
                 case EventOldOnesArmy:
                     return "Ben10Mod:Astrodactyl";
                 default:

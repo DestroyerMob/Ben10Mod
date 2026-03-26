@@ -13,7 +13,7 @@ namespace Ben10Mod.Content.Transformations.DiamondHead
             "Main attack: precise crystal shard shot with strong armor penetration.",
             "Secondary attack: shard barrage for wide close-range pressure.",
             "Primary ability: bulwark stance with huge defense, damage reduction, and retaliatory shards when struck.",
-            "Secondary ability: summon prism spires at the cursor to lock down space.",
+            "Secondary ability: call a prism pincer at the cursor that collapses inward and erupts into shard crossfire.",
             "Ultimate attack: call a giant diamond strike from above.",
             "Role: tanky ranged bruiser that dominates while holding ground."
         };

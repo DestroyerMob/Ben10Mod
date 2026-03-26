@@ -30,13 +30,13 @@ public class DiamondHeadTransformation : Transformation {
         "Piercing crystal shard primary",
         "Wide shard barrage secondary",
         "Crystalline bulwark stance",
-        "Prism spire placement attack",
+        "Prism pincer crush attack",
         "Falling giant diamond ultimate"
     };
 
     public override string PrimaryAttackName => "Crystal Shard";
     public override string SecondaryAttackName => "Shard Barrage";
-    public override string SecondaryAbilityAttackName => "Prism Spires";
+    public override string SecondaryAbilityAttackName => "Prism Pincer";
     public override string UltimateAttackName => "Diamond Drop";
 
     public override int PrimaryAttack => ModContent.ProjectileType<DiamondHeadProjectile>();
@@ -58,7 +58,7 @@ public class DiamondHeadTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 36 * 60;
     public override int PrimaryAbilityCost => 20;
 
-    public override int SecondaryAbilityAttack => ModContent.ProjectileType<DiamondHeadSpireProjectile>();
+    public override int SecondaryAbilityAttack => ModContent.ProjectileType<DiamondHeadPrismPincerProjectile>();
     public override float SecondaryAbilityAttackModifier => 0.7f;
     public override int SecondaryAbilityAttackSpeed => 18;
     public override int SecondaryAbilityAttackShootSpeed => 0;
@@ -150,11 +150,23 @@ public class DiamondHeadTransformation : Transformation {
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             Vector2 target = Main.MouseWorld;
-            float[] offsets = { -46f, 0f, 46f };
-            for (int i = 0; i < offsets.Length; i++) {
-                int spireDamage = i == 1 ? finalDamage : Math.Max(1, (int)Math.Round(finalDamage * 0.8f));
-                Projectile.NewProjectile(source, target + new Vector2(offsets[i], 28f), Vector2.Zero,
-                    ModContent.ProjectileType<DiamondHeadSpireProjectile>(), spireDamage, knockback + 1.5f, player.whoAmI);
+            Vector2[] approachDirections = {
+                Vector2.UnitX,
+                -Vector2.UnitX,
+                Vector2.UnitY,
+                -Vector2.UnitY
+            };
+
+            for (int i = 0; i < approachDirections.Length; i++) {
+                Vector2 approachDirection = approachDirections[i];
+                float spawnDistance = Math.Abs(approachDirection.Y) > 0f ? 148f : 176f;
+                Vector2 spawnPosition = target + approachDirection * spawnDistance;
+                Vector2 inwardVelocity = -approachDirection * (Math.Abs(approachDirection.Y) > 0f ? 15.5f : 17.5f);
+                int prismDamage = Math.Max(1, (int)Math.Round(finalDamage * 0.48f));
+
+                Projectile.NewProjectile(source, spawnPosition, inwardVelocity,
+                    ModContent.ProjectileType<DiamondHeadPrismPincerProjectile>(), prismDamage, knockback + 1.5f,
+                    player.whoAmI, target.X, target.Y);
             }
 
             return false;

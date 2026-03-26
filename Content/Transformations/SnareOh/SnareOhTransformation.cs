@@ -19,20 +19,20 @@ public class SnareOhTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<SnareOh_Buff>();
 
     public override string Description =>
-        "A Thep Khufan who dominates fights with living bandages, locking enemies in place before exposing his arcane core to strip away their defenses.";
+        "A Thep Khufan who dominates fights with living bandages, locking enemies in place before exposing his cursed core and flooding the area around him with weakening radiation.";
 
     public override List<string> Abilities => new() {
         "Bandage lash primary",
         "Constricting wrap secondary",
         "Expose core weaken stance",
         "Burial bind prison",
-        "Pharaoh's shroud ultimate"
+        "Irradiated core aura ultimate"
     };
 
     public override string PrimaryAttackName => "Bandage Lash";
     public override string SecondaryAttackName => "Constricting Wrap";
     public override string SecondaryAbilityAttackName => "Burial Bind";
-    public override string UltimateAttackName => "Pharaoh's Shroud";
+    public override string UltimateAttackName => "Irradiated Core";
 
     public override int PrimaryAttack => ModContent.ProjectileType<SnareOhBandageProjectile>();
     public override int PrimaryAttackSpeed => 16;
@@ -60,12 +60,9 @@ public class SnareOhTransformation : Transformation {
     public override int SecondaryAbilityCooldown => BurialBindCooldown;
     public override bool SecondaryAbilityAttackSingleUse => true;
 
-    public override int UltimateAttack => ModContent.ProjectileType<SnareOhUltimateProjectile>();
-    public override int UltimateAttackSpeed => 34;
-    public override int UltimateShootSpeed => 0;
-    public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
-    public override float UltimateAttackModifier => 1.95f;
-    public override int UltimateEnergyCost => 60;
+    public override bool HasUltimateAbility => true;
+    public override int UltimateAbilityCost => 60;
+    public override int UltimateAbilityDuration => 10 * 60;
     public override int UltimateAbilityCooldown => 55 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
@@ -77,29 +74,58 @@ public class SnareOhTransformation : Transformation {
         player.maxRunSpeed += 0.6f;
         player.noFallDmg = true;
 
-        if (!omp.PrimaryAbilityEnabled)
+        if (omp.PrimaryAbilityEnabled) {
+            player.GetDamage<HeroDamage>() += 0.14f;
+            player.GetAttackSpeed<HeroDamage>() += 0.1f;
+            player.GetCritChance<HeroDamage>() += 4f;
+            player.statDefense -= 6;
+            player.moveSpeed += 0.08f;
+            player.maxRunSpeed += 0.4f;
+            player.armorEffectDrawShadow = true;
+            Lighting.AddLight(player.Center, new Vector3(0.62f, 0.46f, 0.18f));
+        }
+
+        if (!omp.IsUltimateAbilityActive)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.14f;
-        player.GetAttackSpeed<HeroDamage>() += 0.1f;
-        player.GetCritChance<HeroDamage>() += 4f;
-        player.statDefense -= 6;
-        player.moveSpeed += 0.08f;
-        player.maxRunSpeed += 0.4f;
+        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetArmorPenetration<HeroDamage>() += 10;
+        player.GetAttackSpeed<HeroDamage>() += 0.08f;
+        player.statDefense -= 4;
+        player.moveSpeed += 0.12f;
+        player.maxRunSpeed += 0.8f;
+        player.endurance += 0.03f;
         player.armorEffectDrawShadow = true;
-        Lighting.AddLight(player.Center, new Vector3(0.62f, 0.46f, 0.18f));
+        Lighting.AddLight(player.Center, new Vector3(0.38f, 0.72f, 0.18f));
+    }
+
+    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        if (!omp.IsUltimateAbilityActive || player.whoAmI != Main.myPlayer)
+            return;
+
+        int projectileType = ModContent.ProjectileType<SnareOhUltimateProjectile>();
+        int auraDamage = System.Math.Max(1,
+            (int)System.Math.Round(player.GetDamage<HeroDamage>().ApplyTo(34)));
+        int existingAura = FindOwnedProjectile(player.whoAmI, projectileType);
+
+        if (existingAura >= 0) {
+            Projectile aura = Main.projectile[existingAura];
+            aura.ai[1] = omp.PrimaryAbilityEnabled ? 1f : 0f;
+            aura.damage = auraDamage;
+            aura.originalDamage = auraDamage;
+            aura.Center = player.Center;
+            aura.timeLeft = 2;
+            aura.netUpdate = true;
+            return;
+        }
+
+        Projectile.NewProjectile(player.GetSource_FromThis(), player.Center, Vector2.Zero,
+            projectileType, auraDamage, 1.5f, player.whoAmI, 0f, omp.PrimaryAbilityEnabled ? 1f : 0f);
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = ResolveAimDirection(player, velocity);
-
-        if (omp.ultimateAttack) {
-            Vector2 shroudCenter = player.Center + direction * 104f;
-            Projectile.NewProjectile(source, shroudCenter, Vector2.Zero,
-                ModContent.ProjectileType<SnareOhUltimateProjectile>(), damage, knockback + 2f, player.whoAmI);
-            return false;
-        }
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             Vector2 bindCenter = player.Center + direction * 94f;
@@ -136,5 +162,15 @@ public class SnareOhTransformation : Transformation {
         }
 
         return direction;
+    }
+
+    private static int FindOwnedProjectile(int owner, int projectileType) {
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile projectile = Main.projectile[i];
+            if (projectile.active && projectile.owner == owner && projectile.type == projectileType)
+                return i;
+        }
+
+        return -1;
     }
 }
