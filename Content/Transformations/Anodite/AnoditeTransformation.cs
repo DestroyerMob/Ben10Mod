@@ -132,13 +132,11 @@ public class AnoditeTransformation : Transformation {
     }
 
     public override void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
-        SpawnDustBurst(player, DustID.PinkTorch, new Color(255, 145, 225), count: 32, scale: 1.8f);
-        SpawnDustBurst(player, DustID.GemRuby, new Color(255, 225, 245), count: 16, scale: 1.25f);
+        SpawnDustBurst(player, DustID.PinkTorch, Color.White);
     }
 
     public override void SpawnDetransformParticles(Player player, OmnitrixPlayer omp) {
-        SpawnDustBurst(player, DustID.PinkTorch, new Color(255, 165, 235), count: 20, scale: 1.45f);
-        SpawnDustBurst(player, DustID.GemRuby, new Color(255, 230, 245), count: 10, scale: 1.1f);
+        SpawnDustBurst(player, DustID.PinkTorch, Color.White);
     }
 
     public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {

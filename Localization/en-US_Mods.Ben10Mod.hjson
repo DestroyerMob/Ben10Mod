@@ -585,6 +585,11 @@ Items: {
 		DisplayName: Celestialsapien Dna Sample
 		Tooltip: ""
 	}
+
+	AnoditeCatalyst: {
+		Tooltip: ""
+		DisplayName: Anodite Catalyst
+	}
 }
 
 Keybinds: {
@@ -905,6 +910,11 @@ Buffs: {
 		DisplayName: Whampire
 		Description: Vladat
 	}
+
+	Anodite_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Anodite_Buff.Description
+		DisplayName: Anodite_ Buff
+	}
 }
 
 Projectiles: {
@@ -1019,6 +1029,7 @@ Projectiles: {
 	UpgradeDirectiveSpikeProjectile.DisplayName: Upgrade Directive Spike Projectile
 	UpgradeBladeWaveProjectile.DisplayName: Upgrade Blade Wave Projectile
 	UpgradeIntegrationMatrixProjectile.DisplayName: Upgrade Integration Matrix Projectile
+	DiamondHeadPrismPincerProjectile.DisplayName: Diamond Head Prism Pincer Projectile
 }
 
 Tiles: {
