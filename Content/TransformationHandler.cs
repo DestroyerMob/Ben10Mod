@@ -33,14 +33,8 @@ namespace Ben10Mod.Content
 
             if (showParticles)
             {
-                for (int i = 0; i < 25; i++)
-                {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
-                        DustID.GreenTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
-                    Main.dust[dustNum].noGravity = true;
-                }
-
-                CombatText.NewText(player.getRect(), new Color(0, 255, 0),
+                transformation.SpawnTransformParticles(player, omp);
+                CombatText.NewText(player.getRect(), transformation.TransformTextColor,
                     transformation.GetDisplayName(omp) + "!", dramatic: true);
             }
 
@@ -81,14 +75,7 @@ namespace Ben10Mod.Content
                     current.GetUltimateAbilityCooldown(omp));
 
             if (showParticles)
-            {
-                for (int i = 0; i < 25; i++)
-                {
-                    int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
-                        DustID.RedTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
-                    Main.dust[dustNum].noGravity = true;
-                }
-            }
+                current?.SpawnDetransformParticles(player, omp);
 
             if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTimeout"), player.position);

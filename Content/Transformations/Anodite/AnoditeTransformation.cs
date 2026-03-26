@@ -37,6 +37,7 @@ public class AnoditeTransformation : Transformation {
     public override string PrimaryAttackName => "Mana Thread";
     public override string SecondaryAttackName => "Anodite Orb";
     public override string SecondaryAbilityAttackName => "Hex Circle";
+    public override Color TransformTextColor => new(255, 145, 225);
 
     public override int PrimaryAttack => ModContent.ProjectileType<ManaThreadProjectile>();
     public override int PrimaryAttackSpeed => 16;
@@ -97,6 +98,47 @@ public class AnoditeTransformation : Transformation {
         Lighting.AddLight(player.Center, omp.IsUltimateAbilityActive
             ? new Vector3(1.1f, 0.45f, 0.95f)
             : new Vector3(0.78f, 0.32f, 0.72f));
+    }
+
+    public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {
+        Color glowColor = omp.IsUltimateAbilityActive
+            ? new Color(255, 150, 235)
+            : new Color(255, 190, 240);
+        byte targetAlpha = omp.IsUltimateAbilityActive ? (byte)145 : (byte)175;
+        float tintStrength = omp.IsUltimateAbilityActive ? 0.58f : 0.42f;
+
+        drawInfo.colorArmorHead = TintDrawColor(drawInfo.colorArmorHead, glowColor, tintStrength, targetAlpha);
+        drawInfo.colorArmorBody = TintDrawColor(drawInfo.colorArmorBody, glowColor, tintStrength, targetAlpha);
+        drawInfo.colorArmorLegs = TintDrawColor(drawInfo.colorArmorLegs, glowColor, tintStrength, targetAlpha);
+        drawInfo.colorEyeWhites = TintDrawColor(drawInfo.colorEyeWhites, Color.White, 0.38f, targetAlpha);
+        drawInfo.colorEyes = TintDrawColor(drawInfo.colorEyes, new Color(255, 220, 250), 0.48f, targetAlpha);
+    }
+
+    public override void DrawEffects(ref PlayerDrawSet drawInfo) {
+        Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+
+        if (!Main.rand.NextBool(2)) {
+            Vector2 offset = Main.rand.NextVector2Circular(player.width * 0.46f, player.height * 0.55f);
+            Color dustColor = omp.IsUltimateAbilityActive
+                ? new Color(255, 190, 245)
+                : new Color(255, 145, 220);
+            Dust dust = Dust.NewDustPerfect(player.Center + offset,
+                Main.rand.NextBool(3) ? DustID.GemRuby : DustID.PinkTorch,
+                player.velocity * 0.08f + Main.rand.NextVector2Circular(0.45f, 0.45f), 90, dustColor,
+                Main.rand.NextFloat(1f, 1.28f));
+            dust.noGravity = true;
+        }
+    }
+
+    public override void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
+        SpawnDustBurst(player, DustID.PinkTorch, new Color(255, 145, 225), count: 32, scale: 1.8f);
+        SpawnDustBurst(player, DustID.GemRuby, new Color(255, 225, 245), count: 16, scale: 1.25f);
+    }
+
+    public override void SpawnDetransformParticles(Player player, OmnitrixPlayer omp) {
+        SpawnDustBurst(player, DustID.PinkTorch, new Color(255, 165, 235), count: 20, scale: 1.45f);
+        SpawnDustBurst(player, DustID.GemRuby, new Color(255, 230, 245), count: 10, scale: 1.1f);
     }
 
     public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {
@@ -236,5 +278,14 @@ public class AnoditeTransformation : Transformation {
         }
 
         return count;
+    }
+
+    private static Color TintDrawColor(Color baseColor, Color tint, float tintStrength, byte maxAlpha) {
+        return new Color(
+            (byte)MathHelper.Lerp(baseColor.R, tint.R, tintStrength),
+            (byte)MathHelper.Lerp(baseColor.G, tint.G, tintStrength),
+            (byte)MathHelper.Lerp(baseColor.B, tint.B, tintStrength),
+            (byte)Math.Min(baseColor.A, maxAlpha)
+        );
     }
 }

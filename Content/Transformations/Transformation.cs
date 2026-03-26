@@ -153,6 +153,7 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void OnEnterWorld(Player player, OmnitrixPlayer omp) { }
         public virtual void OnTransform(Player player, OmnitrixPlayer omp) { }
         public virtual void OnDetransform(Player player, OmnitrixPlayer omp) { }
+        public virtual Color TransformTextColor => new(0, 255, 0);
         public virtual void PreUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PostUpdateBuffs(Player player, OmnitrixPlayer omp) { }
 
@@ -179,6 +180,12 @@ namespace Ben10Mod.Content.Transformations {
         public virtual bool FreeDodge(Player player, OmnitrixPlayer omp, Player.HurtInfo info) => false;
         public virtual void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) { }
         public virtual void DrawEffects(ref PlayerDrawSet drawInfo) { }
+        public virtual void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
+            SpawnDustBurst(player, DustID.GreenTorch, Color.White);
+        }
+        public virtual void SpawnDetransformParticles(Player player, OmnitrixPlayer omp) {
+            SpawnDustBurst(player, DustID.RedTorch, Color.White);
+        }
         public virtual void OnHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }
         public virtual void PostHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }
         public virtual bool? CanHitNPCWithItem(Player player, OmnitrixPlayer omp, Item item, NPC target) => null;
@@ -426,6 +433,17 @@ namespace Ben10Mod.Content.Transformations {
                 return configuredName;
 
             return fallback;
+        }
+
+        protected static void SpawnDustBurst(Player player, int dustType, Color color, int count = 25, float scale = 4f) {
+            if (player == null || Main.dedServ)
+                return;
+
+            for (int i = 0; i < count; i++) {
+                int dustNum = Dust.NewDust(player.position - new Vector2(1f, 1f), player.width + 1, player.height + 1,
+                    dustType, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 100, color, scale);
+                Main.dust[dustNum].noGravity = true;
+            }
         }
 
         protected virtual IEnumerable<Transformation> EnumerateChildTransformations() {
