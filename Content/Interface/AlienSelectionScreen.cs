@@ -111,8 +111,23 @@ namespace Ben10Mod.Content.Interface
         {
             Player player = Main.LocalPlayer;
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            bool showEnergyBar = omp.omnitrixEquipped;
+            bool showAttackHudOnly = !showEnergyBar && omp.IsTransformed;
+            if (!showEnergyBar && !showAttackHudOnly)
+                return;
 
-            if (!omp.omnitrixEquipped) return;
+            int uiMargin = 20;
+            int gap = 26;
+            int hpBarWidth = 252;
+            int y = 30;
+            int hpLeftX = Main.screenWidth - uiMargin - hpBarWidth;
+
+            if (showAttackHudOnly) {
+                const int hudWidth = 252;
+                int hudX = hpLeftX - gap - hudWidth;
+                DrawCurrentAttackIndicator(player, omp, hudX, y, hudWidth);
+                return;
+            }
 
             float fillPercent = MathHelper.Clamp(omp.omnitrixEnergy / (float)omp.omnitrixEnergyMax, 0f, 1f);
 
@@ -124,12 +139,6 @@ namespace Ben10Mod.Content.Interface
             int midCount = 20;
             int barWidth = panelLeft.Width + panelMid.Width * midCount + panelRight.Width;
             
-            int uiMargin   = 20;
-            int gap        = 26;
-            int hpBarWidth = 252;
-            int y          = 30;
-
-            int hpLeftX = Main.screenWidth - uiMargin - hpBarWidth;
             int x = hpLeftX - gap - barWidth;
 
             int barHeight = Math.Max(panelLeft.Height, Math.Max(panelMid.Height, panelRight.Height));
