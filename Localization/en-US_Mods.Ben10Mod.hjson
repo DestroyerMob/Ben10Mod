@@ -601,6 +601,7 @@ Keybinds: {
 	"Alien Two.DisplayName": Alien  Two
 	"Alien One.DisplayName": Alien  One
 	Transform.DisplayName: Transform
+	"Transform Wheel.DisplayName": Transform Wheel
 	"Absorb Material.DisplayName": Absorb Material
 	"Primary Ability.DisplayName": Primary Ability
 	"Secondary Ability.DisplayName": Secondary Ability

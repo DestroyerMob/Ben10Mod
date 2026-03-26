@@ -133,107 +133,121 @@ namespace Ben10Mod.Content.Items.Accessories
 
         private void HandleAlienSelection(OmnitrixPlayer omp)
         {
-            bool selectionChanged = false;
+            if (transformationSlots == null || transformationSlots.Length == 0)
+                return;
 
             if (KeybindSystem.AlienOneKeybind.JustPressed)
-            {
-                transformationNum = 0;
-                selectionChanged  = true;
-            }
+                TrySelectRosterSlot(player, 0, playSound: false, showText: true);
             else if (KeybindSystem.AlienTwoKeybind.JustPressed)
-            {
-                transformationNum = 1;
-                selectionChanged  = true;
-            }
+                TrySelectRosterSlot(player, 1, playSound: false, showText: true);
             else if (KeybindSystem.AlienThreeKeybind.JustPressed)
-            {
-                transformationNum = 2;
-                selectionChanged  = true;
-            }
+                TrySelectRosterSlot(player, 2, playSound: false, showText: true);
             else if (KeybindSystem.AlienFourKeybind.JustPressed)
-            {
-                transformationNum = 3;
-                selectionChanged  = true;
-            }
+                TrySelectRosterSlot(player, 3, playSound: false, showText: true);
             else if (KeybindSystem.AlienFiveKeybind.JustPressed)
-            {
-                transformationNum = 4;
-                selectionChanged  = true;
-            }
+                TrySelectRosterSlot(player, 4, playSound: false, showText: true);
             else if (KeybindSystem.AlienNextKeybind.JustPressed)
-            {
-                transformationNum = (transformationNum + 1) % transformationSlots.Length;
-                selectionChanged  = true;
-                SoundEngine.PlaySound(SoundID.MenuTick, player.position);
-            }
+                TrySelectRosterSlot(player, (transformationNum + 1) % transformationSlots.Length, playSound: true,
+                    showText: true);
             else if (KeybindSystem.AlienPrevKeybind.JustPressed)
-            {
-                transformationNum = (transformationNum - 1 + transformationSlots.Length) % transformationSlots.Length;
-                selectionChanged  = true;
-                SoundEngine.PlaySound(SoundID.MenuTick, player.position);
-            }
-
-            if (selectionChanged)
-            {
-                string name = "Empty Slot";
-                if (transformationNum < transformationSlots.Length)
-                {
-                    var trans = TransformationLoader.Get(transformationSlots[transformationNum]);
-                    if (trans != null)
-                        name = player.GetModPlayer<OmnitrixPlayer>().GetTransformationBaseName(trans);
-                }
-
-                Main.NewText($"Transformation {transformationNum + 1}: {name}!", Color.Green);
-            }
+                TrySelectRosterSlot(player, (transformationNum - 1 + transformationSlots.Length) % transformationSlots.Length,
+                    playSound: true, showText: true);
         }
 
         private void HandleTransformationKey(OmnitrixPlayer omp)
         {
-            if (!KeybindSystem.TransformationKeybind.JustPressed || omp.onCooldown)
+            if (!KeybindSystem.TransformationKeybind.JustPressed)
                 return;
 
-            if (transformationNum >= transformationSlots.Length) return;
+            TryTransformSelectedSlot(player, omp);
+        }
+
+        private string GetRosterSlotDisplayName(Player player, int slotIndex) {
+            if (slotIndex < 0 || slotIndex >= transformationSlots.Length)
+                return "Empty Slot";
+
+            string transformationId = transformationSlots[slotIndex];
+            if (string.IsNullOrEmpty(transformationId))
+                return "Empty Slot";
+
+            var trans = TransformationLoader.Get(transformationId);
+            if (trans == null)
+                return "Empty Slot";
+
+            return player.GetModPlayer<OmnitrixPlayer>().GetTransformationBaseName(trans);
+        }
+
+        public bool TrySelectRosterSlot(Player player, int slotIndex, bool playSound, bool showText) {
+            if (player == null || transformationSlots == null || transformationSlots.Length == 0)
+                return false;
+
+            if (slotIndex < 0 || slotIndex >= transformationSlots.Length)
+                return false;
+
+            bool changed = transformationNum != slotIndex;
+            transformationNum = slotIndex;
+
+            if (playSound && changed)
+                SoundEngine.PlaySound(SoundID.MenuTick, player.position);
+
+            if (showText)
+                Main.NewText($"Transformation {slotIndex + 1}: {GetRosterSlotDisplayName(player, slotIndex)}!", Color.Green);
+
+            return true;
+        }
+
+        public bool TryTransformToSlot(Player player, OmnitrixPlayer omp, int slotIndex) {
+            if (!TrySelectRosterSlot(player, slotIndex, playSound: false, showText: false))
+                return false;
+
+            return TryTransformSelectedSlot(player, omp);
+        }
+
+        public bool TryTransformSelectedSlot(Player player, OmnitrixPlayer omp) {
+            if (player == null || omp == null || omp.onCooldown)
+                return false;
+
+            if (transformationNum < 0 || transformationNum >= transformationSlots.Length)
+                return false;
 
             string desiredId = transformationSlots[transformationNum];
-            if (string.IsNullOrEmpty(desiredId)) return;
+            if (string.IsNullOrEmpty(desiredId))
+                return false;
 
-            if (!omp.isTransformed)
-            {
+            if (!omp.isTransformed) {
                 TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
+                return true;
             }
-            else
-            {
-                if (omp.currentTransformationId != desiredId)
-                {
-                    var currentTransformation = omp.CurrentTransformation;
-                    if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
-                        return;
 
-                    if (omp.masterControl || (UseEnergyForTransformation && omp.omnitrixEnergy >= TranformationSwapCost))
-                    {
-                        if (!omp.masterControl && UseEnergyForTransformation)
-                            omp.omnitrixEnergy -= TranformationSwapCost;
+            if (omp.currentTransformationId != desiredId) {
+                var currentTransformation = omp.CurrentTransformation;
+                if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
+                    return true;
 
-                        int nextDuration = UseEnergyForTransformation
-                            ? GetTransformationDuration(omp)
-                            : GetRemainingTransformationDurationSeconds(omp);
+                if (!omp.masterControl && (!UseEnergyForTransformation || omp.omnitrixEnergy < TranformationSwapCost))
+                    return false;
 
-                        TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
-                        TransformationHandler.Transform(player, desiredId, nextDuration);
-                    }
-                }
-                else
-                {
-                    var currentTransformation = omp.CurrentTransformation;
-                    if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
-                        return;
+                if (!omp.masterControl && UseEnergyForTransformation)
+                    omp.omnitrixEnergy -= TranformationSwapCost;
 
-                    if (UseEnergyForTransformation || omp.masterControl)
-                    {
-                        TransformationHandler.Detransform(player, 0, addCooldown: false);
-                    }
-                }
+                int nextDuration = UseEnergyForTransformation
+                    ? GetTransformationDuration(omp)
+                    : GetRemainingTransformationDurationSeconds(omp);
+
+                TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
+                TransformationHandler.Transform(player, desiredId, nextDuration);
+                return true;
             }
+
+            var activeTransformation = omp.CurrentTransformation;
+            if (activeTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
+                return true;
+
+            if (!UseEnergyForTransformation && !omp.masterControl)
+                return false;
+
+            TransformationHandler.Detransform(player, 0, addCooldown: false);
+            return true;
         }
 
         public virtual int GetTransformationDuration(OmnitrixPlayer omp) {
