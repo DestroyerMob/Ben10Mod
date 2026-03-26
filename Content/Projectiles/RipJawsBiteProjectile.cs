@@ -37,6 +37,8 @@ public class RipJawsBiteProjectile : ModProjectile {
             return;
         }
 
+        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         float dashSpeed = owner.wet ? WaterDashSpeed : LandDashSpeed;
 
@@ -47,6 +49,7 @@ public class RipJawsBiteProjectile : ModProjectile {
         owner.immuneTime = 10;
         owner.noKnockback = true;
         owner.fallStart = (int)(owner.position.Y / 16f);
+        owner.armorEffectDrawShadow = true;
         owner.itemRotation = direction.ToRotation() * owner.direction;
 
         Projectile.rotation = direction.ToRotation();

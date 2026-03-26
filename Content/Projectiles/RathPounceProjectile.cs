@@ -46,6 +46,8 @@ public class RathPounceProjectile : ModProjectile {
             return;
         }
 
+        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Projectile.velocity = direction;
         Projectile.rotation = direction.ToRotation();

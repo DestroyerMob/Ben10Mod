@@ -68,6 +68,7 @@ public class GoopDelugeProjectile : ModProjectile {
         }
 
         OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        omp.RegisterActiveLunge();
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         owner.direction = direction.X >= 0f ? 1 : -1;
         owner.immune = true;
@@ -75,6 +76,7 @@ public class GoopDelugeProjectile : ModProjectile {
         owner.immuneTime = Math.Max(owner.immuneTime, 12);
         owner.noKnockback = true;
         owner.fallStart = (int)(owner.position.Y / 16f);
+        owner.armorEffectDrawShadow = true;
 
         if (State == 0) {
             Projectile.friendly = false;

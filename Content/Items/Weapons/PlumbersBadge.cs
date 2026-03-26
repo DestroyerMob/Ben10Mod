@@ -80,7 +80,8 @@ namespace Ben10Mod.Content.Items.Weapons {
                 return false;
 
             var trans = omp.CurrentTransformation;
-            return trans?.CanAffordCurrentAttack(omp) ?? false;
+            return (trans?.CanAffordCurrentAttack(omp) ?? false) &&
+                   (trans?.CanStartCurrentAttack(player, omp) ?? false);
         }
 
         public override void HoldItem(Player player) {
@@ -128,8 +129,18 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (firingUltimate && player.HasBuff<UltimateAbilityCooldown>()) return false;
             if (firingUltimate && state.ultimateStarted) return false;
 
+            if (!trans.CanStartCurrentAttack(player, omp))
+                return false;
+
+            int energyCost = trans.GetEnergyCost(omp);
             if (!trans.TryConsumeCurrentAttackCost(omp))
                 return false;
+
+            if (!trans.BeginCurrentAttack(player, omp)) {
+                if (energyCost > 0)
+                    omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + energyCost);
+                return false;
+            }
 
             if (firingUltimate)
                 state.ultimateStarted = true;

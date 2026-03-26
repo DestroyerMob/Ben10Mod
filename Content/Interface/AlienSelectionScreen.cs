@@ -13,36 +13,18 @@ using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Content.Interface {
-    public class HoverOutlineImage : UIImage {
-        public HoverOutlineImage(Asset<Texture2D> texture) : base(texture) { }
-
-        protected override void DrawSelf(SpriteBatch spriteBatch) {
-            base.DrawSelf(spriteBatch);
-
-            if (!ContainsPoint(Main.MouseScreen))
-                return;
-
-            var       dims  = GetDimensions();
-            Rectangle rect  = new Rectangle((int)dims.X, (int)dims.Y, (int)dims.Width, (int)dims.Height);
-            Texture2D pixel = TextureAssets.MagicPixel.Value;
-            rect.Width  = Math.Max(1, rect.Width);
-            rect.Height = Math.Max(1, rect.Height);
-
-            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Y, rect.Width, 1), Color.White);
-            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Bottom - 1, rect.Width, 1), Color.White);
-            spriteBatch.Draw(pixel, new Rectangle(rect.X, rect.Y, 1, rect.Height), Color.White);
-            spriteBatch.Draw(pixel, new Rectangle(rect.Right - 1, rect.Y, 1, rect.Height), Color.White);
-        }
-    }
-
     public class FittedTransformationIcon : UIElement {
         private const float IconPadding = 8f;
-        private readonly Asset<Texture2D> texture;
+        private Asset<Texture2D> texture;
         private readonly Func<bool> isFavoriteProvider;
 
         public FittedTransformationIcon(Asset<Texture2D> texture, Func<bool> isFavoriteProvider) {
             this.texture = texture;
             this.isFavoriteProvider = isFavoriteProvider;
+        }
+
+        public void SetTexture(Asset<Texture2D> texture) {
+            this.texture = texture;
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
@@ -163,6 +145,9 @@ namespace Ben10Mod.Content.Interface {
         private void DrawOmnitrixEnergyBar() {
             Player player            = Main.LocalPlayer;
             var    omp               = player.GetModPlayer<OmnitrixPlayer>();
+            var    clientConfig      = ModContent.GetInstance<Ben10ClientConfig>();
+            if (!clientConfig.ShowHeroInterface)
+                return;
             bool   showEnergyBar     = omp.omnitrixEquipped;
             bool   showAttackHudOnly = !showEnergyBar && omp.IsTransformed;
             if (!showEnergyBar && !showAttackHudOnly)
@@ -175,13 +160,40 @@ namespace Ben10Mod.Content.Interface {
             int hpLeftX    = Main.screenWidth - uiMargin - hpBarWidth;
 
             if (showAttackHudOnly) {
-                const int hudWidth = 252;
-                int       hudX     = hpLeftX - gap - hudWidth;
+                int hudWidth = clientConfig.UseSimplifiedHeroInterface ? 220 : 252;
+                int hudX     = hpLeftX - gap - hudWidth;
                 DrawCurrentAttackIndicator(player, omp, hudX, y, hudWidth);
                 return;
             }
 
             float fillPercent = MathHelper.Clamp(omp.omnitrixEnergy / (float)omp.omnitrixEnergyMax, 0f, 1f);
+
+            if (clientConfig.UseSimplifiedHeroInterface) {
+                Texture2D pixel = TextureAssets.MagicPixel.Value;
+                const int compactWidth = 220;
+                const int compactBarHeight = 16;
+                int compactX = hpLeftX - gap - compactWidth;
+                Rectangle barRect = new Rectangle(compactX, y + 8, compactWidth, compactBarHeight);
+                Rectangle fillRect = new Rectangle(barRect.X + 2, barRect.Y + 2,
+                    Math.Max(0, (int)((barRect.Width - 4) * fillPercent)), Math.Max(1, barRect.Height - 4));
+                Color barBorder = new Color(88, 198, 138);
+                Color barFill = new Color(92, 255, 148);
+
+                Main.spriteBatch.Draw(pixel, barRect, new Color(10, 18, 24, 190));
+                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Y, barRect.Width, 2), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Bottom - 2, barRect.Width, 2), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Y, 2, barRect.Height), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.Right - 2, barRect.Y, 2, barRect.Height), barBorder);
+
+                if (fillRect.Width > 0)
+                    Main.spriteBatch.Draw(pixel, fillRect, barFill);
+
+                Utils.DrawBorderString(Main.spriteBatch, $"OE {(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}",
+                    new Vector2(barRect.Center.X, y - 8), Color.White, 0.78f, 0.5f, 0f);
+
+                DrawCurrentAttackIndicator(player, omp, compactX, barRect.Bottom + 8, compactWidth);
+                return;
+            }
 
             Texture2D panelLeft  = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Left").Value;
             Texture2D panelMid   = ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/OE_Panel_Middle").Value;
@@ -248,6 +260,7 @@ namespace Ben10Mod.Content.Interface {
         private void DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
             bool showAttackHud    = omp.IsTransformed;
             bool showSelectionHud = !omp.IsTransformed && omp.GetActiveOmnitrix() != null;
+            var  clientConfig     = ModContent.GetInstance<Ben10ClientConfig>();
 
             if (!showAttackHud && !showSelectionHud)
                 return;
@@ -259,12 +272,30 @@ namespace Ben10Mod.Content.Interface {
             Texture2D pixel = TextureAssets.MagicPixel.Value;
             string cooldownSummary =
                 showAttackHud ? omp.GetAttackHudCooldownSummary() : omp.GetSelectionHudCooldownSummary();
-            Rectangle panelRect    = new Rectangle(x, y, width, string.IsNullOrWhiteSpace(cooldownSummary) ? 66 : 92);
+            string paletteStatus = showAttackHud
+                ? omp.GetCurrentTransformationPaletteStatusText()
+                : omp.GetSelectedTransformationPaletteStatusText();
+            int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
+            bool affordabilityWarning = clientConfig.ShowHeroAffordabilityTinting &&
+                                        showAttackHud && trans != null && !omp.CanAffordCurrentAttackForHud();
+            string compactFooter = affordabilityWarning
+                ? $"Need {energyCost} OE"
+                : !string.IsNullOrWhiteSpace(cooldownSummary)
+                    ? cooldownSummary
+                    : energyCost > 0
+                        ? $"{energyCost} OE"
+                        : paletteStatus;
+            Rectangle panelRect = new Rectangle(x, y, width, clientConfig.UseSimplifiedHeroInterface
+                ? (string.IsNullOrWhiteSpace(compactFooter) ? 42 : 58)
+                : string.IsNullOrWhiteSpace(cooldownSummary) ? 66 : 92);
             bool      holdingBadge = player.HeldItem.ModItem is PlumbersBadge;
             float     pulse        = MathHelper.Clamp(omp.AttackSelectionPulseProgress, 0f, 1f);
+            float     ultimateReadyPulse = showAttackHud ? MathHelper.Clamp(omp.UltimateReadyCueProgress, 0f, 1f) : 0f;
             Color accent = showAttackHud
                 ? omp.GetCurrentAttackAccentColor()
                 : omp.GetSelectedTransformationAccentColor();
+            if (affordabilityWarning)
+                accent = new Color(235, 96, 72);
             Color borderColor = Color.Lerp(new Color(70, 90, 110), accent, 0.55f + pulse * 0.45f);
             Color fillColor = holdingBadge
                 ? new Color(10, 18, 24, 205)
@@ -276,6 +307,14 @@ namespace Ben10Mod.Content.Interface {
                 Main.spriteBatch.Draw(pixel, glowRect, accent * (0.16f * pulse));
             }
 
+            if (ultimateReadyPulse > 0f) {
+                Rectangle ultimateGlowRect = new Rectangle(panelRect.X - 4, panelRect.Y - 4, panelRect.Width + 8,
+                    panelRect.Height + 8);
+                Main.spriteBatch.Draw(pixel, ultimateGlowRect, new Color(255, 220, 110) * (0.14f * ultimateReadyPulse));
+                Utils.DrawBorderString(Main.spriteBatch, "ULT READY",
+                    new Vector2(panelRect.Center.X, panelRect.Y - 14f), new Color(255, 232, 145), 0.8f, 0.5f, 0f);
+            }
+
             Main.spriteBatch.Draw(pixel, panelRect, fillColor);
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, panelRect.Width, 2), borderColor);
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Bottom - 2, panelRect.Width, 2),
@@ -284,15 +323,28 @@ namespace Ben10Mod.Content.Interface {
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height),
                 borderColor);
 
-            string title = showAttackHud ? "Attack" : "Selection";
             string slotLabel = showAttackHud
                 ? omp.GetCurrentAttackSelectionLabel()
                 : omp.GetSelectedTransformationHudLabel();
             string attackName = showAttackHud
                 ? omp.GetCurrentAttackDisplayName()
                 : omp.GetSelectedTransformationDisplayName();
-            int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
 
+            if (clientConfig.UseSimplifiedHeroInterface) {
+                Utils.DrawBorderString(Main.spriteBatch, attackName,
+                    new Vector2(panelRect.X + 10, panelRect.Y + 9), Color.White, 0.88f);
+                Utils.DrawBorderString(Main.spriteBatch, slotLabel,
+                    new Vector2(panelRect.Right - 10, panelRect.Y + 10), borderColor, 0.72f, 1f, 0f);
+
+                if (!string.IsNullOrWhiteSpace(compactFooter)) {
+                    Utils.DrawBorderString(Main.spriteBatch, compactFooter,
+                        new Vector2(panelRect.X + 10, panelRect.Bottom - 19),
+                        affordabilityWarning ? new Color(255, 170, 145) : new Color(170, 190, 208), 0.68f);
+                }
+                return;
+            }
+
+            string title = showAttackHud ? "Attack" : "Selection";
             Utils.DrawBorderString(Main.spriteBatch, title, new Vector2(panelRect.X + 10, panelRect.Y + 7),
                 new Color(220, 230, 240), 0.8f);
             Utils.DrawBorderString(Main.spriteBatch, slotLabel, new Vector2(panelRect.Right - 10, panelRect.Y + 7),
@@ -300,11 +352,19 @@ namespace Ben10Mod.Content.Interface {
             Utils.DrawBorderString(Main.spriteBatch, attackName, new Vector2(panelRect.X + 10, panelRect.Y + 25),
                 Color.White, 0.96f);
 
-            if (energyCost > 0) {
-                Utils.DrawBorderString(Main.spriteBatch, "Energy",
+            string detailLabel = paletteStatus;
+            if (string.IsNullOrWhiteSpace(detailLabel) && energyCost > 0)
+                detailLabel = "Energy";
+
+            if (!string.IsNullOrWhiteSpace(detailLabel)) {
+                Utils.DrawBorderString(Main.spriteBatch, detailLabel,
                     new Vector2(panelRect.X + 10, panelRect.Y + 45), new Color(180, 195, 210), 0.72f);
-                Utils.DrawBorderString(Main.spriteBatch, $"{energyCost} OE",
-                    new Vector2(panelRect.Right - 10, panelRect.Y + 43), accent, 0.86f, 1f, 0f);
+            }
+
+            if (energyCost > 0) {
+                Utils.DrawBorderString(Main.spriteBatch, affordabilityWarning ? $"Need {energyCost} OE" : $"{energyCost} OE",
+                    new Vector2(panelRect.Right - 10, panelRect.Y + 43),
+                    affordabilityWarning ? new Color(255, 170, 145) : accent, 0.86f, 1f, 0f);
             }
 
             if (!string.IsNullOrWhiteSpace(cooldownSummary)) {
@@ -328,7 +388,7 @@ namespace Ben10Mod.Content.Interface {
 
     public class AlienSelectionScreen : UIState {
         private          UIPanel                 mainPanel;
-        private readonly List<HoverOutlineImage> rosterSlots = new();
+        private readonly List<FittedTransformationIcon> rosterSlots = new();
         private          UIGrid                  unlockedGrid;
         private          UIPanel                 infoPanel;
         private          UIText                  nameText;
@@ -404,8 +464,8 @@ namespace Ben10Mod.Content.Interface {
             int rosterY      = 105;
 
             for (int i = 0; i < 5; i++) {
-                var slot = new HoverOutlineImage(
-                    ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
+                var slot = new FittedTransformationIcon(
+                    ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"), () => false);
                 slot.Width.Set(slotSize, 0f);
                 slot.Height.Set(slotSize, 0f);
                 slot.Left.Set(rosterStartX + i * (slotSize + 26f), 0f);
@@ -527,7 +587,7 @@ namespace Ben10Mod.Content.Interface {
             for (int i = 0; i < rosterSlots.Count; i++) {
                 string id    = i < player.transformationSlots.Length ? player.transformationSlots[i] : string.Empty;
                 var    trans = TransformationLoader.Get(id);
-                rosterSlots[i].SetImage(GetSafeTransformationIcon(trans));
+                rosterSlots[i].SetTexture(GetSafeTransformationIcon(trans));
             }
 
             RefreshUnlockedGrid(player);

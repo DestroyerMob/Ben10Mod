@@ -39,6 +39,8 @@ public class JetrayDiveProjectile : ModProjectile {
             return;
         }
 
+        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;

@@ -21,6 +21,7 @@ using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Common.CustomVisuals;
+using Ben10Mod.Content.Projectiles;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
 using Terraria.GameContent.Events;
@@ -163,6 +164,7 @@ namespace Ben10Mod {
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
         private const int AttackSelectionPulseDuration = 24;
+        private const int UltimateReadyCueDuration = 72;
         private const int TransformFailureFeedbackCooldownTicks = 30;
         private float requestedTransformationScale = 1f;
         private int requestedTransformationScaleTime = 1;
@@ -174,9 +176,14 @@ namespace Ben10Mod {
         internal float goopLandingSquish = 0f;
         internal int goopLandingSplashTime = 0;
         private string lastAttackUiTransformationId = "";
+        private string lastUltimateReadyCueTransformationId = "";
         private string lastTransformFailureMessage = "";
         private ulong lastTransformFailureTick = 0;
+        private int ultimateReadyCueTime = 0;
+        private bool wasUltimateReady = false;
         private bool skipAutomaticForcedDetransformHandling = false;
+        private bool airborneLungeConsumed = false;
+        private int activeLungeTime = 0;
 
         private const int EventBloodMoon = -1;
         private const int EventSolarEclipse = -2;
@@ -201,6 +208,7 @@ namespace Ben10Mod {
         public bool HasLoadedAbilityAttack => IsAbilityAttackSelection(setAttack);
         public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
         public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
+        public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
 
         public Omnitrix GetActiveOmnitrix() {
             if (equippedOmnitrix != null)
@@ -229,6 +237,10 @@ namespace Ben10Mod {
             }
 
             return false;
+        }
+
+        public override void Initialize() {
+            ResetAirborneLungeState();
         }
 
         public override void SaveData(TagCompound tag) {
@@ -669,6 +681,12 @@ namespace Ben10Mod {
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
             int materialBuffType = ModContent.BuffType<MaterialAbsorptionBuff>();
 
+            if (activeLungeTime > 0)
+                activeLungeTime--;
+
+            if (airborneLungeConsumed && activeLungeTime <= 0 && IsTouchingLungeResetSurface())
+                airborneLungeConsumed = false;
+
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
                 pendingEvolutionStepDownTime = 0;
@@ -704,6 +722,8 @@ namespace Ben10Mod {
 
             if (attackSelectionPulseTime > 0)
                 attackSelectionPulseTime--;
+            if (ultimateReadyCueTime > 0)
+                ultimateReadyCueTime--;
 
             string currentAttackTransformationId = isTransformed ? currentTransformationId : "";
             if (lastAttackUiTransformationId != currentAttackTransformationId) {
@@ -711,6 +731,8 @@ namespace Ben10Mod {
                 if (isTransformed)
                     TriggerAttackSelectionPulse();
             }
+
+            UpdateUltimateReadyCueState();
 
             bool authoritativeBuffTracking = Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer;
             bool absorptionBlocked = !osmosianEquipped || omnitrixEquipped;
@@ -1008,6 +1030,81 @@ namespace Ben10Mod {
             return IsFavoriteTransformation(selectedTransformationId)
                 ? new Color(232, 205, 110)
                 : new Color(120, 255, 170);
+        }
+
+        public bool HasPaletteCustomizationData(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null)
+                return false;
+
+            if (transformationPaletteOverrides.TryGetValue(transformation.FullID,
+                    out Dictionary<string, TransformationPaletteChannelSettings> overrides) &&
+                overrides != null && overrides.Count > 0) {
+                return true;
+            }
+
+            IReadOnlyList<TransformationPaletteChannel> channels = transformation.GetPaletteChannels(this);
+            for (int i = 0; i < channels.Count; i++) {
+                TransformationPaletteChannel channel = channels[i];
+                if (channel == null || !channel.IsValid)
+                    continue;
+
+                if (!IsPaletteChannelEnabled(transformation, channel.Id))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool HasPaletteCustomizationData(Transformation transformation) {
+            return transformation != null && HasPaletteCustomizationData(transformation.FullID);
+        }
+
+        public bool CanAffordCurrentAttackForHud() {
+            return CurrentTransformation?.CanAffordCurrentAttack(this) ?? true;
+        }
+
+        public string GetCurrentTransformationPaletteStatusText() {
+            return BuildPaletteStatusText(CurrentTransformation);
+        }
+
+        public string GetSelectedTransformationPaletteStatusText() {
+            return BuildPaletteStatusText(TransformationLoader.Resolve(GetSelectedTransformationId()));
+        }
+
+        private string BuildPaletteStatusText(Transformation transformation) {
+            if (transformation == null)
+                return string.Empty;
+
+            if (!transformation.SupportsPaletteCustomization(this))
+                return "Palette: None";
+
+            IReadOnlyList<TransformationPaletteChannel> channels = transformation.GetPaletteChannels(this);
+            int enabledCount = 0;
+            int validChannelCount = 0;
+            for (int i = 0; i < channels.Count; i++) {
+                TransformationPaletteChannel channel = channels[i];
+                if (channel == null || !channel.IsValid)
+                    continue;
+
+                validChannelCount++;
+                if (IsPaletteChannelEnabled(transformation, channel.Id))
+                    enabledCount++;
+            }
+
+            if (validChannelCount == 0)
+                return "Palette: None";
+
+            if (!HasPaletteCustomizationData(transformation))
+                return "Palette: Default";
+
+            if (enabledCount <= 0)
+                return "Palette: Original";
+
+            if (enabledCount >= validChannelCount)
+                return "Palette: Custom";
+
+            return "Palette: Mixed";
         }
 
         public Transformation GetPaletteTargetTransformation() {
@@ -1497,8 +1594,14 @@ namespace Ben10Mod {
                 AttackSelection.TertiaryAbility => trans.TertiaryAbilityAttackSingleUse,
                 _ => false
             };
+            bool channelled = trans != null && setAttack switch {
+                AttackSelection.PrimaryAbility => trans.PrimaryAbilityAttackChannel,
+                AttackSelection.SecondaryAbility => trans.SecondaryAbilityAttackChannel,
+                AttackSelection.TertiaryAbility => trans.TertiaryAbilityAttackChannel,
+                _ => false
+            };
 
-            if (singleUse)
+            if (singleUse || !channelled)
                 ClearLoadedAbilityAttack(addCooldownIfUsed: true);
         }
 
@@ -1593,6 +1696,43 @@ namespace Ben10Mod {
             SetAttackSelection(baseAttackSelection);
         }
 
+        private void UpdateUltimateReadyCueState() {
+            string cueTransformationId = isTransformed ? currentTransformationId : string.Empty;
+            bool ultimateReadyNow = IsUltimateReadyForCue();
+
+            if (!string.Equals(lastUltimateReadyCueTransformationId, cueTransformationId, StringComparison.OrdinalIgnoreCase)) {
+                lastUltimateReadyCueTransformationId = cueTransformationId;
+                wasUltimateReady = ultimateReadyNow;
+                return;
+            }
+
+            if (Player.whoAmI == Main.myPlayer && !wasUltimateReady && ultimateReadyNow)
+                TriggerUltimateReadyCue();
+
+            wasUltimateReady = ultimateReadyNow;
+        }
+
+        private bool IsUltimateReadyForCue() {
+            Transformation transformation = CurrentTransformation;
+            if (!isTransformed || transformation == null)
+                return false;
+
+            bool hasUltimateAction = transformation.HasUltimateAbilityForState(this) ||
+                                     transformation.GetUltimateAttackProjectileType(this) > 0;
+            if (!hasUltimateAction)
+                return false;
+
+            return !ultimateAttack && !Player.HasBuff<UltimateAbility>() && !Player.HasBuff<UltimateAbilityCooldown>();
+        }
+
+        private void TriggerUltimateReadyCue() {
+            ultimateReadyCueTime = UltimateReadyCueDuration;
+            if (Main.dedServ || Player.whoAmI != Main.myPlayer)
+                return;
+
+            SoundEngine.PlaySound(SoundID.MaxMana, Player.Center);
+        }
+
         private static bool IsAbilityAttackSelection(AttackSelection selection) {
             return selection is AttackSelection.PrimaryAbility or AttackSelection.SecondaryAbility or AttackSelection.TertiaryAbility;
         }
@@ -1605,6 +1745,10 @@ namespace Ben10Mod {
             if (Player.whoAmI != Main.myPlayer) return false;
             var trans = CurrentTransformation;
             return trans?.CanUseItem(Player, this, item) ?? true;
+        }
+
+        public override void UpdateDead() {
+            ResetAirborneLungeState();
         }
 
         public override bool CanBeHitByNPC(NPC npc, ref int cooldownSlot) {
@@ -1794,8 +1938,57 @@ namespace Ben10Mod {
             return Player.dashType == 0 && !Player.setSolar && !Player.mount.Active;
         }
 
+        private bool IsTouchingLungeResetSurface() {
+            return Player.velocity.Y >= 0f &&
+                   Collision.SolidCollision(Player.position + new Vector2(0f, Player.height - 2f), Player.width, 8);
+        }
+
+        private bool IsRestrictedLungeProjectile(int projectileType) {
+            return projectileType == ModContent.ProjectileType<RathPounceProjectile>() ||
+                   projectileType == ModContent.ProjectileType<XLR8DashProjectile>() ||
+                   projectileType == ModContent.ProjectileType<RipJawsBiteProjectile>() ||
+                   projectileType == ModContent.ProjectileType<JetrayDiveProjectile>() ||
+                   projectileType == ModContent.ProjectileType<BigChillPhaseStrikeProjectile>() ||
+                   projectileType == ModContent.ProjectileType<CannonboltRollProjectile>() ||
+                   projectileType == ModContent.ProjectileType<GoopDelugeProjectile>();
+        }
+
+        private bool CanIgnoreAirborneLungeLimit(int projectileType) {
+            return projectileType == ModContent.ProjectileType<RipJawsBiteProjectile>() && Player.wet;
+        }
+
+        private void ResetAirborneLungeState() {
+            airborneLungeConsumed = false;
+            activeLungeTime = 0;
+        }
+
+        public bool CanUseLungeAttack(int projectileType) {
+            if (!IsRestrictedLungeProjectile(projectileType) || CanIgnoreAirborneLungeLimit(projectileType))
+                return true;
+
+            return !airborneLungeConsumed || (activeLungeTime <= 0 && IsTouchingLungeResetSurface());
+        }
+
+        public bool TryConsumeLungeAttack(int projectileType) {
+            if (!IsRestrictedLungeProjectile(projectileType) || CanIgnoreAirborneLungeLimit(projectileType))
+                return true;
+
+            if (!CanUseLungeAttack(projectileType))
+                return false;
+
+            airborneLungeConsumed = true;
+            activeLungeTime = Math.Max(activeLungeTime, 2);
+            return true;
+        }
+
+        public void RegisterActiveLunge() {
+            activeLungeTime = Math.Max(activeLungeTime, 2);
+            Player.armorEffectDrawShadow = true;
+        }
+
         public override void OnEnterWorld() {
             ModContent.GetInstance<UISystem>().HideMyUI();
+            ResetAirborneLungeState();
             if (!isTransformed)
                 currentTransformationId = "";
 

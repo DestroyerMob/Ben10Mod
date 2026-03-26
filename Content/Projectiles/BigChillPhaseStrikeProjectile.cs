@@ -38,6 +38,8 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
             return;
         }
 
+        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Projectile.velocity = direction * DashSpeed;
         owner.velocity = Projectile.velocity;
@@ -47,6 +49,7 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
         owner.immuneTime = Math.Max(owner.immuneTime, 12);
         owner.noKnockback = true;
         owner.fallStart = (int)(owner.position.Y / 16f);
+        owner.armorEffectDrawShadow = true;
 
         Projectile.Center = owner.Center + direction * 20f;
         Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;

@@ -158,6 +158,10 @@ namespace Ben10Mod.Content.Interface {
         }
 
         private void UpdatePreviewSlot() {
+            float deadzoneRadius = Math.Max(0f, ModContent.GetInstance<Ben10ClientConfig>().TransformWheelDeadzonePixels);
+            if (deadzoneRadius > 0f && Vector2.Distance(Main.MouseScreen, menuCenter) <= deadzoneRadius)
+                return;
+
             for (int i = 0; i < OmnitrixPlayer.TransformationSlotCount; i++) {
                 if (!BuildRect(GetSlotCenter(i), SlotSize, SlotSize).Contains(Main.MouseScreen.ToPoint()))
                     continue;

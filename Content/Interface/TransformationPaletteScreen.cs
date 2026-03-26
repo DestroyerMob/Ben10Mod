@@ -499,6 +499,23 @@ public class TransformationPaletteScreen : UIState {
         CustomNames
     }
 
+    private sealed class PaletteClipboardEntry {
+        public string ChannelId { get; init; } = string.Empty;
+        public int ChannelIndex { get; init; }
+        public Color Color { get; init; }
+        public byte Hue { get; init; }
+        public byte Saturation { get; init; }
+        public bool Enabled { get; init; }
+    }
+
+    private sealed class PaletteClipboardState {
+        public string SourceTransformationId { get; init; } = string.Empty;
+        public string SourceDisplayName { get; init; } = string.Empty;
+        public List<PaletteClipboardEntry> Entries { get; } = new();
+    }
+
+    private static PaletteClipboardState s_paletteClipboard;
+
     private UIPanel mainPanel;
     private UIText titleText;
     private UIText targetText;
@@ -518,6 +535,8 @@ public class TransformationPaletteScreen : UIState {
     private PaletteByteSlider blueSlider;
     private PaletteByteSlider hueSlider;
     private PaletteByteSlider saturationSlider;
+    private UITextPanel<string> copyPaletteButton;
+    private UITextPanel<string> pastePaletteButton;
     private UITextPanel<string> paletteToggleButton;
     private UITextPanel<string> applyButton;
     private UITextPanel<string> resetChannelButton;
@@ -634,6 +653,11 @@ public class TransformationPaletteScreen : UIState {
         selectedChannelText.Left.Set(18f, 0f);
         selectedChannelText.Top.Set(16f, 0f);
         controlsPanel.Append(selectedChannelText);
+
+        copyPaletteButton = CreateActionButton("Copy Palette", 336f, 12f, (_, _) => CopyCurrentPalette(), width: 110f);
+        pastePaletteButton = CreateActionButton("Paste Palette", 454f, 12f, (_, _) => PastePalette(), width: 118f);
+        controlsPanel.Append(copyPaletteButton);
+        controlsPanel.Append(pastePaletteButton);
 
         previewSwatch = new PalettePreviewSwatch {
             ResolveColor = GetSelectedPendingColor,
@@ -986,6 +1010,7 @@ public class TransformationPaletteScreen : UIState {
             statusText.SetText("Transform, or select an Omnitrix slot first, to customize palette parts.");
             selectedChannelText.SetText("No part selected");
             SetControlsInteractive(false);
+            UpdatePaletteClipboardButtons(omp, null, interactive: false);
             UpdatePalettePresetButtons(omp, null, interactive: false);
             return;
         }
@@ -997,6 +1022,7 @@ public class TransformationPaletteScreen : UIState {
             statusText.SetText("This transformation has no custom mask parts configured.");
             selectedChannelText.SetText("No part selected");
             SetControlsInteractive(false);
+            UpdatePaletteClipboardButtons(omp, targetTransformation, interactive: false);
             UpdatePalettePresetButtons(omp, targetTransformation, interactive: false);
             return;
         }
@@ -1006,6 +1032,7 @@ public class TransformationPaletteScreen : UIState {
             : $"{GetSelectedChannelDisplayName()} is using the original texture. Hue and saturation still apply while custom RGB stays stored for later.");
         selectedChannelText.SetText(GetSelectedChannelDisplayName());
         SetControlsInteractive(true);
+        UpdatePaletteClipboardButtons(omp, targetTransformation, interactive: true);
         UpdatePalettePresetButtons(omp, targetTransformation, interactive: true);
     }
 
@@ -1420,6 +1447,75 @@ public class TransformationPaletteScreen : UIState {
         LoadSelectedChannelIntoSliders();
     }
 
+    private void CopyCurrentPalette() {
+        if (string.IsNullOrWhiteSpace(_currentTransformationId) || _activeChannels.Count == 0)
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        if (targetTransformation == null)
+            return;
+
+        PaletteClipboardState clipboard = new() {
+            SourceTransformationId = targetTransformation.FullID,
+            SourceDisplayName = targetTransformation.GetDisplayName(omp)
+        };
+
+        for (int i = 0; i < _activeChannels.Count; i++) {
+            TransformationPaletteChannel channel = _activeChannels[i];
+            clipboard.Entries.Add(new PaletteClipboardEntry {
+                ChannelId = channel.Id,
+                ChannelIndex = i,
+                Color = GetPendingColor(channel.Id),
+                Hue = GetPendingHue(channel.Id),
+                Saturation = GetPendingSaturation(channel.Id),
+                Enabled = IsPaletteChannelEnabled(channel.Id)
+            });
+        }
+
+        s_paletteClipboard = clipboard;
+        statusText.SetText($"Copied palette from {clipboard.SourceDisplayName}.");
+        UpdatePaletteClipboardButtons(omp, targetTransformation, interactive: true);
+    }
+
+    private void PastePalette() {
+        if (s_paletteClipboard == null || s_paletteClipboard.Entries.Count == 0 ||
+            string.IsNullOrWhiteSpace(_currentTransformationId) || _activeChannels.Count == 0)
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        if (targetTransformation == null)
+            return;
+
+        bool changed = false;
+        for (int i = 0; i < _activeChannels.Count; i++) {
+            TransformationPaletteChannel channel = _activeChannels[i];
+            PaletteClipboardEntry clipboardEntry = s_paletteClipboard.Entries.FirstOrDefault(entry =>
+                string.Equals(entry.ChannelId, channel.Id, StringComparison.OrdinalIgnoreCase));
+            clipboardEntry ??= i < s_paletteClipboard.Entries.Count ? s_paletteClipboard.Entries[i] : null;
+            if (clipboardEntry == null)
+                continue;
+
+            _pendingColors[channel.Id] = clipboardEntry.Color;
+            _pendingHueValues[channel.Id] = clipboardEntry.Hue;
+            _pendingSaturationValues[channel.Id] = clipboardEntry.Saturation;
+            changed |= omp.SetPaletteColor(_currentTransformationId, channel.Id, clipboardEntry.Color, sync: false);
+            changed |= omp.SetPaletteHue(_currentTransformationId, channel.Id, clipboardEntry.Hue, sync: false);
+            changed |= omp.SetPaletteSaturation(_currentTransformationId, channel.Id, clipboardEntry.Saturation,
+                sync: false);
+            changed |= omp.SetPaletteChannelEnabled(_currentTransformationId, channel.Id, clipboardEntry.Enabled,
+                sync: false);
+        }
+
+        _hasPendingPaletteChanges = false;
+        if (changed)
+            omp.SyncTransformationPaletteStateToServerOrClients();
+
+        RefreshPaletteContext(force: true);
+        statusText.SetText($"Pasted palette from {s_paletteClipboard.SourceDisplayName}.");
+    }
+
     private void LoadPalettePreset(int presetIndex) {
         if (string.IsNullOrWhiteSpace(_currentTransformationId))
             return;
@@ -1468,6 +1564,21 @@ public class TransformationPaletteScreen : UIState {
             presetButton.BorderColor = hasPresetTarget
                 ? (hasPreset ? new Color(136, 190, 255) : new Color(82, 98, 128))
                 : new Color(62, 68, 80);
+        }
+    }
+
+    private void UpdatePaletteClipboardButtons(OmnitrixPlayer omp, Transformation targetTransformation, bool interactive) {
+        bool canCopy = interactive && targetTransformation != null && _activeChannels.Count > 0;
+        bool canPaste = canCopy && s_paletteClipboard != null && s_paletteClipboard.Entries.Count > 0;
+
+        if (copyPaletteButton != null) {
+            copyPaletteButton.BackgroundColor = canCopy ? new Color(54, 64, 88) : new Color(40, 44, 54);
+            copyPaletteButton.BorderColor = canCopy ? new Color(122, 156, 224) : new Color(62, 68, 80);
+        }
+
+        if (pastePaletteButton != null) {
+            pastePaletteButton.BackgroundColor = canPaste ? new Color(58, 82, 72) : new Color(40, 44, 54);
+            pastePaletteButton.BorderColor = canPaste ? new Color(132, 214, 170) : new Color(62, 68, 80);
         }
     }
 

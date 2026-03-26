@@ -78,6 +78,8 @@ public class CannonboltRollProjectile : ModProjectile {
             return;
         }
 
+        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
             Projectile.timeLeft = DashLifetime;
@@ -93,6 +95,7 @@ public class CannonboltRollProjectile : ModProjectile {
         owner.immuneTime = 6;
         owner.noKnockback = true;
         owner.noFallDmg = true;
+        owner.armorEffectDrawShadow = true;
         owner.velocity = direction * DashSpeed + new Vector2(0f, DashLift);
 
         int width = (int)(BaseWidth * (Empowered ? 1.08f : 1f));
@@ -157,6 +160,7 @@ public class CannonboltRollProjectile : ModProjectile {
             owner.immuneNoBlink = true;
             owner.immuneTime = Math.Max(owner.immuneTime, 12);
             owner.noKnockback = false;
+            owner.armorEffectDrawShadow = true;
         }
 
         if (Variant == VariantUltimate)

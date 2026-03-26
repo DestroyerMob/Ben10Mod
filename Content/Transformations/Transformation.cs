@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
+using Ben10Mod.Content.Items.Weapons;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
@@ -165,7 +166,13 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp) { }
 
         public virtual bool? CanUseItem(Player player, OmnitrixPlayer omp, Item item) {
-            return IsIntangibleWhilePrimaryAbilityActive(omp) ? false : null;
+            if (IsIntangibleWhilePrimaryAbilityActive(omp))
+                return false;
+
+            if (item?.ModItem is PlumbersBadge && !CanStartCurrentAttack(player, omp))
+                return false;
+
+            return null;
         }
 
         public virtual bool? CanBeHitByNPC(Player player, OmnitrixPlayer omp, NPC npc, ref int cooldownSlot) {
@@ -375,7 +382,16 @@ namespace Ben10Mod.Content.Transformations {
 
             return ShootAttackProfile(player, source, profile, position, velocity, damage, knockback);
         }
-        
+
+        public virtual bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+            TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+            return profile == null || profile.ProjectileType <= 0 || omp.CanUseLungeAttack(profile.ProjectileType);
+        }
+
+        public virtual bool BeginCurrentAttack(Player player, OmnitrixPlayer omp) {
+            TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+            return profile == null || profile.ProjectileType <= 0 || omp.TryConsumeLungeAttack(profile.ProjectileType);
+        }
 
         public virtual int GetEnergyCost(OmnitrixPlayer omp) {
             return GetSelectedAttackProfile(omp)?.EnergyCost ?? 0;

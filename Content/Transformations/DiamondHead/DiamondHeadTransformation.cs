@@ -12,8 +12,15 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.DiamondHead;
 
 public class DiamondHeadTransformation : Transformation {
-    private const int BarrageShardCount = 5;
-    private const float BarrageSpread = 0.3f;
+    private const int SecondaryGroundSearchAttempts = 10;
+    private const float SecondaryBloomSpread = 176f;
+    private const float SecondaryGroundSearchAbove = 6f * 16f;
+    private const float SecondaryGroundSearchBelow = 28f * 16f;
+    private const int SecondarySpireClearanceWidth = 34;
+    private const int SecondarySpireClearanceHeight = 96;
+    private const float SecondaryMinimumUpwardAim = 20f;
+    private const float SecondaryMaxLeanRadians = 1.08f;
+    private const float BodyBloomOriginOffset = 6f;
     private const int BulwarkRetaliationBaseDamage = 28;
     private const int BulwarkRetaliationShardCount = 8;
     private const int BulwarkRetaliationCooldown = 24;
@@ -24,18 +31,18 @@ public class DiamondHeadTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<DiamondHead_Buff>();
 
     public override string Description =>
-        "A durable Petrosapien that controls the lane with piercing shard fire, fortified crystal plating, and crushing prism strikes from any angle.";
+        "A durable Petrosapien that controls the lane with piercing shard fire, ground-burst crystal blooms, fortified crystal plating, and crushing prism strikes from any angle.";
 
     public override List<string> Abilities => new() {
         "Piercing crystal shard primary",
-        "Wide shard barrage secondary",
+        "Ground-burst crystal bloom secondary",
         "Crystalline bulwark stance",
         "Prism pincer crush attack",
         "Falling giant diamond ultimate"
     };
 
     public override string PrimaryAttackName => "Crystal Shard";
-    public override string SecondaryAttackName => "Shard Barrage";
+    public override string SecondaryAttackName => "Crystal Bloom";
     public override string SecondaryAbilityAttackName => "Prism Pincer";
     public override string UltimateAttackName => "Diamond Drop";
 
@@ -46,9 +53,9 @@ public class DiamondHeadTransformation : Transformation {
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override int PrimaryArmorPenetration => 18;
 
-    public override int SecondaryAttack => ModContent.ProjectileType<DiamondHeadProjectile>();
+    public override int SecondaryAttack => ModContent.ProjectileType<DiamondHeadSpireProjectile>();
     public override float SecondaryAttackModifier => 0.3f;
-    public override int SecondaryAttackSpeed => 22;
+    public override int SecondaryAttackSpeed => 24;
     public override int SecondaryShootSpeed => 18;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override int SecondaryArmorPenetration => 10;
@@ -181,13 +188,9 @@ public class DiamondHeadTransformation : Transformation {
         }
 
         if (omp.altAttack) {
-            for (int i = 0; i < BarrageShardCount; i++) {
-                float spreadOffset = MathHelper.Lerp(-BarrageSpread, BarrageSpread,
-                    BarrageShardCount == 1 ? 0.5f : i / (float)(BarrageShardCount - 1));
-                Vector2 shardVelocity = direction.RotatedBy(spreadOffset) * projectileSpeed;
-                Projectile.NewProjectile(source, player.MountedCenter + direction * 16f, shardVelocity,
-                    ModContent.ProjectileType<DiamondHeadProjectile>(), finalDamage, knockback, player.whoAmI);
-            }
+            Vector2 target = Main.MouseWorld;
+            if (!TrySpawnGroundBloom(source, player, target, finalDamage, knockback))
+                SpawnBodyFallback(source, player, target, direction, projectileSpeed, finalDamage, knockback);
 
             return false;
         }
@@ -244,6 +247,112 @@ public class DiamondHeadTransformation : Transformation {
                 "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Body")
         ),
     };
+
+    private static bool TrySpawnGroundBloom(IEntitySource source, Player player, Vector2 target, int damage,
+        float knockback) {
+        if (!TryFindGroundBloomSpawn(target, out Vector2 spawnCenter, out float groundY))
+            return false;
+
+        float rotation = ComputeBloomRotation(new Vector2(spawnCenter.X, groundY), target);
+        Projectile.NewProjectile(source, spawnCenter, Vector2.Zero,
+            ModContent.ProjectileType<DiamondHeadSpireProjectile>(), damage, knockback, player.whoAmI, rotation, groundY);
+        return true;
+    }
+
+    private static void SpawnBodyFallback(IEntitySource source, Player player, Vector2 target, Vector2 directionHint,
+        float projectileSpeed, int damage, float knockback) {
+        if (CanBodyShotReachTarget(player, target)) {
+            SpawnFallbackShard(source, player, target, directionHint, projectileSpeed, damage, knockback);
+            return;
+        }
+
+        SpawnBodyBloom(source, player, damage, knockback);
+    }
+
+    private static bool CanBodyShotReachTarget(Player player, Vector2 target) {
+        Vector2 origin = player.MountedCenter;
+        return Collision.CanHitLine(origin, 2, 2, target, 2, 2);
+    }
+
+    private static void SpawnFallbackShard(IEntitySource source, Player player, Vector2 target, Vector2 directionHint,
+        float projectileSpeed, int damage, float knockback) {
+        Vector2 spawnPosition = player.MountedCenter;
+        Vector2 shardDirection = (target - spawnPosition).SafeNormalize(directionHint);
+        Projectile.NewProjectile(source, spawnPosition + shardDirection * 16f, shardDirection * projectileSpeed,
+            ModContent.ProjectileType<DiamondHeadProjectile>(), damage, knockback, player.whoAmI);
+    }
+
+    private static void SpawnBodyBloom(IEntitySource source, Player player, int damage, float knockback) {
+        Vector2 bodyOrigin = player.MountedCenter + new Vector2(
+            Main.rand.NextFloat(-player.width * 0.22f, player.width * 0.22f),
+            Main.rand.NextFloat(-player.height * 0.2f, player.height * 0.16f));
+        float rotation = Main.rand.NextFloat(-MathHelper.Pi, MathHelper.Pi);
+        Vector2 growthDirection = (rotation - MathHelper.PiOver2).ToRotationVector2();
+        bodyOrigin += growthDirection * BodyBloomOriginOffset;
+
+        Projectile.NewProjectile(source, bodyOrigin, Vector2.Zero,
+            ModContent.ProjectileType<DiamondHeadSpireProjectile>(), damage, knockback, player.whoAmI, rotation, bodyOrigin.Y);
+    }
+
+    private static bool TryFindGroundBloomSpawn(Vector2 target, out Vector2 spawnCenter, out float groundY) {
+        for (int attempt = 0; attempt < SecondaryGroundSearchAttempts; attempt++) {
+            float candidateX = target.X + Main.rand.NextFloat(-SecondaryBloomSpread * 0.5f, SecondaryBloomSpread * 0.5f);
+            if (TryFindGroundBloomSpawnAt(new Vector2(candidateX, target.Y), out spawnCenter, out groundY))
+                return true;
+        }
+
+        return TryFindGroundBloomSpawnAt(target, out spawnCenter, out groundY);
+    }
+
+    private static bool TryFindGroundBloomSpawnAt(Vector2 target, out Vector2 spawnCenter, out float groundY) {
+        spawnCenter = default;
+        groundY = 0f;
+
+        int tileX = (int)(target.X / 16f);
+        int startTileY = (int)Math.Floor((target.Y - SecondaryGroundSearchAbove) / 16f);
+        int endTileY = (int)Math.Ceiling((target.Y + SecondaryGroundSearchBelow) / 16f);
+
+        for (int tileY = startTileY; tileY <= endTileY; tileY++) {
+            if (!WorldGen.InWorld(tileX, tileY, 10))
+                continue;
+
+            Tile tile = Framing.GetTileSafely(tileX, tileY);
+            if (!tile.HasTile || !Main.tileSolid[tile.TileType] || Main.tileSolidTop[tile.TileType])
+                continue;
+
+            Tile tileAbove = Framing.GetTileSafely(tileX, tileY - 1);
+            if (tileAbove.HasTile && Main.tileSolid[tileAbove.TileType] && !Main.tileSolidTop[tileAbove.TileType])
+                continue;
+
+            float surfaceY = tileY * 16f;
+            if (tile.IsHalfBlock)
+                surfaceY += 8f;
+
+            Vector2 clearanceTopLeft = new(target.X - SecondarySpireClearanceWidth * 0.5f,
+                surfaceY - SecondarySpireClearanceHeight);
+            if (Collision.SolidCollision(clearanceTopLeft, SecondarySpireClearanceWidth, SecondarySpireClearanceHeight))
+                continue;
+
+            groundY = surfaceY;
+            spawnCenter = new Vector2(target.X, surfaceY - DiamondHeadSpireProjectile.BaseHeight * 0.5f);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static float ComputeBloomRotation(Vector2 groundPoint, Vector2 target) {
+        Vector2 aim = target - groundPoint;
+        if (aim.LengthSquared() <= 1f)
+            aim = -Vector2.UnitY;
+
+        if (aim.Y > -SecondaryMinimumUpwardAim)
+            aim.Y = -SecondaryMinimumUpwardAim;
+
+        aim.Normalize();
+        float rotation = aim.ToRotation() + MathHelper.PiOver2;
+        return MathHelper.Clamp(MathHelper.WrapAngle(rotation), -SecondaryMaxLeanRadians, SecondaryMaxLeanRadians);
+    }
 }
 
 public class DiamondHeadPlayer : ModPlayer {
