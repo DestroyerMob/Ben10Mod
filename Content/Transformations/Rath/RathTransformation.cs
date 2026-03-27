@@ -76,9 +76,27 @@ namespace Ben10Mod.Content.Transformations.Rath;
 
         float clawScale = omp.PrimaryAbilityEnabled ? RageClawScale : 1f;
         float clawSpawnOffset = omp.PrimaryAbilityEnabled ? RageClawSpawnOffset : BaseClawSpawnOffset;
-        Projectile.NewProjectile(source, player.Center + (direction * clawSpawnOffset), direction * 6f,
+        Vector2 clawSpawnPosition = ResolveClawSpawnPosition(player, direction, clawSpawnOffset);
+        Projectile.NewProjectile(source, clawSpawnPosition, direction * 6f,
             ModContent.ProjectileType<RathClawProjectile>(), damage, knockback, player.whoAmI, 0f, clawScale);
         return false;
+    }
+
+    private static Vector2 ResolveClawSpawnPosition(Player player, Vector2 fallbackDirection, float maxRange) {
+        Vector2 origin = player.MountedCenter;
+        if (player.whoAmI != Main.myPlayer)
+            return origin + fallbackDirection * maxRange;
+
+        Vector2 mouseOffset = Main.MouseWorld - origin;
+        if (mouseOffset == Vector2.Zero)
+            return origin + fallbackDirection * maxRange;
+
+        float distanceToMouse = mouseOffset.Length();
+        Vector2 direction = mouseOffset / distanceToMouse;
+        if (distanceToMouse <= maxRange)
+            return Main.MouseWorld;
+
+        return origin + direction * maxRange;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

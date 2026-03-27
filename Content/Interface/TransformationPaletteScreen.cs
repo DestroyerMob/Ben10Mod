@@ -516,6 +516,10 @@ public class TransformationPaletteScreen : UIState {
 
     private static PaletteClipboardState s_paletteClipboard;
 
+    internal static void ClearSharedState() {
+        s_paletteClipboard = null;
+    }
+
     private UIPanel mainPanel;
     private UIText titleText;
     private UIText targetText;

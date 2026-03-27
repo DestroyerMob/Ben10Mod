@@ -15,6 +15,9 @@ public sealed class Ben10ClientConfig : ModConfig {
     [DefaultValue(true)]
     public bool ShowHeroAffordabilityTinting { get; set; } = true;
 
+    [DefaultValue(false)]
+    public bool AlwaysShowOmnitrixEnergyText { get; set; } = false;
+
     [DefaultValue(18)]
     public int TransformWheelDeadzonePixels { get; set; } = 18;
 }

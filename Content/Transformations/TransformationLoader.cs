@@ -37,5 +37,10 @@ namespace Ben10Mod.Content.Transformations
         }
 
         public static IEnumerable<Transformation> All => _transformations.Values;
+
+        internal static void Clear()
+        {
+            _transformations.Clear();
+        }
     }
 }

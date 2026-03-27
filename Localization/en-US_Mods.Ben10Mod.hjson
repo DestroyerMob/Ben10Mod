@@ -1072,6 +1072,11 @@ Configs: {
 			Label: Show Hero Affordability Tinting
 		}
 
+		AlwaysShowOmnitrixEnergyText: {
+			Tooltip: ""
+			Label: Always Show Omnitrix Energy Text
+		}
+
 		UseColorblindHeroAccents: {
 			Tooltip: ""
 			Label: Use Colorblind Hero Accents

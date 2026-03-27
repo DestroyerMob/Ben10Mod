@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Ben10Mod.Common.Absorption;
+using Ben10Mod.Common.CustomVisuals;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.Items.Accessories;
@@ -62,7 +63,38 @@ namespace Ben10Mod {
 		}
 
 		public override void Unload() {
-			TransformationBranchRegistry.Clear();
+			TryUnloadStep("transformation branches", TransformationBranchRegistry.Clear);
+			TryUnloadStep("transformation loader", TransformationLoader.Clear);
+			TryUnloadStep("palette texture cache", TransformationPaletteTextureCache.Clear);
+			TryUnloadStep("material absorption registry", MaterialAbsorptionRegistry.Clear);
+			TryUnloadStep("screen shader rules", ScreenShaderController.ClearRules);
+
+			if (Main.netMode != NetmodeID.Server) {
+				TryUnloadSceneFilter("Ben10Mod:Grayscale");
+				TryUnloadSceneFilter("Ben10Mod:Bluescale");
+			}
+		}
+
+		private void TryUnloadStep(string stepName, Action action) {
+			try {
+				action?.Invoke();
+			}
+			catch (Exception ex) {
+				Logger.Warn($"Ignoring unload error while clearing {stepName}: {ex}");
+			}
+		}
+
+		private void TryUnloadSceneFilter(string filterKey) {
+			try {
+				if (Filters.Scene == null)
+					return;
+
+				Filters.Scene.Deactivate(filterKey);
+				Filters.Scene[filterKey] = null;
+			}
+			catch (Exception ex) {
+				Logger.Warn($"Ignoring unload error while clearing scene filter '{filterKey}': {ex}");
+			}
 		}
 
 			public enum MessageType : byte {

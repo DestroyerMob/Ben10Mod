@@ -30,6 +30,10 @@ public class ScreenShaderController : ModSystem {
         Rules.Clear();
     }
 
+    internal static void ClearRules() {
+        Rules.Clear();
+    }
+
     public static void Register(
         string filterKey,
         Func<Player, bool> shouldActivate,

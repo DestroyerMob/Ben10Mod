@@ -17,10 +17,15 @@ namespace Ben10Mod.Content.Interface {
         private const float IconPadding = 8f;
         private Asset<Texture2D> texture;
         private readonly Func<bool> isFavoriteProvider;
+        private readonly Func<bool> isNewProvider;
+        private readonly bool showHoverOutline;
 
-        public FittedTransformationIcon(Asset<Texture2D> texture, Func<bool> isFavoriteProvider) {
+        public FittedTransformationIcon(Asset<Texture2D> texture, Func<bool> isFavoriteProvider,
+            Func<bool> isNewProvider = null, bool showHoverOutline = true) {
             this.texture = texture;
             this.isFavoriteProvider = isFavoriteProvider;
+            this.isNewProvider = isNewProvider;
+            this.showHoverOutline = showHoverOutline;
         }
 
         public void SetTexture(Asset<Texture2D> texture) {
@@ -37,7 +42,7 @@ namespace Ben10Mod.Content.Interface {
             Rectangle iconRect = GetIconDrawRectangle(iconTexture);
             spriteBatch.Draw(iconTexture, iconRect, Color.White);
 
-            if (ContainsPoint(Main.MouseScreen)) {
+            if (showHoverOutline && ContainsPoint(Main.MouseScreen)) {
                 Texture2D pixel = TextureAssets.MagicPixel.Value;
                 spriteBatch.Draw(pixel, new Rectangle(iconRect.X, iconRect.Y, iconRect.Width, 1), Color.White);
                 spriteBatch.Draw(pixel, new Rectangle(iconRect.X, iconRect.Bottom - 1, iconRect.Width, 1), Color.White);
@@ -48,6 +53,11 @@ namespace Ben10Mod.Content.Interface {
             if (isFavoriteProvider?.Invoke() == true) {
                 Vector2 favoritePosition = new(iconRect.Right - 2f, iconRect.Y - 2f);
                 Utils.DrawBorderString(spriteBatch, "★", favoritePosition, new Color(255, 220, 110), 0.92f, 1f, 0f);
+            }
+
+            if (isNewProvider?.Invoke() == true) {
+                Vector2 newPosition = new(iconRect.X + 2f, iconRect.Y - 2f);
+                Utils.DrawBorderString(spriteBatch, "NEW", newPosition, new Color(255, 110, 110), 0.7f, 0f, 0f);
             }
         }
 
@@ -67,6 +77,7 @@ namespace Ben10Mod.Content.Interface {
     public class UISystem : ModSystem {
         internal UserInterface               MyInterface;
         internal AlienSelectionScreen        AS;
+        internal TransformationCodexScreen   TCS;
         internal TransformationPaletteScreen TPS;
         internal TransformationRadialMenu    TRM;
         private  GameTime                    _lastUpdateUiGameTime;
@@ -82,6 +93,11 @@ namespace Ben10Mod.Content.Interface {
                 AS.Activate();
             }
 
+            if (TCS == null) {
+                TCS = new TransformationCodexScreen();
+                TCS.Activate();
+            }
+
             if (TPS == null) {
                 TPS = new TransformationPaletteScreen();
                 TPS.Activate();
@@ -95,10 +111,15 @@ namespace Ben10Mod.Content.Interface {
         }
 
         public override void Unload() {
+            MyInterface?.SetState(null);
+            TransformationPaletteScreen.ClearSharedState();
+            TransformationPaletteTextureCache.Clear();
             MyInterface = null;
             AS          = null;
+            TCS         = null;
             TPS         = null;
             TRM         = null;
+            _lastUpdateUiGameTime = null;
         }
 
         public override void UpdateUI(GameTime gameTime) {
@@ -117,6 +138,15 @@ namespace Ben10Mod.Content.Interface {
                     "Ben10Mod: OmnitrixEnergyBar",
                     delegate {
                         DrawOmnitrixEnergyBar();
+                        return true;
+                    },
+                    InterfaceScaleType.UI));
+                mouseTextIndex++;
+
+                layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
+                    "Ben10Mod: TransformationCodexButton",
+                    delegate {
+                        DrawCodexEntryButton();
                         return true;
                     },
                     InterfaceScaleType.UI));
@@ -173,25 +203,24 @@ namespace Ben10Mod.Content.Interface {
                 const int compactWidth = 220;
                 const int compactBarHeight = 16;
                 int compactX = hpLeftX - gap - compactWidth;
-                Rectangle barRect = new Rectangle(compactX, y + 8, compactWidth, compactBarHeight);
-                Rectangle fillRect = new Rectangle(barRect.X + 2, barRect.Y + 2,
-                    Math.Max(0, (int)((barRect.Width - 4) * fillPercent)), Math.Max(1, barRect.Height - 4));
+                Rectangle compactBarRect = new Rectangle(compactX, y + 8, compactWidth, compactBarHeight);
+                Rectangle fillRect = new Rectangle(compactBarRect.X + 2, compactBarRect.Y + 2,
+                    Math.Max(0, (int)((compactBarRect.Width - 4) * fillPercent)), Math.Max(1, compactBarRect.Height - 4));
                 Color barBorder = new Color(88, 198, 138);
                 Color barFill = new Color(92, 255, 148);
 
-                Main.spriteBatch.Draw(pixel, barRect, new Color(10, 18, 24, 190));
-                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Y, barRect.Width, 2), barBorder);
-                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Bottom - 2, barRect.Width, 2), barBorder);
-                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.X, barRect.Y, 2, barRect.Height), barBorder);
-                Main.spriteBatch.Draw(pixel, new Rectangle(barRect.Right - 2, barRect.Y, 2, barRect.Height), barBorder);
+                Main.spriteBatch.Draw(pixel, compactBarRect, new Color(10, 18, 24, 190));
+                Main.spriteBatch.Draw(pixel, new Rectangle(compactBarRect.X, compactBarRect.Y, compactBarRect.Width, 2), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(compactBarRect.X, compactBarRect.Bottom - 2, compactBarRect.Width, 2), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(compactBarRect.X, compactBarRect.Y, 2, compactBarRect.Height), barBorder);
+                Main.spriteBatch.Draw(pixel, new Rectangle(compactBarRect.Right - 2, compactBarRect.Y, 2, compactBarRect.Height), barBorder);
 
                 if (fillRect.Width > 0)
                     Main.spriteBatch.Draw(pixel, fillRect, barFill);
 
-                Utils.DrawBorderString(Main.spriteBatch, $"OE {(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}",
-                    new Vector2(barRect.Center.X, y - 8), Color.White, 0.78f, 0.5f, 0f);
+                DrawOmnitrixEnergyText(player, omp, compactBarRect, true, clientConfig.AlwaysShowOmnitrixEnergyText);
 
-                DrawCurrentAttackIndicator(player, omp, compactX, barRect.Bottom + 8, compactWidth);
+                DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
                 return;
             }
 
@@ -243,18 +272,63 @@ namespace Ben10Mod.Content.Interface {
                 Main.spriteBatch.Draw(fillTex, fillRect, Color.White);
             }
 
-            string text = $"{(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}";
-            Utils.DrawBorderString(
-                Main.spriteBatch,
-                text,
-                new Vector2(x + barWidth * 0.5f, y - 12),
+            Rectangle barRect = new Rectangle(x, y, barWidth, barHeight);
+            DrawOmnitrixEnergyText(player, omp, barRect, false, clientConfig.AlwaysShowOmnitrixEnergyText);
+
+            DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+        }
+
+        private void DrawOmnitrixEnergyText(Player player, OmnitrixPlayer omp, Rectangle barRect, bool simplified, bool alwaysShow) {
+            if (alwaysShow) {
+                DrawOmnitrixEnergyInlineText(omp, barRect, simplified);
+                return;
+            }
+
+            DrawOmnitrixEnergyHoverText(player, omp, barRect, simplified);
+        }
+
+        private void DrawOmnitrixEnergyInlineText(OmnitrixPlayer omp, Rectangle barRect, bool simplified) {
+            string energyText = $"OE {(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}";
+
+            if (simplified) {
+                Utils.DrawBorderString(Main.spriteBatch, energyText,
+                    new Vector2(barRect.Center.X, barRect.Y - 16f), Color.White, 0.78f, 0.5f, 0f);
+                return;
+            }
+
+            Utils.DrawBorderString(Main.spriteBatch,
+                $"{(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}",
+                new Vector2(barRect.Center.X, barRect.Y - 12f),
                 Color.White,
                 0.9f,
                 0.5f,
                 0.5f
             );
+        }
 
-            DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+        private void DrawOmnitrixEnergyHoverText(Player player, OmnitrixPlayer omp, Rectangle barRect, bool simplified) {
+            if (!barRect.Contains(Main.MouseScreen.ToPoint()))
+                return;
+
+            player.mouseInterface = true;
+
+            string energyText = simplified
+                ? $"OE {(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}"
+                : $"{(int)omp.omnitrixEnergy}/{(int)omp.omnitrixEnergyMax}";
+            float textScale = simplified ? 0.78f : 0.9f;
+            Vector2 textSize = FontAssets.MouseText.Value.MeasureString(energyText) * textScale;
+            Vector2 drawPosition = Main.MouseScreen + new Vector2(16f, 20f);
+
+            if (drawPosition.X + textSize.X > Main.screenWidth - 8f)
+                drawPosition.X = Main.screenWidth - textSize.X - 8f;
+
+            if (drawPosition.Y + textSize.Y > Main.screenHeight - 8f)
+                drawPosition.Y = Main.screenHeight - textSize.Y - 8f;
+
+            drawPosition.X = Math.Max(8f, drawPosition.X);
+            drawPosition.Y = Math.Max(8f, drawPosition.Y);
+
+            Utils.DrawBorderString(Main.spriteBatch, energyText, drawPosition, Color.White, textScale);
         }
 
         private void DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
@@ -378,12 +452,88 @@ namespace Ben10Mod.Content.Interface {
             MyInterface?.SetState(AS);
         }
 
+        internal void ShowCodexUI() {
+            EnsureInterfaceInitialized();
+            CloseVanillaMenusForCodex();
+            TCS?.PrepareToOpen();
+            MyInterface?.SetState(TCS);
+        }
+
         internal void ShowPaletteUI() {
             EnsureInterfaceInitialized();
             MyInterface?.SetState(TPS);
         }
 
         internal void HideMyUI() => MyInterface?.SetState(null);
+
+        private static Rectangle GetCodexEntryButtonRectangle() {
+            // Anchor to the inventory utility cluster under the vanilla Bestiary button.
+            const int buttonWidth = 34;
+            const int buttonHeight = 34;
+            int buttonX = 500;
+            int buttonY = 306;
+            return new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
+        }
+
+        private static void CloseVanillaMenusForCodex() {
+            Player player = Main.LocalPlayer;
+            if (player == null)
+                return;
+
+            Main.playerInventory = false;
+            Main.npcChatText = string.Empty;
+            Main.InGuideCraftMenu = false;
+            Main.recBigList = false;
+            player.chest = -1;
+            Main.CloseNPCChatOrSign();
+            Main.editSign = false;
+            Main.editChest = false;
+            Main.blockInput = false;
+            Recipe.FindRecipes();
+        }
+
+        private void DrawCodexEntryButton() {
+            if (Main.dedServ || Main.gameMenu || !Main.playerInventory || MyInterface?.CurrentState != null)
+                return;
+
+            Player player = Main.LocalPlayer;
+            if (player == null || !player.active)
+                return;
+
+            OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+            if (omp == null || omp.unlockedTransformations.Count == 0)
+                return;
+
+            Rectangle buttonRect = GetCodexEntryButtonRectangle();
+            bool hovering = buttonRect.Contains(Main.MouseScreen.ToPoint());
+            Texture2D pixel = TextureAssets.MagicPixel.Value;
+            Color fillColor = hovering ? new Color(38, 54, 44, 225) : new Color(22, 28, 34, 210);
+            Color borderColor = hovering ? new Color(140, 220, 170) : new Color(90, 120, 108);
+
+            Main.spriteBatch.Draw(pixel, buttonRect, fillColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Y, buttonRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Bottom - 2, buttonRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Y, 2, buttonRect.Height), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.Right - 2, buttonRect.Y, 2, buttonRect.Height), borderColor);
+            Utils.DrawBorderString(Main.spriteBatch, "C", new Vector2(buttonRect.Center.X, buttonRect.Y + 8f),
+                Color.White, 0.8f, 0.5f, 0f);
+
+            if (omp.HasAnyNewlyUnlockedTransformations())
+                Utils.DrawBorderString(Main.spriteBatch, "NEW", new Vector2(buttonRect.Right - 4f, buttonRect.Y - 6f),
+                    new Color(255, 110, 110), 0.72f, 1f, 0f);
+
+            if (!hovering)
+                return;
+
+            player.mouseInterface = true;
+            Utils.DrawBorderString(Main.spriteBatch, "Open Transformation Codex",
+                Main.MouseScreen + new Vector2(16f, 20f), Color.White, 0.75f);
+
+            if (Main.mouseLeft && Main.mouseLeftRelease) {
+                ShowCodexUI();
+                omp.showingUI = true;
+            }
+        }
     }
 
     public class AlienSelectionScreen : UIState {
@@ -400,7 +550,7 @@ namespace Ben10Mod.Content.Interface {
         private string unlockedRosterSignature = "";
         private bool   unlockedGridDirty       = true;
 
-        private static Asset<Texture2D> GetSafeTransformationIcon(Transformation trans) {
+        internal static Asset<Texture2D> GetSafeTransformationIcon(Transformation trans) {
             try {
                 Asset<Texture2D> icon = trans?.GetTransformationIcon();
                 if (icon != null)
@@ -411,7 +561,7 @@ namespace Ben10Mod.Content.Interface {
             return ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien");
         }
 
-        private static string GetSafeTransformationName(Transformation trans) {
+        internal static string GetSafeTransformationName(Transformation trans) {
             var player = Main.LocalPlayer?.GetModPlayer<OmnitrixPlayer>();
             if (player != null && trans != null)
                 return player.GetTransformationBaseName(trans);
@@ -419,7 +569,7 @@ namespace Ben10Mod.Content.Interface {
             return string.IsNullOrWhiteSpace(trans?.TransformationName) ? "Unknown Alien" : trans.TransformationName;
         }
 
-        private static string GetSafeTransformationDescription(Transformation trans, OmnitrixPlayer player) {
+        internal static string GetSafeTransformationDescription(Transformation trans, OmnitrixPlayer player) {
             string description = null;
 
             try {
@@ -430,7 +580,7 @@ namespace Ben10Mod.Content.Interface {
             return string.IsNullOrWhiteSpace(description) ? "No description available." : description;
         }
 
-        private static IReadOnlyList<string>
+        internal static IReadOnlyList<string>
             GetSafeTransformationAbilities(Transformation trans, OmnitrixPlayer player) {
             try {
                 List<string> abilities = trans?.GetAbilities(player);
@@ -619,13 +769,14 @@ namespace Ben10Mod.Content.Interface {
                 slot.Height.Set(92f, 0f);
 
                 string transformationId = id;
-                var btn = new FittedTransformationIcon(icon, () => player.IsFavoriteTransformation(transformationId));
+                var btn = new FittedTransformationIcon(icon,
+                    () => player.IsFavoriteTransformation(transformationId),
+                    () => player.IsNewlyUnlockedTransformation(transformationId));
                 btn.Width.Set(92f, 0f);
                 btn.Height.Set(92f, 0f);
                 btn.IgnoresMouseInteraction = true;
                 slot.OnLeftClick += (_, _) => {
-                    currentlySelectedId = transformationId;
-                    UpdateInfoPanel(TransformationLoader.Get(transformationId));
+                    SelectUnlockedTransformation(transformationId);
                 };
 
                 slot.OnRightClick += (_, _) => {
@@ -663,6 +814,8 @@ namespace Ben10Mod.Content.Interface {
                     .Append('=')
                     .Append(player.IsFavoriteTransformation(transformationId) ? '1' : '0')
                     .Append('=')
+                    .Append(player.IsNewlyUnlockedTransformation(transformationId) ? '1' : '0')
+                    .Append('=')
                     .Append(transformation?.GetDisplayName(player) ?? string.Empty)
                     .Append('|');
             }
@@ -699,6 +852,413 @@ namespace Ben10Mod.Content.Interface {
 
         private void UpdateInfoPanelFromTransformationId(string transformationId) {
             UpdateInfoPanel(TransformationLoader.Get(transformationId));
+        }
+
+        private void SelectUnlockedTransformation(string transformationId) {
+            currentlySelectedId = transformationId ?? string.Empty;
+
+            OmnitrixPlayer player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            if (player.MarkTransformationAsSeen(currentlySelectedId)) {
+                unlockedRosterSignature = string.Empty;
+                unlockedGridDirty = true;
+            }
+
+            UpdateInfoPanel(TransformationLoader.Get(currentlySelectedId));
+        }
+
+        protected override void DrawSelf(SpriteBatch spriteBatch) {
+            base.DrawSelf(spriteBatch);
+            if (ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
+        }
+    }
+
+    public class TransformationCodexScreen : UIState {
+        private UIPanel mainPanel;
+        private UIList codexList;
+        private UIPanel infoPanel;
+        private UIPanel headerPanel;
+        private FittedTransformationIcon previewIcon;
+        private UIText nameText;
+        private UIText statusText;
+        private UIText overviewHeader;
+        private UIText descriptionText;
+        private UIText unlockHeader;
+        private UIText unlockConditionText;
+        private UIText abilitiesHeader;
+        private UIList abilityList;
+        private string currentlySelectedId = string.Empty;
+        private string codexListSignature = string.Empty;
+        private bool codexListDirty = true;
+
+        public void PrepareToOpen() {
+            codexListDirty = true;
+            OmnitrixPlayer player = Main.LocalPlayer?.GetModPlayer<OmnitrixPlayer>();
+            if (player == null)
+                return;
+
+            string preferredSelection = FindFirstNewTransformation(player);
+            if (!string.IsNullOrEmpty(preferredSelection))
+                currentlySelectedId = preferredSelection;
+        }
+
+        public override void OnInitialize() {
+            mainPanel = new UIPanel();
+            mainPanel.Width.Set(1180f, 0f);
+            mainPanel.Height.Set(680f, 0f);
+            mainPanel.HAlign = mainPanel.VAlign = 0.5f;
+            Append(mainPanel);
+
+            var title = new UIText("Transformation Codex", 1.45f);
+            title.HAlign = 0.5f;
+            title.Top.Set(18f, 0f);
+            mainPanel.Append(title);
+
+            var subtitle = new UIText("Alien forms, unlock conditions, and kit details.", 0.85f);
+            subtitle.HAlign = 0.5f;
+            subtitle.Top.Set(54f, 0f);
+            mainPanel.Append(subtitle);
+
+            var listHeader = new UIText("Alien Forms", 1.18f);
+            listHeader.Left.Set(40f, 0f);
+            listHeader.Top.Set(92f, 0f);
+            mainPanel.Append(listHeader);
+
+            codexList = new UIList();
+            codexList.Width.Set(382f, 0f);
+            codexList.Height.Set(492f, 0f);
+            codexList.Left.Set(40f, 0f);
+            codexList.Top.Set(126f, 0f);
+            codexList.ListPadding = 12f;
+            codexList.ManualSortMethod = _ => { };
+            mainPanel.Append(codexList);
+
+            var listScrollbar = new UIScrollbar();
+            listScrollbar.Height.Set(492f, 0f);
+            listScrollbar.Left.Set(430f, 0f);
+            listScrollbar.Top.Set(126f, 0f);
+            mainPanel.Append(listScrollbar);
+            codexList.SetScrollbar(listScrollbar);
+
+            infoPanel = new UIPanel();
+            infoPanel.Width.Set(650f, 0f);
+            infoPanel.Height.Set(560f, 0f);
+            infoPanel.Left.Set(490f, 0f);
+            infoPanel.Top.Set(92f, 0f);
+            mainPanel.Append(infoPanel);
+
+            headerPanel = new UIPanel();
+            headerPanel.Width.Set(590f, 0f);
+            headerPanel.Height.Set(152f, 0f);
+            headerPanel.Left.Set(30f, 0f);
+            headerPanel.Top.Set(24f, 0f);
+            headerPanel.BackgroundColor = new Color(24, 32, 46, 220);
+            headerPanel.BorderColor = new Color(74, 92, 120);
+            infoPanel.Append(headerPanel);
+
+            previewIcon = new FittedTransformationIcon(
+                ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"),
+                () => false,
+                () => false,
+                showHoverOutline: false);
+            previewIcon.Width.Set(120f, 0f);
+            previewIcon.Height.Set(120f, 0f);
+            previewIcon.Left.Set(18f, 0f);
+            previewIcon.Top.Set(16f, 0f);
+            previewIcon.IgnoresMouseInteraction = true;
+            headerPanel.Append(previewIcon);
+
+            nameText = new UIText("Select a form", 1.3f);
+            nameText.Left.Set(160f, 0f);
+            nameText.Top.Set(22f, 0f);
+            headerPanel.Append(nameText);
+
+            statusText = new UIText("Choose a form to view its unlock condition and kit details.", 0.78f);
+            statusText.Left.Set(160f, 0f);
+            statusText.Top.Set(64f, 0f);
+            statusText.Width.Set(390f, 0f);
+            statusText.IsWrapped = true;
+            headerPanel.Append(statusText);
+
+            overviewHeader = new UIText("Overview", 1.08f);
+            overviewHeader.Left.Set(30f, 0f);
+            overviewHeader.Top.Set(194f, 0f);
+            infoPanel.Append(overviewHeader);
+
+            descriptionText = new UIText("View lore-facing kit info and ability details here.", 0.95f);
+            descriptionText.Left.Set(30f, 0f);
+            descriptionText.Top.Set(226f, 0f);
+            descriptionText.Width.Set(580f, 0f);
+            descriptionText.IsWrapped = true;
+            infoPanel.Append(descriptionText);
+
+            unlockHeader = new UIText("Unlock Condition", 1.08f);
+            unlockHeader.Left.Set(30f, 0f);
+            unlockHeader.Top.Set(336f, 0f);
+            infoPanel.Append(unlockHeader);
+
+            unlockConditionText = new UIText("Select a form to inspect how it is unlocked.", 0.9f);
+            unlockConditionText.Left.Set(30f, 0f);
+            unlockConditionText.Top.Set(368f, 0f);
+            unlockConditionText.Width.Set(580f, 0f);
+            unlockConditionText.IsWrapped = true;
+            infoPanel.Append(unlockConditionText);
+
+            abilitiesHeader = new UIText("Abilities", 1.1f);
+            abilitiesHeader.Left.Set(30f, 0f);
+            abilitiesHeader.Top.Set(426f, 0f);
+            infoPanel.Append(abilitiesHeader);
+
+            abilityList = new UIList();
+            abilityList.Width.Set(580f, 0f);
+            abilityList.Height.Set(102f, 0f);
+            abilityList.Left.Set(30f, 0f);
+            abilityList.Top.Set(460f, 0f);
+            abilityList.ListPadding = 8f;
+            infoPanel.Append(abilityList);
+
+            var closeBtn = new UITextPanel<string>("Close Codex");
+            closeBtn.Width.Set(148f, 0f);
+            closeBtn.Height.Set(40f, 0f);
+            closeBtn.Left.Set(-178f, 1f);
+            closeBtn.Top.Set(18f, 0f);
+            closeBtn.OnLeftClick += (_, _) => {
+                ModContent.GetInstance<UISystem>().HideMyUI();
+                Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
+            };
+            mainPanel.Append(closeBtn);
+        }
+
+        public override void Update(GameTime gameTime) {
+            base.Update(gameTime);
+
+            ForceCloseVanillaMenus();
+            OmnitrixPlayer player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            EnsureSelection(player);
+            RefreshCodexList(player);
+
+            if (mainPanel.ContainsPoint(Main.MouseScreen))
+                Main.LocalPlayer.mouseInterface = true;
+        }
+
+        private static void ForceCloseVanillaMenus() {
+            Player player = Main.LocalPlayer;
+            if (player == null)
+                return;
+
+            Main.playerInventory = false;
+            Main.npcChatText = string.Empty;
+            Main.InGuideCraftMenu = false;
+            Main.recBigList = false;
+            Main.editSign = false;
+            Main.editChest = false;
+            Main.blockInput = false;
+            player.chest = -1;
+        }
+
+        private void EnsureSelection(OmnitrixPlayer player) {
+            IReadOnlyList<string> displayList = player.GetTransformationsForCodexDisplay();
+            if (displayList.Count == 0) {
+                currentlySelectedId = string.Empty;
+                UpdateInfoPanel(null, player);
+                return;
+            }
+
+            if (ContainsTransformation(displayList, currentlySelectedId))
+                return;
+
+            string preferredSelection = FindFirstNewTransformation(player);
+            if (string.IsNullOrEmpty(preferredSelection))
+                preferredSelection = displayList[0];
+
+            SelectTransformation(player, preferredSelection);
+        }
+
+        private void RefreshCodexList(OmnitrixPlayer player) {
+            string signature = BuildCodexSignature(player);
+            if (!codexListDirty && signature == codexListSignature)
+                return;
+
+            codexListDirty = false;
+            codexListSignature = signature;
+            codexList.Clear();
+
+            foreach (string transformationId in player.GetTransformationsForCodexDisplay()) {
+                if (string.IsNullOrEmpty(transformationId))
+                    continue;
+
+                Transformation transformation = TransformationLoader.Get(transformationId);
+                if (transformation == null)
+                    continue;
+
+                bool isUnlocked = player.IsTransformationUnlocked(transformation);
+                bool isSelected = string.Equals(currentlySelectedId, transformationId, StringComparison.OrdinalIgnoreCase);
+                UIPanel row = new UIPanel();
+                row.Width.Set(0f, 1f);
+                row.Height.Set(74f, 0f);
+                row.BackgroundColor = isSelected
+                    ? (isUnlocked ? new Color(44, 60, 86, 225) : new Color(58, 50, 68, 225))
+                    : (isUnlocked ? new Color(24, 32, 42, 210) : new Color(30, 28, 36, 208));
+                row.BorderColor = isSelected
+                    ? (isUnlocked ? new Color(120, 175, 255) : new Color(180, 156, 235))
+                    : (isUnlocked ? new Color(70, 88, 108) : new Color(90, 82, 108));
+
+                string capturedId = transformationId;
+                row.OnLeftClick += (_, _) => SelectTransformation(player, capturedId);
+                var icon = new FittedTransformationIcon(
+                    AlienSelectionScreen.GetSafeTransformationIcon(transformation),
+                    () => player.IsFavoriteTransformation(capturedId),
+                    () => player.IsNewlyUnlockedTransformation(capturedId),
+                    showHoverOutline: false);
+                icon.Width.Set(58f, 0f);
+                icon.Height.Set(58f, 0f);
+                icon.Left.Set(8f, 0f);
+                icon.Top.Set(8f, 0f);
+                icon.IgnoresMouseInteraction = true;
+                row.Append(icon);
+
+                string displayName = transformation.GetDisplayName(player);
+                if (player.IsFavoriteTransformation(capturedId))
+                    displayName = $"★ {displayName}";
+
+                var rowName = new UIText(displayName, 0.92f);
+                rowName.Left.Set(78f, 0f);
+                rowName.Top.Set(12f, 0f);
+                row.Append(rowName);
+
+                string rowSubtitle = isUnlocked
+                    ? player.IsNewlyUnlockedTransformation(capturedId)
+                        ? "NEWLY UNLOCKED"
+                        : player.IsFavoriteTransformation(capturedId)
+                            ? "Favorite transformation"
+                            : "Unlocked transformation"
+                    : "Locked form";
+                var subtitle = new UIText(rowSubtitle, 0.68f);
+                subtitle.Left.Set(78f, 0f);
+                subtitle.Top.Set(42f, 0f);
+                row.Append(subtitle);
+
+                codexList.Add(row);
+            }
+
+            codexList.Recalculate();
+            codexList.RecalculateChildren();
+        }
+
+        private string BuildCodexSignature(OmnitrixPlayer player) {
+            if (player == null)
+                return string.Empty;
+
+            IReadOnlyList<string> displayIds = player.GetTransformationsForCodexDisplay();
+            if (displayIds.Count == 0)
+                return $"selected={currentlySelectedId}";
+
+            System.Text.StringBuilder builder = new();
+            builder.Append("selected=").Append(currentlySelectedId).Append('|');
+            for (int i = 0; i < displayIds.Count; i++) {
+                string transformationId = displayIds[i];
+                Transformation transformation = TransformationLoader.Get(transformationId);
+                builder.Append(transformationId)
+                    .Append('=')
+                    .Append(player.IsTransformationUnlocked(transformationId) ? '1' : '0')
+                    .Append('=')
+                    .Append(player.IsFavoriteTransformation(transformationId) ? '1' : '0')
+                    .Append('=')
+                    .Append(player.IsNewlyUnlockedTransformation(transformationId) ? '1' : '0')
+                    .Append('=')
+                    .Append(transformation?.GetDisplayName(player) ?? string.Empty)
+                    .Append('|');
+            }
+
+            return builder.ToString();
+        }
+
+        private void SelectTransformation(OmnitrixPlayer player, string transformationId) {
+            currentlySelectedId = transformationId ?? string.Empty;
+
+            if (player.MarkTransformationAsSeen(currentlySelectedId)) {
+                codexListSignature = string.Empty;
+                codexListDirty = true;
+            }
+
+            UpdateInfoPanel(TransformationLoader.Get(currentlySelectedId), player);
+        }
+
+        private void UpdateInfoPanel(Transformation transformation, OmnitrixPlayer player) {
+            if (transformation == null) {
+                previewIcon.SetTexture(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
+                nameText.SetText("Select a form");
+                statusText.SetText("Choose a form to view its unlock condition and kit details.");
+                descriptionText.SetText("View lore-facing kit info and ability details here.");
+                overviewHeader.SetText("Overview");
+                unlockHeader.SetText("Unlock Condition");
+                unlockConditionText.SetText("Select a form to inspect how it is unlocked.");
+                abilitiesHeader.Top.Set(426f, 0f);
+                abilityList.Top.Set(460f, 0f);
+                abilityList.Height.Set(102f, 0f);
+                abilityList.Clear();
+                return;
+            }
+
+            previewIcon.SetTexture(AlienSelectionScreen.GetSafeTransformationIcon(transformation));
+            nameText.SetText(transformation.GetDisplayName(player));
+
+            bool isUnlocked = player.IsTransformationUnlocked(transformation);
+            List<string> statusParts = new();
+            statusParts.Add(isUnlocked ? "Unlocked" : "Locked");
+            if (isUnlocked && player.IsFavoriteTransformation(transformation))
+                statusParts.Add("Favorite");
+            if (isUnlocked && player.IsNewlyUnlockedTransformation(transformation))
+                statusParts.Add("Newly unlocked");
+            statusText.SetText(string.Join("  |  ", statusParts));
+
+            overviewHeader.SetText("Overview");
+            descriptionText.SetText(AlienSelectionScreen.GetSafeTransformationDescription(transformation, player));
+            descriptionText.Recalculate();
+
+            unlockHeader.SetText("Unlock Condition");
+            unlockConditionText.SetText(player.GetTransformationUnlockConditionText(transformation));
+            unlockConditionText.Recalculate();
+
+            float descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 96f;
+            float unlockTop = Math.Max(336f, descriptionText.Top.Pixels + descriptionHeight + 30f);
+            unlockHeader.Top.Set(unlockTop, 0f);
+            unlockConditionText.Top.Set(unlockTop + 32f, 0f);
+
+            float unlockHeight = unlockConditionText.MinHeight.Pixels > 0f ? unlockConditionText.MinHeight.Pixels : 42f;
+            float abilitiesTop = Math.Max(unlockConditionText.Top.Pixels + unlockHeight + 30f, 426f);
+            abilitiesHeader.Top.Set(abilitiesTop, 0f);
+            float abilityListTop = abilitiesTop + 34f;
+            abilityList.Top.Set(abilityListTop, 0f);
+            abilityList.Height.Set(Math.Max(96f, 560f - abilityListTop - 24f), 0f);
+
+            abilityList.Clear();
+            IReadOnlyList<string> abilities = AlienSelectionScreen.GetSafeTransformationAbilities(transformation, player);
+            for (int i = 0; i < abilities.Count; i++)
+                abilityList.Add(new UIText("• " + (abilities[i] ?? "Unknown ability"), 0.92f));
+        }
+
+        private string FindFirstNewTransformation(OmnitrixPlayer player) {
+            IReadOnlyList<string> displayList = player.GetTransformationsForCodexDisplay();
+            for (int i = 0; i < displayList.Count; i++) {
+                string transformationId = displayList[i];
+                if (player.IsNewlyUnlockedTransformation(transformationId))
+                    return transformationId;
+            }
+
+            return string.Empty;
+        }
+
+        private static bool ContainsTransformation(IReadOnlyList<string> displayList, string transformationId) {
+            if (displayList == null || string.IsNullOrEmpty(transformationId))
+                return false;
+
+            for (int i = 0; i < displayList.Count; i++) {
+                if (string.Equals(displayList[i], transformationId, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {

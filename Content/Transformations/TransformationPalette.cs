@@ -230,6 +230,42 @@ public static class TransformationPaletteTextureCache {
     private static readonly Dictionary<ProcessedOverlayKey, Texture2D> ProcessedOverlays = new();
     private static readonly Dictionary<Texture2D, Color[]> PixelCache = new();
 
+    public static void Clear() {
+        HashSet<Texture2D> generatedTextures = new();
+
+        foreach (Texture2D texture in PreparedMasks.Values) {
+            if (texture != null)
+                generatedTextures.Add(texture);
+        }
+
+        foreach (Texture2D texture in MaskedBases.Values) {
+            if (texture != null)
+                generatedTextures.Add(texture);
+        }
+
+        foreach (Texture2D texture in ProcessedOverlays.Values) {
+            if (texture != null)
+                generatedTextures.Add(texture);
+        }
+
+        PreparedMasks.Clear();
+        MaskedBases.Clear();
+        ProcessedOverlays.Clear();
+        PixelCache.Clear();
+
+        if (Main.dedServ)
+            return;
+
+        foreach (Texture2D texture in generatedTextures) {
+            try {
+                if (texture is { IsDisposed: false })
+                    texture.Dispose();
+            }
+            catch {
+            }
+        }
+    }
+
     public static Texture2D GetPreparedMaskTexture(Texture2D maskTexture) {
         if (maskTexture == null || Main.dedServ)
             return null;

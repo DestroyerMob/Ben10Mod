@@ -159,6 +159,8 @@ namespace Ben10Mod {
             new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> favoriteTransformations =
             new(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> newlyUnlockedTransformations =
+            new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, PalettePresetData[]> palettePresets =
             new(StringComparer.OrdinalIgnoreCase);
         private const int BaseTransformationWidth = 20;
@@ -254,6 +256,7 @@ namespace Ben10Mod {
             tag["transformationRoster"] = transformationSlots;
             tag["unlockedTransformationRoster"] = unlockedTransformations.ToArray();
             tag["favoriteTransformationRoster"] = BuildNormalizedFavoriteTransformations().ToArray();
+            tag["newlyUnlockedTransformationRoster"] = BuildNormalizedNewlyUnlockedTransformations().ToArray();
 
             List<TagCompound> paletteEntries = new();
             foreach (TransformationPaletteColorEntry entry in BuildNormalizedTransformationPaletteEntries()) {
@@ -330,6 +333,15 @@ namespace Ben10Mod {
                     Transformation favoriteTransformation = TransformationLoader.Resolve(favoriteArray[i]);
                     if (favoriteTransformation != null)
                         favoriteTransformations.Add(favoriteTransformation.FullID);
+                }
+            }
+
+            newlyUnlockedTransformations.Clear();
+            if (tag.TryGet("newlyUnlockedTransformationRoster", out string[] newArray)) {
+                for (int i = 0; i < newArray.Length; i++) {
+                    Transformation newTransformation = TransformationLoader.Resolve(newArray[i]);
+                    if (newTransformation != null)
+                        newlyUnlockedTransformations.Add(newTransformation.FullID);
                 }
             }
 
@@ -1176,6 +1188,84 @@ namespace Ben10Mod {
             return SetFavoriteTransformation(transformationId, !IsFavoriteTransformation(transformationId));
         }
 
+        public bool IsNewlyUnlockedTransformation(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return transformation != null && newlyUnlockedTransformations.Contains(transformation.FullID);
+        }
+
+        public bool IsNewlyUnlockedTransformation(Transformation transformation) {
+            return transformation != null && newlyUnlockedTransformations.Contains(transformation.FullID);
+        }
+
+        public bool MarkTransformationAsSeen(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return transformation != null && newlyUnlockedTransformations.Remove(transformation.FullID);
+        }
+
+        public bool HasAnyNewlyUnlockedTransformations() => newlyUnlockedTransformations.Count > 0;
+
+        public bool IsTransformationUnlocked(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return transformation != null && unlockedTransformations.Contains(transformation.FullID);
+        }
+
+        public bool IsTransformationUnlocked(Transformation transformation) {
+            return transformation != null && unlockedTransformations.Contains(transformation.FullID);
+        }
+
+        public IReadOnlyList<string> GetTransformationsForCodexDisplay() {
+            List<string> displayTransformations = new();
+            HashSet<string> seenTransformations = new(StringComparer.OrdinalIgnoreCase);
+
+            foreach (Transformation transformation in TransformationLoader.All) {
+                if (transformation == null)
+                    continue;
+
+                if (seenTransformations.Add(transformation.FullID))
+                    displayTransformations.Add(transformation.FullID);
+            }
+
+            displayTransformations.Sort(CompareCodexTransformationDisplayOrder);
+            return displayTransformations;
+        }
+
+        public string GetTransformationUnlockConditionText(string transformationId) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            return GetTransformationUnlockConditionText(transformation);
+        }
+
+        public string GetTransformationUnlockConditionText(Transformation transformation) {
+            if (transformation == null)
+                return "Unlock condition not available.";
+
+            switch (transformation.FullID) {
+                case "Ben10Mod:HeatBlast":
+                    return "Starter transformation.";
+                case "Ben10Mod:Upgrade":
+                    return "Defeat all three Mechanical Bosses.";
+                case "Ben10Mod:GhostFreak":
+                    return "Participate in and complete a Blood Moon.";
+                case "Ben10Mod:Frankenstrike":
+                    return "Participate in and complete a Solar Eclipse.";
+                case "Ben10Mod:Goop":
+                    return "Participate in and complete a Slime Rain.";
+                case "Ben10Mod:Whampire":
+                    return "Participate in and complete a Pumpkin Moon.";
+                case "Ben10Mod:Lodestar":
+                    return "Participate in and complete a Frost Moon.";
+                case "Ben10Mod:RipJaws":
+                    return "Participate in and defeat the Goblin Army.";
+                case "Ben10Mod:Fasttrack":
+                    return "Participate in and complete the Frost Legion.";
+                case "Ben10Mod:WaterHazard":
+                    return "Participate in and complete a Pirate Invasion.";
+                case "Ben10Mod:Astrodactyl":
+                    return "Participate in and complete the Old One's Army.";
+                default:
+                    return "Unlock condition not yet documented in the codex.";
+            }
+        }
+
         public IReadOnlyList<string> GetUnlockedTransformationsForDisplay() {
             List<string> displayTransformations = new();
             HashSet<string> seenTransformations = new(StringComparer.OrdinalIgnoreCase);
@@ -1193,6 +1283,20 @@ namespace Ben10Mod {
 
             displayTransformations.Sort(CompareUnlockedTransformationDisplayOrder);
             return displayTransformations;
+        }
+
+        private int CompareCodexTransformationDisplayOrder(string leftTransformationId, string rightTransformationId) {
+            bool leftIsUnlocked = IsTransformationUnlocked(leftTransformationId);
+            bool rightIsUnlocked = IsTransformationUnlocked(rightTransformationId);
+            if (leftIsUnlocked != rightIsUnlocked)
+                return leftIsUnlocked ? -1 : 1;
+
+            bool leftIsFavorite = leftIsUnlocked && IsFavoriteTransformation(leftTransformationId);
+            bool rightIsFavorite = rightIsUnlocked && IsFavoriteTransformation(rightTransformationId);
+            if (leftIsFavorite != rightIsFavorite)
+                return leftIsFavorite ? -1 : 1;
+
+            return CompareTransformationDisplayName(leftTransformationId, rightTransformationId);
         }
 
         private int CompareUnlockedTransformationDisplayOrder(string leftTransformationId, string rightTransformationId) {
@@ -2418,6 +2522,7 @@ namespace Ben10Mod {
                 return false;
 
             unlockedTransformations.Add(canonicalTransformationId);
+            newlyUnlockedTransformations.Add(canonicalTransformationId);
             NormalizeStoredTransformationData();
 
             if (showEffects)
@@ -2459,6 +2564,7 @@ namespace Ben10Mod {
 
             bool shouldDetransform = currentTransformationId == canonicalTransformationId;
             unlockedTransformations.Remove(canonicalTransformationId);
+            newlyUnlockedTransformations.Remove(canonicalTransformationId);
 
             for (int i = 0; i < transformationSlots.Length; i++) {
                 if (transformationSlots[i] == canonicalTransformationId)
@@ -2945,6 +3051,7 @@ namespace Ben10Mod {
             unlockedTransformations.Clear();
             unlockedTransformations.AddRange(normalizedUnlocks);
             NormalizeFavoriteTransformations();
+            NormalizeNewlyUnlockedTransformations();
 
             transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
             NormalizeTransformationPaletteState();
@@ -3012,6 +3119,21 @@ namespace Ben10Mod {
                 favoriteTransformations.Add(favoriteTransformationId);
         }
 
+        private void NormalizeNewlyUnlockedTransformations() {
+            HashSet<string> normalizedNew = new(StringComparer.OrdinalIgnoreCase);
+            foreach (string transformationId in newlyUnlockedTransformations) {
+                Transformation transformation = TransformationLoader.Resolve(transformationId);
+                if (transformation == null || !unlockedTransformations.Contains(transformation.FullID))
+                    continue;
+
+                normalizedNew.Add(transformation.FullID);
+            }
+
+            newlyUnlockedTransformations.Clear();
+            foreach (string transformationId in normalizedNew)
+                newlyUnlockedTransformations.Add(transformationId);
+        }
+
         private IReadOnlyList<string> BuildNormalizedFavoriteTransformations() {
             NormalizeFavoriteTransformations();
             List<string> normalizedFavorites = new();
@@ -3019,6 +3141,15 @@ namespace Ben10Mod {
                 normalizedFavorites.Add(transformationId);
             normalizedFavorites.Sort(StringComparer.OrdinalIgnoreCase);
             return normalizedFavorites;
+        }
+
+        private IReadOnlyList<string> BuildNormalizedNewlyUnlockedTransformations() {
+            NormalizeNewlyUnlockedTransformations();
+            List<string> normalizedNew = new();
+            foreach (string transformationId in newlyUnlockedTransformations)
+                normalizedNew.Add(transformationId);
+            normalizedNew.Sort(StringComparer.OrdinalIgnoreCase);
+            return normalizedNew;
         }
 
         private void NormalizePalettePresets() {

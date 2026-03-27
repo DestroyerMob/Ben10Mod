@@ -44,9 +44,22 @@ namespace Ben10Mod.Keybinds {
         }
 
         public override void Unload() {
+            PrimaryAbility = null;
+            SecondaryAbility = null;
+            TertiaryAbility = null;
+            QuaternaryAbility = null;
+            UltimateAbility = null;
             TransformationKeybind = null;
             TransformWheel = null;
             AbsorbMaterial = null;
+            OpenTransformationScreen = null;
+            AlienOneKeybind = null;
+            AlienTwoKeybind = null;
+            AlienThreeKeybind = null;
+            AlienFourKeybind = null;
+            AlienFiveKeybind = null;
+            AlienNextKeybind = null;
+            AlienPrevKeybind = null;
         }
     }
 }
