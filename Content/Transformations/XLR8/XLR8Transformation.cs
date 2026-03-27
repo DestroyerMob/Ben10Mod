@@ -70,7 +70,7 @@ public class XLR8Transformation : Transformation {
         player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4.3f : 2.2f;
         player.runAcceleration *= omp.PrimaryAbilityEnabled ? 2.15f : 1.45f;
         player.maxRunSpeed += omp.PrimaryAbilityEnabled ? 2.2f : 1.1f;
-        player.GetAttackSpeed<HeroDamage>() += omp.PrimaryAbilityEnabled ? 0.44f : 0.26f;
+        player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 0.44f : 0.26f;
         player.GetCritChance<HeroDamage>() += omp.PrimaryAbilityEnabled ? 16f : 8f;
         player.pickSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         player.jumpSpeedBoost += omp.PrimaryAbilityEnabled ? 3f : 1.6f;
