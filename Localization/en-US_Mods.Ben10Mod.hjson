@@ -1037,6 +1037,7 @@ Projectiles: {
 	UpgradeIntegrationMatrixProjectile.DisplayName: Upgrade Integration Matrix Projectile
 	DiamondHeadPrismPincerProjectile.DisplayName: Diamond Head Prism Pincer Projectile
 	DiamondHeadGroundBloomControllerProjectile.DisplayName: Diamond Head Ground Bloom Controller Projectile
+	XLR8VectorDashProjectile.DisplayName: X L R8 Vector Dash Projectile
 }
 
 Tiles: {

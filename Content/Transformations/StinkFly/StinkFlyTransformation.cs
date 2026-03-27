@@ -51,6 +51,6 @@ public class StinkFlyTransformation : Transformation {
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
-        player.wings = EquipLoader.GetEquipSlot(Mod, nameof(StinkFlyWings), EquipType.Wings);
+        player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
     }
 }

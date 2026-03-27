@@ -28,6 +28,7 @@ namespace Ben10Mod.Content.Transformations.StinkFly
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Body}", EquipType.Body, this);
             EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Legs}", EquipType.Legs, this);
+            EquipLoader.AddEquipTexture(Mod, $"{Texture}_{EquipType.Waist}", EquipType.Waist, this);
         }
 
         private void SetupDrawing() {
@@ -37,6 +38,7 @@ namespace Ben10Mod.Content.Transformations.StinkFly
             int equipSlotHead = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Head);
             int equipSlotBody = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
             int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
+            int equipSlotWaist = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Waist);
 
             ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
