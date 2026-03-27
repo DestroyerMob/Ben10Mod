@@ -16,6 +16,7 @@ internal static class StinkFlyWingDrawHelper {
     private static readonly int[] WingFrameTopOffsets = { 2, 62, 126, 186 };
     private const int WingFrameWidth = 86;
     private const int WingFrameHeight = 48;
+    private const float FlightFrameRiseThreshold = 0.15f;
     // This texture already contains the near wing and the far wing in one sprite.
     // Anchor from the body frame's upper back so both halves stay locked to the torso.
     private static readonly Vector2 BodyBackAnchorInFrame = new(20f, 17f);
@@ -70,14 +71,15 @@ internal static class StinkFlyWingDrawHelper {
     }
 
     private static int ResolveWingFrame(Player player) {
-        bool usingFlight = player.wingTime < player.wingTimeMax || player.controlJump;
-        bool falling = player.velocity.Y > 0.6f && !usingFlight;
-        bool grounded = player.velocity.Y == 0f && !usingFlight;
+        float verticalMotion = player.velocity.Y * player.gravDir;
+        bool grounded = verticalMotion == 0f;
+        bool usingWingLift = player.controlJump && player.wingTime > 0f && player.wingTime < player.wingTimeMax;
+        bool activelyFlying = usingWingLift && verticalMotion <= FlightFrameRiseThreshold;
 
         if (grounded)
             return 0;
 
-        if (falling)
+        if (!activelyFlying)
             return 1;
 
         return 2 + (int)(Main.GameUpdateCount / HeightAnimInterval % 2);
