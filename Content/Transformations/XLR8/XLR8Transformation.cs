@@ -25,10 +25,10 @@ public class XLR8Transformation : Transformation {
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override string Description =>
-        "A Kineceleran speedster built to blur across the battlefield, chain rapid strikes, slash through crowds with dashing attacks, and distort the pace of combat.";
+        "A Kineceleran speedster built to blur across the battlefield, chain rapid cursor-cutting slashes, slash through crowds with dashing attacks, and distort the pace of combat.";
 
     public override List<string> Abilities => new() {
-        "Rapid strike rush",
+        "Rapid cursor-guided slash rush",
         "Piercing velocity dash",
         "Extreme speed boost",
         "Targeted vector dash",
@@ -41,9 +41,10 @@ public class XLR8Transformation : Transformation {
     public override string SecondaryAbilityAttackName => "Vector Dash";
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
-    public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8PunchProjectile>();
+    public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8StarlightProjectile>();
     public override int    PrimaryAttackSpeed      => 11;
-    public override int    PrimaryShootSpeed       => 30;
+    public override int    PrimaryShootSpeed       => 15;
+    public override int    PrimaryUseStyle         => ItemUseStyleID.Rapier;
     public override float  PrimaryAttackModifier   => 0.75f;
     public override int    SecondaryAttack         => ModContent.ProjectileType<XLR8DashProjectile>();
     public override int    SecondaryAttackSpeed    => 82;
@@ -91,6 +92,17 @@ public class XLR8Transformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        if (!omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded) {
+            Vector2 attackDirection = ResolveAimDirection(player, velocity);
+            omp.transformationAttackSerial++;
+            Projectile.NewProjectile(source, player.MountedCenter + attackDirection * 12f, attackDirection * PrimaryShootSpeed,
+                ModContent.ProjectileType<XLR8StarlightProjectile>(), damage, knockback, player.whoAmI,
+                omp.PrimaryAbilityEnabled ? 1f : 0f, omp.transformationAttackSerial);
+
+            SoundEngine.PlaySound(SoundID.Item1 with { Pitch = 0.28f, Volume = 0.62f }, player.Center);
+            return false;
+        }
+
         if (!omp.IsSecondaryAbilityAttackLoaded)
             return base.Shoot(player, omp, source, position, velocity, damage, knockback);
 
@@ -143,5 +155,17 @@ public class XLR8Transformation : Transformation {
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
         player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
+    }
+
+    private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {
+        Vector2 direction = fallbackVelocity.SafeNormalize(new Vector2(player.direction, 0f));
+
+        if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
+            Vector2 mouseDirection = player.DirectionTo(Main.MouseWorld);
+            if (mouseDirection != Vector2.Zero)
+                direction = mouseDirection;
+        }
+
+        return direction;
     }
 }
