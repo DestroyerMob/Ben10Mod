@@ -12,11 +12,13 @@ namespace Ben10Mod.Content.Transformations.XLR8
 {
     public class XLR8 : ModItem {
         public static string TransformationDescription =>
-            "A Kineceleran speedster that turns movement into offense. XLR8 dominates with acceleration, dashing, evasiveness, and a time-bending ultimate that freezes enemies in place.";
+            "A Kineceleran speedster that turns movement into offense. XLR8 dominates with acceleration, rapid strikes, piercing dashes, evasiveness, and a time-bending ultimate that freezes enemies in place.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Primary ability: speed overdrive that pushes movement and attack speed even higher.",
+            "Primary ability: speed overdrive that pushes movement and weapon speed even higher.",
             "Main attack: ultra-fast rushing strikes.",
+            "Secondary attack: piercing velocity dash that can cut through multiple enemies.",
+            "Secondary ability: vector dash to the cursor for a targeted speed burst.",
             "Passive: huge movement speed, rapid acceleration, boosted jumping, and water running at speed.",
             "Mobility: horizontal dash by double tapping left or right.",
             "Ultimate ability: grayscale perception shift that slows hostile NPCs and outside projectiles to a halt."

@@ -2028,6 +2028,7 @@ namespace Ben10Mod {
         private bool IsRestrictedLungeProjectile(int projectileType) {
             return projectileType == ModContent.ProjectileType<RathPounceProjectile>() ||
                    projectileType == ModContent.ProjectileType<XLR8DashProjectile>() ||
+                   projectileType == ModContent.ProjectileType<XLR8VectorDashProjectile>() ||
                    projectileType == ModContent.ProjectileType<RipJawsBiteProjectile>() ||
                    projectileType == ModContent.ProjectileType<JetrayDiveProjectile>() ||
                    projectileType == ModContent.ProjectileType<BigChillPhaseStrikeProjectile>() ||
