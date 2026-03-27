@@ -9,16 +9,17 @@ namespace Ben10Mod.Common.CustomVisuals;
 internal static class StinkFlyWingDrawHelper {
     private const string StinkFlyTransformationId = "Ben10Mod:StinkFly";
     private const string WingTexturePath = "Ben10Mod/Content/Items/Accessories/Wings/StinkFlyWings_Wings";
+    private const string BodyTexturePath = "Ben10Mod/Content/Transformations/StinkFly/StinkFly_Body";
     // The Stinkfly wing sheet is hand-packed rather than evenly divided into four bands.
     // Keep these explicit frame starts in sync with the asset so we don't clip or cross into
     // the next frame's rows.
     private static readonly int[] WingFrameTopOffsets = { 2, 62, 126, 186 };
     private const int WingFrameWidth = 86;
     private const int WingFrameHeight = 48;
-    private static readonly Vector2 LeftWingOrigin = new(56f, 47f);
-    private static readonly Vector2 RightWingOrigin = new(WingFrameWidth - LeftWingOrigin.X, LeftWingOrigin.Y);
-    private static readonly Vector2 WingAnchorOffset = new(0f, 6f);
-    private static readonly Vector2 WingSideOffset = new(8f, 0f);
+    // This texture already contains the near wing and the far wing in one sprite.
+    // Anchor from the body frame's upper back so both halves stay locked to the torso.
+    private static readonly Vector2 BodyBackAnchorInFrame = new(20f, 17f);
+    private static readonly Vector2 WingBackAnchorInFrame = new(43f, 19f);
     private const int HeightAnimInterval = 6;
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
@@ -36,59 +37,36 @@ internal static class StinkFlyWingDrawHelper {
             return;
 
         Texture2D texture = ModContent.Request<Texture2D>(WingTexturePath).Value;
+        Texture2D bodyTexture = ModContent.Request<Texture2D>(BodyTexturePath).Value;
         if (texture.Height <= 0)
+            return;
+
+        if (!TryGetBodyDrawData(drawInfo, bodyTexture, out int bodyDrawIndex, out DrawData bodyDrawData))
             return;
 
         int frame = ResolveWingFrame(player);
         Rectangle sourceRectangle = GetWingFrameRectangle(frame);
-        Vector2 anchor = player.MountedCenter - Main.screenPosition + WingAnchorOffset;
-        Color color = Lighting.GetColor((int)(player.Center.X / 16f), (int)(player.Center.Y / 16f), Color.White);
-        float rotation = player.fullRotation;
-        Vector2 bodyRotationAnchor = player.fullRotationOrigin;
-        bool facingLeft = player.direction == -1;
-        SpriteEffects leftEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-        SpriteEffects rightEffects = facingLeft ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-        Vector2 leftOrigin = facingLeft ? RightWingOrigin : LeftWingOrigin;
-        Vector2 rightOrigin = facingLeft ? LeftWingOrigin : RightWingOrigin;
-        Vector2 horizontalOffset = new(WingSideOffset.X * player.direction, WingSideOffset.Y);
-        Vector2 leftOffset = -horizontalOffset;
-        Vector2 rightOffset = horizontalOffset;
+        Vector2 anchor = ResolveBodyAnchor(bodyDrawData, BodyBackAnchorInFrame);
+        bool facingLeft = (bodyDrawData.effect & SpriteEffects.FlipHorizontally) != 0;
+        Vector2 wingOrigin = facingLeft
+            ? new Vector2(sourceRectangle.Width - WingBackAnchorInFrame.X, WingBackAnchorInFrame.Y)
+            : WingBackAnchorInFrame;
 
-        DrawData leftWing = new(
+        DrawData wingPair = new(
             texture,
-            anchor + leftOffset,
+            anchor,
             sourceRectangle,
-            color,
-            rotation,
-            leftOrigin,
-            1f,
-            leftEffects,
+            bodyDrawData.color,
+            bodyDrawData.rotation,
+            wingOrigin,
+            bodyDrawData.scale,
+            bodyDrawData.effect,
             0
         ) {
-            shader = drawInfo.cBody
+            shader = bodyDrawData.shader
         };
 
-        DrawData rightWing = new(
-            texture,
-            anchor + rightOffset,
-            sourceRectangle,
-            color,
-            rotation,
-            rightOrigin,
-            1f,
-            rightEffects,
-            0
-        ) {
-            shader = drawInfo.cBody
-        };
-
-        if (rotation != 0f) {
-            leftWing.position = RotateDrawPosition(leftWing.position, player, bodyRotationAnchor);
-            rightWing.position = RotateDrawPosition(rightWing.position, player, bodyRotationAnchor);
-        }
-
-        drawInfo.DrawDataCache.Add(leftWing);
-        drawInfo.DrawDataCache.Add(rightWing);
+        drawInfo.DrawDataCache.Insert(bodyDrawIndex, wingPair);
     }
 
     private static int ResolveWingFrame(Player player) {
@@ -109,10 +87,33 @@ internal static class StinkFlyWingDrawHelper {
         return new Rectangle(0, WingFrameTopOffsets[frame], WingFrameWidth, WingFrameHeight);
     }
 
-    private static Vector2 RotateDrawPosition(Vector2 drawPosition, Player player, Vector2 rotationOrigin) {
-        Vector2 worldPosition = drawPosition + Main.screenPosition;
-        Vector2 rotatedWorldPosition = worldPosition.RotatedBy(player.fullRotation, player.position + rotationOrigin);
-        return rotatedWorldPosition - Main.screenPosition;
+    private static bool TryGetBodyDrawData(PlayerDrawSet drawInfo, Texture2D bodyTexture, out int bodyDrawIndex, out DrawData bodyDrawData) {
+        for (int i = drawInfo.DrawDataCache.Count - 1; i >= 0; i--) {
+            DrawData drawData = drawInfo.DrawDataCache[i];
+            if (drawData.texture == bodyTexture) {
+                bodyDrawIndex = i;
+                bodyDrawData = drawData;
+                return true;
+            }
+        }
+
+        bodyDrawIndex = -1;
+        bodyDrawData = default;
+        return false;
+    }
+
+    private static Vector2 ResolveBodyAnchor(DrawData bodyDrawData, Vector2 anchorInBodyFrame) {
+        Rectangle bodyFrame = bodyDrawData.sourceRect ?? bodyDrawData.texture.Bounds;
+        Vector2 localAnchor = anchorInBodyFrame;
+
+        if ((bodyDrawData.effect & SpriteEffects.FlipHorizontally) != 0)
+            localAnchor.X = bodyFrame.Width - localAnchor.X;
+
+        if ((bodyDrawData.effect & SpriteEffects.FlipVertically) != 0)
+            localAnchor.Y = bodyFrame.Height - localAnchor.Y;
+
+        Vector2 relativeAnchor = (localAnchor - bodyDrawData.origin) * bodyDrawData.scale;
+        return bodyDrawData.position + relativeAnchor.RotatedBy(bodyDrawData.rotation);
     }
 }
 
@@ -122,7 +123,7 @@ public class StinkFlyWingLayer : PlayerDrawLayer {
     }
 
     public override Position GetDefaultPosition() {
-        return new BeforeParent(PlayerDrawLayers.Torso);
+        return new AfterParent(PlayerDrawLayers.Torso);
     }
 
     protected override void Draw(ref PlayerDrawSet drawInfo) {
