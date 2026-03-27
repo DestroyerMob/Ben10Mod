@@ -80,6 +80,7 @@ Default keybinds:
 
 - `P`: transform or detransform
 - `L`: open or close the alien roster
+- `O`: open or close the transformation codex
 - `F`: primary action slot
 - `G`: secondary action slot
 - `H`: tertiary action slot

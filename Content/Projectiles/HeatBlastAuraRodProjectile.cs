@@ -46,6 +46,12 @@ public class HeatBlastAuraRodProjectile : ModProjectile {
             return;
         }
 
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.IsTransformed || omp.currentTransformationId != "Ben10Mod:HeatBlast") {
+            Projectile.Kill();
+            return;
+        }
+
         Projectile.velocity = Vector2.Zero;
         Projectile.rotation = 0f;
 

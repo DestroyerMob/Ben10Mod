@@ -719,6 +719,18 @@ namespace Ben10Mod {
                 }
             }
 
+            if (KeybindSystem.OpenTransformationCodex.JustPressed && omnitrixEquipped && unlockedTransformations.Count > 0) {
+                UISystem uiSystem = ModContent.GetInstance<UISystem>();
+                if (uiSystem.IsCodexUIOpen()) {
+                    uiSystem.HideMyUI();
+                    showingUI = false;
+                }
+                else {
+                    uiSystem.ShowCodexUI();
+                    showingUI = true;
+                }
+            }
+
             if (CanHandleBadgeRightClickSelection()) {
                 Main.mouseRightRelease = false;
                 HandleBadgeRightClickSelection();
