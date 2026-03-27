@@ -471,6 +471,26 @@ using Ben10Mod;
 player.GetModPlayer<OmnitrixPlayer>().UnlockTransformation("Ben10Addon:ShockRock");
 ```
 
+## Codex Unlock Conditions
+
+Addon transformations can provide codex unlock text in two ways.
+
+Recommended for transformation-owned logic:
+
+```csharp
+public override string GetUnlockConditionText(OmnitrixPlayer omp)
+    => "Defeat Shock Rock's boss encounter.";
+```
+
+Or register a condition string through `Mod.Call`:
+
+```csharp
+ModContent.GetInstance<Ben10Mod>().Call(
+    "RegisterTransformationUnlockCondition",
+    "Ben10Addon:ShockRock",
+    "Defeat Shock Rock's boss encounter.");
+```
+
 ## Child Transformations And Branching Forms
 
 Use child transformations for:

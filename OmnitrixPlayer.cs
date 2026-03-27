@@ -1238,32 +1238,10 @@ namespace Ben10Mod {
             if (transformation == null)
                 return "Unlock condition not available.";
 
-            switch (transformation.FullID) {
-                case "Ben10Mod:HeatBlast":
-                    return "Starter transformation.";
-                case "Ben10Mod:Upgrade":
-                    return "Defeat all three Mechanical Bosses.";
-                case "Ben10Mod:GhostFreak":
-                    return "Participate in and complete a Blood Moon.";
-                case "Ben10Mod:Frankenstrike":
-                    return "Participate in and complete a Solar Eclipse.";
-                case "Ben10Mod:Goop":
-                    return "Participate in and complete a Slime Rain.";
-                case "Ben10Mod:Whampire":
-                    return "Participate in and complete a Pumpkin Moon.";
-                case "Ben10Mod:Lodestar":
-                    return "Participate in and complete a Frost Moon.";
-                case "Ben10Mod:RipJaws":
-                    return "Participate in and defeat the Goblin Army.";
-                case "Ben10Mod:Fasttrack":
-                    return "Participate in and complete the Frost Legion.";
-                case "Ben10Mod:WaterHazard":
-                    return "Participate in and complete a Pirate Invasion.";
-                case "Ben10Mod:Astrodactyl":
-                    return "Participate in and complete the Old One's Army.";
-                default:
-                    return "Unlock condition not yet documented in the codex.";
-            }
+            string unlockConditionText = transformation.GetUnlockConditionText(this);
+            return string.IsNullOrWhiteSpace(unlockConditionText)
+                ? "Unlock condition not yet documented in the codex."
+                : unlockConditionText;
         }
 
         public IReadOnlyList<string> GetUnlockedTransformationsForDisplay() {

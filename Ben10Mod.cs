@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using Ben10Mod.Common.Absorption;
 using Ben10Mod.Common.CustomVisuals;
+using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Armour;
 using Ben10Mod.Content.Items.Accessories;
@@ -27,6 +28,10 @@ namespace Ben10Mod {
 
 			return command switch {
 				"RegisterAbsorbableMaterial" => CallRegisterAbsorbableMaterial(args),
+				"RegisterTransformationUnlockCondition" => CallRegisterTransformationUnlockCondition(args),
+				"GetTransformationUnlockCondition" => args.Length >= 2 && args[1] is string transformationId
+					? TransformationUnlockConditionRegistry.Get(transformationId)
+					: string.Empty,
 				"IsAbsorbableMaterialRegistered" => args.Length >= 2 && args[1] is int itemType &&
 				                                    MaterialAbsorptionRegistry.IsRegistered(itemType),
 				"GetAbsorbableMaterialProfile" => args.Length >= 2 && args[1] is int profileItemType &&
@@ -39,6 +44,8 @@ namespace Ben10Mod {
 		}
 
 		public override void Load() {
+			TransformationUnlockConditionRegistry.Clear();
+			TransformationUnlockConditionRegistry.RegisterBaseConditions();
 
 			if (ModLoader.TryGetMod("ColoredDamageTypes", out Mod coloreddamagetypes)) {
 				//Color version
@@ -65,6 +72,7 @@ namespace Ben10Mod {
 		public override void Unload() {
 			TryUnloadStep("transformation branches", TransformationBranchRegistry.Clear);
 			TryUnloadStep("transformation loader", TransformationLoader.Clear);
+			TryUnloadStep("transformation unlock conditions", TransformationUnlockConditionRegistry.Clear);
 			TryUnloadStep("palette texture cache", TransformationPaletteTextureCache.Clear);
 			TryUnloadStep("material absorption registry", MaterialAbsorptionRegistry.Clear);
 			TryUnloadStep("screen shader rules", ScreenShaderController.ClearRules);
@@ -461,6 +469,19 @@ namespace Ben10Mod {
 			}
 
 			MaterialAbsorptionRegistry.Register(registration);
+			return null;
+		}
+
+		private static object CallRegisterTransformationUnlockCondition(object[] args) {
+			if (args.Length < 3)
+				throw new ArgumentException(
+					"RegisterTransformationUnlockCondition requires a transformation ID and unlock condition text.");
+
+			if (args[1] is not string transformationId || args[2] is not string unlockConditionText)
+				throw new ArgumentException(
+					"RegisterTransformationUnlockCondition arguments must be a transformation ID string and a condition string.");
+
+			TransformationUnlockConditionRegistry.Register(transformationId, unlockConditionText);
 			return null;
 		}
 	}

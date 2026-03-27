@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Items.Weapons;
@@ -236,6 +237,8 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual string GetDisplayName(OmnitrixPlayer omp) => omp?.GetTransformationBaseName(this) ?? TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
+        public virtual string GetUnlockConditionText(OmnitrixPlayer omp)
+            => TransformationUnlockConditionRegistry.Get(FullID);
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
         public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) => PaletteChannels;
         public virtual IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) {
