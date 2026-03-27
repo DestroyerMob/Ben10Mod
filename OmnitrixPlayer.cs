@@ -719,8 +719,7 @@ namespace Ben10Mod {
                 }
             }
 
-            if (Player.whoAmI == Main.myPlayer && Main.mouseRight && Main.mouseRightRelease &&
-                Player.HeldItem.ModItem is PlumbersBadge) {
+            if (CanHandleBadgeRightClickSelection()) {
                 Main.mouseRightRelease = false;
                 HandleBadgeRightClickSelection();
             }
@@ -1762,6 +1761,20 @@ namespace Ben10Mod {
                 ? AttackSelection.Secondary
                 : AttackSelection.Primary;
             SetAttackSelection(baseAttackSelection);
+        }
+
+        private bool CanHandleBadgeRightClickSelection() {
+            if (Player.whoAmI != Main.myPlayer ||
+                !Main.mouseRight ||
+                !Main.mouseRightRelease ||
+                Player.HeldItem.ModItem is not PlumbersBadge)
+                return false;
+
+            // Let vanilla inventory and UI right-click interactions win while a badge is held.
+            if (Main.playerInventory || Player.mouseInterface || Main.LocalPlayer.mouseInterface)
+                return false;
+
+            return true;
         }
 
         private void SetAttackSelection(AttackSelection selection) {

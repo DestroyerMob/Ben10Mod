@@ -930,16 +930,11 @@ namespace Ben10Mod.Content.Interface {
             listHeader.Top.Set(92f, 0f);
             mainPanel.Append(listHeader);
 
-            var listHint = new UIText("Unlocked forms appear first. Locked forms show their requirement in the details panel.", 0.72f);
-            listHint.Left.Set(40f, 0f);
-            listHint.Top.Set(118f, 0f);
-            mainPanel.Append(listHint);
-
             codexList = new UIList();
             codexList.Width.Set(382f, 0f);
             codexList.Height.Set(492f, 0f);
             codexList.Left.Set(40f, 0f);
-            codexList.Top.Set(144f, 0f);
+            codexList.Top.Set(124f, 0f);
             codexList.ListPadding = 12f;
             codexList.ManualSortMethod = _ => { };
             mainPanel.Append(codexList);
@@ -947,7 +942,7 @@ namespace Ben10Mod.Content.Interface {
             var listScrollbar = new UIScrollbar();
             listScrollbar.Height.Set(492f, 0f);
             listScrollbar.Left.Set(430f, 0f);
-            listScrollbar.Top.Set(144f, 0f);
+            listScrollbar.Top.Set(124f, 0f);
             mainPanel.Append(listScrollbar);
             codexList.SetScrollbar(listScrollbar);
 
