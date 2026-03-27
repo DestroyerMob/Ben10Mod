@@ -878,6 +878,9 @@ namespace Ben10Mod.Content.Interface {
         private UIList codexList;
         private UIPanel infoPanel;
         private UIPanel headerPanel;
+        private UIPanel overviewPanel;
+        private UIPanel unlockPanel;
+        private UIPanel abilitiesPanel;
         private FittedTransformationIcon previewIcon;
         private UIText nameText;
         private UIText statusText;
@@ -907,6 +910,8 @@ namespace Ben10Mod.Content.Interface {
             mainPanel.Width.Set(1180f, 0f);
             mainPanel.Height.Set(680f, 0f);
             mainPanel.HAlign = mainPanel.VAlign = 0.5f;
+            mainPanel.BackgroundColor = new Color(12, 18, 28, 238);
+            mainPanel.BorderColor = new Color(76, 96, 126, 235);
             Append(mainPanel);
 
             var title = new UIText("Transformation Codex", 1.45f);
@@ -924,11 +929,16 @@ namespace Ben10Mod.Content.Interface {
             listHeader.Top.Set(92f, 0f);
             mainPanel.Append(listHeader);
 
+            var listHint = new UIText("Unlocked forms appear first. Locked forms show their requirement in the details panel.", 0.72f);
+            listHint.Left.Set(40f, 0f);
+            listHint.Top.Set(118f, 0f);
+            mainPanel.Append(listHint);
+
             codexList = new UIList();
             codexList.Width.Set(382f, 0f);
             codexList.Height.Set(492f, 0f);
             codexList.Left.Set(40f, 0f);
-            codexList.Top.Set(126f, 0f);
+            codexList.Top.Set(144f, 0f);
             codexList.ListPadding = 12f;
             codexList.ManualSortMethod = _ => { };
             mainPanel.Append(codexList);
@@ -936,7 +946,7 @@ namespace Ben10Mod.Content.Interface {
             var listScrollbar = new UIScrollbar();
             listScrollbar.Height.Set(492f, 0f);
             listScrollbar.Left.Set(430f, 0f);
-            listScrollbar.Top.Set(126f, 0f);
+            listScrollbar.Top.Set(144f, 0f);
             mainPanel.Append(listScrollbar);
             codexList.SetScrollbar(listScrollbar);
 
@@ -945,6 +955,8 @@ namespace Ben10Mod.Content.Interface {
             infoPanel.Height.Set(560f, 0f);
             infoPanel.Left.Set(490f, 0f);
             infoPanel.Top.Set(92f, 0f);
+            infoPanel.BackgroundColor = new Color(16, 22, 32, 232);
+            infoPanel.BorderColor = new Color(78, 98, 128, 225);
             mainPanel.Append(infoPanel);
 
             headerPanel = new UIPanel();
@@ -980,42 +992,60 @@ namespace Ben10Mod.Content.Interface {
             statusText.IsWrapped = true;
             headerPanel.Append(statusText);
 
+            overviewPanel = CreateCodexSectionPanel();
+            overviewPanel.Left.Set(30f, 0f);
+            overviewPanel.Top.Set(194f, 0f);
+            overviewPanel.Height.Set(116f, 0f);
+            infoPanel.Append(overviewPanel);
+
             overviewHeader = new UIText("Overview", 1.08f);
-            overviewHeader.Left.Set(30f, 0f);
-            overviewHeader.Top.Set(194f, 0f);
-            infoPanel.Append(overviewHeader);
+            overviewHeader.Left.Set(18f, 0f);
+            overviewHeader.Top.Set(12f, 0f);
+            overviewPanel.Append(overviewHeader);
 
             descriptionText = new UIText("View lore-facing kit info and ability details here.", 0.95f);
-            descriptionText.Left.Set(30f, 0f);
-            descriptionText.Top.Set(226f, 0f);
-            descriptionText.Width.Set(580f, 0f);
+            descriptionText.Left.Set(18f, 0f);
+            descriptionText.Top.Set(44f, 0f);
+            descriptionText.Width.Set(544f, 0f);
             descriptionText.IsWrapped = true;
-            infoPanel.Append(descriptionText);
+            overviewPanel.Append(descriptionText);
+
+            unlockPanel = CreateCodexSectionPanel();
+            unlockPanel.Left.Set(30f, 0f);
+            unlockPanel.Top.Set(328f, 0f);
+            unlockPanel.Height.Set(94f, 0f);
+            infoPanel.Append(unlockPanel);
 
             unlockHeader = new UIText("Unlock Condition", 1.08f);
-            unlockHeader.Left.Set(30f, 0f);
-            unlockHeader.Top.Set(336f, 0f);
-            infoPanel.Append(unlockHeader);
+            unlockHeader.Left.Set(18f, 0f);
+            unlockHeader.Top.Set(12f, 0f);
+            unlockPanel.Append(unlockHeader);
 
             unlockConditionText = new UIText("Select a form to inspect how it is unlocked.", 0.9f);
-            unlockConditionText.Left.Set(30f, 0f);
-            unlockConditionText.Top.Set(368f, 0f);
-            unlockConditionText.Width.Set(580f, 0f);
+            unlockConditionText.Left.Set(18f, 0f);
+            unlockConditionText.Top.Set(44f, 0f);
+            unlockConditionText.Width.Set(544f, 0f);
             unlockConditionText.IsWrapped = true;
-            infoPanel.Append(unlockConditionText);
+            unlockPanel.Append(unlockConditionText);
+
+            abilitiesPanel = CreateCodexSectionPanel();
+            abilitiesPanel.Left.Set(30f, 0f);
+            abilitiesPanel.Top.Set(440f, 0f);
+            abilitiesPanel.Height.Set(96f, 0f);
+            infoPanel.Append(abilitiesPanel);
 
             abilitiesHeader = new UIText("Abilities", 1.1f);
-            abilitiesHeader.Left.Set(30f, 0f);
-            abilitiesHeader.Top.Set(426f, 0f);
-            infoPanel.Append(abilitiesHeader);
+            abilitiesHeader.Left.Set(18f, 0f);
+            abilitiesHeader.Top.Set(12f, 0f);
+            abilitiesPanel.Append(abilitiesHeader);
 
             abilityList = new UIList();
-            abilityList.Width.Set(580f, 0f);
-            abilityList.Height.Set(102f, 0f);
-            abilityList.Left.Set(30f, 0f);
-            abilityList.Top.Set(460f, 0f);
-            abilityList.ListPadding = 8f;
-            infoPanel.Append(abilityList);
+            abilityList.Width.Set(544f, 0f);
+            abilityList.Height.Set(40f, 0f);
+            abilityList.Left.Set(18f, 0f);
+            abilityList.Top.Set(44f, 0f);
+            abilityList.ListPadding = 10f;
+            abilitiesPanel.Append(abilityList);
 
             var closeBtn = new UITextPanel<string>("Close Codex");
             closeBtn.Width.Set(148f, 0f);
@@ -1193,9 +1223,12 @@ namespace Ben10Mod.Content.Interface {
                 overviewHeader.SetText("Overview");
                 unlockHeader.SetText("Unlock Condition");
                 unlockConditionText.SetText("Select a form to inspect how it is unlocked.");
-                abilitiesHeader.Top.Set(426f, 0f);
-                abilityList.Top.Set(460f, 0f);
-                abilityList.Height.Set(102f, 0f);
+                overviewPanel.Height.Set(116f, 0f);
+                unlockPanel.Top.Set(328f, 0f);
+                unlockPanel.Height.Set(94f, 0f);
+                abilitiesPanel.Top.Set(440f, 0f);
+                abilitiesPanel.Height.Set(96f, 0f);
+                abilityList.Height.Set(40f, 0f);
                 abilityList.Clear();
                 return;
             }
@@ -1220,22 +1253,26 @@ namespace Ben10Mod.Content.Interface {
             unlockConditionText.SetText(player.GetTransformationUnlockConditionText(transformation));
             unlockConditionText.Recalculate();
 
-            float descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 96f;
-            float unlockTop = Math.Max(336f, descriptionText.Top.Pixels + descriptionHeight + 30f);
-            unlockHeader.Top.Set(unlockTop, 0f);
-            unlockConditionText.Top.Set(unlockTop + 32f, 0f);
+            float descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 56f;
+            float overviewHeight = Math.Max(112f, descriptionText.Top.Pixels + descriptionHeight + 18f);
+            overviewPanel.Height.Set(overviewHeight, 0f);
 
-            float unlockHeight = unlockConditionText.MinHeight.Pixels > 0f ? unlockConditionText.MinHeight.Pixels : 42f;
-            float abilitiesTop = Math.Max(unlockConditionText.Top.Pixels + unlockHeight + 30f, 426f);
-            abilitiesHeader.Top.Set(abilitiesTop, 0f);
-            float abilityListTop = abilitiesTop + 34f;
-            abilityList.Top.Set(abilityListTop, 0f);
-            abilityList.Height.Set(Math.Max(96f, 560f - abilityListTop - 24f), 0f);
+            float unlockTop = overviewPanel.Top.Pixels + overviewHeight + 18f;
+            unlockPanel.Top.Set(unlockTop, 0f);
+            float unlockHeight = unlockConditionText.MinHeight.Pixels > 0f ? unlockConditionText.MinHeight.Pixels : 36f;
+            float unlockPanelHeight = Math.Max(88f, unlockConditionText.Top.Pixels + unlockHeight + 18f);
+            unlockPanel.Height.Set(unlockPanelHeight, 0f);
+
+            float abilitiesPanelTop = unlockTop + unlockPanelHeight + 18f;
+            abilitiesPanel.Top.Set(abilitiesPanelTop, 0f);
+            float abilitiesPanelHeight = Math.Max(112f, 560f - abilitiesPanelTop - 24f);
+            abilitiesPanel.Height.Set(abilitiesPanelHeight, 0f);
+            abilityList.Height.Set(Math.Max(56f, abilitiesPanelHeight - 60f), 0f);
 
             abilityList.Clear();
             IReadOnlyList<string> abilities = AlienSelectionScreen.GetSafeTransformationAbilities(transformation, player);
             for (int i = 0; i < abilities.Count; i++)
-                abilityList.Add(new UIText("• " + (abilities[i] ?? "Unknown ability"), 0.92f));
+                abilityList.Add(CreateCodexAbilityEntry(abilities[i] ?? "Unknown ability"));
         }
 
         private string FindFirstNewTransformation(OmnitrixPlayer player) {
@@ -1259,6 +1296,30 @@ namespace Ben10Mod.Content.Interface {
             }
 
             return false;
+        }
+
+        private static UIPanel CreateCodexSectionPanel() {
+            UIPanel panel = new UIPanel();
+            panel.Width.Set(590f, 0f);
+            panel.BackgroundColor = new Color(20, 28, 40, 215);
+            panel.BorderColor = new Color(70, 88, 116, 215);
+            return panel;
+        }
+
+        private static UIPanel CreateCodexAbilityEntry(string abilityText) {
+            UIPanel row = new UIPanel();
+            row.Width.Set(0f, 1f);
+            row.Height.Set(46f, 0f);
+            row.BackgroundColor = new Color(28, 38, 54, 220);
+            row.BorderColor = new Color(82, 104, 132, 220);
+
+            UIText text = new UIText("• " + abilityText, 0.88f);
+            text.Left.Set(10f, 0f);
+            text.Top.Set(11f, 0f);
+            text.Width.Set(-20f, 1f);
+            text.IsWrapped = true;
+            row.Append(text);
+            return row;
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
