@@ -9,24 +9,14 @@ namespace Ben10Mod.Common.CustomVisuals;
 internal static class StinkFlyWingDrawHelper {
     private const string StinkFlyTransformationId = "Ben10Mod:StinkFly";
     private const string WingTexturePath = "Ben10Mod/Content/Items/Accessories/Wings/StinkFlyWings_Wings";
-    private static readonly Rectangle[] WingFrames = {
-        new(0, 0, 86, 50),
-        new(0, 67, 86, 43),
-        new(0, 134, 86, 40),
-        new(0, 201, 86, 33)
-    };
-    private static readonly Vector2[] LeftWingOrigins = {
-        new(56f, 49f),
-        new(56f, 42f),
-        new(56f, 39f),
-        new(56f, 32f)
-    };
-    private static readonly Vector2[] RightWingOrigins = {
-        new(30f, 49f),
-        new(30f, 42f),
-        new(30f, 39f),
-        new(30f, 32f)
-    };
+    // The Stinkfly wing sheet is hand-packed rather than evenly divided into four bands.
+    // Keep these explicit frame starts in sync with the asset so we don't clip or cross into
+    // the next frame's rows.
+    private static readonly int[] WingFrameTopOffsets = { 2, 62, 126, 186 };
+    private const int WingFrameWidth = 86;
+    private const int WingFrameHeight = 48;
+    private static readonly Vector2 LeftWingOrigin = new(56f, 47f);
+    private static readonly Vector2 RightWingOrigin = new(WingFrameWidth - LeftWingOrigin.X, LeftWingOrigin.Y);
     private static readonly Vector2 WingAnchorOffset = new(0f, 6f);
     private static readonly Vector2 WingSideOffset = new(8f, 0f);
     private const int HeightAnimInterval = 6;
@@ -50,18 +40,19 @@ internal static class StinkFlyWingDrawHelper {
             return;
 
         int frame = ResolveWingFrame(player);
-        Rectangle sourceRectangle = WingFrames[frame];
+        Rectangle sourceRectangle = GetWingFrameRectangle(frame);
         Vector2 anchor = player.MountedCenter - Main.screenPosition + WingAnchorOffset;
         Color color = Lighting.GetColor((int)(player.Center.X / 16f), (int)(player.Center.Y / 16f), Color.White);
         float rotation = player.fullRotation;
         Vector2 bodyRotationAnchor = player.fullRotationOrigin;
-        bool facingRight = player.direction == 1;
-        SpriteEffects leftEffects = facingRight ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-        SpriteEffects rightEffects = facingRight ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-        Vector2 leftOrigin = facingRight ? LeftWingOrigins[frame] : RightWingOrigins[frame];
-        Vector2 rightOrigin = facingRight ? RightWingOrigins[frame] : LeftWingOrigins[frame];
-        Vector2 leftOffset = new(-WingSideOffset.X * player.direction, WingSideOffset.Y);
-        Vector2 rightOffset = new(WingSideOffset.X * player.direction, WingSideOffset.Y);
+        bool facingLeft = player.direction == -1;
+        SpriteEffects leftEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        SpriteEffects rightEffects = facingLeft ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+        Vector2 leftOrigin = facingLeft ? RightWingOrigin : LeftWingOrigin;
+        Vector2 rightOrigin = facingLeft ? LeftWingOrigin : RightWingOrigin;
+        Vector2 horizontalOffset = new(WingSideOffset.X * player.direction, WingSideOffset.Y);
+        Vector2 leftOffset = -horizontalOffset;
+        Vector2 rightOffset = horizontalOffset;
 
         DrawData leftWing = new(
             texture,
@@ -112,6 +103,10 @@ internal static class StinkFlyWingDrawHelper {
             return 1;
 
         return 2 + (int)(Main.GameUpdateCount / HeightAnimInterval % 2);
+    }
+
+    private static Rectangle GetWingFrameRectangle(int frame) {
+        return new Rectangle(0, WingFrameTopOffsets[frame], WingFrameWidth, WingFrameHeight);
     }
 
     private static Vector2 RotateDrawPosition(Vector2 drawPosition, Player player, Vector2 rotationOrigin) {
