@@ -256,7 +256,7 @@ namespace Ben10Mod.Content.Transformations {
                 return Array.Empty<string>();
 
             List<string> previewBaseTexturePaths = new();
-            HashSet<string> seenPaths = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> seenPreviewKeys = new(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < channels.Count; i++) {
                 TransformationPaletteChannel channel = channels[i];
@@ -268,7 +268,8 @@ namespace Ben10Mod.Content.Transformations {
                     if (overlay == null || string.IsNullOrWhiteSpace(overlay.BaseTexturePath))
                         continue;
 
-                    if (seenPaths.Add(overlay.BaseTexturePath))
+                    string previewKey = NormalizePreviewTexturePath(overlay.BaseTexturePath);
+                    if (seenPreviewKeys.Add(previewKey))
                         previewBaseTexturePaths.Add(overlay.BaseTexturePath);
                 }
             }
@@ -293,6 +294,25 @@ namespace Ben10Mod.Content.Transformations {
             return null;
         }
         public virtual int GetMoveSetIndex(OmnitrixPlayer omp) => 0;
+
+        private static string NormalizePreviewTexturePath(string texturePath) {
+            if (string.IsNullOrWhiteSpace(texturePath))
+                return string.Empty;
+
+            int slashIndex = texturePath.LastIndexOf('/');
+            if (slashIndex < 0)
+                return texturePath.EndsWith("_alt", StringComparison.OrdinalIgnoreCase)
+                    ? texturePath[..^4]
+                    : texturePath;
+
+            string prefix = texturePath[..(slashIndex + 1)];
+            string fileName = texturePath[(slashIndex + 1)..];
+            if (fileName.EndsWith("_alt", StringComparison.OrdinalIgnoreCase))
+                fileName = fileName[..^4];
+
+            return prefix + fileName;
+        }
+
         public virtual bool HasPrimaryAbilityActionForState(OmnitrixPlayer omp)
             => HasPrimaryAbilityForState(omp) || HasPrimaryAbilityAttackForState(omp);
         public virtual bool HasSecondaryAbilityActionForState(OmnitrixPlayer omp)

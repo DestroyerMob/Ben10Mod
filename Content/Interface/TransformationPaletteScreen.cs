@@ -404,6 +404,8 @@ public sealed class PalettePreviewSwatch : UIElement {
         Rectangle shadow = new(previewArea.Center.X - shadowWidth / 2, previewArea.Bottom - 20, shadowWidth, 10);
         spriteBatch.Draw(TextureAssets.MagicPixel.Value, shadow, new Color(0, 0, 0, 105));
 
+        Dictionary<Texture2D, Rectangle> previewFramesByBaseTexture = new();
+
         for (int i = 0; i < baseLayers.Count; i++) {
             ResolvedPreviewBase previewBase = baseLayers[i];
             Texture2D texture = previewBase.Texture;
@@ -420,8 +422,10 @@ public sealed class PalettePreviewSwatch : UIElement {
             Texture2D baseToDraw = masksForBase.Count > 0
                 ? TransformationPaletteTextureCache.GetMaskedBaseTexture(texture, masksForBase)
                 : texture;
+            Rectangle previewFrame = TransformationPaletteTextureCache.ResolvePreviewFrame(texture, masksForBase);
+            previewFramesByBaseTexture[texture] = previewFrame;
 
-            spriteBatch.Draw(baseToDraw, drawPosition, ResolvePreviewFrame(baseToDraw),
+            spriteBatch.Draw(baseToDraw, drawPosition, previewFrame,
                 Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
         }
 
@@ -439,7 +443,11 @@ public sealed class PalettePreviewSwatch : UIElement {
             if (processedOverlay == null)
                 continue;
 
-            spriteBatch.Draw(processedOverlay, drawPosition, ResolvePreviewFrame(processedOverlay),
+            Rectangle previewFrame = previewFramesByBaseTexture.TryGetValue(overlay.BaseTexture, out Rectangle resolvedFrame)
+                ? resolvedFrame
+                : TransformationPaletteTextureCache.ResolvePreviewFrame(overlay.BaseTexture, new[] { overlay.MaskTexture });
+
+            spriteBatch.Draw(processedOverlay, drawPosition, previewFrame,
                 Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
         }
     }
@@ -456,20 +464,6 @@ public sealed class PalettePreviewSwatch : UIElement {
         catch {
             return false;
         }
-    }
-
-    private static Rectangle ResolvePreviewFrame(Texture2D texture) {
-        if (texture == null)
-            return Rectangle.Empty;
-
-        const int previewFrameWidth = 40;
-        const int previewFrameHeight = 56;
-        if (texture.Width >= previewFrameWidth && texture.Height >= previewFrameHeight &&
-            texture.Width % previewFrameWidth == 0 && texture.Height % previewFrameHeight == 0) {
-            return new Rectangle(0, 0, previewFrameWidth, previewFrameHeight);
-        }
-
-        return new Rectangle(0, 0, texture.Width, texture.Height);
     }
 
     private static int ComparePreviewLayerOrder(string leftPath, string rightPath) {

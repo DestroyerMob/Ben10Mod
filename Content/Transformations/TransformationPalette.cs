@@ -224,10 +224,12 @@ public static class TransformationPaletteTextureCache {
     private readonly record struct MaskedBaseKey(Texture2D BaseTexture, string MaskSignature);
     private readonly record struct ProcessedOverlayKey(Texture2D BaseTexture, Texture2D MaskTexture, Color Color,
         byte Hue, byte Saturation, bool UsePaletteColor);
+    private readonly record struct PreviewFrameKey(Texture2D BaseTexture, string MaskSignature, int FrameWidth, int FrameHeight);
 
     private static readonly Dictionary<PreparedMaskKey, Texture2D> PreparedMasks = new();
     private static readonly Dictionary<MaskedBaseKey, Texture2D> MaskedBases = new();
     private static readonly Dictionary<ProcessedOverlayKey, Texture2D> ProcessedOverlays = new();
+    private static readonly Dictionary<PreviewFrameKey, Rectangle> PreviewFrames = new();
     private static readonly Dictionary<Texture2D, Color[]> PixelCache = new();
 
     public static void Clear() {
@@ -251,6 +253,7 @@ public static class TransformationPaletteTextureCache {
         PreparedMasks.Clear();
         MaskedBases.Clear();
         ProcessedOverlays.Clear();
+        PreviewFrames.Clear();
         PixelCache.Clear();
 
         if (Main.dedServ)
@@ -278,11 +281,24 @@ public static class TransformationPaletteTextureCache {
         if (sourcePixels == null || sourcePixels.Length == 0)
             return maskTexture;
 
+        float maxBrightness = 0f;
+        for (int i = 0; i < sourcePixels.Length; i++) {
+            Color pixel = sourcePixels[i];
+            if (pixel.A == 0)
+                continue;
+
+            maxBrightness = Math.Max(maxBrightness, GetMaskBrightness(pixel));
+        }
+
+        if (maxBrightness <= 0f)
+            maxBrightness = 1f;
+
         Color[] preparedPixels = new Color[sourcePixels.Length];
         for (int i = 0; i < sourcePixels.Length; i++) {
             Color pixel = sourcePixels[i];
-            float brightness = (pixel.R + pixel.G + pixel.B) / (3f * 255f);
-            byte coverage = (byte)Math.Clamp((int)Math.Round(brightness * pixel.A), 0, 255);
+            float brightness = GetMaskBrightness(pixel);
+            float normalizedCoverage = brightness / maxBrightness;
+            byte coverage = (byte)Math.Clamp((int)Math.Round(normalizedCoverage * pixel.A), 0, 255);
             preparedPixels[i] = new Color(255, 255, 255, coverage);
         }
 
@@ -369,6 +385,74 @@ public static class TransformationPaletteTextureCache {
         return overlayTexture;
     }
 
+    public static Rectangle ResolvePreviewFrame(Texture2D baseTexture, IReadOnlyList<Texture2D> maskTextures,
+        int frameWidth = 40, int frameHeight = 56) {
+        if (baseTexture == null)
+            return Rectangle.Empty;
+
+        if (frameWidth <= 0 || frameHeight <= 0 ||
+            baseTexture.Width < frameWidth || baseTexture.Height < frameHeight ||
+            baseTexture.Width % frameWidth != 0 || baseTexture.Height % frameHeight != 0) {
+            return new Rectangle(0, 0, baseTexture.Width, baseTexture.Height);
+        }
+
+        string maskSignature = BuildMaskSignature(maskTextures);
+        PreviewFrameKey key = new(baseTexture, maskSignature, frameWidth, frameHeight);
+        if (PreviewFrames.TryGetValue(key, out Rectangle cachedFrame))
+            return cachedFrame;
+
+        Color[] basePixels = GetPixels(baseTexture);
+        if (basePixels == null || basePixels.Length == 0) {
+            Rectangle fullFrame = new(0, 0, frameWidth, frameHeight);
+            PreviewFrames[key] = fullFrame;
+            return fullFrame;
+        }
+
+        List<Color[]> resolvedMaskPixels = new();
+        if (maskTextures != null) {
+            for (int i = 0; i < maskTextures.Count; i++) {
+                Texture2D maskTexture = GetPreparedMaskTexture(maskTextures[i]);
+                if (maskTexture == null || maskTexture.Width != baseTexture.Width || maskTexture.Height != baseTexture.Height)
+                    continue;
+
+                Color[] maskPixels = GetPixels(maskTexture);
+                if (maskPixels != null && maskPixels.Length == basePixels.Length)
+                    resolvedMaskPixels.Add(maskPixels);
+            }
+        }
+
+        int columns = baseTexture.Width / frameWidth;
+        int rows = baseTexture.Height / frameHeight;
+        bool hasMasks = resolvedMaskPixels.Count > 0;
+        int bestScore = -1;
+        Rectangle bestFrame = new(0, 0, frameWidth, frameHeight);
+
+        for (int row = 0; row < rows; row++) {
+            for (int column = 0; column < columns; column++) {
+                Rectangle frame = new(column * frameWidth, row * frameHeight, frameWidth, frameHeight);
+                int baseOpaqueCount = CountOpaquePixels(basePixels, baseTexture.Width, frame);
+                if (baseOpaqueCount <= 0)
+                    continue;
+
+                int maskOpaqueCount = hasMasks
+                    ? CountMaskedPixels(resolvedMaskPixels, baseTexture.Width, frame)
+                    : 0;
+
+                int score = hasMasks && maskOpaqueCount > 0
+                    ? 1_000_000 + maskOpaqueCount * 4 + baseOpaqueCount
+                    : baseOpaqueCount;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestFrame = frame;
+                }
+            }
+        }
+
+        PreviewFrames[key] = bestFrame;
+        return bestFrame;
+    }
+
     private static Color[] GetPixels(Texture2D texture) {
         if (texture == null || Main.dedServ)
             return null;
@@ -397,5 +481,41 @@ public static class TransformationPaletteTextureCache {
 
         ids.Sort();
         return string.Join("|", ids);
+    }
+
+    private static float GetMaskBrightness(Color pixel) {
+        return Math.Max(pixel.R, Math.Max(pixel.G, pixel.B)) / 255f;
+    }
+
+    private static int CountOpaquePixels(Color[] pixels, int textureWidth, Rectangle frame) {
+        int count = 0;
+        for (int y = frame.Top; y < frame.Bottom; y++) {
+            int rowOffset = y * textureWidth;
+            for (int x = frame.Left; x < frame.Right; x++) {
+                if (pixels[rowOffset + x].A > 0)
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static int CountMaskedPixels(IReadOnlyList<Color[]> maskPixels, int textureWidth, Rectangle frame) {
+        int count = 0;
+        for (int y = frame.Top; y < frame.Bottom; y++) {
+            int rowOffset = y * textureWidth;
+            for (int x = frame.Left; x < frame.Right; x++) {
+                int index = rowOffset + x;
+                for (int maskIndex = 0; maskIndex < maskPixels.Count; maskIndex++) {
+                    if (maskPixels[maskIndex][index].A <= 0)
+                        continue;
+
+                    count++;
+                    break;
+                }
+            }
+        }
+
+        return count;
     }
 }
