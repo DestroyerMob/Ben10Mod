@@ -9,17 +9,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Body.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Head.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Legs.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatterySecondaryMask_Body.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockChargeMask_Body.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockChargeMask_Head.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Legs.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneEyeMask_Head.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

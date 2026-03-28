@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
 
@@ -45,6 +46,29 @@ public class FourArmsTransformation : Transformation {
         player.noFallDmg = true;
         player.jumpSpeedBoost += 2.8f;
     }
+    
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
+        new TransformationPaletteChannel(
+            "skin",
+            "Skin",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/FourArms/FourArms_Head",
+                "Ben10Mod/Content/Transformations/FourArms/FourArmsSkinMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/FourArms/FourArms_Body",
+                "Ben10Mod/Content/Transformations/FourArms/FourArmsSkinMask_Body"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/FourArms/FourArms_Legs",
+                "Ben10Mod/Content/Transformations/FourArms/FourArmsSkinMask_Legs")),
+        new TransformationPaletteChannel(
+            "eye",
+            "Eye",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/FourArms/FourArms_Head",
+                "Ben10Mod/Content/Transformations/FourArms/FourArmsEyeMask_Head"))
+    ];
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<FourArms>();
