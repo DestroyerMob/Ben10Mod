@@ -1,0 +1,1102 @@
+# This file will automatically update with entries for new content after a build and reload
+
+Items: {
+	XLR8: {
+		Tooltip: ""
+		DisplayName: XLR8
+	}
+
+	Transformation: {
+		DisplayName: Transformation
+		Tooltip: ""
+	}
+
+	FourArms: {
+		DisplayName: Four Arms
+		Tooltip: ""
+	}
+
+	HeatBlast: {
+		DisplayName: Heat Blast
+		Tooltip: ""
+	}
+
+	HeatBlastWings: {
+		DisplayName: Heat Blast Wings
+		Tooltip: ""
+	}
+
+	DiamondHead: {
+		DisplayName: Diamond Head
+		Tooltip: ""
+	}
+
+	BuzzShock: {
+		DisplayName: Buzz Shock
+		Tooltip: ""
+	}
+
+	Chromastone: {
+		DisplayName: Chromastone
+		Tooltip: ""
+	}
+
+	GhostFreak: {
+		DisplayName: Ghost Freak
+		Tooltip: ""
+	}
+
+	RipJaws: {
+		DisplayName: Rip Jaws
+		Tooltip: ""
+	}
+
+	StinkFly: {
+		DisplayName: Stink Fly
+		Tooltip: ""
+	}
+
+	WildVine: {
+		DisplayName: Wild Vine
+		Tooltip: ""
+	}
+
+	ChromaStone: {
+		DisplayName: Chroma Stone
+		Tooltip: ""
+	}
+
+	TestItem: {
+		DisplayName: Test Item
+		Tooltip: ""
+	}
+
+	PrototypeOmnitrix: {
+		DisplayName: Prototype Omnitrix
+		Tooltip: ""
+	}
+
+	CongealedCodonBar: {
+		DisplayName: Congealed Codon Bar
+		Tooltip: ""
+	}
+
+	CongealedCodonOre: {
+		DisplayName: Congealed Codon Ore
+		Tooltip: ""
+	}
+
+	FourArmsFist: {
+		DisplayName: Four Arms Fist
+		Tooltip: ""
+	}
+
+	Ben10Shirt: {
+		DisplayName: Hero Shirt
+		Tooltip: This shirt seems oddly familiar...
+	}
+
+	Ben10Pants: {
+		DisplayName: Hero Pants
+		Tooltip: These pants seem oddly familiar...
+	}
+
+	PlumbersBadge: {
+		DisplayName: Plumbers Badge
+		Tooltip: Plumbers Identification Badge
+	}
+
+	RecalibratedOmnitrix: {
+		DisplayName: Recalibrated Omnitrix
+		Tooltip: ""
+	}
+
+	Omnitrix: {
+		DisplayName: Omnitrix
+		Tooltip: ""
+	}
+
+	StinkFlyWings: {
+		DisplayName: Stink Fly Wings
+		Tooltip: ""
+	}
+
+	PlumbersGlassHelmet: {
+		DisplayName: Plumbers Glass Helmet
+		Tooltip: ""
+	}
+
+	PlumbersHelmet: {
+		DisplayName: Plumbers Helmet
+		Tooltip: ""
+	}
+
+	PlumbersPants: {
+		DisplayName: Plumbers Pants
+		Tooltip: ""
+	}
+
+	PlumbersShirt: {
+		DisplayName: Plumbers Shirt
+		Tooltip: ""
+	}
+
+	BlankAccessory: {
+		DisplayName: Blank Accessory
+		Tooltip: ""
+	}
+
+	PlumberAgentBadge: {
+		Tooltip: ""
+		DisplayName: Plumbers Agent Badge
+	}
+
+	PlumberCapsulePodItem: {
+		DisplayName: Plumber Capsule Pod Item
+		Tooltip: ""
+	}
+
+	AdvancedCircuitMatrix: {
+		DisplayName: Advanced Circuit Matrix
+		Tooltip: Doubles Transformation and Cooldown times for the prototype omnitrix
+	}
+
+	PlumberMagisterBadge: {
+		DisplayName: Plumbers Magister Badge
+		Tooltip: ""
+	}
+
+	MasterControlKey: {
+		Tooltip: ""
+		DisplayName: Master Control Key
+	}
+
+	EyeGuy: {
+		Tooltip: ""
+		DisplayName: Eye Guy
+	}
+
+	HeroEmblem: {
+		Tooltip: ""
+		DisplayName: Hero Emblem
+	}
+
+	HeatBlastExtraJumpAccessory: {
+		DisplayName: Heat Blast Extra Jump Accessory
+		Tooltip: ""
+	}
+
+	PlumberCadetBadge: {
+		DisplayName: Plumbers Cadet Badge
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeCrimtane: {
+		DisplayName: Plumbers Deputy Badge Crimtane
+		Tooltip: ""
+	}
+
+	PlumberDeputyBadgeDemonite: {
+		DisplayName: Plumbers Deputy Badge Demonite
+		Tooltip: ""
+	}
+
+	SnowFlake: {
+		DisplayName: Snow Flake
+		Tooltip: ""
+	}
+
+	Snowflake: {
+		DisplayName: Snowflake
+		Tooltip: ""
+	}
+
+	PlumberSeniorDeputyBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Senior Deputy Badge
+	}
+
+	HeavenlyCrystallineBadge: {
+		DisplayName: Heavenly Crystalline Badge
+		Tooltip: ""
+	}
+
+	PlumberSeniorAgentBadge: {
+		DisplayName: Plumber Senior Agent Badge
+		Tooltip: ""
+	}
+
+	PlumberProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Proctor Badge
+	}
+
+	PlumberMagistrataBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Magistrata Badge
+	}
+
+	PlumberFieldProctorBadge: {
+		Tooltip: ""
+		DisplayName: Plumber Field Proctor Badge
+	}
+
+	HeroFragment: {
+		Tooltip: ""
+		DisplayName: Hero Fragment
+	}
+
+	DiscoDye: {
+		DisplayName: Disco Dye
+		Tooltip: ""
+	}
+
+	BigChill: {
+		Tooltip: ""
+		DisplayName: Big Chill
+	}
+
+	BigChillWings: {
+		DisplayName: Big Chill Wings
+		Tooltip: ""
+	}
+
+	Ultimatrix: {
+		Tooltip: ""
+		DisplayName: Ultimatrix
+	}
+
+	UltimateBigChillWings: {
+		Tooltip: ""
+		DisplayName: Ultimate Big Chill Wings
+	}
+
+	UltimatrixCore: {
+		Tooltip: ""
+		DisplayName: Ultimatrix Core
+	}
+
+	AlbedoSignal: {
+		Tooltip: ""
+		DisplayName: Albedo Signal
+	}
+
+	ManaThread: {
+		Tooltip: ""
+		DisplayName: Mana Thread
+	}
+
+	HexCircle: {
+		Tooltip: ""
+		DisplayName: Hex Circle
+	}
+
+	AnoditeLance: {
+		Tooltip: ""
+		DisplayName: Anodite Lance
+	}
+
+	AegisCharm: {
+		Tooltip: ""
+		DisplayName: Aegis Charm
+	}
+
+	AnoditeOrb: {
+		DisplayName: Anodite Orb
+		Tooltip: ""
+	}
+
+	ManaBarrier: {
+		DisplayName: Mana Barrier
+		Tooltip: ""
+	}
+
+	AlbedoTransformationCache: {
+		Tooltip: ""
+		DisplayName: Albedo Transformation Cache
+	}
+
+	OsmosianHarness: {
+		Tooltip: ""
+		DisplayName: Osmosian Harness
+	}
+
+	OsmosianAmplifier: {
+		DisplayName: Osmosian Amplifier
+		Tooltip: ""
+	}
+
+	OsmosianRegulator: {
+		DisplayName: Osmosian Regulator
+		Tooltip: ""
+	}
+
+	OsmosianInjector: {
+		Tooltip: ""
+		DisplayName: Osmosian Injector
+	}
+
+	OsmosianDynamo: {
+		Tooltip: ""
+		DisplayName: Osmosian Dynamo
+	}
+
+	OsmosianCapacitor: {
+		Tooltip: ""
+		DisplayName: Osmosian Capacitor
+	}
+
+	OsmosianBreacher: {
+		Tooltip: ""
+		DisplayName: Osmosian Breacher
+	}
+
+	OsmosianLens: {
+		DisplayName: Osmosian Lens
+		Tooltip: ""
+	}
+
+	OsmosianPlating: {
+		DisplayName: Osmosian Plating
+		Tooltip: ""
+	}
+
+	OsmosianRecycler: {
+		DisplayName: Osmosian Recycler
+		Tooltip: ""
+	}
+
+	OsmosianTalons: {
+		DisplayName: Osmosian Talons
+		Tooltip: ""
+	}
+
+	OsmosianTreads: {
+		DisplayName: Osmosian Treads
+		Tooltip: ""
+	}
+
+	AdaptivePlating: {
+		DisplayName: Adaptive Plating
+		Tooltip: ""
+	}
+
+	BurstGreaves: {
+		DisplayName: Burst Greaves
+		Tooltip: ""
+	}
+
+	CooldownAccelerator: {
+		DisplayName: Cooldown Accelerator
+		Tooltip: ""
+	}
+
+	EnergyRecycler: {
+		DisplayName: Energy Recycler
+		Tooltip: ""
+	}
+
+	HeroVisor: {
+		DisplayName: Hero Visor
+		Tooltip: ""
+	}
+
+	ImpactHarness: {
+		DisplayName: Impact Harness
+		Tooltip: ""
+	}
+
+	KineticServos: {
+		DisplayName: Kinetic Servos
+		Tooltip: ""
+	}
+
+	PrimaryConduit: {
+		DisplayName: Primary Conduit
+		Tooltip: ""
+	}
+
+	TransformationStabilizer: {
+		DisplayName: Transformation Stabilizer
+		Tooltip: ""
+	}
+
+	UltimateRelay: {
+		DisplayName: Ultimate Relay
+		Tooltip: ""
+	}
+
+	PlumberAssaultGreaves: {
+		DisplayName: Plumber Assault Greaves
+		Tooltip: ""
+	}
+
+	PlumberAssaultHarness: {
+		DisplayName: Plumber Assault Harness
+		Tooltip: ""
+	}
+
+	PlumberAssaultHelmet: {
+		DisplayName: Plumber Assault Helmet
+		Tooltip: ""
+	}
+
+	PlumberBulwarkGreaves: {
+		DisplayName: Plumber Bulwark Greaves
+		Tooltip: ""
+	}
+
+	PlumberBulwarkHelm: {
+		DisplayName: Plumber Bulwark Helm
+		Tooltip: ""
+	}
+
+	PlumberBulwarkMail: {
+		DisplayName: Plumber Bulwark Mail
+		Tooltip: ""
+	}
+
+	PlumberMagistrataCoat: {
+		DisplayName: Plumber Magistrata Coat
+		Tooltip: ""
+	}
+
+	PlumberMagistrataGreaves: {
+		DisplayName: Plumber Magistrata Greaves
+		Tooltip: ""
+	}
+
+	PlumberMagistrataHelm: {
+		DisplayName: Plumber Magistrata Helm
+		Tooltip: ""
+	}
+
+	PlumberOverclockGreaves: {
+		DisplayName: Plumber Overclock Greaves
+		Tooltip: ""
+	}
+
+	PlumberOverclockHelm: {
+		DisplayName: Plumber Overclock Helm
+		Tooltip: ""
+	}
+
+	PlumberOverclockPlate: {
+		DisplayName: Plumber Overclock Plate
+		Tooltip: ""
+	}
+
+	PlumberRelayCoat: {
+		DisplayName: Plumber Relay Coat
+		Tooltip: ""
+	}
+
+	PlumberRelayLeggings: {
+		DisplayName: Plumber Relay Leggings
+		Tooltip: ""
+	}
+
+	PlumberRelayVisor: {
+		DisplayName: Plumber Relay Visor
+		Tooltip: ""
+	}
+
+	PlumberSiegeBoots: {
+		DisplayName: Plumber Siege Boots
+		Tooltip: ""
+	}
+
+	PlumberSiegeCuirass: {
+		DisplayName: Plumber Siege Cuirass
+		Tooltip: ""
+	}
+
+	PlumberSiegeMask: {
+		DisplayName: Plumber Siege Mask
+		Tooltip: ""
+	}
+
+	TitaniumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Titanium Hero Helmet
+	}
+
+	SpectreHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Spectre Hero Helmet
+	}
+
+	ShroomiteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Shroomite Hero Helmet
+	}
+
+	PalladiumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Palladium Hero Helmet
+	}
+
+	OrichalcumHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Orichalcum Hero Helmet
+	}
+
+	MythrilHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Mythril Hero Helmet
+	}
+
+	HallowedHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Hallowed Hero Helmet
+	}
+
+	CobaltHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Cobalt Hero Helmet
+	}
+
+	ChlorophyteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Chlorophyte Hero Helmet
+	}
+
+	AdamantiteHeroHelmet: {
+		Tooltip: ""
+		DisplayName: Adamantite Hero Helmet
+	}
+
+	ReversionFailsafe: {
+		DisplayName: Reversion Failsafe
+		Tooltip: ""
+	}
+
+	JetrayWings: {
+		DisplayName: Jetray Wings
+		Tooltip: ""
+	}
+
+	DnaPaletteKit: {
+		DisplayName: Dna Palette Kit
+		Tooltip: ""
+	}
+
+	CelestialsapienDnaSample: {
+		DisplayName: Celestialsapien Dna Sample
+		Tooltip: ""
+	}
+
+	AnoditeCatalyst: {
+		Tooltip: ""
+		DisplayName: Anodite Catalyst
+	}
+
+	Anodite: {
+		Tooltip: ""
+		DisplayName: Anodite
+	}
+}
+
+Keybinds: {
+	"Prev Alien.DisplayName": Prev Alien
+	"Next Alien.DisplayName": Next Alien
+	"Alien Five.DisplayName": Alien  Five
+	"Alien Four.DisplayName": Alien  Four
+	"Alien Three.DisplayName": Alien  Three
+	"Alien Two.DisplayName": Alien  Two
+	"Alien One.DisplayName": Alien  One
+	Transform.DisplayName: Transform
+	"Transform Wheel.DisplayName": Transform Wheel
+	"Absorb Material.DisplayName": Absorb Material
+	"Primary Ability.DisplayName": Primary Ability
+	"Secondary Ability.DisplayName": Secondary Ability
+	"Open Menu.DisplayName": Open Menu
+	"Open Codex.DisplayName": Open Codex
+	"Quaternary Ability.DisplayName": Quaternary Ability
+	"Tertiary Ability.DisplayName": Tertiary Ability
+	"Ultimate Ability.DisplayName": Ultimate Ability
+}
+
+Buffs: {
+	XLR8_Buff: {
+		DisplayName: XLR8
+		Description: Kineceleran
+	}
+
+	HeatBlast_Buff: {
+		DisplayName: Heatblast
+		Description: Pyronite
+	}
+
+	DiamondHead_Buff: {
+		DisplayName: Diamondhead
+		Description: Petrosapien
+	}
+
+	BuzzShock_Buff: {
+		DisplayName: Buzzshock
+		Description: Nosedeenian
+	}
+
+	ChromaStone_Buff: {
+		DisplayName: Chromastone
+		Description: Crystalsapien
+	}
+
+	MaterialAbsorptionBuff: {
+		DisplayName: Material Absorption
+		Description: Kevin's absorbed material is enhancing his body.
+	}
+
+	FourArms_Buff: {
+		DisplayName: Fourarms
+		Description: Tetramand
+	}
+
+	GhostFreak_Buff: {
+		DisplayName: Ghostfreak
+		Description: Ectonurite
+	}
+
+	RipJaws_Buff: {
+		DisplayName: Ripjaws
+		Description: Piscciss Volann
+	}
+
+	StinkFly_Buff: {
+		DisplayName: Stinkfly
+		Description: Lepidopterran
+	}
+
+	WildVine_Buff: {
+		DisplayName: Wildvine
+		Description: Florauna
+	}
+
+	TransformationCooldown_Buff: {
+		Description: Timeout
+		DisplayName: Cannot transform while timed out
+	}
+
+	EnemySlow: {
+		Description: Movement speed reduced by extreme cold
+		DisplayName: Enemy Slow
+	}
+
+	EyeGuy_Buff: {
+		DisplayName: Eye Guy
+		Description: Opticoid
+	}
+
+	OmnitrixUpdating: {
+		Description: Omnitrix is undergoing updates
+		DisplayName: Omnitrix Updating
+	}
+
+	PrimaryAbility: {
+		DisplayName: Primary Ability
+		Description: Primary Ability Activated
+	}
+
+	PrimaryAbilityCooldown: {
+		DisplayName: Primary Ability Cooldown
+		Description: Primary Ability On Cooldown
+	}
+
+	SecondaryAbility: {
+		DisplayName: Secondary Ability
+		Description: Secondary Ability Activated
+	}
+
+	SecondaryAbilityCooldown: {
+		DisplayName: Secondary Ability Cooldown
+		Description: Secondary Ability On Cooldown
+	}
+
+	TertiaryAbility: {
+		DisplayName: Tertiary Ability
+		Description: Tertiary Ability Activated
+	}
+
+	TertiaryAbilityCooldown: {
+		DisplayName: Tertiary Ability Cooldown
+		Description: Tertiary Ability On Cooldown
+	}
+
+	BuzzShockMinionBuff: {
+		DisplayName: Buzz Shock Minion Buff
+		Description: A Buzzshock minion fights at your side
+	}
+
+	UltimateAbilityCooldown: {
+		Description: Ultimate ability on cooldown
+		DisplayName: Ultimate Ability Cooldown
+	}
+
+	UltimateAbility: {
+		Description: Ultimate ability activated
+		DisplayName: Ultimate Ability
+	}
+
+	BigChill_Buff: {
+		Description: Necrofriggian
+		DisplayName: Bigchill
+	}
+
+	UltimateBigChill_Buff: {
+		DisplayName: Ultimate Bigchill
+		Description: Evolved Necrofriggian
+	}
+
+	UltraBigChill_Buff: {
+		DisplayName: Ultra Big Chill
+		Description: Evolved Necrofriggian
+	}
+
+	UltimateHumungousaur_Buff: {
+		DisplayName: Ultimate Humungousaur
+		Description: Evolved Vaxasaurian
+	}
+
+	UltimateEchoEcho_Buff: {
+		DisplayName: Ultimate Echo Echo
+		Description: Evolved Sonorosian
+	}
+
+	Humungousaur_Buff: {
+		DisplayName: Humungousaur
+		Description: Vaxasaurian
+	}
+
+	EchoEcho_Buff: {
+		DisplayName: Echo Echo
+		Description: Sonorosian
+	}
+
+	EchoEchoCloneBuff: {
+		DisplayName: Echo Echo Clone Buff
+		Description: Mods.Ben10Mod.Buffs.EchoEchoCloneBuff.Description
+	}
+
+	UltimateEchoEchoSpeakerBuff: {
+		DisplayName: Ultimate Echo Echo Speaker Buff
+		Description: Mods.Ben10Mod.Buffs.UltimateEchoEchoSpeakerBuff.Description
+	}
+
+	BuzzShockTagBuff: {
+		Description: Mods.Ben10Mod.Buffs.BuzzShockTagBuff.Description
+		DisplayName: Buzz Shock Tag Buff
+	}
+
+	Swampfire_Buff: {
+		DisplayName: Swampfire
+		Description: Methanosian
+	}
+
+	Rath_Buff: {
+		DisplayName: Rath
+		Description: Appoplexian
+	}
+
+	Armodrillo_Buff: {
+		DisplayName: Armodrillo
+		Description: Talpaedan
+	}
+
+	Jetray_Buff: {
+		DisplayName: Jetray
+		Description: Aerophibian
+	}
+
+	NRG_Buff: {
+		DisplayName: NRG
+		Description: Prypiatosian-B
+	}
+
+	EnemyFrozen: {
+		Description: Mods.Ben10Mod.Buffs.EnemyFrozen.Description
+		DisplayName: Enemy Frozen
+	}
+
+	EnemyElectrocuted: {
+		Description: Mods.Ben10Mod.Buffs.EnemyElectrocuted.Description
+		DisplayName: Enemy Electrocuted
+	}
+
+	EnergyOverloaded: {
+		Description: Mods.Ben10Mod.Buffs.EnergyOverloaded.Description
+		DisplayName: Energy Overloaded
+	}
+
+	Blitzwolfer_Buff: {
+		DisplayName: Blitzwolfer
+		Description: Loboan
+	}
+
+	Astrodactyl_Buff: {
+		DisplayName: Astrodactyl
+		Description: Astrodactyl
+	}
+
+	Arctiguana_Buff: {
+		DisplayName: Arctiguana
+		Description: Polar Manzardill
+	}
+
+	AmpFibian_Buff: {
+		DisplayName: AmpFibian
+		Description: Amperi
+	}
+
+	AlienX_Buff: {
+		DisplayName: Alien X
+		Description: Celestialsapien
+	}
+
+	Cannonbolt_Buff: {
+		DisplayName: Cannonbolt
+		Description: Arburian Pelarota
+	}
+
+	Clockwork_Buff: {
+		DisplayName: Clockwork
+		Description: Chronosapien
+	}
+
+	Fasttrack_Buff: {
+		DisplayName: Fasttrack
+		Description: Citrakayah
+	}
+
+	Frankenstrike_Buff: {
+		DisplayName: Frankenstrike
+		Description: Transylian
+	}
+
+	Goop_Buff: {
+		DisplayName: Goop
+		Description: Polymorph
+	}
+
+	Lodestar_Buff: {
+		DisplayName: Lodestar
+		Description: Biosovortian
+	}
+
+	PeskyDust_Buff: {
+		DisplayName: Pesky Dust
+		Description: Nemuina
+	}
+
+	SnareOh_Buff: {
+		DisplayName: Snare-Oh
+		Description: Thep Khufan
+	}
+
+	Terraspin_Buff: {
+		DisplayName: Terraspin
+		Description: Geochelone Aerio
+	}
+
+	Upgrade_Buff: {
+		DisplayName: Upgrade
+		Description: Galvanic Mechamorph
+	}
+
+	WaterHazard_Buff: {
+		DisplayName: Water Hazard
+		Description: Orishan
+	}
+
+	WayBig_Buff: {
+		DisplayName: Way Big
+		Description: To'kustar
+	}
+
+	Whampire_Buff: {
+		DisplayName: Whampire
+		Description: Vladat
+	}
+
+	Anodite_Buff: {
+		Description: Mods.Ben10Mod.Buffs.Anodite_Buff.Description
+		DisplayName: Anodite_ Buff
+	}
+}
+
+Projectiles: {
+	DiamondHeadProjectile.DisplayName: Diamond Head Projectile
+	RipJawsProjectile.DisplayName: Rip Jaws Projectile
+	ChromaStoneHoldout.DisplayName: Chroma Stone Holdout
+	ChromaStoneProjectile.DisplayName: Chroma Stone Projectile
+	FourArmsClap.DisplayName: Four Arms Clap
+	BuzzShockProjectile.DisplayName: Buzz Shock Projectile
+	FistProjectile.DisplayName: Fist Projectile
+	StinkFlyProjectile.DisplayName: Stink Fly Projectile
+	WildVineBomb.DisplayName: Wild Vine Bomb
+	HeatBlastFireSlam.DisplayName: Heat Blast Fire Slam
+	HeatBlastBomb.DisplayName: Heat Blast Bomb
+	Explosion.DisplayName: Explosion
+	GhostFreakProjectile.DisplayName: Ghost Freak Projectile
+	BuzzShockMinionProjectile.DisplayName: Buzz Shock Minion Projectile
+	WildVineProjectile.DisplayName: Wild Vine Projectile
+	WildVineGrapple.DisplayName: Wild Vine Grapple
+	StinkFlySlowProjectile.DisplayName: Stink Fly Slow Projectile
+	StinkFlyPoisonProjectile.DisplayName: Stink Fly Poison Projectile
+	GhostFreakPossesionProjectile.DisplayName: Ghost Freak Possesion Projectile
+	EyeGuyLaserbeam.DisplayName: Eye Guy Laserbeam
+	EyeGuyUltimateBeam.DisplayName: Eye Guy Ultimate Beam
+	GiantDiamondProjectile.DisplayName: Giant Diamond Projectile
+	HeatBlastUltimateProjectile.DisplayName: Heat Blast Ultimate Projectile
+	IcyFlames.DisplayName: Icy Flames
+	BuzzShockUltimateProjectile.DisplayName: Buzz Shock Ultimate Projectile
+	BigChillProjectile.DisplayName: Big Chill Projectile
+	BigChillFrostBreathProjectile.DisplayName: Big Chill Frost Breath Projectile
+	RipJawsBiteProjectile.DisplayName: Rip Jaws Bite Projectile
+	GhostFreakShadowProjectile.DisplayName: Ghost Freak Shadow Projectile
+	AlbedoSpeakerProjectile.DisplayName: Albedo Speaker Projectile
+	AlbedoSonicBlastProjectile.DisplayName: Albedo Sonic Blast Projectile
+	AlbedoShockwaveProjectile.DisplayName: Albedo Shockwave Projectile
+	AlbedoRocketProjectile.DisplayName: Albedo Rocket Projectile
+	ManaThreadProjectile.DisplayName: Mana Thread Projectile
+	HexCircleProjectile.DisplayName: Hex Circle Projectile
+	AnoditeLanceProjectile.DisplayName: Anodite Lance Projectile
+	AegisCharmWardProjectile.DisplayName: Aegis Charm Ward Projectile
+	AegisCharmBoltProjectile.DisplayName: Aegis Charm Bolt Projectile
+	AnoditeSparkProjectile.DisplayName: Anodite Spark Projectile
+	AnoditeOrbProjectile.DisplayName: Anodite Orb Projectile
+	ManaBarrierProjectile.DisplayName: Mana Barrier Projectile
+	UltimateHumungousaurRocketPlayerProjectile.DisplayName: Ultimate Humungousaur Rocket Player Projectile
+	UltimateEchoEchoSpeakerProjectile.DisplayName: Detached Speaker
+	HumungousaurShockwavePlayerProjectile.DisplayName: Humungousaur Shockwave Player Projectile
+	HumungousaurPunchProjectile.DisplayName: Humungousaur Punch Projectile
+	EchoEchoSonicBlastProjectile.DisplayName: Echo Echo Sonic Blast Projectile
+	EchoEchoCloneProjectile.DisplayName: Echo Echo Duplicate
+	SwampfireSeedProjectile.DisplayName: Swampfire Seed Projectile
+	SwampfireBoltProjectile.DisplayName: Swampfire Bolt Projectile
+	RathPounceProjectile.DisplayName: Rath Pounce Projectile
+	RathClawProjectile.DisplayName: Rath Claw Projectile
+	SwampfireVineProjectile.DisplayName: Swampfire Vine Projectile
+	ArmodrilloDrillProjectile.DisplayName: Armodrillo Drill Projectile
+	ArmodrilloQuakeProjectile.DisplayName: Armodrillo Quake Projectile
+	JetrayBoltProjectile.DisplayName: Jetray Bolt Projectile
+	JetrayDiveProjectile.DisplayName: Jetray Dive Projectile
+	NRGBurstProjectile.DisplayName: N R G Burst Projectile
+	NRGRadiationProjectile.DisplayName: N R G Radiation Projectile
+	HeatBlastAuraRodProjectile.DisplayName: Heat Blast Aura Rod Projectile
+	BulwarkShieldVisualProjectile.DisplayName: Bulwark Shield Visual Projectile
+	PlumberSiegeBoomerangProjectile.DisplayName: Plumber Siege Boomerang Projectile
+	ArmodrilloUltimateSlamProjectile.DisplayName: Armodrillo Ultimate Slam Projectile
+	NRGLaserProjectile.DisplayName: N R G Laser Projectile
+	NRGHomingEnergyBallProjectile.DisplayName: N R G Homing Energy Ball Projectile
+	JetrayLaserProjectile.DisplayName: Jetray Laser Projectile
+	FourArmsPunchProjectile.DisplayName: Four Arms Punch Projectile
+	PunchProjectile.DisplayName: Punch Projectile
+	FourArmsLandingShockwaveProjectile.DisplayName: Four Arms Landing Shockwave Projectile
+	XLR8PunchProjectile.DisplayName: X L R8 Punch Projectile
+	XLR8DashProjectile.DisplayName: X L R8 Dash Projectile
+	BigChillPhaseStrikeProjectile.DisplayName: Big Chill Phase Strike Projectile
+	WayBigPunchProjectile.DisplayName: Way Big Punch Projectile
+	GoopGlobProjectile.DisplayName: Goop Glob Projectile
+	GoopDelugeProjectile.DisplayName: Goop Deluge Projectile
+	GoopPuddleBombProjectile.DisplayName: Goop Puddle Bomb Projectile
+	GoopPuddleProjectile.DisplayName: Goop Puddle Projectile
+	ClockworkBoltProjectile.DisplayName: Clockwork Bolt Projectile
+	ClockworkTimeTrapProjectile.DisplayName: Clockwork Time Trap Projectile
+	ClockworkTimeFieldProjectile.DisplayName: Clockwork Time Field Projectile
+	ClockworkChronoLockProjectile.DisplayName: Clockwork Chrono Lock Projectile
+	AmpFibianBarrierProjectile.DisplayName: Amp Fibian Barrier Projectile
+	AmpFibianBoltProjectile.DisplayName: Amp Fibian Bolt Projectile
+	AmpFibianBurstProjectile.DisplayName: Amp Fibian Burst Projectile
+	AmpFibianPhaseShiftMarkerProjectile.DisplayName: Amp Fibian Phase Shift Marker Projectile
+	AlienXBlackHoleProjectile.DisplayName: Alien X Black Hole Projectile
+	WayBigCosmicRayProjectile.DisplayName: Way Big Cosmic Ray Projectile
+	WayBigShockwaveProjectile.DisplayName: Way Big Shockwave Projectile
+	DiamondHeadSpireProjectile.DisplayName: Diamond Head Spire Projectile
+	HeatBlastSupernovaProjectile.DisplayName: Heat Blast Supernova Projectile
+	CannonboltImpactBurstProjectile.DisplayName: Cannonbolt Impact Burst Projectile
+	CannonboltRollProjectile.DisplayName: Cannonbolt Roll Projectile
+	WaterHazardUltimateProjectile.DisplayName: Water Hazard Ultimate Projectile
+	WaterHazardSnareProjectile.DisplayName: Water Hazard Snare Projectile
+	WaterHazardPressureProjectile.DisplayName: Water Hazard Pressure Projectile
+	WaterHazardBurstProjectile.DisplayName: Water Hazard Burst Projectile
+	TerraspinVortexFieldProjectile.DisplayName: Terraspin Vortex Field Projectile
+	TerraspinUltimateProjectile.DisplayName: Terraspin Ultimate Projectile
+	TerraspinGustProjectile.DisplayName: Terraspin Gust Projectile
+	TerraspinBurstProjectile.DisplayName: Terraspin Burst Projectile
+	SnareOhBandageProjectile.DisplayName: Snare Oh Bandage Projectile
+	SnareOhBindFieldProjectile.DisplayName: Snare Oh Bind Field Projectile
+	SnareOhUltimateProjectile.DisplayName: Snare Oh Ultimate Projectile
+	SnareOhWrapProjectile.DisplayName: Snare Oh Wrap Projectile
+	UpgradeAssimilationPulseProjectile.DisplayName: Upgrade Assimilation Pulse Projectile
+	UpgradeConstructProjectile.DisplayName: Upgrade Construct Projectile
+	UpgradeOpticRayProjectile.DisplayName: Upgrade Optic Ray Projectile
+	UpgradePulseRoundProjectile.DisplayName: Upgrade Pulse Round Projectile
+	UpgradeMagicOrbProjectile.DisplayName: Upgrade Magic Orb Projectile
+	UpgradeDirectiveSpikeProjectile.DisplayName: Upgrade Directive Spike Projectile
+	UpgradeBladeWaveProjectile.DisplayName: Upgrade Blade Wave Projectile
+	UpgradeIntegrationMatrixProjectile.DisplayName: Upgrade Integration Matrix Projectile
+	DiamondHeadPrismPincerProjectile.DisplayName: Diamond Head Prism Pincer Projectile
+	DiamondHeadGroundBloomControllerProjectile.DisplayName: Diamond Head Ground Bloom Controller Projectile
+	XLR8VectorDashProjectile.DisplayName: X L R8 Vector Dash Projectile
+	XLR8StarlightProjectile.DisplayName: X L R8 Starlight Projectile
+	ArctiguanaBreathProjectile.DisplayName: Arctiguana Breath Projectile
+	ArctiguanaFreezeRayProjectile.DisplayName: Arctiguana Freeze Ray Projectile
+	ArctiguanaIceConstructProjectile.DisplayName: Arctiguana Ice Construct Projectile
+	ArctiguanaUltimateBeamProjectile.DisplayName: Arctiguana Ultimate Beam Projectile
+}
+
+Tiles: {
+	CongealedCodonOreTile.MapEntry: Congealed Codon Ore
+	PlumberCapsulePod.MapEntry: Strange Capsule
+}
+
+DamageClasses.HeroDamage.DisplayName: Hero Damage
+NPCs.AlbedoBoss.DisplayName: Albedo Boss
+RecipeConditions.MustBeTransformedAs: Must be transformed as {0}
+
+Configs: {
+	Ben10ClientConfig: {
+		DisplayName: Ben10 Client Config
+
+		TransformWheelDeadzonePixels: {
+			Label: Transform Wheel Deadzone Pixels
+			Tooltip: ""
+		}
+
+		FreezePlayerWhileTransformWheelOpen: {
+			Label: Freeze Player While Transform Wheel Open
+			Tooltip: ""
+		}
+
+		ShowPaletteCustomizationIndicators: {
+			Tooltip: ""
+			Label: Show Palette Customization Indicators
+		}
+
+		ShowHeroAffordabilityTinting: {
+			Tooltip: ""
+			Label: Show Hero Affordability Tinting
+		}
+
+		AlwaysShowOmnitrixEnergyText: {
+			Tooltip: ""
+			Label: Always Show Omnitrix Energy Text
+		}
+
+		UseColorblindHeroAccents: {
+			Tooltip: ""
+			Label: Use Colorblind Hero Accents
+		}
+
+		UseSimplifiedHeroInterface: {
+			Tooltip: ""
+			Label: Use Simplified Hero Interface
+		}
+
+		ShowHeroInterface: {
+			Tooltip: ""
+			Label: Show Hero Interface
+		}
+	}
+}
