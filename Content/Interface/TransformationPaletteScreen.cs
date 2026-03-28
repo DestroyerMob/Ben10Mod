@@ -350,6 +350,22 @@ public sealed class PalettePreviewSwatch : UIElement {
             Array.Empty<string>();
         IReadOnlyList<TransformationPaletteChannel> channels = ResolveChannels?.Invoke() ??
             Array.Empty<TransformationPaletteChannel>();
+        IReadOnlyList<string> equipPreviewBaseTexturePaths = ResolvePreviewEquipTexturePaths();
+        List<string> effectivePreviewBaseTexturePaths = new();
+
+        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
+            string texturePath = previewBaseTexturePaths[i];
+            if (!string.IsNullOrWhiteSpace(texturePath) &&
+                !effectivePreviewBaseTexturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
+                effectivePreviewBaseTexturePaths.Add(texturePath);
+        }
+
+        for (int i = 0; i < equipPreviewBaseTexturePaths.Count; i++) {
+            string texturePath = equipPreviewBaseTexturePaths[i];
+            if (!string.IsNullOrWhiteSpace(texturePath) &&
+                !effectivePreviewBaseTexturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
+                effectivePreviewBaseTexturePaths.Add(texturePath);
+        }
 
         spriteBatch.Draw(pixel, outer, new Color(18, 22, 28, 220));
         spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Y, outer.Width, 2), new Color(110, 140, 160));
@@ -362,8 +378,8 @@ public sealed class PalettePreviewSwatch : UIElement {
         spriteBatch.Draw(pixel, new Rectangle(previewArea.X, previewArea.Bottom - 18, previewArea.Width, 18),
             new Color(20, 28, 34, 245));
 
-        if (!TryDrawLivePreview(previewArea))
-            DrawPreviewFigure(spriteBatch, previewArea, previewBaseTexturePaths, channels);
+        DrawPreviewFigure(spriteBatch, previewArea, effectivePreviewBaseTexturePaths, channels);
+        TryDrawLivePreview(previewArea);
 
         Rectangle swatch = new Rectangle(outer.Right - 62, outer.Bottom - 38, 30, 18);
         spriteBatch.Draw(pixel, swatch, color);
@@ -412,6 +428,56 @@ public sealed class PalettePreviewSwatch : UIElement {
         finally {
             RestorePreviewPlayerState(player, omp, savedState);
         }
+    }
+
+    private static IReadOnlyList<string> ResolvePreviewEquipTexturePaths() {
+        if (Main.dedServ)
+            return Array.Empty<string>();
+
+        Player player = Main.LocalPlayer;
+        if (player == null || !player.active)
+            return Array.Empty<string>();
+
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        if (targetTransformation == null)
+            return Array.Empty<string>();
+
+        PreviewPlayerState savedState = CapturePreviewPlayerState(player, omp);
+        try {
+            PreparePreviewPlayer(player, omp, targetTransformation, Rectangle.Empty);
+            List<string> texturePaths = new();
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Back, player.back);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Waist, player.waist);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Body, player.body);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Legs, player.legs);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Head, player.head);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Wings, player.wings);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.HandsOff, player.handoff);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.HandsOn, player.handon);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Shield, player.shield);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Neck, player.neck);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Face, player.face);
+            AddPreviewEquipTexturePath(texturePaths, EquipType.Front, player.front);
+            return texturePaths;
+        }
+        catch {
+            return Array.Empty<string>();
+        }
+        finally {
+            RestorePreviewPlayerState(player, omp, savedState);
+        }
+    }
+
+    private static void AddPreviewEquipTexturePath(List<string> texturePaths, EquipType equipType, int slot) {
+        if (slot < 0)
+            return;
+
+        EquipTexture equipTexture = EquipLoader.GetEquipTexture(equipType, slot);
+        string texturePath = equipTexture?.Texture;
+        if (!string.IsNullOrWhiteSpace(texturePath) &&
+            !texturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
+            texturePaths.Add(texturePath);
     }
 
     private void DrawPreviewFigure(SpriteBatch spriteBatch, Rectangle previewArea,
