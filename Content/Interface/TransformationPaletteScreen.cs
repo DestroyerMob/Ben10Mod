@@ -268,6 +268,44 @@ public sealed class CustomNameTextInputPanel : UIElement {
 }
 
 public sealed class PalettePreviewSwatch : UIElement {
+    private readonly struct PreviewPlayerState {
+        public string TransformationId { get; init; }
+        public bool PrimaryAbilityEnabled { get; init; }
+        public bool SecondaryAbilityEnabled { get; init; }
+        public bool TertiaryAbilityEnabled { get; init; }
+        public bool UltimateAbilityEnabled { get; init; }
+        public bool IsDisplayDollOrInanimate { get; init; }
+        public Vector2 Position { get; init; }
+        public Vector2 Velocity { get; init; }
+        public int Direction { get; init; }
+        public float GravDir { get; init; }
+        public Rectangle HeadFrame { get; init; }
+        public Rectangle BodyFrame { get; init; }
+        public Rectangle LegFrame { get; init; }
+        public float HeadRotation { get; init; }
+        public float BodyRotation { get; init; }
+        public float LegRotation { get; init; }
+        public float ItemRotation { get; init; }
+        public float FullRotation { get; init; }
+        public Vector2 FullRotationOrigin { get; init; }
+        public int ItemAnimation { get; init; }
+        public int ItemTime { get; init; }
+        public bool ArmorEffectDrawShadow { get; init; }
+        public int HeadSlot { get; init; }
+        public int BodySlot { get; init; }
+        public int LegsSlot { get; init; }
+        public int BackSlot { get; init; }
+        public int WaistSlot { get; init; }
+        public int WingsSlot { get; init; }
+        public int ShoeSlot { get; init; }
+        public int HandOffSlot { get; init; }
+        public int HandOnSlot { get; init; }
+        public int ShieldSlot { get; init; }
+        public int NeckSlot { get; init; }
+        public int FaceSlot { get; init; }
+        public int FrontSlot { get; init; }
+    }
+
     private readonly struct ResolvedPreviewBase {
         public ResolvedPreviewBase(string texturePath, Texture2D texture) {
             TexturePath = texturePath ?? string.Empty;
@@ -324,7 +362,8 @@ public sealed class PalettePreviewSwatch : UIElement {
         spriteBatch.Draw(pixel, new Rectangle(previewArea.X, previewArea.Bottom - 18, previewArea.Width, 18),
             new Color(20, 28, 34, 245));
 
-        DrawPreviewFigure(spriteBatch, previewArea, previewBaseTexturePaths, channels);
+        if (!TryDrawLivePreview(previewArea))
+            DrawPreviewFigure(spriteBatch, previewArea, previewBaseTexturePaths, channels);
 
         Rectangle swatch = new Rectangle(outer.Right - 62, outer.Bottom - 38, 30, 18);
         spriteBatch.Draw(pixel, swatch, color);
@@ -335,6 +374,43 @@ public sealed class PalettePreviewSwatch : UIElement {
 
         Utils.DrawBorderString(spriteBatch, label, new Vector2(dims.X + 12f, dims.Y + dims.Height - 28f),
             Color.White, 0.82f);
+    }
+
+    private static bool TryDrawLivePreview(Rectangle previewArea) {
+        if (Main.dedServ)
+            return false;
+
+        Player player = Main.LocalPlayer;
+        if (player == null || !player.active)
+            return false;
+
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        if (targetTransformation == null)
+            return false;
+
+        PreviewPlayerState savedState = CapturePreviewPlayerState(player, omp);
+        try {
+            PreparePreviewPlayer(player, omp, targetTransformation, previewArea);
+
+            const float previewFrameWidth = 40f;
+            const float previewFrameHeight = 56f;
+            float scale = Math.Min((previewArea.Width - 40f) / previewFrameWidth, (previewArea.Height - 26f) / previewFrameHeight);
+            scale = MathHelper.Clamp(scale, 1.6f, 4.2f);
+
+            Vector2 previewTopLeft = new Vector2(previewArea.Center.X, previewArea.Center.Y + 6f) -
+                new Vector2(previewFrameWidth * 0.5f, previewFrameHeight * 0.5f) * scale;
+
+            player.position = previewTopLeft;
+            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewTopLeft, 0f, Vector2.Zero, 0f, scale);
+            return true;
+        }
+        catch {
+            return false;
+        }
+        finally {
+            RestorePreviewPlayerState(player, omp, savedState);
+        }
     }
 
     private void DrawPreviewFigure(SpriteBatch spriteBatch, Rectangle previewArea,
@@ -464,6 +540,130 @@ public sealed class PalettePreviewSwatch : UIElement {
         catch {
             return false;
         }
+    }
+
+    private static PreviewPlayerState CapturePreviewPlayerState(Player player, OmnitrixPlayer omp) {
+        return new PreviewPlayerState {
+            TransformationId = omp.currentTransformationId,
+            PrimaryAbilityEnabled = omp.PrimaryAbilityEnabled,
+            SecondaryAbilityEnabled = omp.SecondaryAbilityEnabled,
+            TertiaryAbilityEnabled = omp.TertiaryAbilityEnabled,
+            UltimateAbilityEnabled = omp.UltimateAbilityEnabled,
+            IsDisplayDollOrInanimate = player.isDisplayDollOrInanimate,
+            Position = player.position,
+            Velocity = player.velocity,
+            Direction = player.direction,
+            GravDir = player.gravDir,
+            HeadFrame = player.headFrame,
+            BodyFrame = player.bodyFrame,
+            LegFrame = player.legFrame,
+            HeadRotation = player.headRotation,
+            BodyRotation = player.bodyRotation,
+            LegRotation = player.legRotation,
+            ItemRotation = player.itemRotation,
+            FullRotation = player.fullRotation,
+            FullRotationOrigin = player.fullRotationOrigin,
+            ItemAnimation = player.itemAnimation,
+            ItemTime = player.itemTime,
+            ArmorEffectDrawShadow = player.armorEffectDrawShadow,
+            HeadSlot = player.head,
+            BodySlot = player.body,
+            LegsSlot = player.legs,
+            BackSlot = player.back,
+            WaistSlot = player.waist,
+            WingsSlot = player.wings,
+            ShoeSlot = player.shoe,
+            HandOffSlot = player.handoff,
+            HandOnSlot = player.handon,
+            ShieldSlot = player.shield,
+            NeckSlot = player.neck,
+            FaceSlot = player.face,
+            FrontSlot = player.front
+        };
+    }
+
+    private static void PreparePreviewPlayer(Player player, OmnitrixPlayer omp, Transformation targetTransformation,
+        Rectangle previewArea) {
+        omp.currentTransformationId = targetTransformation.FullID;
+        omp.PrimaryAbilityEnabled = false;
+        omp.SecondaryAbilityEnabled = false;
+        omp.TertiaryAbilityEnabled = false;
+        omp.UltimateAbilityEnabled = false;
+
+        player.isDisplayDollOrInanimate = true;
+        player.velocity = Vector2.Zero;
+        player.direction = 1;
+        player.gravDir = 1f;
+        player.headFrame = new Rectangle(0, 0, 40, 56);
+        player.bodyFrame = new Rectangle(0, 0, 40, 56);
+        player.legFrame = new Rectangle(0, 9 * 56, 40, 56);
+        player.headRotation = 0f;
+        player.bodyRotation = 0f;
+        player.legRotation = 0f;
+        player.itemRotation = 0f;
+        player.fullRotation = 0f;
+        player.fullRotationOrigin = Vector2.Zero;
+        player.itemAnimation = 0;
+        player.itemTime = 0;
+        player.armorEffectDrawShadow = false;
+
+        ClearPreviewVisualSlots(player);
+        targetTransformation.FrameEffects(player, omp);
+    }
+
+    private static void RestorePreviewPlayerState(Player player, OmnitrixPlayer omp, PreviewPlayerState state) {
+        omp.currentTransformationId = state.TransformationId;
+        omp.PrimaryAbilityEnabled = state.PrimaryAbilityEnabled;
+        omp.SecondaryAbilityEnabled = state.SecondaryAbilityEnabled;
+        omp.TertiaryAbilityEnabled = state.TertiaryAbilityEnabled;
+        omp.UltimateAbilityEnabled = state.UltimateAbilityEnabled;
+
+        player.isDisplayDollOrInanimate = state.IsDisplayDollOrInanimate;
+        player.position = state.Position;
+        player.velocity = state.Velocity;
+        player.direction = state.Direction;
+        player.gravDir = state.GravDir;
+        player.headFrame = state.HeadFrame;
+        player.bodyFrame = state.BodyFrame;
+        player.legFrame = state.LegFrame;
+        player.headRotation = state.HeadRotation;
+        player.bodyRotation = state.BodyRotation;
+        player.legRotation = state.LegRotation;
+        player.itemRotation = state.ItemRotation;
+        player.fullRotation = state.FullRotation;
+        player.fullRotationOrigin = state.FullRotationOrigin;
+        player.itemAnimation = state.ItemAnimation;
+        player.itemTime = state.ItemTime;
+        player.armorEffectDrawShadow = state.ArmorEffectDrawShadow;
+        player.head = state.HeadSlot;
+        player.body = state.BodySlot;
+        player.legs = state.LegsSlot;
+        player.back = state.BackSlot;
+        player.waist = state.WaistSlot;
+        player.wings = state.WingsSlot;
+        player.shoe = state.ShoeSlot;
+        player.handoff = state.HandOffSlot;
+        player.handon = state.HandOnSlot;
+        player.shield = state.ShieldSlot;
+        player.neck = state.NeckSlot;
+        player.face = state.FaceSlot;
+        player.front = state.FrontSlot;
+    }
+
+    private static void ClearPreviewVisualSlots(Player player) {
+        player.head = -1;
+        player.body = -1;
+        player.legs = -1;
+        player.back = -1;
+        player.waist = -1;
+        player.wings = -1;
+        player.shoe = -1;
+        player.handoff = -1;
+        player.handon = -1;
+        player.shield = -1;
+        player.neck = -1;
+        player.face = -1;
+        player.front = -1;
     }
 
     private static Rectangle ResolvePreviewFrame(string texturePath, Texture2D texture, IReadOnlyList<Texture2D> maskTextures) {
