@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -10,17 +11,15 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.Goop;
 
-public class GoopTransformation : SimpleRangedTransformationBase {
+public class GoopTransformation : Transformation {
     private const float LandingSquishVelocityThreshold = 3.5f;
     private const float LiquefyTrailMultiplier = 1.8f;
 
     public override string FullID => "Ben10Mod:Goop";
     public override string TransformationName => "Goop";
     public override int TransformationBuffId => ModContent.BuffType<Goop_Buff>();
-    protected override string BasicDescription => "A fluid Polymorph that fights with corrosive globs and lingering slime puddles.";
-    protected override int HeadSlot => ArmorIDs.Head.CopperHelmet;
-    protected override int BodySlot => ArmorIDs.Body.CopperChainmail;
-    protected override int LegSlot => ArmorIDs.Legs.CopperGreaves;
+    public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
+    public override string Description => "A fluid Polymorph that fights with corrosive globs and lingering slime puddles.";
     public override List<string> Abilities => new() { "Corrosive glob primary", "Lobbed puddle secondary", "Liquefy" };
     public override string PrimaryAttackName => "Corrosive Glob";
     public override string SecondaryAttackName => "Slime Puddle";
@@ -28,6 +27,7 @@ public class GoopTransformation : SimpleRangedTransformationBase {
     public override int PrimaryAttack => ModContent.ProjectileType<GoopGlobProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 14;
+    public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override float PrimaryAttackModifier => 0.92f;
     public override int SecondaryAttack => ModContent.ProjectileType<GoopPuddleBombProjectile>();
     public override int SecondaryAttackSpeed => 30;
@@ -54,6 +54,8 @@ public class GoopTransformation : SimpleRangedTransformationBase {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        player.GetDamage<HeroDamage>() += 0.04f;
+        player.statDefense += 4;
         player.moveSpeed += 0.08f;
         player.runAcceleration += 0.04f;
         player.maxRunSpeed += 0.4f;
@@ -227,5 +229,11 @@ public class GoopTransformation : SimpleRangedTransformationBase {
         omp.goopPreviousVerticalVelocity = 0f;
         omp.goopLandingSquish = 0f;
         omp.goopLandingSplashTime = 0;
+    }
+
+    public override void FrameEffects(Player player, OmnitrixPlayer omp) {
+        player.head = ArmorIDs.Head.CopperHelmet;
+        player.body = ArmorIDs.Body.CopperChainmail;
+        player.legs = ArmorIDs.Legs.CopperGreaves;
     }
 }
