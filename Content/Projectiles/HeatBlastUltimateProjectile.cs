@@ -16,7 +16,7 @@ namespace Ben10Mod.Content.Projectiles
         protected override float MaxChargeScale => 2.2f;
         protected override float ChargeStep => 0.038f;
         protected override float LaunchSpeed => 5f;
-        protected override int MaxLifetime => 600;
+        protected override int MaxLifetime => 15 * 60;
 
         protected override void UpdateCharging(Player owner) {
             float radius = 58f * Projectile.scale;

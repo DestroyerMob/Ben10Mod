@@ -144,15 +144,6 @@ namespace Ben10Mod.Content.Interface {
                 mouseTextIndex++;
 
                 layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
-                    "Ben10Mod: TransformationCodexButton",
-                    delegate {
-                        DrawCodexEntryButton();
-                        return true;
-                    },
-                    InterfaceScaleType.UI));
-                mouseTextIndex++;
-
-                layers.Insert(mouseTextIndex, new LegacyGameInterfaceLayer(
                     "Ben10Mod: AlienSelection",
                     delegate {
                         if (_lastUpdateUiGameTime != null && MyInterface?.CurrentState != null)
@@ -459,21 +450,17 @@ namespace Ben10Mod.Content.Interface {
             MyInterface?.SetState(TCS);
         }
 
+        internal bool IsCodexUIOpen() {
+            EnsureInterfaceInitialized();
+            return MyInterface?.CurrentState == TCS;
+        }
+
         internal void ShowPaletteUI() {
             EnsureInterfaceInitialized();
             MyInterface?.SetState(TPS);
         }
 
         internal void HideMyUI() => MyInterface?.SetState(null);
-
-        private static Rectangle GetCodexEntryButtonRectangle() {
-            // Anchor to the inventory utility cluster under the vanilla Bestiary button.
-            const int buttonWidth = 34;
-            const int buttonHeight = 34;
-            int buttonX = 500;
-            int buttonY = 306;
-            return new Rectangle(buttonX, buttonY, buttonWidth, buttonHeight);
-        }
 
         private static void CloseVanillaMenusForCodex() {
             Player player = Main.LocalPlayer;
@@ -490,49 +477,6 @@ namespace Ben10Mod.Content.Interface {
             Main.editChest = false;
             Main.blockInput = false;
             Recipe.FindRecipes();
-        }
-
-        private void DrawCodexEntryButton() {
-            if (Main.dedServ || Main.gameMenu || !Main.playerInventory || MyInterface?.CurrentState != null)
-                return;
-
-            Player player = Main.LocalPlayer;
-            if (player == null || !player.active)
-                return;
-
-            OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-            if (omp == null || omp.unlockedTransformations.Count == 0)
-                return;
-
-            Rectangle buttonRect = GetCodexEntryButtonRectangle();
-            bool hovering = buttonRect.Contains(Main.MouseScreen.ToPoint());
-            Texture2D pixel = TextureAssets.MagicPixel.Value;
-            Color fillColor = hovering ? new Color(38, 54, 44, 225) : new Color(22, 28, 34, 210);
-            Color borderColor = hovering ? new Color(140, 220, 170) : new Color(90, 120, 108);
-
-            Main.spriteBatch.Draw(pixel, buttonRect, fillColor);
-            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Y, buttonRect.Width, 2), borderColor);
-            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Bottom - 2, buttonRect.Width, 2), borderColor);
-            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.X, buttonRect.Y, 2, buttonRect.Height), borderColor);
-            Main.spriteBatch.Draw(pixel, new Rectangle(buttonRect.Right - 2, buttonRect.Y, 2, buttonRect.Height), borderColor);
-            Utils.DrawBorderString(Main.spriteBatch, "C", new Vector2(buttonRect.Center.X, buttonRect.Y + 8f),
-                Color.White, 0.8f, 0.5f, 0f);
-
-            if (omp.HasAnyNewlyUnlockedTransformations())
-                Utils.DrawBorderString(Main.spriteBatch, "NEW", new Vector2(buttonRect.Right - 4f, buttonRect.Y - 6f),
-                    new Color(255, 110, 110), 0.72f, 1f, 0f);
-
-            if (!hovering)
-                return;
-
-            player.mouseInterface = true;
-            Utils.DrawBorderString(Main.spriteBatch, "Open Transformation Codex",
-                Main.MouseScreen + new Vector2(16f, 20f), Color.White, 0.75f);
-
-            if (Main.mouseLeft && Main.mouseLeftRelease) {
-                ShowCodexUI();
-                omp.showingUI = true;
-            }
         }
     }
 

@@ -19,16 +19,18 @@ public class XLR8Transformation : Transformation {
     private const float OverdriveAttackUseTimeMultiplier = 0.72f;
     private const float BaseVectorDashRange = 420f;
     private const float OverdriveVectorDashRange = 600f;
+    private const int PrimaryStrikeBurstCount = 5;
+    private const int PrimaryStrikeSpacing = 2;
 
     public override string FullID                  => "Ben10Mod:XLR8";
     public override string TransformationName      => "XLR8";
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override string Description =>
-        "A Kineceleran speedster built to blur across the battlefield, chain rapid cursor-cutting slashes, slash through crowds with dashing attacks, and distort the pace of combat.";
+        "A Kineceleran speedster built to blur across the battlefield, hammer enemies with photonic speed jabs, slash through crowds with dashing attacks, and distort the pace of combat.";
 
     public override List<string> Abilities => new() {
-        "Rapid cursor-guided slash rush",
+        "Rapid photonic speed jabs",
         "Piercing velocity dash",
         "Extreme speed boost",
         "Targeted vector dash",
@@ -42,10 +44,10 @@ public class XLR8Transformation : Transformation {
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8StarlightProjectile>();
-    public override int    PrimaryAttackSpeed      => 11;
-    public override int    PrimaryShootSpeed       => 15;
-    public override int    PrimaryUseStyle         => ItemUseStyleID.Rapier;
-    public override float  PrimaryAttackModifier   => 0.75f;
+    public override int    PrimaryAttackSpeed      => 10;
+    public override int    PrimaryShootSpeed       => 20;
+    public override int    PrimaryUseStyle         => ItemUseStyleID.Shoot;
+    public override float  PrimaryAttackModifier   => 0.5f;
     public override int    SecondaryAttack         => ModContent.ProjectileType<XLR8DashProjectile>();
     public override int    SecondaryAttackSpeed    => 82;
     public override int    SecondaryShootSpeed     => 14;
@@ -88,20 +90,39 @@ public class XLR8Transformation : Transformation {
         float speedMultiplier = omp.PrimaryAbilityEnabled
             ? OverdriveAttackUseTimeMultiplier
             : BaseAttackUseTimeMultiplier;
+        bool firingPrimary = !omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded && !omp.ultimateAttack;
+        int minUseTime = firingPrimary ? 7 : 6;
 
-        item.useTime = item.useAnimation = Math.Max(6, (int)Math.Round(item.useTime * speedMultiplier));
+        item.useTime = item.useAnimation = Math.Max(minUseTime, (int)Math.Round(item.useTime * speedMultiplier));
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         if (!omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded) {
-            Vector2 attackDirection = ResolveAimDirection(player, velocity);
-            omp.transformationAttackSerial++;
-            Projectile.NewProjectile(source, player.MountedCenter + attackDirection * 12f, attackDirection * PrimaryShootSpeed,
-                ModContent.ProjectileType<XLR8StarlightProjectile>(), damage, knockback, player.whoAmI,
-                omp.PrimaryAbilityEnabled ? 1f : 0f, omp.transformationAttackSerial);
+            if (HasActiveOwnedProjectile(player, ModContent.ProjectileType<XLR8StarlightProjectile>()))
+                return false;
 
-            SoundEngine.PlaySound(SoundID.Item1 with { Pitch = 0.28f, Volume = 0.62f }, player.Center);
+            Vector2 attackDirection = ResolveAimDirection(player, velocity);
+            float empoweredFlag = omp.PrimaryAbilityEnabled ? 1f : 0f;
+
+            for (int i = 0; i < PrimaryStrikeBurstCount; i++) {
+                Vector2 burstDirection = attackDirection.RotatedBy(Main.rand.NextFloat(-0.085f, 0.085f));
+                omp.transformationAttackSerial++;
+                int burstProjectileIndex = Projectile.NewProjectile(source,
+                    player.MountedCenter + burstDirection * 12f,
+                    burstDirection * PrimaryShootSpeed,
+                    ModContent.ProjectileType<XLR8StarlightProjectile>(),
+                    damage,
+                    knockback,
+                    player.whoAmI,
+                    empoweredFlag,
+                    omp.transformationAttackSerial,
+                    i * PrimaryStrikeSpacing);
+
+                if (burstProjectileIndex >= 0 && burstProjectileIndex < Main.maxProjectiles)
+                    Main.projectile[burstProjectileIndex].netUpdate = true;
+            }
+
             return false;
         }
 
@@ -169,5 +190,15 @@ public class XLR8Transformation : Transformation {
         }
 
         return direction;
+    }
+
+    private static bool HasActiveOwnedProjectile(Player player, int projectileType) {
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile projectile = Main.projectile[i];
+            if (projectile.active && projectile.owner == player.whoAmI && projectile.type == projectileType)
+                return true;
+        }
+
+        return false;
     }
 }

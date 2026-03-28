@@ -611,6 +611,7 @@ Keybinds: {
 	"Primary Ability.DisplayName": Primary Ability
 	"Secondary Ability.DisplayName": Secondary Ability
 	"Open Menu.DisplayName": Open Menu
+	"Open Codex.DisplayName": Open Codex
 	"Quaternary Ability.DisplayName": Quaternary Ability
 	"Tertiary Ability.DisplayName": Tertiary Ability
 	"Ultimate Ability.DisplayName": Ultimate Ability
@@ -1038,6 +1039,11 @@ Projectiles: {
 	DiamondHeadPrismPincerProjectile.DisplayName: Diamond Head Prism Pincer Projectile
 	DiamondHeadGroundBloomControllerProjectile.DisplayName: Diamond Head Ground Bloom Controller Projectile
 	XLR8VectorDashProjectile.DisplayName: X L R8 Vector Dash Projectile
+	XLR8StarlightProjectile.DisplayName: X L R8 Starlight Projectile
+	ArctiguanaBreathProjectile.DisplayName: Arctiguana Breath Projectile
+	ArctiguanaFreezeRayProjectile.DisplayName: Arctiguana Freeze Ray Projectile
+	ArctiguanaIceConstructProjectile.DisplayName: Arctiguana Ice Construct Projectile
+	ArctiguanaUltimateBeamProjectile.DisplayName: Arctiguana Ultimate Beam Projectile
 }
 
 Tiles: {

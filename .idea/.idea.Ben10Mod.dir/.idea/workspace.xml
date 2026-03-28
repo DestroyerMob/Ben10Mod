@@ -10,10 +10,18 @@
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HeatBlastAuraRodProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HeatBlastAuraRodProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/HeatBlastUltimateProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/HeatBlastUltimateProjectile.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Projectiles/XLR8StarlightProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/XLR8StarlightProjectile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/Arctiguana/ArctiguanaTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Arctiguana/ArctiguanaTransformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Keybinds/KeybindSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Keybinds/KeybindSystem.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

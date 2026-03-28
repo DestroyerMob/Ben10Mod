@@ -80,6 +80,11 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 0, rand.Next(-1, 2), rand.Next(-1, 2), Color.White, rand.Next(3));
             Main.dust[dustNum].noGravity = true;
         }
+
+        public override void OnDetransform(Player player, OmnitrixPlayer omp) {
+            KillOwnedProjectiles(player,
+                ModContent.ProjectileType<HeatBlastAuraRodProjectile>());
+        }
         
         public override void OnHitNPC(Player player, OmnitrixPlayer omp, NPC target, NPC.HitInfo hit, int damageDone) {
             if (target.life <= 0) return;
@@ -212,5 +217,24 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                     "Ben10Mod/Content/Transformations/HeatBlast/HeatBlastRockMask_Legs")
             )
         };
+
+        private static void KillOwnedProjectiles(Player player, params int[] projectileTypes) {
+            if (projectileTypes == null || projectileTypes.Length == 0)
+                return;
+
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != player.whoAmI)
+                    continue;
+
+                for (int j = 0; j < projectileTypes.Length; j++) {
+                    if (projectile.type != projectileTypes[j])
+                        continue;
+
+                    projectile.Kill();
+                    break;
+                }
+            }
+        }
     }
 }

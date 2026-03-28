@@ -3,6 +3,7 @@ using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -10,36 +11,44 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class XLR8StarlightProjectile : ModProjectile {
-    private const int SlashLifetime = 12;
-    private const float BaseForwardRange = 68f;
-    private const float OverdriveForwardRange = 82f;
-    private const float BaseSlashLength = 58f;
-    private const float OverdriveSlashLength = 72f;
-    private const float BaseCollisionWidth = 16f;
-    private const float OverdriveCollisionWidth = 20f;
-    private const float ForwardOffset = 14f;
-    private const float SideOffset = 8f;
+    private const int StrikeLifetime = 7;
+    private const float BaseReach = 154f;
+    private const float OverdriveReach = 256f;
+    private const float BaseCollisionWidth = 14f;
+    private const float OverdriveCollisionWidth = 18f;
+    private const float FistForwardOffset = 12f;
+    private const float FistVerticalOffset = -4f;
 
     private bool Empowered => Projectile.ai[0] >= 0.5f;
-    private int SlashSerial => (int)Math.Round(Projectile.ai[1]);
-    private float SlashSide => (SlashSerial & 1) == 0 ? -1f : 1f;
+    private int StrikeSerial => (int)Math.Round(Projectile.ai[1]);
+    private int ActivationDelay => Math.Max(0, (int)Math.Round(Projectile.ai[2]));
+    private float StrikeSide => (StrikeSerial & 1) == 0 ? -1f : 1f;
+    private Color StrikeColor => (StrikeSerial & 1) == 0
+        ? (Empowered ? new Color(18, 34, 84) : new Color(10, 18, 42))
+        : (Empowered ? new Color(90, 190, 255) : new Color(28, 108, 255));
 
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.PiercingStarlight}";
+
+    public override void SetStaticDefaults() {
+        ProjectileID.Sets.TrailCacheLength[Type] = 5;
+        ProjectileID.Sets.TrailingMode[Type] = 2;
+    }
 
     public override void SetDefaults() {
-        Projectile.width = 50;
-        Projectile.height = 50;
+        Projectile.width = 18;
+        Projectile.height = 18;
         Projectile.friendly = true;
         Projectile.hostile = false;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.penetrate = -1;
-        Projectile.timeLeft = SlashLifetime;
+        Projectile.timeLeft = StrikeLifetime;
         Projectile.hide = true;
         Projectile.ownerHitCheck = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = SlashLifetime;
+        Projectile.localNPCHitCooldown = StrikeLifetime;
+        Projectile.localAI[1] = -1f;
     }
 
     public override void AI() {
@@ -49,135 +58,144 @@ public class XLR8StarlightProjectile : ModProjectile {
             return;
         }
 
-        Vector2 aimDirection = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        if (aimDirection.X != 0f)
-            owner.direction = aimDirection.X > 0f ? 1 : -1;
+        if (Projectile.localAI[1] < 0f) {
+            Projectile.localAI[1] = ActivationDelay;
+            Projectile.timeLeft = StrikeLifetime + ActivationDelay;
+        }
 
-        float progress = 1f - Projectile.timeLeft / (float)SlashLifetime;
-        float thrustProgress = progress < 0.28f
-            ? progress / 0.28f
-            : 1f - (progress - 0.28f) / 0.72f * 0.24f;
-        thrustProgress = MathHelper.Clamp(thrustProgress, 0f, 1f);
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        if (direction.X != 0f)
+            owner.direction = direction.X > 0f ? 1 : -1;
 
-        float sweepAngle = MathHelper.Lerp(0.58f * SlashSide, -0.12f * SlashSide, progress);
-        Vector2 slashDirection = aimDirection.RotatedBy(sweepAngle);
-        Vector2 perpendicular = aimDirection.RotatedBy(MathHelper.PiOver2);
-        float slashScale = Empowered ? 1.12f : 1f;
-        float forwardRange = MathHelper.Lerp(22f, Empowered ? OverdriveForwardRange : BaseForwardRange, thrustProgress);
-        Vector2 anchor = owner.MountedCenter + aimDirection * ForwardOffset +
-                         perpendicular * SideOffset * SlashSide * (1f - progress * 0.55f);
+        if (Projectile.localAI[1] > 0f) {
+            Projectile.localAI[1]--;
+            Projectile.Center = GetStrikeOrigin(owner, direction, Empowered ? 1.28f : 1.12f);
+            return;
+        }
 
-        Projectile.scale = slashScale;
-        Projectile.Center = anchor + aimDirection * forwardRange;
-        Projectile.rotation = slashDirection.ToRotation() + MathHelper.PiOver2;
+        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        float reachProgress = EaseOutCubic(progress);
+        float laneProgress = 1f - progress;
+        float scale = Empowered ? 1.28f : 1.12f;
+        Vector2 strikeOrigin = GetStrikeOrigin(owner, direction, scale);
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * laneProgress * scale;
+        float reach = MathHelper.Lerp(14f, Empowered ? OverdriveReach : BaseReach, reachProgress) * scale;
+
+        Projectile.scale = scale;
+        Projectile.rotation = direction.ToRotation();
+        Projectile.Center = strikeOrigin + laneOffset + direction * reach;
         owner.heldProj = Projectile.whoAmI;
         owner.itemTime = Math.Max(owner.itemTime, 2);
         owner.itemAnimation = Math.Max(owner.itemAnimation, 2);
-        owner.itemRotation = aimDirection.ToRotation() * owner.direction;
-        owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, aimDirection.ToRotation() - MathHelper.PiOver2);
+        owner.itemRotation = direction.ToRotation() * owner.direction;
+        owner.SetCompositeArmFront(true, Player.CompositeArmStretchAmount.Full, direction.ToRotation() - MathHelper.PiOver2);
 
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
-            SpawnOpeningDust(anchor, slashDirection, slashScale);
+            if (!Main.dedServ)
+                SoundEngine.PlaySound(SoundID.Item1 with { Pitch = 0.28f, Volume = 0.62f }, Projectile.Center);
         }
 
-        if (Main.rand.NextBool(Empowered ? 2 : 3)) {
-            Dust trailDust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(8f, 8f), DustID.BlueCrystalShard,
-                slashDirection * Main.rand.NextFloat(0.35f, 1.1f), 100, new Color(90, 175, 255),
-                Main.rand.NextFloat(0.95f, 1.22f));
-            trailDust.noGravity = true;
-        }
-
-        if (Main.rand.NextBool(4)) {
-            Dust smokeDust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(12f, 12f), DustID.Smoke,
-                -slashDirection * Main.rand.NextFloat(0.15f, 0.6f), 120, new Color(12, 16, 26), 0.95f);
-            smokeDust.noGravity = true;
-        }
-
-        Lighting.AddLight(Projectile.Center, Empowered ? new Vector3(0.06f, 0.18f, 0.52f) : new Vector3(0.04f, 0.12f, 0.36f));
+        Color strikeColor = StrikeColor;
+        Lighting.AddLight(Projectile.Center, strikeColor.ToVector3() * 0.0026f);
     }
 
     public override bool PreDraw(ref Color lightColor) {
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Vector2 center = Projectile.Center - Main.screenPosition;
-        Vector2 slashDirection = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
-        float progress = 1f - Projectile.timeLeft / (float)SlashLifetime;
-        float fadeIn = Utils.GetLerpValue(0f, 0.12f, progress, true);
-        float fadeOut = Utils.GetLerpValue(0f, 0.42f, Projectile.timeLeft / (float)SlashLifetime, true);
-        float opacity = fadeIn * fadeOut;
-        float slashLength = (Empowered ? OverdriveSlashLength : BaseSlashLength) * Projectile.scale;
-        Vector2 origin = new(0.5f, 0.5f);
-        Rectangle source = new(0, 0, 1, 1);
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || Projectile.localAI[1] > 0f)
+            return false;
 
-        Main.EntitySpriteDraw(pixel, center - slashDirection * (8f * Projectile.scale), source,
-            new Color(6, 10, 18, 225) * opacity, Projectile.rotation, origin,
-            new Vector2(10f * Projectile.scale, slashLength), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, source,
-            new Color(18, 74, 255, 210) * opacity, Projectile.rotation, origin,
-            new Vector2(5f * Projectile.scale, slashLength * 0.9f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center + slashDirection * (4f * Projectile.scale), source,
-            new Color(130, 220, 255, 220) * opacity, Projectile.rotation, origin,
-            new Vector2(1.9f * Projectile.scale, slashLength * 0.72f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, source,
-            new Color(30, 32, 45, 190) * opacity, 0f, origin,
-            new Vector2(12f * Projectile.scale, 12f * Projectile.scale), SpriteEffects.None, 0);
+        Texture2D slashTexture = TextureAssets.Projectile[ProjectileID.PiercingStarlight].Value;
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 strikeOrigin = GetStrikeOrigin(owner, direction, Projectile.scale);
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        float reachProgress = EaseOutCubic(progress);
+        Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * (1f - progress) * Projectile.scale;
+        Vector2 worldStart = strikeOrigin + laneOffset;
+        Vector2 worldEnd = Projectile.Center;
+        float opacity = Utils.GetLerpValue(0f, 0.16f, progress, true) *
+                        Utils.GetLerpValue(0f, 0.38f, Projectile.timeLeft / (float)StrikeLifetime, true);
+        float beamWidth = (Empowered ? 16f : 13.5f) * Projectile.scale;
+        Color strikeColor = StrikeColor;
+
+        DrawBeam(slashTexture, worldStart, worldEnd, beamWidth, strikeColor, opacity);
+
+        for (int i = 0; i < Projectile.oldPos.Length; i++) {
+            if (Projectile.oldPos[i] == Vector2.Zero)
+                continue;
+
+            float previousProgress = MathHelper.Clamp(progress - (i + 1f) / StrikeLifetime, 0f, 1f);
+            float previousReachProgress = EaseOutCubic(previousProgress);
+            float previousLaneProgress = 1f - previousProgress;
+            Vector2 trailStart = strikeOrigin +
+                                 normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, previousReachProgress) *
+                                 previousLaneProgress * Projectile.scale;
+            float trailProgress = 1f - i / (float)Projectile.oldPos.Length;
+            Vector2 trailEnd = Projectile.oldPos[i] + Projectile.Size * 0.5f;
+            DrawBeam(slashTexture, trailStart, trailEnd, beamWidth * MathHelper.Lerp(0.65f, 0.9f, trailProgress),
+                strikeColor, opacity * trailProgress * 0.3f);
+        }
         return false;
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
-        float halfLength = (Empowered ? OverdriveSlashLength : BaseSlashLength) * Projectile.scale * 0.5f;
-        float collisionWidth = (Empowered ? OverdriveCollisionWidth : BaseCollisionWidth) * Projectile.scale;
-        Vector2 slashDirection = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
-        Vector2 lineStart = Projectile.Center - slashDirection * halfLength;
-        Vector2 lineEnd = Projectile.Center + slashDirection * halfLength;
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead || Projectile.localAI[1] > 0f)
+            return false;
+
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        float reachProgress = EaseOutCubic(progress);
+        Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * (1f - progress) * Projectile.scale;
+        Vector2 lineStart = GetStrikeOrigin(owner, direction, Projectile.scale) + laneOffset;
+        Vector2 lineEnd = Projectile.Center;
         float collisionPoint = 0f;
 
         return Collision.CheckAABBvLineCollision(
-            new Vector2(targetHitbox.X, targetHitbox.Y),
-            new Vector2(targetHitbox.Width, targetHitbox.Height),
+            targetHitbox.TopLeft(),
+            targetHitbox.Size(),
             lineStart,
             lineEnd,
-            collisionWidth,
+            (Empowered ? OverdriveCollisionWidth : BaseCollisionWidth) * Projectile.scale,
             ref collisionPoint
         );
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        Vector2 slashDirection = (Projectile.rotation - MathHelper.PiOver2).ToRotationVector2();
-        for (int i = 0; i < 10; i++) {
-            Dust blueDust = Dust.NewDustPerfect(target.Center, DustID.BlueCrystalShard,
-                slashDirection.RotatedByRandom(0.55f) * Main.rand.NextFloat(0.8f, 3.2f), 100, new Color(100, 195, 255),
-                Main.rand.NextFloat(0.95f, 1.25f));
-            blueDust.noGravity = true;
-        }
-
-        for (int i = 0; i < 6; i++) {
-            Dust smokeDust = Dust.NewDustPerfect(target.Center, DustID.Smoke,
-                Main.rand.NextVector2Circular(2.2f, 2.2f), 120, new Color(10, 12, 18), Main.rand.NextFloat(0.85f, 1.05f));
-            smokeDust.noGravity = true;
-        }
     }
 
-    private static void SpawnOpeningDust(Vector2 anchor, Vector2 slashDirection, float slashScale) {
-        Vector2 normal = slashDirection.RotatedBy(MathHelper.PiOver2);
-        float halfLength = 24f * slashScale;
+    private static Vector2 GetStrikeOrigin(Player owner, Vector2 direction, float scale) {
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        return owner.MountedCenter + new Vector2(owner.direction * FistForwardOffset * scale, FistVerticalOffset * scale) +
+               normal * owner.direction * 2f * scale;
+    }
 
-        for (int i = 0; i < 4; i++) {
-            float along = Main.rand.NextFloat(-halfLength, halfLength);
-            float across = Main.rand.NextFloat(-3f, 3f) * slashScale;
-            Vector2 dustPosition = anchor + slashDirection * along + normal * across;
-            Dust smokeDust = Dust.NewDustPerfect(dustPosition, DustID.Smoke,
-                slashDirection * Main.rand.NextFloat(0.15f, 0.65f), 120, new Color(8, 10, 18), 0.95f);
-            smokeDust.noGravity = true;
-        }
+    private static float EaseOutCubic(float value) {
+        value = MathHelper.Clamp(value, 0f, 1f);
+        float inverse = 1f - value;
+        return 1f - inverse * inverse * inverse;
+    }
 
-        for (int i = 0; i < 4; i++) {
-            float along = Main.rand.NextFloat(-halfLength, halfLength);
-            float across = Main.rand.NextFloat(-2f, 2f) * slashScale;
-            Vector2 dustPosition = anchor + slashDirection * along + normal * across;
-            Dust blueDust = Dust.NewDustPerfect(dustPosition, DustID.BlueCrystalShard,
-                slashDirection * Main.rand.NextFloat(0.2f, 0.8f), 100, new Color(95, 185, 255), 1.02f);
-            blueDust.noGravity = true;
-        }
+    private static void DrawBeam(Texture2D slashTexture, Vector2 worldStart, Vector2 worldEnd, float beamWidth, Color color, float opacity) {
+        Vector2 beamVector = worldEnd - worldStart;
+        float beamLength = beamVector.Length();
+        if (beamLength <= 1f)
+            return;
+
+        Vector2 center = worldStart + beamVector * 0.5f - Main.screenPosition;
+        float rotation = beamVector.ToRotation();
+        Vector2 origin = slashTexture.Size() * 0.5f;
+        float lengthScale = beamLength / slashTexture.Width;
+        float widthScale = beamWidth / slashTexture.Height * 1.75f;
+
+        DrawSlashTexture(slashTexture, center, color, rotation, new Vector2(lengthScale, widthScale), origin, opacity);
+    }
+
+    private static void DrawSlashTexture(Texture2D slashTexture, Vector2 position, Color color, float rotation,
+        Vector2 scale, Vector2 origin, float opacity) {
+        Main.EntitySpriteDraw(slashTexture, position, null, color * opacity, rotation, origin, scale, SpriteEffects.None, 0);
     }
 }
