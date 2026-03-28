@@ -10,6 +10,7 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class AstrodactylPlasmaBoltProjectile : ModProjectile {
     private bool Hyperflight => Projectile.ai[0] >= 0.5f;
+    private float AirSupremacyRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -30,17 +31,20 @@ public class AstrodactylPlasmaBoltProjectile : ModProjectile {
     }
 
     public override void AI() {
-        if (Projectile.velocity.LengthSquared() < (Hyperflight ? 1024f : 841f))
-            Projectile.velocity *= Hyperflight ? 1.018f : 1.014f;
+        float maxVelocitySq = MathHelper.Lerp(Hyperflight ? 1024f : 841f, Hyperflight ? 1296f : 1024f, AirSupremacyRatio);
+        if (Projectile.velocity.LengthSquared() < maxVelocitySq)
+            Projectile.velocity *= MathHelper.Lerp(Hyperflight ? 1.018f : 1.014f, Hyperflight ? 1.028f : 1.022f, AirSupremacyRatio);
 
         Projectile.rotation = Projectile.velocity.ToRotation();
-        Lighting.AddLight(Projectile.Center, Hyperflight ? new Vector3(0.25f, 1f, 0.68f) : new Vector3(0.18f, 0.9f, 0.56f));
+        Lighting.AddLight(Projectile.Center,
+            Vector3.Lerp(Hyperflight ? new Vector3(0.25f, 1f, 0.68f) : new Vector3(0.18f, 0.9f, 0.56f),
+                new Vector3(0.35f, 1f, 0.82f), AirSupremacyRatio));
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(3f, 3f),
                 Main.rand.NextBool(3) ? DustID.GreenTorch : DustID.GemEmerald,
                 -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.11f), 100, new Color(170, 255, 210),
-                Main.rand.NextFloat(0.9f, Hyperflight ? 1.22f : 1.08f));
+                Main.rand.NextFloat(0.9f, MathHelper.Lerp(Hyperflight ? 1.22f : 1.08f, 1.3f, AirSupremacyRatio)));
             dust.noGravity = true;
         }
     }
@@ -50,11 +54,13 @@ public class AstrodactylPlasmaBoltProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         Vector2 center = Projectile.Center - Main.screenPosition;
         float rotation = direction.ToRotation();
+        float outerLength = MathHelper.Lerp(Hyperflight ? 34f : 28f, 42f, AirSupremacyRatio);
+        float coreLength = MathHelper.Lerp(Hyperflight ? 18f : 15f, 22f, AirSupremacyRatio);
 
         Main.EntitySpriteDraw(pixel, center, null, new Color(55, 220, 125, 125), rotation, Vector2.One * 0.5f,
-            new Vector2(Hyperflight ? 34f : 28f, Hyperflight ? 7.5f : 6f), SpriteEffects.None, 0);
+            new Vector2(outerLength, MathHelper.Lerp(Hyperflight ? 7.5f : 6f, 8.4f, AirSupremacyRatio)), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center, null, new Color(225, 255, 235, 215), rotation, Vector2.One * 0.5f,
-            new Vector2(Hyperflight ? 18f : 15f, 2.8f), SpriteEffects.None, 0);
+            new Vector2(coreLength, 2.8f), SpriteEffects.None, 0);
         return false;
     }
 

@@ -13,7 +13,8 @@ public class FasttrackVelocityBarrageProjectile : ModProjectile {
     private const int BarrageLifetime = 30;
     private const int StrikeInterval = 4;
 
-    private bool Empowered => Projectile.ai[0] >= 0.5f;
+    private float MomentumRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private bool Overdrive => Projectile.ai[1] >= 0.5f;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -50,14 +51,15 @@ public class FasttrackVelocityBarrageProjectile : ModProjectile {
         owner.itemRotation = direction.ToRotation() * owner.direction;
         owner.armorEffectDrawShadow = true;
 
-        if (Projectile.localAI[0] % StrikeInterval == 0f) {
+        int interval = Math.Max(2, (int)Math.Round(MathHelper.Lerp(StrikeInterval, 2f, MomentumRatio)));
+        if ((int)Projectile.localAI[0] % interval == 0) {
             SpawnStrike(owner, direction);
         }
 
         Projectile.localAI[0]++;
-        Lighting.AddLight(Projectile.Center, Empowered ? new Vector3(0.15f, 0.74f, 0.46f) : new Vector3(0.1f, 0.45f, 0.3f));
+        Lighting.AddLight(Projectile.Center, Vector3.Lerp(new Vector3(0.1f, 0.45f, 0.3f), new Vector3(0.15f, 0.74f, 0.46f), MomentumRatio));
 
-        if (Main.rand.NextBool(Empowered ? 1 : 2)) {
+        if (Main.rand.NextBool(Overdrive ? 1 : 2)) {
             Dust dust = Dust.NewDustPerfect(owner.Center + Main.rand.NextVector2Circular(16f, 20f),
                 Main.rand.NextBool() ? DustID.GemEmerald : DustID.GreenFairy,
                 -direction * Main.rand.NextFloat(0.8f, 2f) + Main.rand.NextVector2Circular(0.8f, 0.8f), 100,
@@ -72,8 +74,8 @@ public class FasttrackVelocityBarrageProjectile : ModProjectile {
         Vector2 center = owner.Center - Main.screenPosition;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
-        Color outer = Empowered ? new Color(20, 26, 30, 80) : new Color(10, 16, 20, 70);
-        Color inner = Empowered ? new Color(140, 255, 220, 70) : new Color(90, 225, 190, 60);
+        Color outer = Color.Lerp(new Color(10, 16, 20, 70), new Color(20, 26, 30, 80), MomentumRatio);
+        Color inner = Color.Lerp(new Color(90, 225, 190, 60), new Color(140, 255, 220, 70), MomentumRatio);
 
         for (int i = -1; i <= 1; i++) {
             Vector2 offset = direction * (i * 10f) + normal * (i * 8f);
@@ -101,10 +103,10 @@ public class FasttrackVelocityBarrageProjectile : ModProjectile {
         };
 
         Vector2 strikeDirection = direction.RotatedBy(spread);
-        float scale = Empowered ? 1.22f : 1.08f;
+        float scale = MathHelper.Lerp(1.08f, Overdrive ? 1.26f : 1.22f, MomentumRatio);
         Projectile.NewProjectile(Projectile.GetSource_FromThis(), owner.MountedCenter + strikeDirection * 14f, strikeDirection,
             ModContent.ProjectileType<FasttrackPunchProjectile>(), Projectile.damage, Projectile.knockBack, Projectile.owner,
-            scale, Empowered ? 1f : 0f);
+            scale, MomentumRatio);
 
         SoundEngine.PlaySound(SoundID.Item1 with { Pitch = 0.36f, Volume = 0.55f }, owner.Center);
         Projectile.localAI[1]++;

@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Interface;
+using Ben10Mod.Content.Items.Accessories.Wings;
+using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -22,20 +26,21 @@ public class AstrodactylTransformation : Transformation {
     private const float DiveDamageMultiplier = 1.28f;
     private const float UltimateDamageMultiplier = 1.2f;
     private const float BaseDiveRange = 400f;
-    private const float HyperflightDiveRange = 540f;
+    private const float HyperflightDiveRange = 580f;
 
     public override string FullID => "Ben10Mod:Astrodactyl";
     public override string TransformationName => "Astrodactyl";
     public override int TransformationBuffId => ModContent.BuffType<Astrodactyl_Buff>();
     public override string Description =>
-        "A soaring aerial hunter that peppers enemies with plasma bolts, ruptures them with starbursts, dives through formations, and calls down a cosmic comet barrage.";
+        "A soaring aerial hunter who gets more dangerous the longer he owns the sky, marking prey from above before diving through them and calling comets onto exposed targets.";
 
     public override List<string> Abilities => new() {
-        "Rapid plasma bolt primary",
+        "Aerial plasma bolt primary",
         "Bursting star plasma orb",
-        "Hyperflight aerial stance",
-        "Jet dive rush attack",
-        "Cosmic comet barrage ultimate"
+        "Natural flight",
+        "Hyperflight air supremacy stance",
+        "Jet dive sky-hunter strike",
+        "Cosmic comet killzone ultimate"
     };
 
     public override string PrimaryAttackName => "Plasma Bolt";
@@ -79,39 +84,43 @@ public class AstrodactylTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<JetrayWings>());
+        AlienIdentityPlayer identity = player.GetModPlayer<AlienIdentityPlayer>();
+        float airSupremacyRatio = identity.AstrodactylAirSupremacyRatio;
 
         player.GetDamage<HeroDamage>() += 0.1f;
         player.GetCritChance<HeroDamage>() += 8f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
         player.moveSpeed += 0.18f;
-        player.maxRunSpeed += 1.4f;
+        player.maxRunSpeed += 1.2f + airSupremacyRatio * 1.6f;
         player.accRunSpeed += 1.2f;
         player.jumpSpeedBoost += 1.8f;
         player.noFallDmg = true;
         player.ignoreWater = true;
+        player.wingTimeMax += (int)Math.Round(22f + 28f * airSupremacyRatio);
+
+        if (airSupremacyRatio >= 0.5f)
+            player.armorEffectDrawShadow = true;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetAttackSpeed<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 4f;
-        player.moveSpeed += 0.24f;
-        player.maxRunSpeed += 1.8f;
-        player.accRunSpeed += 1.5f;
-        player.jumpSpeedBoost += 1.2f;
-        player.endurance += 0.03f;
+        identity.AddAstrodactylAirSupremacy(0.5f);
+        player.moveSpeed += 0.12f;
+        player.maxRunSpeed += 1.1f;
+        player.accRunSpeed += 1.2f;
+        player.jumpSpeedBoost += 0.8f;
+        player.endurance += 0.02f;
         player.armorEffectDrawShadow = true;
-        player.wingTimeMax += 70;
+        player.wingTimeMax += 80;
         player.wingTime = Math.Max(player.wingTime, 24f);
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        item.useTime = item.useAnimation = Math.Max(7, (int)Math.Round(item.useTime * 0.82f));
+        AlienIdentityPlayer identity = omp.Player.GetModPlayer<AlienIdentityPlayer>();
+        float airSupremacyRatio = identity.AstrodactylAirSupremacyRatio;
+        float useMultiplier = MathHelper.Lerp(1f, omp.PrimaryAbilityEnabled ? 0.82f : 0.9f, airSupremacyRatio);
+        item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * useMultiplier));
     }
 
     public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {
@@ -123,8 +132,11 @@ public class AstrodactylTransformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        AlienIdentityPlayer identity = player.GetModPlayer<AlienIdentityPlayer>();
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 spawnPosition = player.MountedCenter + direction * 14f;
+        float airSupremacyRatio = identity.AstrodactylAirSupremacyRatio;
+        bool hyperflight = omp.PrimaryAbilityEnabled;
 
         if (omp.ultimateAttack) {
             if (Main.netMode == NetmodeID.Server ||
@@ -133,7 +145,7 @@ public class AstrodactylTransformation : Transformation {
 
             Vector2 targetPosition = Main.MouseWorld;
             int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
-            int cometCount = omp.PrimaryAbilityEnabled ? 7 : 6;
+            int cometCount = 5 + (hyperflight ? 1 : 0) + (airSupremacyRatio >= 0.4f ? 1 : 0) + (airSupremacyRatio >= 0.8f ? 1 : 0);
             float spacing = 36f;
 
             for (int i = 0; i < cometCount; i++) {
@@ -142,9 +154,10 @@ public class AstrodactylTransformation : Transformation {
                 Vector2 skySpawn = impactPoint + new Vector2(Main.rand.NextFloat(-22f, 22f), -420f - i * 26f);
                 Vector2 cometVelocity = (impactPoint - skySpawn).SafeNormalize(Vector2.UnitY) * Main.rand.NextFloat(17f, 21f);
                 Projectile.NewProjectile(source, skySpawn, cometVelocity, UltimateAttack, finalDamage,
-                    knockback + 1.2f, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
+                    knockback + 1.2f, player.whoAmI, hyperflight ? 1f : 0f, airSupremacyRatio);
             }
 
+            identity.ConsumeAstrodactylAirSupremacy(34f);
             return false;
         }
 
@@ -157,44 +170,84 @@ public class AstrodactylTransformation : Transformation {
             if (offset == Vector2.Zero)
                 offset = new Vector2(player.direction, 0f);
 
-            bool hyperflight = omp.PrimaryAbilityEnabled;
-            float maxRange = hyperflight ? HyperflightDiveRange : BaseDiveRange;
+            float maxRange = MathHelper.Lerp(BaseDiveRange, HyperflightDiveRange, airSupremacyRatio) + (hyperflight ? 18f : 0f);
             float requestedDistance = Math.Min(offset.Length(), maxRange);
             Vector2 diveDirection = offset.SafeNormalize(new Vector2(player.direction, 0f));
-            float diveSpeed = AstrodactylDiveProjectile.GetDiveSpeed(hyperflight);
+            float diveSpeed = AstrodactylDiveProjectile.GetDiveSpeed(hyperflight) + airSupremacyRatio * 3f;
             int diveFrames = Utils.Clamp((int)Math.Ceiling(requestedDistance / diveSpeed),
                 AstrodactylDiveProjectile.MinDiveFrames, AstrodactylDiveProjectile.MaxDiveFrames);
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
 
             int projectileIndex = Projectile.NewProjectile(source, player.Center + diveDirection * 20f,
                 diveDirection * diveSpeed, SecondaryAbilityAttack, finalDamage, knockback + 1.5f, player.whoAmI,
-                hyperflight ? 1f : 0f);
+                hyperflight ? 1f : 0f, airSupremacyRatio);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
                 Projectile projectile = Main.projectile[projectileIndex];
                 projectile.timeLeft = diveFrames;
                 projectile.netUpdate = true;
             }
 
+            identity.ConsumeAstrodactylAirSupremacy(18f);
             return false;
         }
 
         if (omp.altAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack, finalDamage,
-                knockback + 0.8f, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
+                knockback + 0.8f, player.whoAmI, hyperflight ? 1f : 0f, airSupremacyRatio);
             return false;
         }
 
-        int boltCount = omp.PrimaryAbilityEnabled ? 2 : 1;
+        int boltCount = airSupremacyRatio >= 0.8f ? 3 : airSupremacyRatio >= 0.35f ? 2 : 1;
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         for (int i = 0; i < boltCount; i++) {
-            float spread = boltCount == 1 ? 0f : (i == 0 ? -0.05f : 0.05f);
+            float spread = boltCount switch {
+                3 => (i - 1) * 0.09f,
+                2 => i == 0 ? -0.05f : 0.05f,
+                _ => 0f
+            };
             Vector2 shotVelocity = direction.RotatedBy(spread) * PrimaryShootSpeed;
             Projectile.NewProjectile(source, spawnPosition, shotVelocity, PrimaryAttack, primaryDamage, knockback,
-                player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
+                player.whoAmI, hyperflight ? 1f : 0f, airSupremacyRatio);
         }
 
         return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsAstrodactylProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!state.IsSkyMarkedFor(player.whoAmI))
+            return;
+
+        modifiers.FinalDamage *= projectile.type switch {
+            _ when projectile.type == SecondaryAbilityAttack => 1.32f,
+            _ when projectile.type == UltimateAttack => 1.18f,
+            _ => 1.1f
+        };
+    }
+
+    public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        NPC.HitInfo hit, int damageDone) {
+        if (!IsAstrodactylProjectile(projectile.type))
+            return;
+
+        AlienIdentityPlayer identity = player.GetModPlayer<AlienIdentityPlayer>();
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool aerialHit = !AlienIdentityPlayer.IsGrounded(player) || omp.PrimaryAbilityEnabled || player.velocity.Y < -0.1f;
+        if (aerialHit)
+            state.ApplySkyMark(player.whoAmI, 5 * 60);
+
+        if (projectile.type == PrimaryAttack || projectile.type == SecondaryAttack)
+            identity.AddAstrodactylAirSupremacy(4f);
+
+        if (projectile.type == SecondaryAbilityAttack && state.IsSkyMarkedFor(player.whoAmI)) {
+            player.velocity = new Vector2(player.velocity.X * 0.75f, Math.Min(player.velocity.Y, -5.8f));
+            player.wingTime = Math.Min(player.wingTimeMax, player.wingTime + 30f);
+        }
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -232,5 +285,12 @@ public class AstrodactylTransformation : Transformation {
 
         player.fallStart = (int)(player.position.Y / 16f);
         player.maxFallSpeed = 8f;
+    }
+
+    private bool IsAstrodactylProjectile(int projectileType) {
+        return projectileType == PrimaryAttack ||
+               projectileType == SecondaryAttack ||
+               projectileType == SecondaryAbilityAttack ||
+               projectileType == UltimateAttack;
     }
 }

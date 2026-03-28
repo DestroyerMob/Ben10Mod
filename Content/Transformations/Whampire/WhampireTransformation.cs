@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Interface;
+using Ben10Mod.Content.Items.Accessories.Wings;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -26,14 +29,15 @@ public class WhampireTransformation : Transformation {
     public override string TransformationName => "Whampire";
     public override int TransformationBuffId => ModContent.BuffType<Whampire_Buff>();
     public override string Description =>
-        "A nocturnal Vladat predator that fires corruptura bolts, disorients prey with screeches, locks targets down with hypnosis, and floods arenas with a midnight swarm.";
+        "A nocturnal Vladat predator built around picking prey, stalking them through the air, locking them down with hypnosis, and unleashing swarms that follow marked victims.";
 
     public override List<string> Abilities => new() {
-        "Corruptura bolt primary fire",
-        "Vampiric screech burst",
-        "Nightcloak aerial stance",
-        "Hypnotic gaze beam",
-        "Midnight swarm ultimate"
+        "Corruptura prey-mark primary",
+        "Vampiric screech spread",
+        "Natural flight",
+        "Nightcloak stalking mode",
+        "Hypnotic gaze lockdown",
+        "Midnight swarm hunt"
     };
 
     public override string PrimaryAttackName => "Corruptura Bolt";
@@ -83,9 +87,9 @@ public class WhampireTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<BigChillWings>());
 
         player.GetDamage<HeroDamage>() += 0.11f;
-        player.GetCritChance<HeroDamage>() += 6f;
         player.GetArmorPenetration<HeroDamage>() += 4;
         player.statDefense += 7;
         player.endurance += 0.03f;
@@ -101,26 +105,25 @@ public class WhampireTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetAttackSpeed<HeroDamage>() += 0.1f;
-        player.GetCritChance<HeroDamage>() += 4f;
-        player.moveSpeed += 0.18f;
-        player.runAcceleration += 0.12f;
-        player.maxRunSpeed += 1f;
-        player.jumpSpeedBoost += 1.2f;
+        player.moveSpeed += 0.08f;
+        player.runAcceleration += 0.08f;
+        player.maxRunSpeed += 0.8f;
+        player.jumpSpeedBoost += 0.8f;
         player.wingTimeMax += 70;
         player.wingTime = Math.Max(player.wingTime, 20f);
-        player.endurance += 0.04f;
+        player.endurance += 0.02f;
         player.blackBelt = true;
         player.armorEffectDrawShadow = true;
+        player.aggro -= 600;
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (!omp.PrimaryAbilityEnabled)
+        NPC prey = FindMarkedPrey(omp.Player);
+        if (prey == null)
             return;
 
-        item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * 0.88f));
+        item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * 0.84f));
     }
 
     public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {
@@ -132,7 +135,8 @@ public class WhampireTransformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
-        Vector2 direction = ResolveAimDirection(player, velocity);
+        NPC prey = FindMarkedPrey(player);
+        Vector2 direction = ResolveAimDirection(player, velocity, omp.PrimaryAbilityEnabled ? prey : null);
         Vector2 spawnPosition = player.MountedCenter + new Vector2(player.direction * 8f, -10f) + direction * 12f;
         bool cloaked = omp.PrimaryAbilityEnabled;
 
@@ -145,29 +149,64 @@ public class WhampireTransformation : Transformation {
                 return false;
 
             int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
-            Projectile.NewProjectile(source, Main.MouseWorld, Vector2.Zero, UltimateAttack, finalDamage, knockback + 0.8f,
-                player.whoAmI, cloaked ? 1f : 0f);
+            Vector2 swarmCenter = prey?.Center ?? Main.MouseWorld;
+            float preyTarget = prey == null ? 0f : prey.whoAmI + 1f;
+            Projectile.NewProjectile(source, swarmCenter, Vector2.Zero, UltimateAttack, finalDamage, knockback + 0.8f,
+                player.whoAmI, cloaked ? 1f : 0f, preyTarget);
             return false;
         }
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction, SecondaryAbilityAttack, finalDamage, knockback + 0.5f,
-                player.whoAmI, cloaked ? 1f : 0f);
+                player.whoAmI, cloaked ? 1f : 0f, prey == null ? 0f : prey.whoAmI + 1f);
             return false;
         }
 
         if (omp.altAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack, finalDamage,
-                knockback + 0.8f, player.whoAmI, cloaked ? 1f : 0f);
+                knockback + 0.8f, player.whoAmI, cloaked ? 1f : 0f, prey == null ? 0f : prey.whoAmI + 1f);
             return false;
         }
 
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage,
-            knockback, player.whoAmI, cloaked ? 1f : 0f);
+            knockback, player.whoAmI, cloaked ? 1f : 0f, prey == null ? 0f : prey.whoAmI + 1f);
         return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsWhampireProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!state.IsWhampirePreyFor(player.whoAmI))
+            return;
+
+        modifiers.FinalDamage *= projectile.type switch {
+            _ when projectile.type == SecondaryAbilityAttack => 1.35f,
+            _ when projectile.type == UltimateAttack => 1.22f,
+            _ => 1.16f
+        };
+    }
+
+    public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        NPC.HitInfo hit, int damageDone) {
+        if (!IsWhampireProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (projectile.type == PrimaryAttack || projectile.type == SecondaryAttack || projectile.type == UltimateAttack)
+            state.ApplyWhampirePrey(player.whoAmI, omp.PrimaryAbilityEnabled ? 7 * 60 : 5 * 60);
+
+        if (projectile.type == SecondaryAbilityAttack) {
+            state.ApplyWhampirePrey(player.whoAmI, 7 * 60);
+            state.ApplyWhampireHypnosis(state.IsWhampirePreyFor(player.whoAmI) ? 150 : 96);
+            player.statLife = Math.Min(player.statLifeMax2, player.statLife + 2);
+            player.HealEffect(2, true);
+        }
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -195,12 +234,15 @@ public class WhampireTransformation : Transformation {
         player.fallStart = (int)(player.position.Y / 16f);
     }
 
-    private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {
+    private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity, NPC preferredTarget = null) {
         Vector2 direction = fallbackVelocity.SafeNormalize(new Vector2(player.direction, 0f));
+
+        if (preferredTarget != null && preferredTarget.active)
+            direction = player.DirectionTo(preferredTarget.Center);
 
         if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
             Vector2 mouseDirection = player.DirectionTo(Main.MouseWorld);
-            if (mouseDirection != Vector2.Zero)
+            if (preferredTarget == null && mouseDirection != Vector2.Zero)
                 direction = mouseDirection;
         }
 
@@ -231,5 +273,35 @@ public class WhampireTransformation : Transformation {
                 break;
             }
         }
+    }
+
+    private NPC FindMarkedPrey(Player player) {
+        NPC bestTarget = null;
+        float bestDistanceSq = float.MaxValue;
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            AlienIdentityGlobalNPC state = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            if (!state.IsWhampirePreyFor(player.whoAmI))
+                continue;
+
+            float distanceSq = Vector2.DistanceSquared(player.Center, npc.Center);
+            if (distanceSq >= bestDistanceSq)
+                continue;
+
+            bestDistanceSq = distanceSq;
+            bestTarget = npc;
+        }
+
+        return bestTarget;
+    }
+
+    private bool IsWhampireProjectile(int projectileType) {
+        return projectileType == PrimaryAttack ||
+               projectileType == SecondaryAttack ||
+               projectileType == SecondaryAbilityAttack ||
+               projectileType == UltimateAttack;
     }
 }

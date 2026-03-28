@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -68,12 +67,7 @@ public class PeskyDustSleepDustProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        bool alreadyDrowsy = target.HasBuff(ModContent.BuffType<EnemySlow>()) || target.HasBuff(BuffID.Confused);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Drifting ? 120 : 90);
-        target.AddBuff(BuffID.Confused, Drifting ? 90 : 60);
-        if (alreadyDrowsy)
-            target.AddBuff(BuffID.Weak, Drifting ? 150 : 105);
-
+        target.velocity *= Drifting ? 0.92f : 0.95f;
         target.netUpdate = true;
     }
 

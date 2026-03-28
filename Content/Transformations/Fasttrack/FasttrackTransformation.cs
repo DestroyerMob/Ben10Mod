@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -22,19 +24,19 @@ public class FasttrackTransformation : Transformation {
     private const float PursuitRushDamageMultiplier = 1.28f;
     private const float UltimateDamageMultiplier = 0.54f;
     private const float BaseRushRange = 340f;
-    private const float SurgeRushRange = 440f;
+    private const float MaxMomentumRushRange = 520f;
 
     public override string FullID => "Ben10Mod:Fasttrack";
     public override string TransformationName => "Fasttrack";
     public override int TransformationBuffId => ModContent.BuffType<Fasttrack_Buff>();
     public override string Description =>
-        "A grounded speed bruiser that overwhelms targets with rush punches, cutting claw arcs, explosive pursuit tackles, and a rapid-fire velocity barrage.";
+        "A momentum-driven speed bruiser who gets deadlier the longer he keeps moving, chaining rush punches into combo pressure before cashing that speed out with brutal tackles and barrages.";
 
     public override List<string> Abilities => new() {
-        "Rush punch primary combo",
-        "Cutting claw wave secondary",
-        "Adrenaline surge speed stance",
-        "Pursuit rush tackle",
+        "Rush punch combo builder",
+        "Cutting claw finisher wave",
+        "Momentum drive overclock",
+        "Pursuit rush cash-out tackle",
         "Velocity barrage ultimate"
     };
 
@@ -83,46 +85,44 @@ public class FasttrackTransformation : Transformation {
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
+        AlienIdentityPlayer identity = player.GetModPlayer<AlienIdentityPlayer>();
+        float momentumRatio = identity.FasttrackMomentumRatio;
 
         player.GetDamage<HeroDamage>() += 0.11f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 6f;
         player.GetKnockback<HeroDamage>() += 0.4f;
         player.statDefense += 6;
-        player.moveSpeed += 0.26f;
-        player.runAcceleration += 0.12f;
-        player.accRunSpeed += 1.6f;
-        player.maxRunSpeed += 2f;
+        player.moveSpeed += 0.2f + momentumRatio * 0.16f;
+        player.runAcceleration += 0.1f + momentumRatio * 0.12f;
+        player.accRunSpeed += 1.35f + momentumRatio * 1.8f;
+        player.maxRunSpeed += 1.6f + momentumRatio * 2.2f;
         player.jumpSpeedBoost += 1.7f;
         player.pickSpeed *= 0.88f;
         player.noFallDmg = true;
 
-        if (Math.Abs(player.velocity.X) > 2.5f)
+        if (momentumRatio >= 0.45f)
             player.waterWalk = true;
+        if (momentumRatio >= 0.75f)
+            player.armorEffectDrawShadow = true;
 
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetAttackSpeed<HeroDamage>() += 0.14f;
-        player.GetCritChance<HeroDamage>() += 8f;
-        player.moveSpeed += 0.28f;
-        player.runAcceleration += 0.16f;
-        player.accRunSpeed += 2.1f;
-        player.maxRunSpeed += 2.6f;
-        player.jumpSpeedBoost += 1.2f;
-        player.endurance += 0.03f;
-        player.blackBelt = true;
+        identity.AddFasttrackMomentum(0.65f);
+        player.moveSpeed += 0.12f;
+        player.runAcceleration += 0.14f;
+        player.accRunSpeed += 1.45f;
+        player.maxRunSpeed += 1.8f;
+        player.jumpSpeedBoost += 0.9f;
+        player.endurance += 0.02f + momentumRatio * 0.02f;
+        player.blackBelt = momentumRatio >= 0.3f;
         player.armorEffectDrawShadow = true;
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        item.useTime = item.useAnimation = Math.Max(7, (int)Math.Round(item.useTime * 0.82f));
+        float momentumRatio = omp.Player.GetModPlayer<AlienIdentityPlayer>().FasttrackMomentumRatio;
+        float useMultiplier = MathHelper.Lerp(1f, omp.PrimaryAbilityEnabled ? 0.72f : 0.82f, momentumRatio);
+        item.useTime = item.useAnimation = Math.Max(6, (int)Math.Round(item.useTime * useMultiplier));
     }
 
     public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
@@ -137,14 +137,17 @@ public class FasttrackTransformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        AlienIdentityPlayer identity = player.GetModPlayer<AlienIdentityPlayer>();
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 spawnPosition = player.MountedCenter + direction * 14f;
-        bool surged = omp.PrimaryAbilityEnabled;
+        float momentumRatio = identity.FasttrackMomentumRatio;
+        bool overdrive = omp.PrimaryAbilityEnabled;
 
         if (omp.ultimateAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
             Projectile.NewProjectile(source, player.Center, direction, UltimateAttack, finalDamage, knockback + 0.8f,
-                player.whoAmI, surged ? 1f : 0f);
+                player.whoAmI, momentumRatio, overdrive ? 1f : 0f);
+            identity.ConsumeFasttrackMomentum(34f);
             return false;
         }
 
@@ -157,44 +160,88 @@ public class FasttrackTransformation : Transformation {
             if (offset == Vector2.Zero)
                 offset = new Vector2(player.direction, 0f);
 
-            float maxRange = surged ? SurgeRushRange : BaseRushRange;
+            float maxRange = MathHelper.Lerp(BaseRushRange, MaxMomentumRushRange, momentumRatio) + (overdrive ? 24f : 0f);
             float requestedDistance = Math.Min(offset.Length(), maxRange);
             Vector2 rushDirection = offset.SafeNormalize(new Vector2(player.direction, 0f));
-            float rushSpeed = FasttrackPursuitRushProjectile.GetRushSpeed(surged);
+            float rushSpeed = FasttrackPursuitRushProjectile.GetRushSpeed(momentumRatio >= 0.6f);
             int rushFrames = Utils.Clamp((int)Math.Ceiling(requestedDistance / rushSpeed),
                 FasttrackPursuitRushProjectile.MinRushFrames, FasttrackPursuitRushProjectile.MaxRushFrames);
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
 
             int projectileIndex = Projectile.NewProjectile(source, player.Center + rushDirection * 16f,
                 rushDirection * rushSpeed, SecondaryAbilityAttack, finalDamage, knockback + 1.2f, player.whoAmI,
-                surged ? 1f : 0f);
+                momentumRatio, overdrive ? 1f : 0f);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
                 Projectile projectile = Main.projectile[projectileIndex];
                 projectile.timeLeft = rushFrames;
                 projectile.netUpdate = true;
             }
 
+            identity.ConsumeFasttrackMomentum(24f);
             return false;
         }
 
         if (omp.altAttack) {
-            int waveCount = surged ? 2 : 1;
+            int waveCount = momentumRatio >= 0.85f ? 3 : momentumRatio >= 0.45f ? 2 : 1;
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             for (int i = 0; i < waveCount; i++) {
-                float spread = waveCount == 1 ? 0f : (i == 0 ? -0.08f : 0.08f);
+                float spread = waveCount switch {
+                    3 => (i - 1) * 0.1f,
+                    2 => i == 0 ? -0.08f : 0.08f,
+                    _ => 0f
+                };
                 Vector2 waveVelocity = direction.RotatedBy(spread) * SecondaryShootSpeed;
                 Projectile.NewProjectile(source, spawnPosition, waveVelocity, SecondaryAttack, finalDamage,
-                    knockback + 0.8f, player.whoAmI, surged ? 1f : 0f);
+                    knockback + 0.8f, player.whoAmI, momentumRatio, overdrive ? 1f : 0f);
             }
 
             return false;
         }
 
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
-        float punchScale = surged ? 1.15f : 1f;
-        Projectile.NewProjectile(source, spawnPosition, direction, PrimaryAttack, primaryDamage, knockback, player.whoAmI,
-            punchScale, surged ? 1f : 0f);
+        float punchScale = 1f + momentumRatio * 0.2f + (overdrive ? 0.05f : 0f);
+        int punchCount = momentumRatio >= 0.82f ? 2 : 1;
+        for (int i = 0; i < punchCount; i++) {
+            float spread = punchCount == 1 ? 0f : (i == 0 ? -0.05f : 0.05f);
+            Projectile.NewProjectile(source, spawnPosition, direction.RotatedBy(spread), PrimaryAttack, primaryDamage,
+                knockback, player.whoAmI, punchScale, momentumRatio);
+        }
+
         return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsFasttrackProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!state.IsFasttrackComboActiveFor(player.whoAmI))
+            return;
+
+        modifiers.FinalDamage *= 1f + 0.05f * Math.Min(state.FasttrackComboStacks, 4);
+        if (projectile.type == SecondaryAbilityAttack && state.FasttrackComboStacks >= 4)
+            modifiers.FinalDamage *= 1.14f;
+    }
+
+    public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        NPC.HitInfo hit, int damageDone) {
+        if (!IsFasttrackProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int existingStacks = state.IsFasttrackComboActiveFor(player.whoAmI) ? state.FasttrackComboStacks : 0;
+        int stacksToAdd = projectile.type switch {
+            _ when projectile.type == PrimaryAttack => 1,
+            _ when projectile.type == SecondaryAttack => 2,
+            _ when projectile.type == SecondaryAbilityAttack => 3,
+            _ => 1
+        };
+
+        state.ApplyFasttrackCombo(player.whoAmI, stacksToAdd, 90);
+
+        if (projectile.type == SecondaryAbilityAttack && existingStacks >= 3)
+            player.GetModPlayer<AlienIdentityPlayer>().AddFasttrackMomentum(18f);
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -240,5 +287,12 @@ public class FasttrackTransformation : Transformation {
                 break;
             }
         }
+    }
+
+    private bool IsFasttrackProjectile(int projectileType) {
+        return projectileType == PrimaryAttack ||
+               projectileType == SecondaryAttack ||
+               projectileType == SecondaryAbilityAttack ||
+               projectileType == UltimateAttack;
     }
 }

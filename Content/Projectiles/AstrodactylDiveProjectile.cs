@@ -14,6 +14,7 @@ public class AstrodactylDiveProjectile : ModProjectile {
     private const float HyperflightDiveSpeed = 33f;
 
     private bool Hyperflight => Projectile.ai[0] >= 0.5f;
+    private float AirSupremacyRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
 
     public static float GetDiveSpeed(bool hyperflight) => hyperflight ? HyperflightDiveSpeed : BaseDiveSpeed;
 
@@ -45,10 +46,10 @@ public class AstrodactylDiveProjectile : ModProjectile {
         owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        float diveSpeed = GetDiveSpeed(Hyperflight);
+        float diveSpeed = GetDiveSpeed(Hyperflight) + AirSupremacyRatio * 3f;
         Projectile.velocity = direction * diveSpeed;
         Projectile.rotation = direction.ToRotation();
-        Projectile.Center = owner.Center + direction * (Hyperflight ? 22f : 18f);
+        Projectile.Center = owner.Center + direction * MathHelper.Lerp(Hyperflight ? 22f : 18f, 28f, AirSupremacyRatio);
 
         owner.velocity = Projectile.velocity;
         owner.direction = direction.X >= 0f ? 1 : -1;
@@ -64,7 +65,7 @@ public class AstrodactylDiveProjectile : ModProjectile {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(10f, 10f),
                 Main.rand.NextBool(3) ? DustID.GreenTorch : DustID.GemEmerald,
                 -Projectile.velocity * Main.rand.NextFloat(0.05f, 0.13f), 105, new Color(180, 255, 220),
-                Main.rand.NextFloat(0.9f, Hyperflight ? 1.2f : 1.08f));
+                Main.rand.NextFloat(0.9f, MathHelper.Lerp(Hyperflight ? 1.2f : 1.08f, 1.3f, AirSupremacyRatio)));
             dust.noGravity = true;
         }
     }
@@ -74,7 +75,7 @@ public class AstrodactylDiveProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.OnFire3, Hyperflight ? 240 : 180);
+        target.AddBuff(BuffID.OnFire3, (int)MathHelper.Lerp(Hyperflight ? 240 : 180, 300f, AirSupremacyRatio));
         target.AddBuff(BuffID.Oiled, 90);
     }
 

@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -96,9 +96,7 @@ public class PeskyDustDreamSnareProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.velocity *= 0.74f;
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 180);
         target.AddBuff(BuffID.Confused, Drifting ? 210 : 180);
-        target.AddBuff(BuffID.Weak, Drifting ? 210 : 180);
         target.netUpdate = true;
     }
 
@@ -115,6 +113,8 @@ public class PeskyDustDreamSnareProjectile : ModProjectile {
             float pullStrength = MathHelper.Lerp(0.6f, Drifting ? 3.4f : 2.6f, 1f - distance / CurrentRadius);
             Vector2 desiredVelocity = (Projectile.Center - npc.Center).SafeNormalize(Vector2.Zero) * pullStrength;
             npc.velocity = Vector2.Lerp(npc.velocity, desiredVelocity, npc.boss ? 0.04f : 0.12f);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().AddPeskyDrowsy(Projectile.owner, Drifting ? 3 : 2, 90, 100,
+                Drifting ? 240 : 180);
             npc.netUpdate = true;
         }
     }

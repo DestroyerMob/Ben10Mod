@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +17,7 @@ public class WhampireHypnosisProjectile : ModProjectile {
     private const float CloakedWidth = 26f;
 
     private bool Cloaked => Projectile.ai[0] >= 0.5f;
+    private int PreyTargetIndex => (int)Projectile.ai[1] - 1;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -46,7 +46,8 @@ public class WhampireHypnosisProjectile : ModProjectile {
             return;
         }
 
-        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 direction = ResolveDirection(owner);
+        Projectile.velocity = direction;
         Projectile.rotation = direction.ToRotation();
         Projectile.Center = GetBeamStart(owner, direction) + direction * GetBeamLength() * 0.5f;
 
@@ -70,7 +71,7 @@ public class WhampireHypnosisProjectile : ModProjectile {
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
         Player owner = Main.player[Projectile.owner];
-        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 direction = ResolveDirection(owner);
         Vector2 start = GetBeamStart(owner, direction);
         Vector2 end = start + direction * GetBeamLength();
         float collisionPoint = 0f;
@@ -81,7 +82,7 @@ public class WhampireHypnosisProjectile : ModProjectile {
     public override bool PreDraw(ref Color lightColor) {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Player owner = Main.player[Projectile.owner];
-        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        Vector2 direction = ResolveDirection(owner);
         Vector2 start = GetBeamStart(owner, direction) - Main.screenPosition;
         float length = GetBeamLength();
         float width = GetBeamWidth();
@@ -103,14 +104,22 @@ public class WhampireHypnosisProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(BuffID.Confused, Cloaked ? 360 : 300);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Cloaked ? 240 : 180);
-        target.AddBuff(BuffID.Weak, Cloaked ? 300 : 240);
         target.netUpdate = true;
     }
 
     private float GetBeamLength() => Cloaked ? CloakedLength : BaseLength;
 
     private float GetBeamWidth() => Cloaked ? CloakedWidth : BaseWidth;
+
+    private Vector2 ResolveDirection(Player owner) {
+        if (PreyTargetIndex >= 0 && PreyTargetIndex < Main.maxNPCs) {
+            NPC preyTarget = Main.npc[PreyTargetIndex];
+            if (preyTarget.CanBeChasedBy(Projectile))
+                return owner.DirectionTo(preyTarget.Center);
+        }
+
+        return Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+    }
 
     private static Vector2 GetBeamStart(Player owner, Vector2 direction) {
         return owner.MountedCenter + new Vector2(owner.direction * 8f, -10f) + direction * 12f;

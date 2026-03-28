@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -75,9 +74,8 @@ public class WhampireScreechProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Cloaked ? 180 : 150);
-        target.AddBuff(BuffID.Confused, 150);
-        target.AddBuff(BuffID.Weak, Cloaked ? 180 : 150);
+        target.AddBuff(BuffID.Confused, Cloaked ? 180 : 150);
+        target.AddBuff(BuffID.Bleeding, Cloaked ? 150 : 105);
         target.netUpdate = true;
     }
 

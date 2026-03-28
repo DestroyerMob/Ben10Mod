@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -18,6 +19,7 @@ public class PeskyDustTransformation : Transformation {
     private const int DreamSnareEnergyCost = 24;
     private const int DreamSnareCooldown = 15 * 60;
     private const int MaxActiveDreamSnares = 2;
+    private const int DriftDreamSnareCap = 3;
     private const float PrimaryDamageMultiplier = 0.76f;
     private const float SecondaryDamageMultiplier = 0.88f;
     private const float DreamSnareDamageMultiplier = 1.02f;
@@ -27,14 +29,14 @@ public class PeskyDustTransformation : Transformation {
     public override string TransformationName => "Pesky Dust";
     public override int TransformationBuffId => ModContent.BuffType<PeskyDust_Buff>();
     public override string Description =>
-        "A nimble Nemuina trickster that blankets enemies in soporific dust, glides on dream currents, pins targets in dream snares, and overwhelms whole areas with a sandman storm.";
+        "A dream-trickster built around putting enemies to sleep in stages, turning drowsy targets dreambound, and then cashing that setup out with snares and storms.";
 
     public override List<string> Abilities => new() {
-        "Sleep-dust bolt primary fire",
-        "Lullaby cloud secondary burst",
-        "Pixie drift aerial stance",
-        "Dream snare field placement",
-        "Sandman storm ultimate"
+        "Sleep-dust drowsy builder",
+        "Lullaby cloud dream spread",
+        "Pixie drift glide stance",
+        "Dream snare dreambound trap",
+        "Sandman storm payoff ultimate"
     };
 
     public override string PrimaryAttackName => "Sleep Dust";
@@ -86,8 +88,6 @@ public class PeskyDustTransformation : Transformation {
         base.UpdateEffects(player, omp);
 
         player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 6f;
         player.GetKnockback<HeroDamage>() += 0.3f;
         player.statDefense += 4;
         player.moveSpeed += 0.16f;
@@ -101,22 +101,19 @@ public class PeskyDustTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetAttackSpeed<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 6f;
-        player.moveSpeed += 0.2f;
-        player.runAcceleration += 0.1f;
-        player.maxRunSpeed += 1.15f;
-        player.jumpSpeedBoost += 1.2f;
+        player.moveSpeed += 0.12f;
+        player.runAcceleration += 0.08f;
+        player.maxRunSpeed += 0.8f;
+        player.jumpSpeedBoost += 0.9f;
         player.wingTimeMax += 48;
         player.wingTime = Math.Max(player.wingTime, 16f);
-        player.endurance += 0.03f;
         player.armorEffectDrawShadow = true;
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
 
-        if (!omp.PrimaryAbilityEnabled)
+        if (CountDreamboundTargets(omp.Player) <= 0)
             return;
 
         item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * 0.84f));
@@ -156,7 +153,7 @@ public class PeskyDustTransformation : Transformation {
                 return false;
 
             int snareType = ModContent.ProjectileType<PeskyDustDreamSnareProjectile>();
-            CullOldestDreamSnare(player, snareType);
+            CullOldestDreamSnare(player, snareType, drifting ? DriftDreamSnareCap : MaxActiveDreamSnares);
 
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
             int projectileIndex = Projectile.NewProjectile(source, Main.MouseWorld, Vector2.Zero, snareType, finalDamage,
@@ -177,16 +174,56 @@ public class PeskyDustTransformation : Transformation {
             return false;
         }
 
-        int boltCount = drifting ? 2 : 1;
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
-        for (int i = 0; i < boltCount; i++) {
-            float spread = boltCount == 1 ? 0f : (i == 0 ? -0.1f : 0.1f);
-            Vector2 shotVelocity = direction.RotatedBy(spread) * PrimaryShootSpeed;
-            Projectile.NewProjectile(source, spawnPosition, shotVelocity, PrimaryAttack, primaryDamage, knockback,
-                player.whoAmI, drifting ? 1f : 0f);
-        }
+        Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage, knockback,
+            player.whoAmI, drifting ? 1f : 0f);
 
         return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsPeskyDustProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!state.IsDreamboundFor(player.whoAmI))
+            return;
+
+        modifiers.FinalDamage *= projectile.type switch {
+            _ when projectile.type == SecondaryAbilityAttack => 1.35f,
+            _ when projectile.type == UltimateAttack => 1.22f,
+            _ => 1.12f
+        };
+    }
+
+    public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        NPC.HitInfo hit, int damageDone) {
+        if (!IsPeskyDustProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool drifting = omp.PrimaryAbilityEnabled;
+        switch (projectile.type) {
+            case var _ when projectile.type == PrimaryAttack:
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 54 : 40, 210, 100, drifting ? 240 : 180);
+                break;
+            case var _ when projectile.type == SecondaryAttack:
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 40 : 28, 200, 100, drifting ? 240 : 180);
+                break;
+            case var _ when projectile.type == SecondaryAbilityAttack:
+                if (state.IsDreamboundFor(player.whoAmI)) {
+                    state.ApplyDreambound(player.whoAmI, drifting ? 260 : 210, 28);
+                    SpawnDreamBurst(projectile, target, drifting);
+                }
+                else {
+                    state.AddPeskyDrowsy(player.whoAmI, drifting ? 52 : 44, 220, 100, drifting ? 260 : 210);
+                }
+                break;
+            case var _ when projectile.type == UltimateAttack:
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 44 : 34, 240, 100, drifting ? 280 : 220);
+                break;
+        }
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -234,7 +271,7 @@ public class PeskyDustTransformation : Transformation {
         return false;
     }
 
-    private static void CullOldestDreamSnare(Player player, int projectileType) {
+    private static void CullOldestDreamSnare(Player player, int projectileType, int maxActiveDreamSnares) {
         int activeCount = 0;
         int oldestIndex = -1;
         float oldestSpawnOrder = float.MaxValue;
@@ -252,7 +289,7 @@ public class PeskyDustTransformation : Transformation {
             }
         }
 
-        if (activeCount >= MaxActiveDreamSnares && oldestIndex != -1)
+        if (activeCount >= maxActiveDreamSnares && oldestIndex != -1)
             Main.projectile[oldestIndex].Kill();
     }
 
@@ -270,5 +307,39 @@ public class PeskyDustTransformation : Transformation {
                 break;
             }
         }
+    }
+
+    private int CountDreamboundTargets(Player player) {
+        int count = 0;
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.active)
+                continue;
+
+            if (npc.GetGlobalNPC<AlienIdentityGlobalNPC>().IsDreamboundFor(player.whoAmI))
+                count++;
+        }
+
+        return count;
+    }
+
+    private void SpawnDreamBurst(Projectile projectile, NPC target, bool drifting) {
+        if (projectile.owner != Main.myPlayer)
+            return;
+
+        int boltDamage = Math.Max(1, (int)Math.Round(projectile.damage * 0.42f));
+        for (int i = 0; i < 3; i++) {
+            float angle = -MathHelper.PiOver2 + MathHelper.Lerp(-0.65f, 0.65f, i / 2f);
+            Vector2 velocity = angle.ToRotationVector2() * Main.rand.NextFloat(7f, 10f);
+            Projectile.NewProjectile(projectile.GetSource_FromThis(), target.Center, velocity, PrimaryAttack, boltDamage,
+                projectile.knockBack * 0.4f, projectile.owner, drifting ? 1f : 0f);
+        }
+    }
+
+    private bool IsPeskyDustProjectile(int projectileType) {
+        return projectileType == PrimaryAttack ||
+               projectileType == SecondaryAttack ||
+               projectileType == SecondaryAbilityAttack ||
+               projectileType == UltimateAttack;
     }
 }

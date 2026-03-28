@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,6 +11,7 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class WhampireCorrupturaBoltProjectile : ModProjectile {
     private bool Cloaked => Projectile.ai[0] >= 0.5f;
+    private int PreyTargetIndex => (int)Projectile.ai[1] - 1;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -66,16 +66,17 @@ public class WhampireCorrupturaBoltProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        bool alreadyDazed = target.HasBuff(BuffID.Confused);
-        target.AddBuff(BuffID.Confused, Cloaked ? 105 : 75);
-        target.AddBuff(BuffID.Weak, Cloaked ? 180 : 120);
-        if (alreadyDazed)
-            target.AddBuff(BuffID.BrokenArmor, Cloaked ? 150 : 105);
-
+        target.AddBuff(BuffID.Bleeding, Cloaked ? 240 : 180);
         target.netUpdate = true;
     }
 
     private NPC FindTarget(float maxDistance) {
+        if (PreyTargetIndex >= 0 && PreyTargetIndex < Main.maxNPCs) {
+            NPC preyTarget = Main.npc[PreyTargetIndex];
+            if (preyTarget.CanBeChasedBy(Projectile))
+                return preyTarget;
+        }
+
         NPC bestTarget = null;
         float bestDistanceSq = maxDistance * maxDistance;
         for (int i = 0; i < Main.maxNPCs; i++) {

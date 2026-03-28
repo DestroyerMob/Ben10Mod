@@ -11,6 +11,7 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class AstrodactylStarburstProjectile : ModProjectile {
     private bool Hyperflight => Projectile.ai[0] >= 0.5f;
+    private float AirSupremacyRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -30,9 +31,12 @@ public class AstrodactylStarburstProjectile : ModProjectile {
     }
 
     public override void AI() {
-        HomeTowardTarget(Hyperflight ? 0.12f : 0.08f, Hyperflight ? 520f : 420f);
+        HomeTowardTarget(MathHelper.Lerp(Hyperflight ? 0.12f : 0.08f, 0.18f, AirSupremacyRatio),
+            MathHelper.Lerp(Hyperflight ? 520f : 420f, 620f, AirSupremacyRatio));
         Projectile.rotation += Hyperflight ? 0.34f : 0.24f;
-        Lighting.AddLight(Projectile.Center, Hyperflight ? new Vector3(0.25f, 1f, 0.72f) : new Vector3(0.18f, 0.92f, 0.62f));
+        Lighting.AddLight(Projectile.Center,
+            Vector3.Lerp(Hyperflight ? new Vector3(0.25f, 1f, 0.72f) : new Vector3(0.18f, 0.92f, 0.62f),
+                new Vector3(0.32f, 1f, 0.86f), AirSupremacyRatio));
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(5f, 5f),
@@ -47,11 +51,12 @@ public class AstrodactylStarburstProjectile : ModProjectile {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 center = Projectile.Center - Main.screenPosition;
         float pulse = 1f + 0.14f * (float)Math.Sin(Main.GlobalTimeWrappedHourly * 12f + Projectile.identity);
+        float size = MathHelper.Lerp(1f, 1.24f, AirSupremacyRatio);
 
         Main.EntitySpriteDraw(pixel, center, null, new Color(70, 225, 135, 120), 0f, Vector2.One * 0.5f,
-            new Vector2(22f, 22f) * pulse, SpriteEffects.None, 0);
+            new Vector2(22f, 22f) * pulse * size, SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center, null, new Color(235, 255, 240, 215), Projectile.rotation, Vector2.One * 0.5f,
-            new Vector2(12f, 12f) * pulse, SpriteEffects.None, 0);
+            new Vector2(12f, 12f) * pulse * size, SpriteEffects.None, 0);
         return false;
     }
 
@@ -67,9 +72,9 @@ public class AstrodactylStarburstProjectile : ModProjectile {
 
             for (int i = 0; i < ShardCount; i++) {
                 Vector2 velocity = (MathHelper.TwoPi * i / ShardCount).ToRotationVector2() * Main.rand.NextFloat(10f, 13f);
-                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                    ModContent.ProjectileType<AstrodactylPlasmaBoltProjectile>(), shardDamage, Projectile.knockBack * 0.6f,
-                    Projectile.owner, Hyperflight ? 1f : 0f);
+                    Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
+                        ModContent.ProjectileType<AstrodactylPlasmaBoltProjectile>(), shardDamage, Projectile.knockBack * 0.6f,
+                        Projectile.owner, Hyperflight ? 1f : 0f, AirSupremacyRatio);
             }
         }
 

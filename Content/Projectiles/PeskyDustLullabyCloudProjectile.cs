@@ -1,5 +1,4 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -74,10 +73,8 @@ public class PeskyDustLullabyCloudProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.velocity *= 0.82f;
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Drifting ? 180 : 150);
+        target.velocity *= 0.84f;
         target.AddBuff(BuffID.Confused, 120);
-        target.AddBuff(BuffID.Weak, Drifting ? 180 : 150);
         target.netUpdate = true;
     }
 

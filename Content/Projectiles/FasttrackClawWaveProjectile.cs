@@ -1,4 +1,3 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -10,7 +9,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class FasttrackClawWaveProjectile : ModProjectile {
-    private bool Empowered => Projectile.ai[0] >= 0.5f;
+    private float MomentumRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private bool HighMomentum => MomentumRatio >= 0.65f;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -31,14 +31,14 @@ public class FasttrackClawWaveProjectile : ModProjectile {
 
     public override void AI() {
         Projectile.rotation = Projectile.velocity.ToRotation();
-        Projectile.velocity *= Empowered ? 0.992f : 0.986f;
-        Lighting.AddLight(Projectile.Center, Empowered ? new Vector3(0.12f, 0.68f, 0.42f) : new Vector3(0.08f, 0.42f, 0.28f));
+        Projectile.velocity *= HighMomentum ? 0.992f : 0.986f;
+        Lighting.AddLight(Projectile.Center, Vector3.Lerp(new Vector3(0.08f, 0.42f, 0.28f), new Vector3(0.12f, 0.68f, 0.42f), MomentumRatio));
 
-        if (Main.rand.NextBool(Empowered ? 1 : 2)) {
+        if (Main.rand.NextBool(HighMomentum ? 1 : 2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(8f, 8f),
                 Main.rand.NextBool() ? DustID.GemEmerald : DustID.GreenFairy,
-                -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.16f), 105, new Color(145, 255, 215),
-                Main.rand.NextFloat(0.85f, Empowered ? 1.18f : 1.02f));
+                -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.16f), 105, Color.Lerp(new Color(120, 240, 200), new Color(145, 255, 215), MomentumRatio),
+                Main.rand.NextFloat(0.85f, HighMomentum ? 1.18f : 1.02f));
             dust.noGravity = true;
         }
     }
@@ -46,10 +46,10 @@ public class FasttrackClawWaveProjectile : ModProjectile {
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         Vector2 lineStart = Projectile.Center - direction * 18f;
-        Vector2 lineEnd = Projectile.Center + direction * (Empowered ? 34f : 28f);
+        Vector2 lineEnd = Projectile.Center + direction * MathHelper.Lerp(28f, 34f, MomentumRatio);
         float collisionPoint = 0f;
         return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), lineStart, lineEnd,
-            Empowered ? 24f : 18f, ref collisionPoint);
+            MathHelper.Lerp(18f, 24f, MomentumRatio), ref collisionPoint);
     }
 
     public override bool PreDraw(ref Color lightColor) {
@@ -58,26 +58,26 @@ public class FasttrackClawWaveProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
         float rotation = direction.ToRotation();
-        Color outer = Empowered ? new Color(20, 24, 28, 225) : new Color(12, 16, 20, 220);
-        Color inner = Empowered ? new Color(150, 255, 220, 180) : new Color(95, 220, 190, 170);
-        Color core = Empowered ? new Color(225, 255, 245, 150) : new Color(190, 255, 235, 130);
+        Color outer = Color.Lerp(new Color(12, 16, 20, 220), new Color(20, 24, 28, 225), MomentumRatio);
+        Color inner = Color.Lerp(new Color(95, 220, 190, 170), new Color(150, 255, 220, 180), MomentumRatio);
+        Color core = Color.Lerp(new Color(190, 255, 235, 130), new Color(225, 255, 245, 150), MomentumRatio);
 
         for (int i = -1; i <= 1; i++) {
-            Vector2 offset = normal * i * (Empowered ? 7f : 5f);
+            Vector2 offset = normal * i * MathHelper.Lerp(5f, 7f, MomentumRatio);
             Main.EntitySpriteDraw(pixel, center + offset, null, outer, rotation, Vector2.One * 0.5f,
-                new Vector2(Empowered ? 44f : 36f, 8f), SpriteEffects.None, 0);
+                new Vector2(MathHelper.Lerp(36f, 44f, MomentumRatio), 8f), SpriteEffects.None, 0);
             Main.EntitySpriteDraw(pixel, center + offset, null, inner, rotation, Vector2.One * 0.5f,
-                new Vector2(Empowered ? 31f : 26f, 4.6f), SpriteEffects.None, 0);
+                new Vector2(MathHelper.Lerp(26f, 31f, MomentumRatio), 4.6f), SpriteEffects.None, 0);
         }
 
         Main.EntitySpriteDraw(pixel, center, null, core, rotation, Vector2.One * 0.5f,
-            new Vector2(Empowered ? 20f : 17f, 2.4f), SpriteEffects.None, 0);
+            new Vector2(MathHelper.Lerp(17f, 20f, MomentumRatio), 2.4f), SpriteEffects.None, 0);
         return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Empowered ? 120 : 90);
-        target.AddBuff(BuffID.BrokenArmor, Empowered ? 150 : 105);
+        if (HighMomentum)
+            target.AddBuff(BuffID.BrokenArmor, 135);
         target.netUpdate = true;
     }
 }
