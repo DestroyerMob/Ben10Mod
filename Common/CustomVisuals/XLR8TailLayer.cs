@@ -19,7 +19,7 @@ internal static class XLR8TailDrawHelper {
     // The tail sprite is packed against the left side of the frame, so the actual attachment
     // point is near the right edge of the visible tail, not near x = 0.
     private static readonly Vector2 BodyBackAnchorInFrame = new(12f, 34f);
-    private static readonly Vector2 TailRootAnchorInFrame = new(24f, 34f);
+    private static readonly Vector2 TailRootAnchorInFrame = new(24f, 36f);
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
