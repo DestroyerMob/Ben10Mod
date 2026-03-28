@@ -219,10 +219,7 @@ public class XLR8Transformation : Transformation {
                 "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Body"),
             new TransformationPaletteOverlay(
                 "Ben10Mod/Content/Transformations/XLR8/XLR8_Legs",
-                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Legs"),
-        new TransformationPaletteOverlay(
-            "Ben10Mod/Content/Transformations/XLR8/XLR8_Tail",
-            "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Tail")),
+                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Legs")),
         new TransformationPaletteChannel(
             "eye",
             "Eye",

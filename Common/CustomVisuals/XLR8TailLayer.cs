@@ -3,20 +3,23 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ModLoader;
+using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Common.CustomVisuals;
 
 internal static class XLR8TailDrawHelper {
     private const string XLR8TransformationId = "Ben10Mod:XLR8";
     private const string TailTexturePath = "Ben10Mod/Content/Transformations/XLR8/XLR8_Tail";
+    private const string TailMaskTexturePath = "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Tail";
     private const string BodyTexturePath = "Ben10Mod/Content/Transformations/XLR8/XLR8_Body";
-    private const string LegsTexturePath = "Ben10Mod/Content/Transformations/XLR8/XLR8_Legs";
     private const int TailFrameWidth = 58;
     private const int TailFrameHeight = 56;
+    private const string BasePaletteChannelId = "base";
 
-    // Anchor to the trailing edge of the torso so the tail grows out from XLR8's back.
-    private static readonly Vector2 BodyBackAnchorInFrame = new(12f, 33f);
-    private static readonly Vector2 TailRootAnchorInFrame = new(1f, 32f);
+    // The tail sprite is packed against the left side of the frame, so the actual attachment
+    // point is near the right edge of the visible tail, not near x = 0.
+    private static readonly Vector2 BodyBackAnchorInFrame = new(12f, 34f);
+    private static readonly Vector2 TailRootAnchorInFrame = new(26f, 34f);
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
@@ -32,8 +35,8 @@ internal static class XLR8TailDrawHelper {
             return;
 
         Texture2D tailTexture = ModContent.Request<Texture2D>(TailTexturePath).Value;
+        Texture2D tailMaskTexture = ModContent.Request<Texture2D>(TailMaskTexturePath).Value;
         Texture2D bodyTexture = ModContent.Request<Texture2D>(BodyTexturePath).Value;
-        Texture2D legsTexture = ModContent.Request<Texture2D>(LegsTexturePath).Value;
 
         if (!TryGetBodyDrawData(drawInfo, bodyTexture, out int bodyDrawIndex, out DrawData bodyDrawData))
             return;
@@ -46,8 +49,12 @@ internal static class XLR8TailDrawHelper {
             ? new Vector2(sourceRectangle.Width - TailRootAnchorInFrame.X, TailRootAnchorInFrame.Y)
             : TailRootAnchorInFrame;
 
+        OmnitrixPlayer omp = drawInfo.drawPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation transformation = omp.CurrentTransformation;
+        Texture2D drawTexture = ResolveTailTexture(transformation, omp, tailTexture, tailMaskTexture);
+
         DrawData tailDraw = new(
-            tailTexture,
+            drawTexture,
             anchor,
             sourceRectangle,
             bodyDrawData.color,
@@ -60,8 +67,21 @@ internal static class XLR8TailDrawHelper {
             shader = bodyDrawData.shader
         };
 
-        int insertIndex = ResolveTailInsertIndex(drawInfo, bodyDrawIndex, bodyTexture, legsTexture);
-        drawInfo.DrawDataCache.Insert(insertIndex, tailDraw);
+        drawInfo.DrawDataCache.Insert(bodyDrawIndex, tailDraw);
+    }
+
+    private static Texture2D ResolveTailTexture(Transformation transformation, OmnitrixPlayer omp, Texture2D baseTexture,
+        Texture2D maskTexture) {
+        if (transformation == null || baseTexture == null || maskTexture == null)
+            return baseTexture;
+
+        TransformationPaletteChannelSettings settings = omp.GetPaletteSettings(transformation, BasePaletteChannelId);
+        bool usePaletteColor = omp.IsPaletteChannelEnabled(transformation, BasePaletteChannelId);
+        if (!usePaletteColor && settings.HasNeutralAdjustments)
+            return baseTexture;
+
+        return TransformationPaletteTextureCache.GetProcessedOverlayTexture(baseTexture, maskTexture, settings, usePaletteColor) ??
+               baseTexture;
     }
 
     private static int ResolveFrameIndex(DrawData bodyDrawData) {
@@ -70,20 +90,6 @@ internal static class XLR8TailDrawHelper {
             return 0;
 
         return bodyFrame.Y / bodyFrame.Height;
-    }
-
-    private static int ResolveTailInsertIndex(PlayerDrawSet drawInfo, int fallbackIndex, Texture2D bodyTexture, Texture2D legsTexture) {
-        int insertIndex = fallbackIndex;
-
-        for (int i = 0; i < drawInfo.DrawDataCache.Count; i++) {
-            Texture2D texture = drawInfo.DrawDataCache[i].texture;
-            if (texture == bodyTexture || texture == legsTexture) {
-                insertIndex = i;
-                break;
-            }
-        }
-
-        return insertIndex < 0 ? 0 : insertIndex;
     }
 
     private static bool TryGetBodyDrawData(PlayerDrawSet drawInfo, Texture2D bodyTexture, out int bodyDrawIndex, out DrawData bodyDrawData) {
