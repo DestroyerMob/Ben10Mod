@@ -116,4 +116,27 @@ public class GhostFreakTransformation : Transformation {
 
         player.velocity = Vector2.Zero;
     }
+    
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
+        new TransformationPaletteChannel(
+            "base",
+            "Base",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreak_Head",
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreakBaseMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreak_Body",
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreakBaseMask_Body"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreak_Legs",
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreakBaseMask_Legs")),
+        new TransformationPaletteChannel(
+            "eye",
+            "Eye",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreak_Head",
+                "Ben10Mod/Content/Transformations/GhostFreak/GhostFreakEyeMask_Head"))
+    ];
 }
