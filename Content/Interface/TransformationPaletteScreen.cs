@@ -419,7 +419,7 @@ public sealed class PalettePreviewSwatch : UIElement {
             Vector2 previewWorldTopLeft = Main.screenPosition + previewTopLeft;
 
             player.position = previewWorldTopLeft;
-            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewWorldTopLeft, 0f, Vector2.Zero, 0f, scale);
+            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewTopLeft, 0f, Vector2.Zero, 0f, scale);
             return true;
         }
         catch {
@@ -748,8 +748,10 @@ public sealed class PalettePreviewSwatch : UIElement {
         int columns = texture.Width / previewFrameWidth;
         int rows = texture.Height / previewFrameHeight;
 
-        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase) && columns >= 5)
-            return new Rectangle(previewFrameWidth * 4, 0, previewFrameWidth, previewFrameHeight);
+        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase)) {
+            int standingColumn = columns >= 5 ? 4 : 0;
+            return new Rectangle(standingColumn * previewFrameWidth, 0, previewFrameWidth, previewFrameHeight);
+        }
 
         if (texturePath.EndsWith("_Legs", StringComparison.OrdinalIgnoreCase)) {
             int standingFrame = Math.Min(9, rows - 1);
@@ -758,7 +760,14 @@ public sealed class PalettePreviewSwatch : UIElement {
 
         if (texturePath.EndsWith("_Head", StringComparison.OrdinalIgnoreCase) ||
             texturePath.EndsWith("_Back", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase)) {
+            texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Wings", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_HandsOff", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_HandsOn", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Shield", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Neck", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Face", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Front", StringComparison.OrdinalIgnoreCase)) {
             return new Rectangle(0, 0, previewFrameWidth, previewFrameHeight);
         }
 
