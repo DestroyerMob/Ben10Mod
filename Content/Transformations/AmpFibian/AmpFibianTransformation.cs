@@ -38,6 +38,7 @@ public class AmpFibianTransformation : Transformation {
     public override string PrimaryAttackName => "Lightning Bolt";
     public override string SecondaryAttackName => "Electrical Burst";
     public override string PrimaryAbilityAttackName => "Phase Shift";
+    public override string UltimateAbilityName => "Electrical Barrier";
     public override int PrimaryAttack => ModContent.ProjectileType<AmpFibianBoltProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 18;

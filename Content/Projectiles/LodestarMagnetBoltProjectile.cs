@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -10,6 +10,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class LodestarMagnetBoltProjectile : ModProjectile {
+    private bool Repel => Projectile.ai[0] >= 0.5f;
+
     public override string Texture => "Terraria/Images/Projectile_0";
 
     public override void SetDefaults() {
@@ -64,23 +66,26 @@ public class LodestarMagnetBoltProjectile : ModProjectile {
         Vector2 perpendicular = direction.RotatedBy(MathHelper.PiOver2);
         Vector2 center = Projectile.Center - Main.screenPosition;
         float rotation = direction.ToRotation();
+        Color outerColor = Repel ? new Color(115, 165, 255, 120) : new Color(225, 85, 72, 120);
+        Color accentColor = Repel ? new Color(195, 225, 255, 120) : new Color(185, 195, 210, 120);
 
-        Main.EntitySpriteDraw(pixel, center, null, new Color(225, 85, 72, 120), rotation, Vector2.One * 0.5f,
+        Main.EntitySpriteDraw(pixel, center, null, outerColor, rotation, Vector2.One * 0.5f,
             new Vector2(34f, 7f), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center, null, new Color(235, 235, 240, 210), rotation, Vector2.One * 0.5f,
             new Vector2(22f, 3.2f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center + perpendicular * 6f, null, new Color(185, 195, 210, 120), rotation + 0.26f,
+        Main.EntitySpriteDraw(pixel, center + perpendicular * 6f, null, accentColor, rotation + 0.26f,
             Vector2.One * 0.5f, new Vector2(11f, 2.1f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center - perpendicular * 6f, null, new Color(185, 195, 210, 120), rotation - 0.26f,
+        Main.EntitySpriteDraw(pixel, center - perpendicular * 6f, null, accentColor, rotation - 0.26f,
             Vector2.One * 0.5f, new Vector2(11f, 2.1f), SpriteEffects.None, 0);
         return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        Vector2 pull = (Projectile.Center - target.Center).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX)) * 5.5f;
-        target.velocity = Vector2.Lerp(target.velocity, target.velocity + pull, 0.45f);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 75);
-        target.AddBuff(BuffID.BrokenArmor, 90);
+        Vector2 forceDirection = Repel
+            ? (target.Center - Projectile.Center).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX))
+            : (Projectile.Center - target.Center).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX));
+        target.velocity = Vector2.Lerp(target.velocity, forceDirection * 6.5f, 0.45f);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyLodestarPolarity(Projectile.owner, 180, Repel ? 1 : -1);
         target.netUpdate = true;
     }
 

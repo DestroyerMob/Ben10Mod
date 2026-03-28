@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -28,18 +29,19 @@ public class FrankenstrikeTransformation : Transformation {
     public override string TransformationName => "Frankenstrike";
     public override int TransformationBuffId => ModContent.BuffType<Frankenstrike_Buff>();
     public override string Description =>
-        "A storm-forged Transylian bruiser that hurls tesla bolts, detonates thunderclaps, overcharges his body, and calls down crushing lightning barrages.";
+        "A storm-forged Transylian who builds static charge through combat, then unloads it through thunderclaps, lunges, and lightning verdicts.";
 
     public override List<string> Abilities => new() {
-        "Heavy tesla bolt primary",
-        "Expanding thunderclap burst",
-        "Overcharged body combat mode",
-        "Storm leap lunge attack",
-        "Thunderstorm strike barrage ultimate"
+        "Tesla bolts that build static charge",
+        "Thunderclap that spends stored charge in a blast",
+        "Overcharge that stores power faster and hardens your frame",
+        "Storm Leap that crashes through enemies in a burst of lightning",
+        "Thunderstorm Barrage that calls down repeated strikes"
     };
 
     public override string PrimaryAttackName => "Tesla Bolt";
     public override string SecondaryAttackName => "Thunderclap";
+    public override string PrimaryAbilityName => "Overcharge";
     public override string SecondaryAbilityAttackName => "Storm Leap";
     public override string UltimateAttackName => "Thunderstorm Barrage";
 
@@ -80,7 +82,7 @@ public class FrankenstrikeTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
-        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetDamage<HeroDamage>() += 0.1f;
         player.GetCritChance<HeroDamage>() += 4f;
         player.GetKnockback<HeroDamage>() += 0.7f;
         player.GetArmorPenetration<HeroDamage>() += 8;
@@ -94,28 +96,20 @@ public class FrankenstrikeTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.1f;
-        player.GetAttackSpeed<HeroDamage>() += 0.15f;
-        player.GetCritChance<HeroDamage>() += 6f;
-        player.statDefense += 6;
-        player.endurance += 0.02f;
-        player.moveSpeed += 0.1f;
-        player.runAcceleration += 0.06f;
+        player.statDefense += 2;
+        player.endurance += 0.03f;
         player.armorEffectDrawShadow = true;
         Lighting.AddLight(player.Center, new Vector3(0.3f, 0.52f, 0.95f));
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        item.useTime = item.useAnimation = Math.Max(9, (int)Math.Round(item.useTime * 0.84f));
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
+        float chargeRatio = identityPlayer.FrankenstrikeStaticChargeRatio;
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 spawnPosition = player.MountedCenter + direction * 16f;
 
@@ -125,18 +119,20 @@ public class FrankenstrikeTransformation : Transformation {
                 return false;
 
             Vector2 targetPosition = Main.MouseWorld;
-            int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
-            float[] offsets = omp.PrimaryAbilityEnabled
-                ? new[] { -110f, -66f, -22f, 22f, 66f, 110f }
-                : new[] { -92f, -46f, 0f, 46f, 92f };
+            int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier * (1f + chargeRatio * 0.32f)));
+            float spread = MathHelper.Lerp(92f, 136f, chargeRatio);
+            int strikeCount = 5 + (int)Math.Round(chargeRatio * 3f);
+            float step = strikeCount <= 1 ? 0f : (spread * 2f) / (strikeCount - 1);
 
-            for (int i = 0; i < offsets.Length; i++) {
-                Vector2 strikePosition = targetPosition + new Vector2(offsets[i], i % 2 == 0 ? -10f : 12f);
+            for (int i = 0; i < strikeCount; i++) {
+                float offsetX = -spread + step * i;
+                Vector2 strikePosition = targetPosition + new Vector2(offsetX, i % 2 == 0 ? -10f : 12f);
                 int delay = i * 4;
                 Projectile.NewProjectile(source, strikePosition, Vector2.Zero, UltimateAttack, finalDamage,
-                    knockback + 1.8f, player.whoAmI, delay, omp.PrimaryAbilityEnabled ? 1f : 0f);
+                    knockback + 1.8f, player.whoAmI, delay, chargeRatio);
             }
 
+            identityPlayer.ConsumeFrankenstrikeStaticCharge(65f);
             return false;
         }
 
@@ -149,37 +145,39 @@ public class FrankenstrikeTransformation : Transformation {
             if (offset == Vector2.Zero)
                 offset = new Vector2(player.direction, 0f);
 
-            bool overcharged = omp.PrimaryAbilityEnabled;
-            float maxRange = overcharged ? OverchargedLeapRange : BaseLeapRange;
+            bool overcharged = chargeRatio >= 0.45f || omp.PrimaryAbilityEnabled;
+            float maxRange = MathHelper.Lerp(BaseLeapRange, OverchargedLeapRange, Math.Max(chargeRatio, omp.PrimaryAbilityEnabled ? 0.5f : 0f));
             float requestedDistance = Math.Min(offset.Length(), maxRange);
             Vector2 leapDirection = offset.SafeNormalize(new Vector2(player.direction, 0f));
             float leapSpeed = FrankenstrikeStormLeapProjectile.GetLeapSpeed(overcharged);
             int leapFrames = Utils.Clamp((int)Math.Ceiling(requestedDistance / leapSpeed),
                 FrankenstrikeStormLeapProjectile.MinLeapFrames, FrankenstrikeStormLeapProjectile.MaxLeapFrames);
-            int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
+            int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier * (1f + chargeRatio * 0.2f)));
 
             int projectileIndex = Projectile.NewProjectile(source, player.Center + leapDirection * 20f,
                 leapDirection * leapSpeed, SecondaryAbilityAttack, finalDamage, knockback + 2f, player.whoAmI,
-                overcharged ? 1f : 0f);
+                chargeRatio, omp.PrimaryAbilityEnabled ? 1f : 0f);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
                 Projectile projectile = Main.projectile[projectileIndex];
                 projectile.timeLeft = leapFrames;
                 projectile.netUpdate = true;
             }
 
+            identityPlayer.ConsumeFrankenstrikeStaticCharge(28f);
             return false;
         }
 
         if (omp.altAttack) {
-            int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
+            int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier * (1f + chargeRatio * 0.18f)));
             Projectile.NewProjectile(source, player.Center + direction * 8f, Vector2.Zero, SecondaryAttack,
-                finalDamage, knockback + 1.2f, player.whoAmI);
+                finalDamage, knockback + 1.2f, player.whoAmI, chargeRatio);
+            identityPlayer.ConsumeFrankenstrikeStaticCharge(18f);
             return false;
         }
 
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage,
-            knockback, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
+            knockback, player.whoAmI, chargeRatio, omp.PrimaryAbilityEnabled ? 1f : 0f);
         return false;
     }
 

@@ -24,15 +24,17 @@ public class ClockworkTransformation : Transformation {
         "A Chronosapien who manipulates time with scrambling bolts, suspended traps, bursts of temporal acceleration, and paradox dodges.";
 
     public override List<string> Abilities => new() {
-        "Chrono Bolt primary",
-        "Time Snare secondary",
-        "Accelerate",
-        "Paradox",
-        "Chrono Lock ultimate"
+        "Chrono bolts that scramble enemies",
+        "Time Snares that suspend targets in place",
+        "Accelerate to speed yourself up",
+        "Paradox for short-range temporal dodges",
+        "Chrono Lock to pin enemies in frozen time"
     };
 
     public override string PrimaryAttackName => "Chrono Bolt";
     public override string SecondaryAttackName => "Time Snare";
+    public override string PrimaryAbilityName => "Accelerate";
+    public override string SecondaryAbilityName => "Paradox";
     public override string UltimateAttackName => "Chrono Lock";
 
     public override int PrimaryAttack => ModContent.ProjectileType<ClockworkBoltProjectile>();

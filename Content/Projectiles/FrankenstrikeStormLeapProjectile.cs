@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -14,7 +14,9 @@ public class FrankenstrikeStormLeapProjectile : ModProjectile {
     private const float BaseLeapSpeed = 22f;
     private const float OverchargedLeapSpeed = 27f;
 
-    private bool Overcharged => Projectile.ai[0] >= 0.5f;
+    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private bool CapacitorCore => Projectile.ai[1] >= 0.5f;
+    private bool Overcharged => ChargeRatio >= 0.45f || CapacitorCore;
 
     public static float GetLeapSpeed(bool overcharged) => overcharged ? OverchargedLeapSpeed : BaseLeapSpeed;
 
@@ -74,9 +76,16 @@ public class FrankenstrikeStormLeapProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
+        modifiers.SourceDamage *= 1f + ChargeRatio * 0.16f + conductiveStacks * 0.08f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyFrankenstrikeConductive(Projectile.owner, Overcharged ? 3 : 2,
+            Overcharged ? 260 : 220);
         target.AddBuff(BuffID.Electrified, Overcharged ? 240 : 180);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Overcharged ? 120 : 90);
         target.netUpdate = true;
     }
 
@@ -100,6 +109,6 @@ public class FrankenstrikeStormLeapProjectile : ModProjectile {
         int shockDamage = Math.Max(1, (int)Math.Round(Projectile.damage * 0.52f));
         Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, Vector2.Zero,
             ModContent.ProjectileType<FrankenstrikeThunderclapProjectile>(), shockDamage, Projectile.knockBack,
-            Projectile.owner);
+            Projectile.owner, ChargeRatio);
     }
 }

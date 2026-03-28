@@ -37,6 +37,8 @@ public class HumungousaurTransformation : Transformation {
 
     public override string PrimaryAttackName => "Power Punch";
     public override string SecondaryAttackName => "Ground Shockwave";
+    public override string PrimaryAbilityName => "Growth Surge";
+    public override string UltimateAbilityName => "Titan Growth";
     public override int PrimaryAttack => ModContent.ProjectileType<HumungousaurPunchProjectile>();
     public override int PrimaryAttackSpeed => 34;
     public override int PrimaryShootSpeed => 10;

@@ -132,11 +132,15 @@ That means `F`, `G`, `H`, and `U` are not just buff toggles.
 
 Use properties such as:
 
+- `PrimaryAbilityName`
 - `PrimaryAbilityDuration`
 - `PrimaryAbilityCooldown`
 - `PrimaryAbilityCost`
+- `SecondaryAbilityName`
 - `SecondaryAbilityDuration`
+- `TertiaryAbilityName`
 - `TertiaryAbilityDuration`
+- `UltimateAbilityName`
 - `UltimateAbilityDuration`
 
 And optionally:
@@ -179,6 +183,19 @@ Use:
 - `UltimateAttackName`
 
 If a name changes by moveset, use the attack profile `DisplayName` for that state-specific version.
+
+## Timed Ability Naming
+
+The active-ability HUD reads timed ability names from the transformation API.
+
+Use:
+
+- `PrimaryAbilityName`
+- `SecondaryAbilityName`
+- `TertiaryAbilityName`
+- `UltimateAbilityName`
+
+If you do not set one, the HUD falls back to the slot label.
 
 ## Moveset Profiles
 

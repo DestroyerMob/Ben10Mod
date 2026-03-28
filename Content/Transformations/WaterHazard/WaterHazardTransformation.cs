@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -19,18 +20,19 @@ public class WaterHazardTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<WaterHazard_Buff>();
 
     public override string Description =>
-        "An armored Orishan who controls the battlefield with pressurized water jets, crushing bursts, trapping geysers, and a massive tidal shockwave.";
+        "An armored Orishan who builds reservoir pressure, drenches enemies, and turns that stored force into bursts, whirlpools, and tidal detonations.";
 
     public override List<string> Abilities => new() {
-        "Pressurized water jets",
-        "Close-range riptide burst",
-        "Pressurized reservoir stance",
-        "Tidal snare geyser",
-        "Monsoon break ultimate"
+        "Pressure jets that drench enemies",
+        "Riptide burst that pops soaked targets",
+        "Reservoir Vent to build pressure and keep firing",
+        "Tidal Snare that traps enemies in a whirlpool",
+        "Monsoon Break that spends stored pressure in a huge blast"
     };
 
     public override string PrimaryAttackName => "Pressure Jet";
     public override string SecondaryAttackName => "Riptide Burst";
+    public override string PrimaryAbilityName => "Reservoir Vent";
     public override string SecondaryAbilityAttackName => "Tidal Snare";
     public override string UltimateAttackName => "Monsoon Break";
 
@@ -69,8 +71,8 @@ public class WaterHazardTransformation : Transformation {
     public override int UltimateAbilityCooldown => 50 * 60;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage<HeroDamage>() += 0.1f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetCritChance<HeroDamage>() += 4f;
         player.statDefense += 8;
         player.endurance += 0.04f;
         player.moveSpeed += 0.08f;
@@ -90,50 +92,63 @@ public class WaterHazardTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.statDefense += 12;
-        player.endurance += 0.08f;
-        player.GetAttackSpeed<HeroDamage>() += 0.14f;
-        player.GetKnockback<HeroDamage>() += 0.6f;
-        player.moveSpeed += 0.12f;
-        player.maxRunSpeed += 0.8f;
         player.armorEffectDrawShadow = true;
         Lighting.AddLight(player.Center, new Vector3(0.1f, 0.35f, 0.55f));
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
+        float pressureRatio = identityPlayer.WaterHazardPressureRatio;
         Vector2 direction = ResolveAimDirection(player, velocity);
 
         if (omp.ultimateAttack) {
+            int finalDamage = System.Math.Max(1,
+                (int)System.Math.Round(damage * UltimateAttackModifier * (1f + pressureRatio * 0.28f)));
             Projectile.NewProjectile(source, player.Center + direction * 30f, direction,
-                ModContent.ProjectileType<WaterHazardUltimateProjectile>(), damage, knockback + 2f, player.whoAmI);
+                ModContent.ProjectileType<WaterHazardUltimateProjectile>(), finalDamage, knockback + 2f, player.whoAmI,
+                pressureRatio);
+            identityPlayer.ConsumeWaterHazardPressure(60f);
             return false;
         }
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             Vector2 trapCenter = player.Center + direction * 108f;
             Projectile.NewProjectile(source, trapCenter, Vector2.Zero, ModContent.ProjectileType<WaterHazardSnareProjectile>(),
-                damage, knockback, player.whoAmI);
+                damage, knockback, player.whoAmI, pressureRatio);
+            identityPlayer.ConsumeWaterHazardPressure(22f);
             return false;
         }
 
         if (omp.altAttack) {
-            int burstDamage = System.Math.Max(1, (int)System.Math.Round(damage * SecondaryAttackModifier));
+            int burstDamage = System.Math.Max(1,
+                (int)System.Math.Round(damage * SecondaryAttackModifier * (1f + pressureRatio * 0.18f)));
             Projectile.NewProjectile(source, player.Center + direction * 16f, Vector2.Zero,
-                ModContent.ProjectileType<WaterHazardBurstProjectile>(), burstDamage, knockback + 1.5f, player.whoAmI);
+                ModContent.ProjectileType<WaterHazardBurstProjectile>(), burstDamage, knockback + 1.5f, player.whoAmI,
+                pressureRatio);
+            identityPlayer.ConsumeWaterHazardPressure(14f);
             return false;
         }
 
-        int shotCount = omp.PrimaryAbilityEnabled ? 2 : 1;
+        int shotCount = omp.PrimaryAbilityEnabled ? 3 : 1;
         Vector2 perpendicular = direction.RotatedBy(MathHelper.PiOver2);
         for (int i = 0; i < shotCount; i++) {
-            float lateralOffset = shotCount == 1 ? 0f : (i == 0 ? -8f : 8f);
+            float lateralOffset = shotCount switch {
+                3 when i == 0 => -10f,
+                3 when i == 2 => 10f,
+                2 when i == 0 => -8f,
+                2 => 8f,
+                _ => 0f
+            };
             Vector2 spawnOffset = direction * 18f + perpendicular * lateralOffset;
-            Vector2 shotVelocity = direction.RotatedBy(lateralOffset * 0.0025f) * PrimaryShootSpeed;
+            Vector2 shotVelocity = direction.RotatedBy(lateralOffset * (omp.PrimaryAbilityEnabled ? 0.01f : 0.0025f)) *
+                PrimaryShootSpeed;
             Projectile.NewProjectile(source, player.Center + spawnOffset, shotVelocity,
-                ModContent.ProjectileType<WaterHazardPressureProjectile>(), damage, knockback, player.whoAmI);
+                ModContent.ProjectileType<WaterHazardPressureProjectile>(), damage, knockback, player.whoAmI,
+                pressureRatio, omp.PrimaryAbilityEnabled ? 1f : 0f);
         }
 
+        identityPlayer.AddWaterHazardPressure(omp.PrimaryAbilityEnabled ? 6f : 4f);
         return false;
     }
 

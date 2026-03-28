@@ -29,18 +29,19 @@ public class PeskyDustTransformation : Transformation {
     public override string TransformationName => "Pesky Dust";
     public override int TransformationBuffId => ModContent.BuffType<PeskyDust_Buff>();
     public override string Description =>
-        "A dream-trickster built around putting enemies to sleep in stages, turning drowsy targets dreambound, and then cashing that setup out with snares and storms.";
+        "A dream-trickster who lulls enemies to sleep in stages, turns them dreambound, and punishes that setup with snares and storms.";
 
     public override List<string> Abilities => new() {
-        "Sleep-dust drowsy builder",
-        "Lullaby cloud dream spread",
-        "Pixie drift glide stance",
-        "Dream snare dreambound trap",
-        "Sandman storm payoff ultimate"
+        "Sleep dust that makes enemies drowsy",
+        "Lullaby cloud that spreads dream magic",
+        "Pixie Drift for nimble gliding and air control",
+        "Dream Snare that traps enemies in dream energy",
+        "Sandman Storm that punishes dreambound foes"
     };
 
     public override string PrimaryAttackName => "Sleep Dust";
     public override string SecondaryAttackName => "Lullaby Cloud";
+    public override string PrimaryAbilityName => "Pixie Drift";
     public override string SecondaryAbilityAttackName => "Dream Snare";
     public override string UltimateAttackName => "Sandman Storm";
 

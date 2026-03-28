@@ -30,18 +30,19 @@ public class FasttrackTransformation : Transformation {
     public override string TransformationName => "Fasttrack";
     public override int TransformationBuffId => ModContent.BuffType<Fasttrack_Buff>();
     public override string Description =>
-        "A momentum-driven speed bruiser who gets deadlier the longer he keeps moving, chaining rush punches into combo pressure before cashing that speed out with brutal tackles and barrages.";
+        "A relentless speed bruiser who gets stronger by staying in motion, chaining hits into faster combos before cashing that momentum out in tackles and barrages.";
 
     public override List<string> Abilities => new() {
-        "Rush punch combo builder",
-        "Cutting claw finisher wave",
-        "Momentum drive overclock",
-        "Pursuit rush cash-out tackle",
-        "Velocity barrage ultimate"
+        "Rapid rush punches that build combo pressure",
+        "Claw wave that cuts through a line of enemies",
+        "Adrenaline Surge that supercharges movement",
+        "Pursuit Rush that cashes combo stacks out in one hit",
+        "Velocity Barrage that floods the screen with speed strikes"
     };
 
     public override string PrimaryAttackName => "Rush Punch";
     public override string SecondaryAttackName => "Claw Wave";
+    public override string PrimaryAbilityName => "Adrenaline Surge";
     public override string SecondaryAbilityAttackName => "Pursuit Rush";
     public override string UltimateAttackName => "Velocity Barrage";
 

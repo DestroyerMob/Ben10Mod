@@ -28,11 +28,12 @@ public class TerraspinTransformation : Transformation {
         "Shell-spin gale",
         "Shell turbine hover",
         "Cyclone pocket",
-        "Tempest spiral ultimate"
+        "Tempest Spiral that fills the area with storm winds"
     };
 
     public override string PrimaryAttackName => "Wind Cannon";
     public override string SecondaryAttackName => "Gale Spin";
+    public override string PrimaryAbilityName => "Shell Turbine";
     public override string SecondaryAbilityAttackName => "Cyclone Pocket";
     public override string UltimateAttackName => "Tempest Spiral";
 

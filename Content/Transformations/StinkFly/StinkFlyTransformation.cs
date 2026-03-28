@@ -23,13 +23,13 @@ public class StinkFlyTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<StinkFly_Buff>();
 
     public override string Description =>
-        "A fast flier that controls space with sticky slime globs, corrosive spit, and a bursting status finisher.";
+        "A fast flier that controls space with sticky slime, corrosive spit, and a toxic finishing burst from the air.";
 
     public override List<string> Abilities => new() {
-        "Sticky slime shot",
-        "Corrosive poison spit",
+        "Sticky slime glob that gums enemies up",
+        "Corrosive spit that poisons and punches through targets",
         "Passive flight",
-        "Corrosive barrage finisher"
+        "Corrosive Barrage that bursts into toxic droplets"
     };
 
     public override string PrimaryAttackName => "Slime Shot";

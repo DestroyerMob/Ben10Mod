@@ -26,6 +26,7 @@ public class SwampfireTransformation : Transformation {
 
     public override string PrimaryAttackName => "Methane Bolt";
     public override string SecondaryAttackName => "Seed Pod";
+    public override string PrimaryAbilityName => "Regenerative Rooting";
     public override int PrimaryAttack => ModContent.ProjectileType<SwampfireBoltProjectile>();
     public override int PrimaryAttackSpeed => 18;
     public override int PrimaryShootSpeed => 13;

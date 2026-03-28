@@ -41,6 +41,7 @@ public class NRGTransformation : Transformation {
     public override string PrimaryAttackName => "Containment Beam";
     public override string SecondaryAttackName => "Radiant Seeker";
     public override string PrimaryAbilityAttackName => "Containment Burst";
+    public override string UltimateAbilityName => "Unbound Core";
     public override int PrimaryAttack => ModContent.ProjectileType<NRGLaserProjectile>();
     public override int PrimaryAttackSpeed => 28;
     public override int PrimaryShootSpeed => 18;

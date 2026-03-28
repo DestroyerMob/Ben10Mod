@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -14,8 +14,10 @@ public class BlitzwolferHowlProjectile : ModProjectile {
     private const int MaxLifetime = 30;
     private const float BaseRadius = 24f;
     private const float MaxRadius = 82f;
+    private bool Echolocating => Projectile.ai[0] >= 0.5f;
 
-    private float CurrentRadius => MathHelper.Lerp(BaseRadius, MaxRadius, 1f - Projectile.timeLeft / (float)MaxLifetime);
+    private float CurrentRadius => MathHelper.Lerp(BaseRadius, Echolocating ? MaxRadius + 18f : MaxRadius,
+        1f - Projectile.timeLeft / (float)MaxLifetime);
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -42,14 +44,14 @@ public class BlitzwolferHowlProjectile : ModProjectile {
 
         Projectile.rotation = Projectile.velocity.ToRotation();
         Projectile.velocity *= 0.97f;
-        Lighting.AddLight(Projectile.Center, new Vector3(0.72f, 0.75f, 0.92f) * 0.55f);
+        Lighting.AddLight(Projectile.Center, new Vector3(0.18f, 1.05f, 0.28f) * 0.65f);
 
         if (Main.rand.NextBool(2)) {
             Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
             Vector2 spawnPosition = Projectile.Center + direction.RotatedByRandom(0.85f) * Main.rand.NextFloat(CurrentRadius * 0.3f, CurrentRadius);
-            Dust dust = Dust.NewDustPerfect(spawnPosition, Main.rand.NextBool(3) ? DustID.GemDiamond : DustID.Smoke,
-                direction.RotatedByRandom(0.4f) * Main.rand.NextFloat(0.4f, 1.2f), 110, new Color(235, 245, 255),
-                Main.rand.NextFloat(0.9f, 1.18f));
+            Dust dust = Dust.NewDustPerfect(spawnPosition, Main.rand.NextBool(3) ? DustID.GemEmerald : DustID.GreenTorch,
+                direction.RotatedByRandom(0.4f) * Main.rand.NextFloat(0.4f, 1.2f), 110, new Color(160, 255, 160),
+                Main.rand.NextFloat(0.92f, 1.2f));
             dust.noGravity = true;
         }
     }
@@ -64,16 +66,24 @@ public class BlitzwolferHowlProjectile : ModProjectile {
         float opacity = Utils.GetLerpValue(0f, 0.18f, 1f - Projectile.timeLeft / (float)MaxLifetime, true) *
             Utils.GetLerpValue(0f, 0.28f, Projectile.timeLeft / (float)MaxLifetime, true);
 
-        DrawArc(pixel, Projectile.Center, CurrentRadius, 3.6f, 0.95f, rotation, new Color(145, 180, 220, 90) * opacity);
-        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.72f, 3f, 1.08f, rotation, new Color(230, 240, 255, 130) * opacity);
-        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.46f, 2.4f, 1.18f, rotation, new Color(255, 255, 255, 160) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius, 3.9f, 0.95f, rotation, new Color(55, 150, 75, 100) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.72f, 3.2f, 1.08f, rotation, new Color(110, 255, 120, 145) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.46f, 2.6f, 1.18f, rotation, new Color(225, 255, 220, 170) * opacity);
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int stacks = identity.GetBlitzwolferResonanceStacks(Projectile.owner);
+        if (stacks > 0)
+            modifiers.SourceDamage *= 1f + stacks * (Echolocating ? 0.08f : 0.06f);
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 120);
-        target.AddBuff(BuffID.Confused, 90);
-        target.AddBuff(BuffID.BrokenArmor, 90);
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        identity.ApplyBlitzwolferResonance(Projectile.owner, Echolocating ? 4 : 3, Echolocating ? 320 : 260);
+        Vector2 pushDirection = (target.Center - Projectile.Center).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX));
+        target.velocity = Vector2.Lerp(target.velocity, pushDirection * (Echolocating ? 9f : 7.5f), 0.52f);
         target.netUpdate = true;
     }
 

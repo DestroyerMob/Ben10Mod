@@ -19,7 +19,7 @@ public class EyeGuyTransformation : Transformation {
     public override List<string> Abilities => new() {
         "Rapid eye laser",
         "Long-range beam pressure",
-        "Channeled ultimate eye beam"
+        "Optic Beam for sustained eye-blast pressure"
     };
 
     public override string PrimaryAttackName => "Eye Laser";

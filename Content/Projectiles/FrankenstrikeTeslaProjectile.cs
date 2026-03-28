@@ -1,4 +1,6 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Players;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -9,7 +11,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class FrankenstrikeTeslaProjectile : ModProjectile {
-    private bool Overcharged => Projectile.ai[0] >= 0.5f;
+    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private bool CapacitorCore => Projectile.ai[1] >= 0.5f;
+    private bool Overcharged => ChargeRatio >= 0.55f || CapacitorCore;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -64,9 +68,19 @@ public class FrankenstrikeTeslaProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
+        if (conductiveStacks > 0)
+            modifiers.SourceDamage *= 1f + conductiveStacks * 0.08f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        identity.ApplyFrankenstrikeConductive(Projectile.owner, CapacitorCore ? 2 : 1, CapacitorCore ? 260 : 210);
+        Main.player[Projectile.owner].GetModPlayer<AlienIdentityPlayer>()
+            .AddFrankenstrikeStaticCharge(CapacitorCore ? 13f : 8f);
         target.AddBuff(BuffID.Electrified, Overcharged ? 240 : 180);
-        target.AddBuff(BuffID.BrokenArmor, Overcharged ? 150 : 90);
         target.netUpdate = true;
     }
 

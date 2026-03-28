@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -38,13 +38,22 @@ public class SnareOhBandageProjectile : ModProjectile {
         }
     }
 
-    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        bool exposedCore = OwnerExposedCore();
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), exposedCore ? 150 : 90);
-        target.velocity *= exposedCore ? 0.08f : 0.22f;
-        if (exposedCore)
-            target.AddBuff(BuffID.BrokenArmor, 180);
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int curseStacks = identity.GetSnareOhCurseStacks(Projectile.owner);
+        if (OwnerExposedCore() && curseStacks > 0)
+            modifiers.SourceDamage *= 1f + curseStacks * 0.08f;
+    }
 
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool exposedCore = OwnerExposedCore();
+        identity.ApplySnareOhCurse(Projectile.owner, exposedCore ? 2 : 1, exposedCore ? 270 : 220);
+        if (exposedCore) {
+            int spent = identity.ConsumeSnareOhCurse(Projectile.owner, 1);
+            if (spent > 0)
+                target.velocity = Vector2.Lerp(target.velocity, (Projectile.Center - target.Center).SafeNormalize(Vector2.UnitX) * 2.4f, 0.65f);
+        }
         target.netUpdate = true;
     }
 

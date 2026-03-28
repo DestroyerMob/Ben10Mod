@@ -21,15 +21,16 @@ public class CannonboltTransformation : Transformation {
         "An armored Arburian Pelarota that turns momentum into offense with crushing shell rolls, impact bursts, and high-speed crash attacks.";
 
     public override List<string> Abilities => new() {
-        "Armored shell roll primary",
-        "Ricochet roll secondary",
-        "Fortified curl stance",
-        "Point-blank impact burst",
-        "Meteor crash ultimate"
+        "Shell roll that smashes straight through enemies",
+        "Ricochet roll for faster, wilder crashes",
+        "Fortified Curl to harden your shell",
+        "Impact Burst that detonates at point-blank range",
+        "Meteor Crash for a devastating high-speed slam"
     };
 
     public override string PrimaryAttackName => "Shell Roll";
     public override string SecondaryAttackName => "Ricochet Roll";
+    public override string PrimaryAbilityName => "Fortified Curl";
     public override string SecondaryAbilityAttackName => "Impact Burst";
     public override string UltimateAttackName => "Meteor Crash";
 

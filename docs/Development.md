@@ -198,6 +198,15 @@ Use:
 
 If a name changes by moveset, use the attack profile `DisplayName`.
 
+The active-ability HUD reads timed ability names from:
+
+- `PrimaryAbilityName`
+- `SecondaryAbilityName`
+- `TertiaryAbilityName`
+- `UltimateAbilityName`
+
+If a timed ability does not define one yet, the HUD falls back to the slot label.
+
 ### Use HeroDamage For Transformation Combat
 
 Transformation combat should feel like one class.

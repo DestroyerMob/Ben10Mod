@@ -42,6 +42,21 @@ namespace Ben10Mod {
             Ultimate
         }
 
+        public readonly struct ActiveAbilityStatus {
+            public ActiveAbilityStatus(AttackSelection selection, string displayName, int remainingTicks, Color accentColor) {
+                Selection = selection;
+                DisplayName = displayName;
+                RemainingTicks = remainingTicks;
+                AccentColor = accentColor;
+            }
+
+            public AttackSelection Selection { get; }
+            public string DisplayName { get; }
+            public int RemainingTicks { get; }
+            public Color AccentColor { get; }
+            public string RemainingText => RemainingTicks > 0 ? FormatCooldownTicks(RemainingTicks) : "Active";
+        }
+
         public bool masterControl = false;
 
         public bool omnitrixEquipped = false;
@@ -687,6 +702,7 @@ namespace Ben10Mod {
                 trans.UpdateEffects(Player, this);
 
             trans?.PostUpdateBuffs(Player, this);
+            trans?.UpdateActiveAbilityVisuals(Player, this);
         }
 
         public override void PostUpdate() {
@@ -1015,6 +1031,50 @@ namespace Ben10Mod {
             return CurrentTransformation?.GetAttackSelectionDisplayName(setAttack, this) ?? "No Attack";
         }
 
+        public string GetAbilityDisplayName(AttackSelection selection) {
+            return CurrentTransformation?.GetAbilitySelectionDisplayName(selection, this) ?? selection switch {
+                AttackSelection.PrimaryAbility => "Primary Ability",
+                AttackSelection.SecondaryAbility => "Secondary Ability",
+                AttackSelection.TertiaryAbility => "Tertiary Ability",
+                AttackSelection.Ultimate => "Ultimate Ability",
+                _ => "Ability"
+            };
+        }
+
+        public List<ActiveAbilityStatus> GetActiveAbilityStatuses() {
+            List<ActiveAbilityStatus> statuses = new();
+            if (!IsTransformed)
+                return statuses;
+
+            Transformation transformation = CurrentTransformation;
+            if (transformation == null)
+                return statuses;
+
+            AppendActiveAbilityStatus(statuses, transformation, AttackSelection.PrimaryAbility,
+                transformation.HasPrimaryAbilityForState(this), IsPrimaryAbilityActive);
+            AppendActiveAbilityStatus(statuses, transformation, AttackSelection.SecondaryAbility,
+                transformation.HasSecondaryAbilityForState(this), IsSecondaryAbilityActive);
+            AppendActiveAbilityStatus(statuses, transformation, AttackSelection.TertiaryAbility,
+                transformation.HasTertiaryAbilityForState(this), IsTertiaryAbilityActive);
+            AppendActiveAbilityStatus(statuses, transformation, AttackSelection.Ultimate,
+                transformation.HasUltimateAbilityForState(this), IsUltimateAbilityActive);
+
+            return statuses;
+        }
+
+        private void AppendActiveAbilityStatus(List<ActiveAbilityStatus> statuses, Transformation transformation,
+            AttackSelection selection, bool slotHasTimedAbility, bool isActive) {
+            if (!slotHasTimedAbility || !isActive)
+                return;
+
+            statuses.Add(new ActiveAbilityStatus(
+                selection,
+                transformation.GetAbilitySelectionDisplayName(selection, this),
+                GetActiveAbilityRemainingTicks(selection),
+                GetAbilityAccentColor(selection)
+            ));
+        }
+
         public int GetSelectedTransformationSlotIndex() {
             Omnitrix activeOmnitrix = GetActiveOmnitrix();
             if (activeOmnitrix == null || transformationSlots.Length == 0)
@@ -1337,6 +1397,16 @@ namespace Ben10Mod {
             };
         }
 
+        public int GetActiveAbilityRemainingTicks(AttackSelection selection) {
+            return selection switch {
+                AttackSelection.PrimaryAbility => GetBuffRemainingTicks(ModContent.BuffType<PrimaryAbility>()),
+                AttackSelection.SecondaryAbility => GetBuffRemainingTicks(ModContent.BuffType<SecondaryAbility>()),
+                AttackSelection.TertiaryAbility => GetBuffRemainingTicks(ModContent.BuffType<TertiaryAbility>()),
+                AttackSelection.Ultimate => GetBuffRemainingTicks(ModContent.BuffType<UltimateAbility>()),
+                _ => 0
+            };
+        }
+
         public static string FormatCooldownTicks(int ticks) {
             if (ticks <= 0)
                 return "Ready";
@@ -1629,6 +1699,16 @@ namespace Ben10Mod {
                 AttackSelection.TertiaryAbility => new Color(210, 140, 255),
                 AttackSelection.Ultimate => new Color(255, 210, 80),
                 _ => new Color(120, 255, 120)
+            };
+        }
+
+        public Color GetAbilityAccentColor(AttackSelection selection) {
+            return selection switch {
+                AttackSelection.PrimaryAbility => new Color(120, 255, 170),
+                AttackSelection.SecondaryAbility => new Color(255, 190, 90),
+                AttackSelection.TertiaryAbility => new Color(210, 140, 255),
+                AttackSelection.Ultimate => new Color(255, 210, 80),
+                _ => new Color(160, 175, 190)
             };
         }
 

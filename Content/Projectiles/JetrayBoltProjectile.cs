@@ -1,4 +1,5 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -9,6 +10,7 @@ namespace Ben10Mod.Content.Projectiles;
 public class JetrayBoltProjectile : ModProjectile {
     private const float HomingRange = 620f;
     private const float HomingStrength = 0.12f;
+    private bool StrafeLock => Projectile.ai[0] >= 0.5f;
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.MartianTurretBolt}";
 
@@ -40,6 +42,7 @@ public class JetrayBoltProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, StrafeLock ? 300 : 220);
         target.AddBuff(BuffID.Electrified, 180);
     }
 
@@ -71,10 +74,26 @@ public class JetrayBoltProjectile : ModProjectile {
     private NPC FindClosestTarget() {
         NPC closestTarget = null;
         float closestDistance = HomingRange;
+        bool foundLockedTarget = false;
 
         for (int i = 0; i < Main.maxNPCs; i++) {
             NPC npc = Main.npc[i];
             if (!npc.CanBeChasedBy(Projectile))
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            bool isLockedTarget = StrafeLock && identity.IsJetrayLockedFor(Projectile.owner);
+            if (isLockedTarget) {
+                float lockedDistance = Vector2.Distance(Projectile.Center, npc.Center);
+                if (lockedDistance < closestDistance) {
+                    closestDistance = lockedDistance;
+                    closestTarget = npc;
+                    foundLockedTarget = true;
+                }
+                continue;
+            }
+
+            if (foundLockedTarget)
                 continue;
 
             float distance = Vector2.Distance(Projectile.Center, npc.Center);

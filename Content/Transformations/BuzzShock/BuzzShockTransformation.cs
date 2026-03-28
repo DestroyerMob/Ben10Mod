@@ -29,6 +29,7 @@ public class BuzzShockTransformation : Transformation {
     };
 
     public override string PrimaryAttackName => "Shock Bolt";
+    public override string PrimaryAbilityName => "Teleport Burst";
     public override string UltimateAttackName => "Storm Barrage";
     public override int PrimaryAttack => ModContent.ProjectileType<BuzzShockProjectile>();
     public override int PrimaryAttackSpeed => 20;

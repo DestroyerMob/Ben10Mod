@@ -35,11 +35,12 @@ public class WayBigTransformation : Transformation {
         "Titan-scale melee punch",
         "Ground-ripping stomp shockwave",
         "Cosmic surge that boosts size and strength",
-        "Channeled cosmic ray ultimate"
+        "Cosmic Ray, a sustained stellar beam"
     };
 
     public override string PrimaryAttackName => "Cosmic Punch";
     public override string SecondaryAttackName => "Planetary Stomp";
+    public override string PrimaryAbilityName => "Cosmic Surge";
     public override string UltimateAttackName => "Cosmic Ray";
     public override int PrimaryAttack => ModContent.ProjectileType<WayBigPunchProjectile>();
     public override int PrimaryAttackSpeed => 30;

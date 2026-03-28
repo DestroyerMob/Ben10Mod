@@ -29,19 +29,20 @@ public class WhampireTransformation : Transformation {
     public override string TransformationName => "Whampire";
     public override int TransformationBuffId => ModContent.BuffType<Whampire_Buff>();
     public override string Description =>
-        "A nocturnal Vladat predator built around picking prey, stalking them through the air, locking them down with hypnosis, and unleashing swarms that follow marked victims.";
+        "A nocturnal Vladat predator built around marking prey, stalking them through the air, locking them down with hypnosis, and unleashing swarms that follow marked victims.";
 
     public override List<string> Abilities => new() {
-        "Corruptura prey-mark primary",
-        "Vampiric screech spread",
+        "Corruptura bolts that mark prey",
+        "Vampiric screech that spreads the hunt",
         "Natural flight",
-        "Nightcloak stalking mode",
-        "Hypnotic gaze lockdown",
-        "Midnight swarm hunt"
+        "Nightcloak for stealthier, deadlier pursuit",
+        "Hypnotic Gaze that locks prey in place",
+        "Midnight Swarm that chases marked victims"
     };
 
     public override string PrimaryAttackName => "Corruptura Bolt";
     public override string SecondaryAttackName => "Vampiric Screech";
+    public override string PrimaryAbilityName => "Nightcloak";
     public override string SecondaryAbilityAttackName => "Hypnotic Gaze";
     public override string UltimateAttackName => "Midnight Swarm";
 

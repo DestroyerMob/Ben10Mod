@@ -147,6 +147,7 @@ Press `L` while an Omnitrix is equipped to open the roster screen.
 
 - the top row is your active five-alien roster
 - the lower grid shows every alien you have unlocked
+- the search bar filters the unlocked alien grid by name
 - left click an unlocked alien, then click a roster slot to assign it
 - right click a roster slot to clear it
 - hovering an alien shows its description and ability list
@@ -260,36 +261,47 @@ These are a few highlights, not a full encyclopedia.
 ### Heatblast
 
 - rapid fire primary
-- explosive secondary
+- explosive fire-bomb secondary with a quicker throw cadence
 - primary ability attack loads an aura rod sentry
+- loaded secondary ability attack channels a vertical solar halo behind Heatblast that cycles imp fireballs at the cursor
+- tertiary ability ignites a superheated flame aura around Heatblast
 - channeled growing fireball ultimate
 
 ### XLR8
 
 - fast movement and acceleration
-- punch-style primary
+- rapid light-strike primary
 - ram-style dash secondary
+- vector dash for targeted repositioning
 - ultimate ability that creates a time-warp state where projectiles slow, freeze, then launch back out
 
-### Big Chill
+### Arctiguana
 
-- aerial movement and phasing-style mobility
-- ranged ice attacks
-- primary ability for free phasing movement
-- ultimate attack is a real phase dash that freezes enemies you pass through
+- freeze ray for steady ranged control
+- freezing breath for close-range pressure
+- recoil-powered propulsion for sharp repositioning
+- ice constructs and a sustained Absolute Zero beam for lockdown
 
-### Humungousaur
+### Blitzwolfer
 
-- heavy bruiser gameplay
-- growth-based primary ability state
-- stronger ultimate growth state
-- larger hit presence and attack scaling while grown
+- sonic bark and howl attacks that build resonance
+- channeled Omega Howl for sustained pressure
+- pounce attacks that hit harder against resonating prey
+- lunar howl payoff for crowd bursts
 
-### NRG
+### Water Hazard
 
-- slower heavy primary while inside the suit
-- primary ability attack for the hot burst release
-- ultimate ability turns him into an unbound energy form with quicker attacks and flight
+- pressure jets that soak enemies
+- burst and snare tools that reward setting targets up
+- reservoir management changes how hard the kit hits
+- monsoon-style ultimate that spends stored pressure
+
+### Alien X
+
+- force waves for fast knockback and control
+- singularity placement for space control
+- repulsion burst for clearing groups
+- player-centered supernova for huge area denial
 
 ## Extra Systems
 

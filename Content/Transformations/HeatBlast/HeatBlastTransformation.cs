@@ -16,15 +16,20 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
     public class HeatBlastTransformation : Transformation {
         private const float AuraRodDamageMultiplier = 0.1f;
         private const int AuraRodEnergyCost = 100;
-        private const float SupernovaDamageMultiplier = 1.8f;
-        private const int SupernovaEnergyCost = 60;
-        private const int SupernovaCooldown = 30 * 60;
+        private const float SolarHaloDamageMultiplier = 0.42f;
+        private const int SolarHaloEnergyCost = 30;
+        private const int SolarHaloSustainCost = 1;
+        private const int SolarHaloSustainInterval = 9;
+        private const int SuperheatDuration = 9 * 60;
+        private const int SuperheatCooldown = 28 * 60;
+        private const int SuperheatCost = 24;
+        private const int SuperheatBaseDamage = 16;
 
         public override string FullID             => "Ben10Mod:HeatBlast";
         public override string TransformationName => "Heatblast";
 
         public override string Description =>
-            "A fiery Pyronite from the blazing star Pyros. A living inferno of plasma wrapped in molten rock.";
+            "A fiery Pyronite from the blazing star Pyros. A living inferno of plasma wrapped in molten rock that can flood the battlefield with bombs, halos, and superheated fire.";
 
         public override string IconPath             => "Ben10Mod/Content/Interface/HeatBlastSelect";
         public override int    TransformationBuffId => ModContent.BuffType<HeatBlast_Buff>();
@@ -37,14 +42,20 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override float PrimaryAbilityAttackModifier => AuraRodDamageMultiplier;
         public override int PrimaryAbilityAttackEnergyCost => AuraRodEnergyCost;
         public override bool PrimaryAbilityAttackSingleUse => false;
-        public override int SecondaryAbilityAttack => ModContent.ProjectileType<HeatBlastSupernovaProjectile>();
-        public override int SecondaryAbilityAttackSpeed => 30;
+        public override int SecondaryAbilityAttack => ModContent.ProjectileType<HeatBlastSolarHaloProjectile>();
+        public override int SecondaryAbilityAttackSpeed => 18;
         public override int SecondaryAbilityAttackShootSpeed => 0;
-        public override int SecondaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
-        public override float SecondaryAbilityAttackModifier => SupernovaDamageMultiplier;
-        public override int SecondaryAbilityAttackEnergyCost => SupernovaEnergyCost;
-        public override int SecondaryAbilityCooldown => SupernovaCooldown;
-        public override bool SecondaryAbilityAttackSingleUse => true;
+        public override int SecondaryAbilityAttackUseStyle => ItemUseStyleID.Shoot;
+        public override float SecondaryAbilityAttackModifier => SolarHaloDamageMultiplier;
+        public override int SecondaryAbilityAttackEnergyCost => SolarHaloEnergyCost;
+        public override int SecondaryAbilityAttackSustainEnergyCost => SolarHaloSustainCost;
+        public override int SecondaryAbilityAttackSustainInterval => SolarHaloSustainInterval;
+        public override bool SecondaryAbilityAttackChannel => true;
+        public override bool SecondaryAbilityAttackSingleUse => false;
+        public override string TertiaryAbilityName => "Superheat";
+        public override int TertiaryAbilityDuration => SuperheatDuration;
+        public override int TertiaryAbilityCooldown => SuperheatCooldown;
+        public override int TertiaryAbilityCost => SuperheatCost;
 
         public override List<string> Abilities => new List<string> {
             "Flamethrower blast",
@@ -52,14 +63,15 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             "Flame-boosted jump",
             "Fire & lava immunity",
             "Flame aura rod sentry",
-            "Supernova heat wave",
-            "Large fireball attack - ultimate charged attack"
+            "Solar halo of orbiting imp fireballs",
+            "Superheated flame aura that scorches everything around Heatblast",
+            "Growing fireball that hits harder the longer it builds"
         };
 
         public override string PrimaryAttackName => "Flame Jet";
         public override string SecondaryAttackName => "Fire Bomb";
         public override string PrimaryAbilityAttackName => "Flare Rod";
-        public override string SecondaryAbilityAttackName => "Supernova";
+        public override string SecondaryAbilityAttackName => "Solar Halo";
         public override string UltimateAttackName => "Fireball";
         
         public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
@@ -83,7 +95,9 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override void OnDetransform(Player player, OmnitrixPlayer omp) {
             KillOwnedProjectiles(player,
-                ModContent.ProjectileType<HeatBlastAuraRodProjectile>());
+                ModContent.ProjectileType<HeatBlastAuraRodProjectile>(),
+                ModContent.ProjectileType<HeatBlastSolarHaloProjectile>(),
+                ModContent.ProjectileType<HeatBlastSuperheatAuraProjectile>());
         }
         
         public override void OnHitNPC(Player player, OmnitrixPlayer omp, NPC target, NPC.HitInfo hit, int damageDone) {
@@ -102,7 +116,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override float PrimaryAttackModifier => 0.3f;
 
         public override int SecondaryAttack => ModContent.ProjectileType<HeatBlastBomb>();
-        public override int SecondaryAttackSpeed => 50;
+        public override int SecondaryAttackSpeed => 40;
         public override int SecondaryShootSpeed => 10;
         public override float SecondaryAttackModifier => 1.5f;
         public override int SecondaryUseStyle => ItemUseStyleID.Swing;
@@ -122,13 +136,10 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int damage, float knockback) {
             if (omp.IsSecondaryAbilityAttackLoaded) {
-                TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
-                if (profile == null || profile.ProjectileType <= 0)
-                    return false;
-
-                int supernovaDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
-                Projectile.NewProjectile(source, player.Center, Vector2.Zero, profile.ProjectileType,
-                    supernovaDamage, knockback + 2f, player.whoAmI);
+                int haloDamage = Math.Max(1, (int)Math.Round(damage * SolarHaloDamageMultiplier));
+                Projectile.NewProjectile(source, player.Center, Vector2.Zero,
+                    ModContent.ProjectileType<HeatBlastSolarHaloProjectile>(),
+                    haloDamage, knockback + 0.5f, player.whoAmI);
                 return false;
             }
 
@@ -178,6 +189,42 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             }
 
             return false;
+        }
+
+        public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+            if (!base.CanStartCurrentAttack(player, omp))
+                return false;
+
+            TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+            if (profile?.ProjectileType == ModContent.ProjectileType<HeatBlastSolarHaloProjectile>())
+                return !HasActiveOwnedProjectile(player, profile.ProjectileType);
+
+            return true;
+        }
+
+        public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+            if (!omp.IsTertiaryAbilityActive || player.whoAmI != Main.myPlayer)
+                return;
+
+            int projectileType = ModContent.ProjectileType<HeatBlastSuperheatAuraProjectile>();
+            int auraDamage = Math.Max(1, (int)Math.Round(player.GetDamage<HeroDamage>().ApplyTo(SuperheatBaseDamage)));
+            int existingAura = FindOwnedProjectile(player.whoAmI, projectileType);
+
+            if (existingAura >= 0) {
+                Projectile aura = Main.projectile[existingAura];
+                aura.damage = auraDamage;
+                aura.originalDamage = auraDamage;
+                aura.Center = player.Center;
+                aura.timeLeft = 2;
+                aura.netUpdate = true;
+                return;
+            }
+
+            Projectile.NewProjectile(player.GetSource_FromThis(), player.Center, Vector2.Zero, projectileType,
+                auraDamage, 0.7f, player.whoAmI);
+        }
+
+        public override void UpdateActiveAbilityVisuals(Player player, OmnitrixPlayer omp) {
         }
 
         public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -235,6 +282,26 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                     break;
                 }
             }
+        }
+
+        private static bool HasActiveOwnedProjectile(Player player, int projectileType) {
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (projectile.active && projectile.owner == player.whoAmI && projectile.type == projectileType)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int FindOwnedProjectile(int owner, int projectileType) {
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (projectile.active && projectile.owner == owner && projectile.type == projectileType)
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

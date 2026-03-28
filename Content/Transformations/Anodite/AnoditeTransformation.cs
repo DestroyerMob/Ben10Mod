@@ -27,16 +27,18 @@ public class AnoditeTransformation : Transformation {
         "A living mana-form that rides the air, threads targets with raw energy, and shapes shields and wards out of pure anodite power.";
 
     public override List<string> Abilities => new() {
-        "Mana thread primary",
-        "Anodite orb secondary",
-        "Mana barrier primary ability",
-        "Hex circle snare",
-        "Ascendant halo ward ultimate"
+        "Mana Thread that lashes through targets",
+        "Anodite Orb that blooms with arcane energy",
+        "Mana Barrier for protection and control",
+        "Hex Circle that snares enemies in place",
+        "Ascendant Halo that surrounds you with living magic"
     };
 
     public override string PrimaryAttackName => "Mana Thread";
     public override string SecondaryAttackName => "Anodite Orb";
+    public override string PrimaryAbilityName => "Mana Barrier";
     public override string SecondaryAbilityAttackName => "Hex Circle";
+    public override string UltimateAbilityName => "Ascendant Halo";
     public override Color TransformTextColor => new(255, 145, 225);
 
     public override int PrimaryAttack => ModContent.ProjectileType<ManaThreadProjectile>();

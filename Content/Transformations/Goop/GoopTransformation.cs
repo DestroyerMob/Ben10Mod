@@ -19,10 +19,16 @@ public class GoopTransformation : Transformation {
     public override string TransformationName => "Goop";
     public override int TransformationBuffId => ModContent.BuffType<Goop_Buff>();
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
-    public override string Description => "A fluid Polymorph that fights with corrosive globs and lingering slime puddles.";
-    public override List<string> Abilities => new() { "Corrosive glob primary", "Lobbed puddle secondary", "Liquefy" };
+    public override string Description => "A slippery Polymorph who pelts enemies with corrosive slime, litters the ground with puddles, and melts into motion when he needs to slip away.";
+    public override List<string> Abilities => new() {
+        "Corrosive globs that splash on impact",
+        "Lobbed slime puddles that control the ground",
+        "Liquefy for faster, lower, slipperier movement",
+        "Toxic Deluge that blankets the area in acid"
+    };
     public override string PrimaryAttackName => "Corrosive Glob";
     public override string SecondaryAttackName => "Slime Puddle";
+    public override string PrimaryAbilityName => "Liquefy";
     public override string UltimateAttackName => "Toxic Deluge";
     public override int PrimaryAttack => ModContent.ProjectileType<GoopGlobProjectile>();
     public override int PrimaryAttackSpeed => 18;
