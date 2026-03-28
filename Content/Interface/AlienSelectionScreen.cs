@@ -545,6 +545,9 @@ namespace Ben10Mod.Content.Interface {
         private string unlockedRosterSignature = "";
         private string unlockedSearchText      = string.Empty;
         private bool   unlockedGridDirty       = true;
+        private string lastUnlockedClickId     = string.Empty;
+        private ulong  lastUnlockedClickTime;
+        private const ulong UnlockedAlienDoubleClickWindow = 24;
 
         internal static Asset<Texture2D> GetSafeTransformationIcon(Transformation trans) {
             try {
@@ -736,6 +739,8 @@ namespace Ben10Mod.Content.Interface {
             unlockedSearchText = string.Empty;
             unlockedGridDirty = true;
             unlockedRosterSignature = string.Empty;
+            lastUnlockedClickId = string.Empty;
+            lastUnlockedClickTime = 0;
             unlockedSearchInput?.SetText(string.Empty, invoke: false);
             unlockedSearchInput?.SetFocused(false);
             RefreshUnlockedHint(0, 0);
@@ -815,9 +820,7 @@ namespace Ben10Mod.Content.Interface {
                 btn.Width.Set(92f, 0f);
                 btn.Height.Set(92f, 0f);
                 btn.IgnoresMouseInteraction = true;
-                slot.OnLeftClick += (_, _) => {
-                    SelectUnlockedTransformation(transformationId);
-                };
+                slot.OnLeftClick += (_, _) => HandleUnlockedTransformationLeftClick(transformationId);
 
                 slot.OnRightClick += (_, _) => {
                     OmnitrixPlayer localPlayer = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
@@ -911,6 +914,50 @@ namespace Ben10Mod.Content.Interface {
             }
 
             UpdateInfoPanel(TransformationLoader.Get(currentlySelectedId));
+        }
+
+        private void HandleUnlockedTransformationLeftClick(string transformationId) {
+            ulong currentTime = Main.GameUpdateCount;
+            bool isDoubleClick = !string.IsNullOrEmpty(transformationId) &&
+                                 string.Equals(lastUnlockedClickId, transformationId, StringComparison.OrdinalIgnoreCase) &&
+                                 currentTime - lastUnlockedClickTime <= UnlockedAlienDoubleClickWindow;
+
+            SelectUnlockedTransformation(transformationId);
+
+            if (isDoubleClick)
+                AssignAndTransformUnlockedTransformation(transformationId);
+
+            lastUnlockedClickId = transformationId ?? string.Empty;
+            lastUnlockedClickTime = currentTime;
+        }
+
+        private void AssignAndTransformUnlockedTransformation(string transformationId) {
+            if (string.IsNullOrWhiteSpace(transformationId))
+                return;
+
+            OmnitrixPlayer player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+            if (!player.IsTransformationUnlocked(transformationId))
+                return;
+
+            Content.Items.Accessories.Omnitrix activeOmnitrix = player.GetActiveOmnitrix();
+            if (activeOmnitrix == null) {
+                player.ShowTransformFailureFeedback("Equip the Omnitrix to transform.");
+                return;
+            }
+
+            int selectedSlotIndex = player.GetSelectedTransformationSlotIndex();
+            if (selectedSlotIndex < 0 || selectedSlotIndex >= player.transformationSlots.Length) {
+                player.ShowTransformFailureFeedback("Select an Omnitrix slot first.");
+                return;
+            }
+
+            player.transformationSlots[selectedSlotIndex] = transformationId;
+            activeOmnitrix.transformationSlots = player.transformationSlots;
+            player.SyncTransformationStateToServer();
+
+            currentlySelectedId = transformationId;
+            UpdateInfoPanelFromTransformationId(player.transformationSlots[selectedSlotIndex]);
+            activeOmnitrix.TryTransformToSlot(Main.LocalPlayer, player, selectedSlotIndex);
         }
 
         private void HandleUnlockedSearchChanged(string text) {
