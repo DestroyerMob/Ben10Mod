@@ -179,7 +179,7 @@ public class XLR8Transformation : Transformation {
             player.head = EquipLoader.GetEquipSlot(Mod, "XLR8_alt", EquipType.Head);
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
-        player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
+        player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
     }
 
     private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {

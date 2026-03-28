@@ -957,7 +957,10 @@ namespace Ben10Mod.Content.Interface {
 
             currentlySelectedId = transformationId;
             UpdateInfoPanelFromTransformationId(player.transformationSlots[selectedSlotIndex]);
-            activeOmnitrix.TryTransformToSlot(Main.LocalPlayer, player, selectedSlotIndex);
+            if (activeOmnitrix.TryTransformToSlot(Main.LocalPlayer, player, selectedSlotIndex)) {
+                ModContent.GetInstance<UISystem>().HideMyUI();
+                player.showingUI = false;
+            }
         }
 
         private void HandleUnlockedSearchChanged(string text) {
