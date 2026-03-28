@@ -9,13 +9,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Body.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Head.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Legs.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneEyeMask_Head.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArmsTransformation.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8BaseMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8BaseMask_Head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8BaseMask_Head_alt.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8BaseMask_Legs.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8BaseMask_Tail.png" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

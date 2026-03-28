@@ -203,4 +203,33 @@ public class XLR8Transformation : Transformation {
 
         return false;
     }
+    
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
+        new TransformationPaletteChannel(
+            "base",
+            "Base",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/XLR8/XLR8_Head",
+                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/XLR8/XLR8_Head_alt",
+                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Head_alt"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/XLR8/XLR8_Body",
+                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Body"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/XLR8/XLR8_Legs",
+                "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Legs"),
+        new TransformationPaletteOverlay(
+            "Ben10Mod/Content/Transformations/XLR8/XLR8_Tail",
+            "Ben10Mod/Content/Transformations/XLR8/XLR8BaseMask_Tail")),
+        new TransformationPaletteChannel(
+            "eye",
+            "Eye",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/XLR8/XLR8_Head",
+                "Ben10Mod/Content/Transformations/XLR8/XLR8EyeMask_Head"))
+    ];
 }
