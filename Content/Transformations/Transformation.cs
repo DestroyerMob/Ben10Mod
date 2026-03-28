@@ -171,9 +171,7 @@ namespace Ben10Mod.Content.Transformations {
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
             abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
         }
-        public virtual void UpdateActiveAbilityVisuals(Player player, OmnitrixPlayer omp) {
-            SpawnDefaultActiveAbilityAura(player, omp);
-        }
+        public virtual void UpdateActiveAbilityVisuals(Player player, OmnitrixPlayer omp) { }
         public virtual void PostUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp) { }
 
