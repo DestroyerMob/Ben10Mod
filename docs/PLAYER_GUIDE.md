@@ -152,6 +152,22 @@ Press `L` while an Omnitrix is equipped to open the roster screen.
 - right click a roster slot to clear it
 - hovering an alien shows its description and ability list
 
+## Alien Customization
+
+Alien Customization lets you tune how each transformation looks without changing its gameplay.
+
+It currently has three tabs:
+
+- `Palette`: recolor supported parts of the selected transformation
+- `Costumes`: swap to alternate looks installed by Ben10Mod or addon mods
+- `Custom Names`: give unlocked aliens your own display names
+
+Important details:
+
+- costumes are appearance-only and keep the same moveset
+- palettes save separately for the default look and for each costume
+- if an addon adds a costume for one of your transformations, it shows up in the `Costumes` tab automatically
+
 ## Unlock Progression
 
 You do not unlock every form through crafting. Most of them come from bosses and events.

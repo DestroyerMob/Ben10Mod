@@ -1,5 +1,6 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Ben10Mod.Common.Absorption;
 using Ben10Mod.Common.CustomVisuals;
 using Ben10Mod.Common.Systems;
@@ -72,6 +73,7 @@ namespace Ben10Mod {
 		public override void Unload() {
 			TryUnloadStep("transformation branches", TransformationBranchRegistry.Clear);
 			TryUnloadStep("transformation loader", TransformationLoader.Clear);
+			TryUnloadStep("transformation costume loader", TransformationCostumeLoader.Clear);
 			TryUnloadStep("transformation unlock conditions", TransformationUnlockConditionRegistry.Clear);
 			TryUnloadStep("palette texture cache", TransformationPaletteTextureCache.Clear);
 			TryUnloadStep("material absorption registry", MaterialAbsorptionRegistry.Clear);
@@ -271,8 +273,9 @@ namespace Ben10Mod {
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
 							string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
+							KeyValuePair<string, string>[] selectedCostumeEntries = OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
 							OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-							omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys);
+							omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys, selectedCostumeEntries);
 							omp.SyncTransformationPaletteState();
 							break;
 						}
@@ -290,7 +293,9 @@ namespace Ben10Mod {
 
 							TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
 							string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
-							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries, enabledChannelKeys);
+							KeyValuePair<string, string>[] selectedCostumeEntries = OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
+							player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries, enabledChannelKeys,
+								selectedCostumeEntries);
 							break;
 						}
 						case MessageType.RequestAbsorbMaterial: {

@@ -112,6 +112,25 @@ Current shared pattern:
 
 This is the preferred replacement for hardcoding badge stat swaps in several manual branches.
 
+### Adding A Built-In Costume
+
+Use a `TransformationCostume` when you want an alternate appearance without cloning the transformation's gameplay.
+
+Typical checklist:
+
+1. create a `TransformationCostume` subclass
+2. point `TargetTransformationId` at the transformation you want to skin
+3. register any needed equip textures through the costume texture-path properties
+4. define costume `PaletteChannels` if the alternate art should support recolouring
+5. verify the costume appears in the `Costumes` tab of Alien Customization
+6. verify palette colours save separately for the default look and the costume
+
+Important rule:
+
+- do not bake costume-specific gameplay into the costume class
+- costumes are meant to be visual and palette owners
+- gameplay still belongs to the target `Transformation`
+
 ### Adding A New Built-In Omnitrix
 
 Typical checklist:
@@ -240,6 +259,7 @@ If you are touching transformation gameplay:
 If you are touching UI:
 
 - [AlienSelectionScreen.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Interface/AlienSelectionScreen.cs)
+- [TransformationPaletteScreen.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/Content/Interface/TransformationPaletteScreen.cs)
 - [OmnitrixPlayer.cs](/Users/ethanhellyer/Library/Application%20Support/Terraria/tModLoader/ModSources/Ben10Mod/OmnitrixPlayer.cs)
 
 If you are touching progression:

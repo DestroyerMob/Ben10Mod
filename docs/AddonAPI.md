@@ -14,6 +14,7 @@ Ben10Mod currently exposes three main extension surfaces:
 
 - `Ben10Mod.Content.Items.Accessories.Omnitrix`
 - `Ben10Mod.Content.Transformations.Transformation`
+- `Ben10Mod.Content.Transformations.TransformationCostume`
 - `Ben10Mod.Content.Items.Weapons.PlumbersBadge`
 
 The important design rule is:
@@ -101,6 +102,92 @@ Usually also:
 - costume or equip content
 - projectiles
 - unlock item or unlock progression hook
+
+## Building A Costume
+
+Costumes are lightweight appearance packs that target an existing transformation.
+
+Use a costume when you want to:
+
+- add an alternate look for a base-mod alien
+- add an alternate look for an addon alien
+- ship palette-capable alternate art without replacing the alien's gameplay
+
+Create a `TransformationCostume` subclass and set:
+
+- `TargetTransformationId`
+- `DisplayName`
+- optional `Description`
+- equip texture paths such as `HeadTexturePath`, `BodyTexturePath`, `LegsTexturePath`, `BackTexturePath`, or other supported equipment-layer paths
+
+For palette support, define `PaletteChannels` on the costume just like you would on a transformation.
+
+Important behavior:
+
+- costume selections are saved per player
+- costume selections sync in multiplayer
+- palette data is stored per appearance owner, so the default look and each costume keep separate palette states
+- costume palette channels merge with the target transformation's palette channels by default, with costume channels overriding matching ids
+
+That means an addon can target either:
+
+- its own transformation, such as `Ben10Addon:ShockRock`
+- a base Ben10Mod transformation, such as `Ben10Mod:HeatBlast`
+
+The costume tab in Alien Customization will automatically list any registered costumes for the selected transformation.
+
+### Example Costume
+
+```csharp
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
+using Ben10Mod.Content.Transformations;
+
+namespace Ben10Addon.Content.Transformations.Heatblast;
+
+public sealed class BlueFlareHeatblastCostume : TransformationCostume {
+    public override string TargetTransformationId => "Ben10Mod:HeatBlast";
+    public override string DisplayName => "Blue Flare";
+    public override string Description => "A hotter alternate Heatblast look with its own saved palette.";
+
+    protected override string HeadTexturePath => $"{Mod.Name}/Content/Transformations/Heatblast/BlueFlare_Head";
+    protected override string BodyTexturePath => $"{Mod.Name}/Content/Transformations/Heatblast/BlueFlare_Body";
+    protected override string LegsTexturePath => $"{Mod.Name}/Content/Transformations/Heatblast/BlueFlare_Legs";
+
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => new[] {
+        new TransformationPaletteChannel(
+            id: "flames",
+            displayName: "Flames",
+            defaultColor: new Color(90, 170, 255),
+            overlays: new[] {
+                new TransformationPaletteOverlay(
+                    $"{Mod.Name}/Content/Transformations/Heatblast/BlueFlare_Body",
+                    $"{Mod.Name}/Content/Transformations/Heatblast/BlueFlare_Body_Mask")
+            })
+    };
+}
+```
+
+The same pattern works for:
+
+- a costume that targets your own transformation
+- a costume pack addon for base Ben10Mod aliens
+- a compatibility addon that targets another addon mod's transformation id
+
+### Costume Palette Rules
+
+Costume palettes follow the same UI and storage flow as normal transformation palettes, but the data owner changes.
+
+- the default appearance stores palette state under the transformation id
+- a selected costume stores palette state under the costume id
+- palette presets are also stored per appearance owner
+- switching between the default look and a costume restores each look's own saved colours and channel toggles
+
+By default, costume channels merge with the target transformation's channels. If you want a costume to define its own full palette layout instead, set:
+
+```csharp
+public override bool MergeTransformationPaletteChannels => false;
+```
 
 ### Transformation IDs
 

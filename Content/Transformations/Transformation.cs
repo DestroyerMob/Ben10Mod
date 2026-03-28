@@ -249,9 +249,16 @@ namespace Ben10Mod.Content.Transformations {
         public virtual string GetUnlockConditionText(OmnitrixPlayer omp)
             => TransformationUnlockConditionRegistry.Get(FullID);
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
-        public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) => PaletteChannels;
+        public virtual IReadOnlyList<TransformationPaletteChannel> GetPaletteChannels(OmnitrixPlayer omp) {
+            TransformationCostume selectedCostume = omp?.GetSelectedTransformationCostume(this);
+            return selectedCostume?.GetMergedPaletteChannels(this, omp) ?? PaletteChannels;
+        }
         public virtual IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) {
-            IReadOnlyList<TransformationPaletteChannel> channels = GetPaletteChannels(omp);
+            TransformationCostume selectedCostume = omp?.GetSelectedTransformationCostume(this);
+            if (selectedCostume != null)
+                return selectedCostume.GetPalettePreviewBaseTexturePaths(this, omp);
+
+            IReadOnlyList<TransformationPaletteChannel> channels = PaletteChannels;
             if (channels == null || channels.Count == 0)
                 return Array.Empty<string>();
 

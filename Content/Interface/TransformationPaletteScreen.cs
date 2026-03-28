@@ -609,6 +609,7 @@ public sealed class PalettePreviewSwatch : UIElement {
 
         ClearPreviewVisualSlots(player);
         targetTransformation.FrameEffects(player, omp);
+        omp.ApplySelectedTransformationCostumeVisuals(player, targetTransformation);
     }
 
     private static void RestorePreviewPlayerState(Player player, OmnitrixPlayer omp, PreviewPlayerState state) {
@@ -732,6 +733,7 @@ public sealed class PalettePreviewSwatch : UIElement {
 public class TransformationPaletteScreen : UIState {
     private enum CustomizationTab {
         Palette,
+        Costumes,
         CustomNames
     }
 
@@ -750,6 +752,14 @@ public class TransformationPaletteScreen : UIState {
         public List<PaletteClipboardEntry> Entries { get; } = new();
     }
 
+    private sealed class CostumeListEntry {
+        public string CostumeId { get; init; } = string.Empty;
+        public string DisplayName { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public string SourceLabel { get; init; } = string.Empty;
+        public bool IsDefault { get; init; }
+    }
+
     private static PaletteClipboardState s_paletteClipboard;
 
     internal static void ClearSharedState() {
@@ -761,8 +771,10 @@ public class TransformationPaletteScreen : UIState {
     private UIText targetText;
     private UIText statusText;
     private UITextPanel<string> paletteTabButton;
+    private UITextPanel<string> costumesTabButton;
     private UITextPanel<string> customNamesTabButton;
     private UIElement paletteContentRoot;
+    private UIElement costumesContentRoot;
     private UIElement customNamesContentRoot;
     private UIList channelList;
     private UIScrollbar channelScrollbar;
@@ -783,6 +795,14 @@ public class TransformationPaletteScreen : UIState {
     private UITextPanel<string> resetAllButton;
     private UIText palettePresetHintText;
     private readonly List<UITextPanel<string>> palettePresetButtons = new();
+    private UIList costumeList;
+    private UIScrollbar costumeScrollbar;
+    private UIText selectedCostumeText;
+    private UIText costumeSourceText;
+    private UIText costumeDescriptionText;
+    private UIText costumeHintText;
+    private PalettePreviewSwatch costumePreviewSwatch;
+    private UITextPanel<string> useDefaultCostumeButton;
     private UIList customNameList;
     private UIScrollbar customNameScrollbar;
     private UIText selectedNameText;
@@ -798,7 +818,9 @@ public class TransformationPaletteScreen : UIState {
     private string _currentChannelSignature = string.Empty;
     private string _currentPreviewBaseSignature = string.Empty;
     private string _currentChannelEnabledSignature = string.Empty;
+    private string _currentPaletteCostumeId = string.Empty;
     private string _currentCustomNameSignature = string.Empty;
+    private string _currentCostumeSignature = string.Empty;
     private string _selectedChannelId = string.Empty;
     private string _selectedCustomNameTransformationId = string.Empty;
     private string _loadedCustomNameValue = string.Empty;
@@ -809,6 +831,7 @@ public class TransformationPaletteScreen : UIState {
     private bool _hasPendingCustomNameChanges;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
     private readonly List<string> _activePreviewBaseTexturePaths = new();
+    private readonly List<CostumeListEntry> _availableCostumeEntries = new();
     private readonly List<string> _availableCustomNameTransformationIds = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingHueValues = new(StringComparer.OrdinalIgnoreCase);
@@ -828,6 +851,12 @@ public class TransformationPaletteScreen : UIState {
         paletteContentRoot.Left.Set(0f, 0f);
         mainPanel.Append(paletteContentRoot);
 
+        costumesContentRoot = new UIElement();
+        costumesContentRoot.Width.Set(0f, 1f);
+        costumesContentRoot.Height.Set(0f, 1f);
+        costumesContentRoot.Left.Set(-1600f, 0f);
+        mainPanel.Append(costumesContentRoot);
+
         customNamesContentRoot = new UIElement();
         customNamesContentRoot.Width.Set(0f, 1f);
         customNamesContentRoot.Height.Set(0f, 1f);
@@ -839,10 +868,13 @@ public class TransformationPaletteScreen : UIState {
         titleText.Top.Set(20f, 0f);
         mainPanel.Append(titleText);
 
-        paletteTabButton = CreateActionButton("Palette", 686f, 20f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
-        customNamesTabButton = CreateActionButton("Custom Names", 816f, 20f,
+        paletteTabButton = CreateActionButton("Palette", 552f, 20f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
+        costumesTabButton = CreateActionButton("Costumes", 682f, 20f,
+            (_, _) => SetActiveTab(CustomizationTab.Costumes), width: 120f);
+        customNamesTabButton = CreateActionButton("Custom Names", 812f, 20f,
             (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: 140f);
         mainPanel.Append(paletteTabButton);
+        mainPanel.Append(costumesTabButton);
         mainPanel.Append(customNamesTabButton);
 
         targetText = new UIText("No transformation selected", 1f);
@@ -978,6 +1010,86 @@ public class TransformationPaletteScreen : UIState {
             controlsPanel.Append(presetButton);
         }
 
+        UIPanel costumeListPanel = new UIPanel();
+        costumeListPanel.Width.Set(320f, 0f);
+        costumeListPanel.Height.Set(512f, 0f);
+        costumeListPanel.Left.Set(24f, 0f);
+        costumeListPanel.Top.Set(126f, 0f);
+        costumesContentRoot.Append(costumeListPanel);
+
+        UIText costumeListHeader = new UIText("Costumes", 1.05f);
+        costumeListHeader.Left.Set(16f, 0f);
+        costumeListHeader.Top.Set(12f, 0f);
+        costumeListPanel.Append(costumeListHeader);
+
+        costumeList = new UIList();
+        costumeList.Width.Set(-30f, 1f);
+        costumeList.Height.Set(-52f, 1f);
+        costumeList.Left.Set(10f, 0f);
+        costumeList.Top.Set(40f, 0f);
+        costumeList.ListPadding = 8f;
+        costumeListPanel.Append(costumeList);
+
+        costumeScrollbar = new UIScrollbar();
+        costumeScrollbar.Height.Set(-52f, 1f);
+        costumeScrollbar.Left.Set(-20f, 1f);
+        costumeScrollbar.Top.Set(40f, 0f);
+        costumeListPanel.Append(costumeScrollbar);
+        costumeList.SetScrollbar(costumeScrollbar);
+
+        UIPanel costumeControlsPanel = new UIPanel();
+        costumeControlsPanel.Width.Set(590f, 0f);
+        costumeControlsPanel.Height.Set(512f, 0f);
+        costumeControlsPanel.Left.Set(366f, 0f);
+        costumeControlsPanel.Top.Set(126f, 0f);
+        costumesContentRoot.Append(costumeControlsPanel);
+
+        selectedCostumeText = new UIText("Default Costume", 1.05f);
+        selectedCostumeText.Left.Set(18f, 0f);
+        selectedCostumeText.Top.Set(16f, 0f);
+        costumeControlsPanel.Append(selectedCostumeText);
+
+        useDefaultCostumeButton = CreateActionButton("Use Default Look", 406f, 12f,
+            (_, _) => SelectCostume(string.Empty), width: 166f);
+        costumeControlsPanel.Append(useDefaultCostumeButton);
+
+        costumeSourceText = new UIText("Source: Base Ben10Mod look", 0.9f);
+        costumeSourceText.Left.Set(18f, 0f);
+        costumeSourceText.Top.Set(48f, 0f);
+        costumeControlsPanel.Append(costumeSourceText);
+
+        costumePreviewSwatch = new PalettePreviewSwatch {
+            ResolveColor = () => new Color(145, 205, 255),
+            ResolveLabel = GetCostumePreviewLabel,
+            ResolveBaseTexturePaths = () => _activePreviewBaseTexturePaths,
+            ResolveChannels = () => _activeChannels,
+            ResolveChannelSettings = GetPendingSettings,
+            ResolveChannelEnabled = IsPaletteChannelEnabled
+        };
+        costumePreviewSwatch.Left.Set(18f, 0f);
+        costumePreviewSwatch.Top.Set(78f, 0f);
+        costumePreviewSwatch.Width.Set(554f, 0f);
+        costumePreviewSwatch.Height.Set(156f, 0f);
+        costumeControlsPanel.Append(costumePreviewSwatch);
+
+        costumeDescriptionText = new UIText("Select a costume to preview and apply it to the current transformation.", 0.9f) {
+            IsWrapped = true
+        };
+        costumeDescriptionText.Left.Set(18f, 0f);
+        costumeDescriptionText.Top.Set(252f, 0f);
+        costumeDescriptionText.Width.Set(554f, 0f);
+        costumeControlsPanel.Append(costumeDescriptionText);
+
+        costumeHintText = new UIText(
+            "Costumes can come from Ben10Mod or addon mods. Palette colours save separately for each costume.",
+            0.84f) {
+            IsWrapped = true
+        };
+        costumeHintText.Left.Set(18f, 0f);
+        costumeHintText.Top.Set(382f, 0f);
+        costumeHintText.Width.Set(554f, 0f);
+        costumeControlsPanel.Append(costumeHintText);
+
         UIPanel customNameListPanel = new UIPanel();
         customNameListPanel.Width.Set(320f, 0f);
         customNameListPanel.Height.Set(512f, 0f);
@@ -1085,6 +1197,7 @@ public class TransformationPaletteScreen : UIState {
         if (mainPanel == null)
             return;
         RefreshPaletteContext(force: true);
+        RefreshCostumeContext(force: true);
         RefreshCustomNameContext(force: true);
         SetActiveTab(_activeTab, refreshState: true);
     }
@@ -1102,6 +1215,7 @@ public class TransformationPaletteScreen : UIState {
             return;
 
         RefreshPaletteContext(force: false);
+        RefreshCostumeContext(force: false);
         RefreshCustomNameContext(force: false);
 
         if (mainPanel.ContainsPoint(Main.MouseScreen))
@@ -1117,10 +1231,13 @@ public class TransformationPaletteScreen : UIState {
         _activeTab = tab;
 
         float paletteLeft = tab == CustomizationTab.Palette ? 0f : -1600f;
+        float costumesLeft = tab == CustomizationTab.Costumes ? 0f : -1600f;
         float customNamesLeft = tab == CustomizationTab.CustomNames ? 0f : -1600f;
         paletteContentRoot.Left.Set(paletteLeft, 0f);
+        costumesContentRoot.Left.Set(costumesLeft, 0f);
         customNamesContentRoot.Left.Set(customNamesLeft, 0f);
         paletteContentRoot.Recalculate();
+        costumesContentRoot.Recalculate();
         customNamesContentRoot.Recalculate();
 
         UpdateTabButtonState();
@@ -1129,11 +1246,13 @@ public class TransformationPaletteScreen : UIState {
             return;
 
         RefreshPaletteContext(force: true);
+        RefreshCostumeContext(force: true);
         RefreshCustomNameContext(force: true);
     }
 
     private void UpdateTabButtonState() {
         UpdateTabButtonVisual(paletteTabButton, _activeTab == CustomizationTab.Palette);
+        UpdateTabButtonVisual(costumesTabButton, _activeTab == CustomizationTab.Costumes);
         UpdateTabButtonVisual(customNamesTabButton, _activeTab == CustomizationTab.CustomNames);
     }
 
@@ -1178,6 +1297,9 @@ public class TransformationPaletteScreen : UIState {
         OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
         Transformation targetTransformation = omp.GetPaletteTargetTransformation();
         string targetTransformationId = targetTransformation?.FullID ?? string.Empty;
+        string selectedCostumeId = targetTransformation == null
+            ? string.Empty
+            : omp.GetSelectedTransformationCostumeId(targetTransformation.FullID);
         IReadOnlyList<TransformationPaletteChannel> channels = targetTransformation?.GetPaletteChannels(omp)
             ?.Where(channel => channel != null && channel.IsValid)
             .ToArray() ?? Array.Empty<TransformationPaletteChannel>();
@@ -1189,6 +1311,7 @@ public class TransformationPaletteScreen : UIState {
         string previewBaseSignature = BuildPreviewBaseSignature(previewBaseTexturePaths);
         string channelEnabledSignature = BuildChannelEnabledSignature(targetTransformation, channels, omp);
         bool channelContentChanged = force || targetTransformationId != _currentTransformationId ||
+            selectedCostumeId != _currentPaletteCostumeId ||
             channelSignature != _currentChannelSignature;
         bool previewChanged = channelContentChanged || previewBaseSignature != _currentPreviewBaseSignature;
         bool channelStateChanged = channelContentChanged || channelEnabledSignature != _currentChannelEnabledSignature;
@@ -1197,6 +1320,7 @@ public class TransformationPaletteScreen : UIState {
             return;
 
         _currentTransformationId = targetTransformationId;
+        _currentPaletteCostumeId = selectedCostumeId;
         _currentChannelSignature = channelSignature;
         _currentPreviewBaseSignature = previewBaseSignature;
         _currentChannelEnabledSignature = channelEnabledSignature;
@@ -1274,6 +1398,195 @@ public class TransformationPaletteScreen : UIState {
         SetControlsInteractive(true);
         UpdatePaletteClipboardButtons(omp, targetTransformation, interactive: true);
         UpdatePalettePresetButtons(omp, targetTransformation, interactive: true);
+    }
+
+    private void RefreshCostumeContext(bool force) {
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || Main.gameMenu || Main.myPlayer < 0 || Main.myPlayer >= Main.maxPlayers ||
+            !localPlayer.active)
+            return;
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        string selectedCostumeId = targetTransformation == null
+            ? string.Empty
+            : omp.GetSelectedTransformationCostumeId(targetTransformation.FullID);
+        List<CostumeListEntry> costumeEntries = BuildCostumeEntries(targetTransformation);
+        string costumeSignature = BuildCostumeSignature(targetTransformation, costumeEntries, selectedCostumeId);
+        bool costumeContentChanged = force || costumeSignature != _currentCostumeSignature;
+
+        if (!costumeContentChanged && _activeTab != CustomizationTab.Costumes)
+            return;
+
+        if (costumeContentChanged) {
+            _currentCostumeSignature = costumeSignature;
+            _availableCostumeEntries.Clear();
+            _availableCostumeEntries.AddRange(costumeEntries);
+            RebuildCostumeButtons();
+        }
+
+        if (_activeTab == CustomizationTab.Costumes)
+            UpdateCostumeHeaderState(omp, targetTransformation);
+    }
+
+    private void UpdateCostumeHeaderState(OmnitrixPlayer omp, Transformation targetTransformation) {
+        if (targetTransformation == null) {
+            targetText.SetText("No active transformation context");
+            statusText.SetText("Transform, or select an Omnitrix slot first, to choose a costume.");
+            selectedCostumeText.SetText("Default Look");
+            costumeSourceText.SetText("Source: --");
+            costumeDescriptionText.SetText("Costumes let addon mods replace the look of a transformation without replacing the transformation itself.");
+            costumeHintText.SetText("When installed, addon costumes will show up here and keep their own palette settings.");
+            UpdateCostumeButtonState(interactive: false);
+            return;
+        }
+
+        CostumeListEntry selectedEntry = GetSelectedCostumeEntry(targetTransformation, omp);
+        string selectedDisplayName = selectedEntry?.DisplayName ?? "Default Look";
+        targetText.SetText($"Costumes: {targetTransformation.GetDisplayName(omp)}");
+        statusText.SetText(selectedEntry is { IsDefault: true }
+            ? "Using the default look. Select a costume to apply an alternate appearance for this transformation."
+            : "This costume is active now. Palette colours and toggles save separately for each costume.");
+        selectedCostumeText.SetText(selectedDisplayName);
+        costumeSourceText.SetText($"Source: {selectedEntry?.SourceLabel ?? "Base Ben10Mod look"}");
+        costumeDescriptionText.SetText(string.IsNullOrWhiteSpace(selectedEntry?.Description)
+            ? "This costume swaps the transformation's visuals while leaving its moveset and gameplay intact."
+            : selectedEntry.Description);
+        costumeHintText.SetText(_availableCostumeEntries.Count <= 1
+            ? "No alternate costumes are installed for this transformation yet. Addon costumes will appear here automatically."
+            : "Click a costume to apply it immediately. The palette tab will switch to that costume's own saved colours.");
+        UpdateCostumeButtonState(interactive: true);
+    }
+
+    private void UpdateCostumeButtonState(bool interactive) {
+        if (useDefaultCostumeButton == null)
+            return;
+
+        useDefaultCostumeButton.BackgroundColor = interactive ? new Color(78, 66, 42) : new Color(40, 44, 54);
+        useDefaultCostumeButton.BorderColor = interactive ? new Color(225, 192, 118) : new Color(62, 68, 80);
+    }
+
+    private List<CostumeListEntry> BuildCostumeEntries(Transformation targetTransformation) {
+        List<CostumeListEntry> entries = new();
+        if (targetTransformation == null)
+            return entries;
+
+        entries.Add(new CostumeListEntry {
+            CostumeId = string.Empty,
+            DisplayName = "Default Look",
+            Description = $"Use the base {targetTransformation.GetDisplayName(Main.LocalPlayer?.GetModPlayer<OmnitrixPlayer>())} appearance.",
+            SourceLabel = $"{targetTransformation.Mod.Name} default appearance",
+            IsDefault = true
+        });
+
+        IReadOnlyList<TransformationCostume> costumes = TransformationCostumeLoader.GetForTransformation(targetTransformation.FullID);
+        for (int i = 0; i < costumes.Count; i++) {
+            TransformationCostume costume = costumes[i];
+            if (costume == null)
+                continue;
+
+            entries.Add(new CostumeListEntry {
+                CostumeId = costume.FullID,
+                DisplayName = string.IsNullOrWhiteSpace(costume.DisplayName) ? costume.CostumeName : costume.DisplayName,
+                Description = costume.Description,
+                SourceLabel = costume.Mod.Name,
+                IsDefault = false
+            });
+        }
+
+        return entries;
+    }
+
+    private static string BuildCostumeSignature(Transformation targetTransformation, IReadOnlyList<CostumeListEntry> entries,
+        string selectedCostumeId) {
+        if (targetTransformation == null)
+            return string.Empty;
+
+        StringBuilder builder = new();
+        builder.Append(targetTransformation.FullID)
+            .Append('|')
+            .Append(selectedCostumeId)
+            .Append('|');
+
+        if (entries != null) {
+            for (int i = 0; i < entries.Count; i++) {
+                CostumeListEntry entry = entries[i];
+                builder.Append(entry.CostumeId)
+                    .Append('=')
+                    .Append(entry.DisplayName)
+                    .Append('|');
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    private void RebuildCostumeButtons() {
+        costumeList.Clear();
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        string selectedCostumeId = targetTransformation == null
+            ? string.Empty
+            : omp.GetSelectedTransformationCostumeId(targetTransformation.FullID);
+
+        for (int i = 0; i < _availableCostumeEntries.Count; i++) {
+            CostumeListEntry entry = _availableCostumeEntries[i];
+            UITextPanel<string> button = new(BuildCostumeButtonLabel(entry), 0.88f, large: false);
+            button.Width.Set(0f, 1f);
+            button.Height.Set(44f, 0f);
+            bool isSelected = string.Equals(entry.CostumeId, selectedCostumeId, StringComparison.OrdinalIgnoreCase) ||
+                (entry.IsDefault && string.IsNullOrWhiteSpace(selectedCostumeId));
+            button.BackgroundColor = isSelected ? new Color(32, 56, 74, 235) : new Color(18, 24, 30, 215);
+            button.BorderColor = isSelected ? new Color(140, 220, 170) : new Color(85, 100, 115);
+            string selectedEntryId = entry.CostumeId;
+            button.OnLeftClick += (_, _) => SelectCostume(selectedEntryId);
+            costumeList.Add(button);
+        }
+    }
+
+    private static string BuildCostumeButtonLabel(CostumeListEntry entry) {
+        if (entry == null)
+            return "Unknown Costume";
+
+        return entry.IsDefault
+            ? "Default Look"
+            : $"{entry.DisplayName} [{entry.SourceLabel}]";
+    }
+
+    private CostumeListEntry GetSelectedCostumeEntry(Transformation targetTransformation, OmnitrixPlayer omp) {
+        if (targetTransformation == null)
+            return null;
+
+        string selectedCostumeId = omp?.GetSelectedTransformationCostumeId(targetTransformation.FullID) ?? string.Empty;
+        for (int i = 0; i < _availableCostumeEntries.Count; i++) {
+            CostumeListEntry entry = _availableCostumeEntries[i];
+            if (entry.IsDefault && string.IsNullOrWhiteSpace(selectedCostumeId))
+                return entry;
+
+            if (string.Equals(entry.CostumeId, selectedCostumeId, StringComparison.OrdinalIgnoreCase))
+                return entry;
+        }
+
+        return _availableCostumeEntries.Count > 0 ? _availableCostumeEntries[0] : null;
+    }
+
+    private void SelectCostume(string costumeId) {
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || !localPlayer.active)
+            return;
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        if (targetTransformation == null)
+            return;
+
+        CommitPendingColors();
+        bool changed = omp.SetSelectedTransformationCostume(targetTransformation.FullID, costumeId, sync: false);
+        if (changed)
+            omp.SyncTransformationPaletteStateToServerOrClients();
+
+        RefreshPaletteContext(force: true);
+        RefreshCostumeContext(force: true);
     }
 
     private void RefreshCustomNameContext(bool force) {
@@ -1884,6 +2197,19 @@ public class TransformationPaletteScreen : UIState {
         return string.IsNullOrWhiteSpace(_selectedChannelId)
             ? "Preview"
             : $"{GetSelectedChannelDisplayName()} Preview";
+    }
+
+    private string GetCostumePreviewLabel() {
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || !localPlayer.active)
+            return "Costume Preview";
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
+        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
+        CostumeListEntry entry = GetSelectedCostumeEntry(targetTransformation, omp);
+        return string.IsNullOrWhiteSpace(entry?.DisplayName)
+            ? "Costume Preview"
+            : $"{entry.DisplayName} Preview";
     }
 
     private bool IsPaletteChannelEnabled(string channelId) {
