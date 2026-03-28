@@ -8,9 +8,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,7 +31,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/DestroyerMob/Ben10Mod.git&quot;,
-    &quot;accountId&quot;: &quot;24b9852e-9272-4195-bcd7-b287e60d9878&quot;
+    &quot;accountId&quot;: &quot;e10becbb-c5ff-41c4-b480-d3cf4848be98&quot;
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
@@ -78,7 +76,6 @@
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/Ben10Mod.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
       <option name="LAUNCH_PROFILE_NAME" value="Terraria" />
-      <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
       <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
@@ -86,6 +83,7 @@
       <option name="SEND_DEBUG_REQUEST" value="1" />
       <option name="ADDITIONAL_IIS_EXPRESS_ARGUMENTS" value="" />
       <option name="AUTO_ATTACH_CHILDREN" value="0" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
       <method v="2">
         <option name="Build" />
       </method>
@@ -94,7 +92,6 @@
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/Ben10Mod.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
       <option name="LAUNCH_PROFILE_NAME" value="TerrariaServer" />
-      <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
       <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
@@ -102,6 +99,7 @@
       <option name="SEND_DEBUG_REQUEST" value="1" />
       <option name="ADDITIONAL_IIS_EXPRESS_ARGUMENTS" value="" />
       <option name="AUTO_ATTACH_CHILDREN" value="0" />
+      <option name="MIXED_MODE_DEBUG" value="0" />
       <method v="2">
         <option name="Build" />
       </method>
@@ -141,9 +139,7 @@
       <workItem from="1770717901166" duration="3819000" />
       <workItem from="1770755907328" duration="5008000" />
       <workItem from="1770889767980" duration="732000" />
-      <workItem from="1774684698167" duration="5449000" />
-      <workItem from="1774700942875" duration="160000" />
-      <workItem from="1774702400145" duration="10000" />
+      <workItem from="1774684698167" duration="6648000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

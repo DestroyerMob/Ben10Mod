@@ -38,6 +38,7 @@ public class OmnitrixProjectile : GlobalProjectile {
     public override bool InstancePerEntity => true;
 
     public  int     itemUsed         = 0;
+    private bool    blocksOmnitrixEnergyGain = false;
     private int     framesAlive      = 0;
     public  bool    projectileSlowed = false;
     public  Vector2 initialVelocity  = Vector2.Zero;
@@ -54,14 +55,27 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (source is IEntitySource_WithStatsFromItem itemSource) {
             itemUsed        = itemSource.Item.type;
             initialVelocity = projectile.velocity;
+
+            if (itemSource.Item?.ModItem is PlumbersBadge &&
+                projectile.owner >= 0 &&
+                projectile.owner < Main.maxPlayers) {
+                Player owner = Main.player[projectile.owner];
+                if (owner != null && owner.active)
+                    blocksOmnitrixEnergyGain =
+                        owner.GetModPlayer<OmnitrixPlayer>().ShouldMarkSpawnedAttackProjectilesAsNoEnergyGain();
+            }
         }
         else if (source is EntitySource_Parent { Entity: Projectile parentProjectile }) {
-            itemUsed = parentProjectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed;
+            OmnitrixProjectile parentGlobal = parentProjectile.GetGlobalProjectile<OmnitrixProjectile>();
+            itemUsed = parentGlobal.itemUsed;
+            blocksOmnitrixEnergyGain = parentGlobal.blocksOmnitrixEnergyGain;
             initialVelocity = projectile.velocity;
         }
 
         ApplyTransformationDamageType(projectile, source);
     }
+
+    public bool BlocksOmnitrixEnergyGain => blocksOmnitrixEnergyGain;
 
     public override void ModifyHitNPC(Projectile projectile, NPC target, ref NPC.HitModifiers modifiers) {
         // if (itemUsed == ModContent.ItemType<PlumberMagisterBadge>())
