@@ -1044,6 +1044,34 @@ Projectiles: {
 	ArctiguanaFreezeRayProjectile.DisplayName: Arctiguana Freeze Ray Projectile
 	ArctiguanaIceConstructProjectile.DisplayName: Arctiguana Ice Construct Projectile
 	ArctiguanaUltimateBeamProjectile.DisplayName: Arctiguana Ultimate Beam Projectile
+	AstrodactylCometProjectile.DisplayName: Astrodactyl Comet Projectile
+	AstrodactylDiveProjectile.DisplayName: Astrodactyl Dive Projectile
+	AstrodactylPlasmaBoltProjectile.DisplayName: Astrodactyl Plasma Bolt Projectile
+	AstrodactylStarburstProjectile.DisplayName: Astrodactyl Starburst Projectile
+	BlitzwolferHowlProjectile.DisplayName: Blitzwolfer Howl Projectile
+	BlitzwolferLunarHowlProjectile.DisplayName: Blitzwolfer Lunar Howl Projectile
+	BlitzwolferPounceProjectile.DisplayName: Blitzwolfer Pounce Projectile
+	BlitzwolferSonicBoltProjectile.DisplayName: Blitzwolfer Sonic Bolt Projectile
+	FasttrackClawWaveProjectile.DisplayName: Fasttrack Claw Wave Projectile
+	FasttrackPunchProjectile.DisplayName: Fasttrack Punch Projectile
+	FasttrackPursuitRushProjectile.DisplayName: Fasttrack Pursuit Rush Projectile
+	FasttrackVelocityBarrageProjectile.DisplayName: Fasttrack Velocity Barrage Projectile
+	FrankenstrikeLightningStrikeProjectile.DisplayName: Frankenstrike Lightning Strike Projectile
+	FrankenstrikeStormLeapProjectile.DisplayName: Frankenstrike Storm Leap Projectile
+	FrankenstrikeTeslaProjectile.DisplayName: Frankenstrike Tesla Projectile
+	FrankenstrikeThunderclapProjectile.DisplayName: Frankenstrike Thunderclap Projectile
+	LodestarAnchorProjectile.DisplayName: Lodestar Anchor Projectile
+	LodestarMagnetBoltProjectile.DisplayName: Lodestar Magnet Bolt Projectile
+	LodestarMagneticOrbProjectile.DisplayName: Lodestar Magnetic Orb Projectile
+	LodestarPolarVortexProjectile.DisplayName: Lodestar Polar Vortex Projectile
+	PeskyDustDreamSnareProjectile.DisplayName: Pesky Dust Dream Snare Projectile
+	PeskyDustLullabyCloudProjectile.DisplayName: Pesky Dust Lullaby Cloud Projectile
+	PeskyDustSandmanStormProjectile.DisplayName: Pesky Dust Sandman Storm Projectile
+	PeskyDustSleepDustProjectile.DisplayName: Pesky Dust Sleep Dust Projectile
+	WhampireCorrupturaBoltProjectile.DisplayName: Whampire Corruptura Bolt Projectile
+	WhampireHypnosisProjectile.DisplayName: Whampire Hypnosis Projectile
+	WhampireNightSwarmProjectile.DisplayName: Whampire Night Swarm Projectile
+	WhampireScreechProjectile.DisplayName: Whampire Screech Projectile
 }
 
 Tiles: {
