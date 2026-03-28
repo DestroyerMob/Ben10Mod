@@ -27,20 +27,22 @@ public class XLR8Transformation : Transformation {
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override string Description =>
-        "A Kineceleran speedster built to blur across the battlefield, hammer enemies with photonic speed jabs, slash through crowds with dashing attacks, and distort the pace of combat.";
+        "A Kineceleran speedster built to blur across the battlefield, hammer enemies with light-speed jabs, carve through crowds with dashes, and distort the pace of combat.";
 
     public override List<string> Abilities => new() {
-        "Rapid photonic speed jabs",
-        "Piercing velocity dash",
-        "Extreme speed boost",
-        "Targeted vector dash",
+        "Rapid light-strikes fired at close range",
+        "Velocity dash that tears through a line",
+        "Extreme speed overdrive",
+        "Vector Dash to the cursor",
         "Water running at speed",
-        "Time-slowing ultimate field"
+        "Time-slowing field that freezes the battlefield"
     };
 
     public override string PrimaryAttackName       => "Speed Strike";
     public override string SecondaryAttackName     => "Velocity Dash";
+    public override string PrimaryAbilityName      => "Overdrive";
     public override string SecondaryAbilityAttackName => "Vector Dash";
+    public override string UltimateAbilityName     => "Temporal Distortion";
     public override int    PrimaryAbilityDuration  => 10 * 60;
     public override int    PrimaryAbilityCooldown  => 30 * 60;
     public override int    PrimaryAttack           => ModContent.ProjectileType<XLR8StarlightProjectile>();

@@ -22,10 +22,11 @@ public class ArmodrilloTransformation : Transformation {
     public override List<string> Abilities => new() {
         "Piston drill strike",
         "Siege plating",
-        "Seismic slam ultimate attack"
+        "Seismic Slam that shatters the ground"
     };
 
     public override string PrimaryAttackName => "Piston Drill";
+    public override string PrimaryAbilityName => "Siege Plating";
     public override string UltimateAttackName => "Seismic Slam";
     public override int PrimaryAttack => ModContent.ProjectileType<ArmodrilloDrillProjectile>();
     public override int PrimaryAttackSpeed => 24;

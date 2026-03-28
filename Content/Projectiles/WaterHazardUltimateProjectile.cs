@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -12,10 +12,11 @@ public class WaterHazardUltimateProjectile : ModProjectile {
     private const int LifetimeTicks = 28;
     private const float StartRadius = 34f;
     private const float MaxRadius = 252f;
+    private float PressureRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
 
     private float CurrentRadius {
-        get => Projectile.ai[0];
-        set => Projectile.ai[0] = value;
+        get => Projectile.localAI[1];
+        set => Projectile.localAI[1] = value;
     }
 
     private float PreviousRadius {
@@ -57,7 +58,7 @@ public class WaterHazardUltimateProjectile : ModProjectile {
 
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float easedProgress = 1f - MathF.Pow(1f - progress, 2.7f);
-        float radius = MathHelper.Lerp(StartRadius, MaxRadius, easedProgress);
+        float radius = MathHelper.Lerp(StartRadius, MaxRadius + 90f * PressureRatio, easedProgress);
         SpawnWaveDust(radius, PreviousRadius, aimDirection);
         PreviousRadius = radius;
         CurrentRadius = radius;
@@ -68,8 +69,17 @@ public class WaterHazardUltimateProjectile : ModProjectile {
         return targetHitbox.Distance(Projectile.Center) <= CurrentRadius;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        int soak = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetWaterHazardSoak(Projectile.owner);
+        modifiers.SourceDamage *= 1f + PressureRatio * 0.18f + soak / 160f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 180);
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int soaked = identity.ConsumeWaterHazardSoak(Projectile.owner, 60);
+        Vector2 blast = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitY) * (8.5f + soaked * 0.04f);
+        target.velocity = Vector2.Lerp(target.velocity, blast, 0.6f);
+        target.netUpdate = true;
     }
 
     private void SpawnWaveDust(float radius, float previousRadius, Vector2 aimDirection) {

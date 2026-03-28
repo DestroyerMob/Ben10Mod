@@ -34,15 +34,16 @@ public class DiamondHeadTransformation : Transformation {
         "A durable Petrosapien that controls the lane with piercing shard fire, ground-burst crystal blooms, fortified crystal plating, and crushing prism strikes from any angle.";
 
     public override List<string> Abilities => new() {
-        "Piercing crystal shard primary",
-        "Ground-burst crystal bloom secondary",
-        "Crystalline bulwark stance",
-        "Prism pincer crush attack",
-        "Falling giant diamond ultimate"
+        "Piercing crystal shards for precise ranged pressure",
+        "Crystal blooms that burst from the ground",
+        "Crystalline Bulwark for heavier armor and retaliation",
+        "Prism Pincer that crushes a point from both sides",
+        "Diamond Drop that calls a massive crystal down from above"
     };
 
     public override string PrimaryAttackName => "Crystal Shard";
     public override string SecondaryAttackName => "Crystal Bloom";
+    public override string PrimaryAbilityName => "Crystalline Bulwark";
     public override string SecondaryAbilityAttackName => "Prism Pincer";
     public override string UltimateAttackName => "Diamond Drop";
 

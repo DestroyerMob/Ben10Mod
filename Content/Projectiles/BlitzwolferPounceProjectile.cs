@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -73,9 +73,19 @@ public class BlitzwolferPounceProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int resonance = identity.GetBlitzwolferResonanceStacks(Projectile.owner);
+        if (resonance > 0)
+            modifiers.SourceDamage *= 1f + resonance * (Heightened ? 0.14f : 0.1f);
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Heightened ? 120 : 90);
-        target.AddBuff(BuffID.Confused, Heightened ? 90 : 60);
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int resonance = identity.ConsumeBlitzwolferResonance(Projectile.owner);
+        identity.ApplyBlitzwolferResonance(Projectile.owner, Heightened ? 3 : 2, 220);
+        if (resonance > 0)
+            target.velocity = Vector2.Lerp(target.velocity, Projectile.velocity.SafeNormalize(Vector2.UnitX) * (8f + resonance), 0.55f);
         target.netUpdate = true;
     }
 

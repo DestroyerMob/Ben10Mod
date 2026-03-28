@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -11,10 +11,11 @@ namespace Ben10Mod.Content.Projectiles;
 public class WaterHazardSnareProjectile : ModProjectile {
     private const int LifetimeTicks = 5 * 60;
     private const float MaxRadius = 84f;
+    private float PressureRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
 
     private float CurrentRadius {
-        get => Projectile.ai[0];
-        set => Projectile.ai[0] = value;
+        get => Projectile.localAI[1];
+        set => Projectile.localAI[1] = value;
     }
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
@@ -41,9 +42,10 @@ public class WaterHazardSnareProjectile : ModProjectile {
         float lifetimeProgress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float fadeOut = Utils.GetLerpValue(0f, 30f, Projectile.timeLeft, true);
         float pulse = 0.82f + 0.18f * (1f + MathF.Sin(Main.GlobalTimeWrappedHourly * 6f)) * 0.5f;
-        CurrentRadius = MaxRadius * (0.45f + 0.55f * fadeOut) * pulse;
+        CurrentRadius = (MaxRadius + 32f * PressureRatio) * (0.45f + 0.55f * fadeOut) * pulse;
 
         Lighting.AddLight(Projectile.Center, new Vector3(0.08f, 0.28f, 0.45f));
+        PullNearbyEnemies();
         SpawnSnareDust(lifetimeProgress);
     }
 
@@ -52,7 +54,8 @@ public class WaterHazardSnareProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 150);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().AddWaterHazardSoak(Projectile.owner, 18 + (int)Math.Round(PressureRatio * 14f),
+            260);
     }
 
     public override void OnKill(int timeLeft) {
@@ -83,6 +86,27 @@ public class WaterHazardSnareProjectile : ModProjectile {
             Dust dust = Dust.NewDustPerfect(position, i % 4 == 0 ? DustID.DungeonWater : DustID.Water, velocity, 110,
                 new Color(120, 210, 255), Main.rand.NextFloat(0.9f, 1.2f));
             dust.noGravity = true;
+        }
+    }
+
+    private void PullNearbyEnemies() {
+        if (Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy(Projectile))
+                continue;
+
+            float distance = Vector2.Distance(Projectile.Center, npc.Center);
+            if (distance > CurrentRadius || distance <= 8f)
+                continue;
+
+            Vector2 inward = (Projectile.Center - npc.Center).SafeNormalize(Vector2.UnitY);
+            float pullStrength = MathHelper.Lerp(1.1f, 5.6f + 2.4f * PressureRatio, 1f - distance / CurrentRadius);
+            npc.velocity = Vector2.Lerp(npc.velocity, inward * pullStrength, npc.boss ? 0.06f : 0.18f);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().AddWaterHazardSoak(Projectile.owner, 1, 45);
+            npc.netUpdate = true;
         }
     }
 }

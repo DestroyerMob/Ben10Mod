@@ -7,14 +7,14 @@ namespace Ben10Mod.Content.Transformations.StinkFly;
 
 public class StinkFly : ModItem {
     public static string TransformationDescription =>
-        "A flying harassment alien that controls space with sticky slime, corrosive spit, and a bursting finisher from the air.";
+        "A flying skirmisher that controls space with sticky slime, corrosive spit, and a toxic finishing burst from the air.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Passive: built-in wings while transformed.",
-        "Main attack: sticky slime glob that slows enemies.",
-        "Alt attack: corrosive spit that poisons and pierces.",
-        "Ultimate attack: corrosive barrage shot that bursts into status droplets.",
-        "Role: aerial control and safe ranged pressure."
+        "Built-in wings while transformed.",
+        "Sticky slime globs that gum enemies up.",
+        "Corrosive spit that poisons and punches through targets.",
+        "Corrosive Barrage, a toxic shot that bursts into lingering droplets.",
+        "Aerial control and safe ranged pressure."
     };
 
     public override void Load() {

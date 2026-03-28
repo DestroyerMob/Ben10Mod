@@ -12,16 +12,15 @@ namespace Ben10Mod.Content.Transformations.Anodite
 {
     public class Anodite : ModItem {
         public static string TransformationDescription =>
-            "A Pyronite built for constant pressure. Heat Blast controls fire, shrugs off lava, and can erupt into a devastating supernova while burning everything nearby.";
+            "A living mana-form that glides through the air, lashes targets with raw energy, and shapes wards out of pure anodite power.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Primary ability: deploy a flare rod sentry that scorches nearby enemies.",
-            "Secondary ability: unleash a supernova heat wave that expands from your body and ignites everything it touches.",
-            "Main attack: rapid flamethrower stream.",
-            "Alt attack: explosive fire bomb.",
-            "Passive: lava immunity, fire walking, and fiery melee hits.",
-            "Mobility: gains a powerful flame-propelled extra jump while transformed.",
-            "Ultimate attack: sustained high-power fire blast."
+            "Mana Thread to lash through enemies.",
+            "Anodite Orb for heavier bursts of magic.",
+            "Mana Barrier for protection and battlefield control.",
+            "Hex Circle to trap enemies in place.",
+            "Ascendant Halo to surround yourself with living magic.",
+            "Strong air movement and mana-focused pressure while transformed."
         };
 
         public override void Load() {

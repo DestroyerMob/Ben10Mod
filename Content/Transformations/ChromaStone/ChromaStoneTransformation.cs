@@ -21,13 +21,14 @@ public class ChromaStoneTransformation : Transformation {
         "A living crystal conduit that absorbs punishment, turns it into extra firepower, and shines brighter as the pressure rises.";
 
     public override List<string> Abilities => new() {
-        "Focused crystal projectile",
-        "Energy absorption stance",
-        "Stored damage amplification",
-        "Chromatic empowered glow"
+        "Crystal bolts powered by stored energy",
+        "Absorbs punishment while his guard is up",
+        "Stored energy boosts damage and toughness",
+        "Chromatic glow that flares brighter as charge rises"
     };
 
     public override string PrimaryAttackName => "Crystal Bolt";
+    public override string PrimaryAbilityName => "Crystal Guard";
     public override int PrimaryAttack => ModContent.ProjectileType<ChromaStoneProjectile>();
 
     public override int PrimaryAbilityDuration => 60 * 60;

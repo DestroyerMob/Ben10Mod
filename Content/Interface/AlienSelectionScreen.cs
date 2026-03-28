@@ -183,7 +183,8 @@ namespace Ben10Mod.Content.Interface {
             if (showAttackHudOnly) {
                 int hudWidth = clientConfig.UseSimplifiedHeroInterface ? 220 : 252;
                 int hudX     = hpLeftX - gap - hudWidth;
-                DrawCurrentAttackIndicator(player, omp, hudX, y, hudWidth);
+                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, hudX, y, hudWidth);
+                DrawActiveAbilityIndicator(player, omp, hudX, y + attackHudHeight + 8, hudWidth);
                 return;
             }
 
@@ -211,7 +212,8 @@ namespace Ben10Mod.Content.Interface {
 
                 DrawOmnitrixEnergyText(player, omp, compactBarRect, true, clientConfig.AlwaysShowOmnitrixEnergyText);
 
-                DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
+                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
+                DrawActiveAbilityIndicator(player, omp, compactX, compactBarRect.Bottom + attackHudHeight + 16, compactWidth);
                 return;
             }
 
@@ -266,7 +268,8 @@ namespace Ben10Mod.Content.Interface {
             Rectangle barRect = new Rectangle(x, y, barWidth, barHeight);
             DrawOmnitrixEnergyText(player, omp, barRect, false, clientConfig.AlwaysShowOmnitrixEnergyText);
 
-            DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+            int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+            DrawActiveAbilityIndicator(player, omp, x, y + barHeight + fullAttackHudHeight + 26, barWidth);
         }
 
         private void DrawOmnitrixEnergyText(Player player, OmnitrixPlayer omp, Rectangle barRect, bool simplified, bool alwaysShow) {
@@ -322,17 +325,17 @@ namespace Ben10Mod.Content.Interface {
             Utils.DrawBorderString(Main.spriteBatch, energyText, drawPosition, Color.White, textScale);
         }
 
-        private void DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
+        private int DrawCurrentAttackIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
             bool showAttackHud    = omp.IsTransformed;
             bool showSelectionHud = !omp.IsTransformed && omp.GetActiveOmnitrix() != null;
             var  clientConfig     = ModContent.GetInstance<Ben10ClientConfig>();
 
             if (!showAttackHud && !showSelectionHud)
-                return;
+                return 0;
 
             Transformation trans = omp.CurrentTransformation;
             if (showAttackHud && trans == null)
-                return;
+                return 0;
 
             Texture2D pixel = TextureAssets.MagicPixel.Value;
             string cooldownSummary =
@@ -406,7 +409,7 @@ namespace Ben10Mod.Content.Interface {
                         new Vector2(panelRect.X + 10, panelRect.Bottom - 19),
                         affordabilityWarning ? new Color(255, 170, 145) : new Color(170, 190, 208), 0.68f);
                 }
-                return;
+                return panelRect.Height;
             }
 
             string title = showAttackHud ? "Attack" : "Selection";
@@ -436,6 +439,52 @@ namespace Ben10Mod.Content.Interface {
                 Utils.DrawBorderString(Main.spriteBatch, cooldownSummary,
                     new Vector2(panelRect.X + 10, panelRect.Bottom - 22), new Color(170, 190, 208), 0.72f);
             }
+
+            return panelRect.Height;
+        }
+
+        private int DrawActiveAbilityIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
+            if (!omp.IsTransformed)
+                return 0;
+
+            List<OmnitrixPlayer.ActiveAbilityStatus> activeAbilities = omp.GetActiveAbilityStatuses();
+            if (activeAbilities.Count == 0)
+                return 0;
+
+            var clientConfig = ModContent.GetInstance<Ben10ClientConfig>();
+            bool simplified = clientConfig.UseSimplifiedHeroInterface;
+            int lineHeight = simplified ? 15 : 18;
+            int headerHeight = simplified ? 18 : 22;
+            int panelHeight = headerHeight + 10 + activeAbilities.Count * lineHeight;
+            Rectangle panelRect = new Rectangle(x, y, width, panelHeight);
+            Texture2D pixel = TextureAssets.MagicPixel.Value;
+
+            Color accent = activeAbilities[0].AccentColor;
+            Color borderColor = Color.Lerp(new Color(70, 90, 110), accent, 0.58f);
+            Color fillColor = new Color(10, 18, 24, 185);
+
+            Main.spriteBatch.Draw(pixel, panelRect, fillColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Bottom - 2, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, 2, panelRect.Height), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
+
+            string title = activeAbilities.Count == 1 ? "Active Ability" : "Active Abilities";
+            Utils.DrawBorderString(Main.spriteBatch, title, new Vector2(panelRect.X + 10, panelRect.Y + 6),
+                new Color(220, 230, 240), simplified ? 0.68f : 0.78f);
+
+            int lineY = panelRect.Y + headerHeight;
+            for (int i = 0; i < activeAbilities.Count; i++) {
+                OmnitrixPlayer.ActiveAbilityStatus status = activeAbilities[i];
+                float lineScale = simplified ? 0.7f : 0.78f;
+                Utils.DrawBorderString(Main.spriteBatch, status.DisplayName,
+                    new Vector2(panelRect.X + 10, lineY + i * lineHeight), status.AccentColor, lineScale);
+                Utils.DrawBorderString(Main.spriteBatch, status.RemainingText,
+                    new Vector2(panelRect.Right - 10, lineY + i * lineHeight),
+                    Color.Lerp(status.AccentColor, Color.White, 0.2f), lineScale + 0.02f, 1f, 0f);
+            }
+
+            return panelRect.Height;
         }
 
         internal void ShowMyUI() {
@@ -484,14 +533,17 @@ namespace Ben10Mod.Content.Interface {
         private          UIPanel                 mainPanel;
         private readonly List<FittedTransformationIcon> rosterSlots = new();
         private          UIGrid                  unlockedGrid;
+        private          CustomNameTextInputPanel unlockedSearchInput;
         private          UIPanel                 infoPanel;
         private          UIText                  nameText;
         private          UIText                  descriptionText;
         private          UIList                  abilityList;
         private          UIText                  abilitiesHeader;
+        private          UIText                  unlockedHintText;
 
         private string currentlySelectedId     = "";
         private string unlockedRosterSignature = "";
+        private string unlockedSearchText      = string.Empty;
         private bool   unlockedGridDirty       = true;
 
         internal static Asset<Texture2D> GetSafeTransformationIcon(Transformation trans) {
@@ -592,10 +644,32 @@ namespace Ben10Mod.Content.Interface {
             unlockedHeader.Top.Set(rosterY + slotSize + 52f, 0f);
             mainPanel.Append(unlockedHeader);
 
-            var unlockedHint = new UIText("Right click an unlocked alien to favorite it", 0.78f);
-            unlockedHint.Left.Set(65f, 0f);
-            unlockedHint.Top.Set(rosterY + slotSize + 76f, 0f);
-            mainPanel.Append(unlockedHint);
+            UIPanel searchPanel = new UIPanel();
+            searchPanel.Width.Set(304f, 0f);
+            searchPanel.Height.Set(34f, 0f);
+            searchPanel.Left.Set(325f, 0f);
+            searchPanel.Top.Set(rosterY + slotSize + 46f, 0f);
+            searchPanel.PaddingTop = 0f;
+            searchPanel.PaddingBottom = 0f;
+            searchPanel.PaddingLeft = 0f;
+            searchPanel.PaddingRight = 0f;
+            mainPanel.Append(searchPanel);
+
+            unlockedSearchInput = new CustomNameTextInputPanel("Search unlocked aliens") {
+                MaxLength = 40
+            };
+            unlockedSearchInput.Width.Set(-12f, 1f);
+            unlockedSearchInput.Height.Set(-10f, 1f);
+            unlockedSearchInput.Left.Set(6f, 0f);
+            unlockedSearchInput.Top.Set(5f, 0f);
+            unlockedSearchInput.TextChanged += text => HandleUnlockedSearchChanged(text);
+            unlockedSearchInput.Submitted += text => HandleUnlockedSearchChanged(text);
+            searchPanel.Append(unlockedSearchInput);
+
+            unlockedHintText = new UIText(string.Empty, 0.78f);
+            unlockedHintText.Left.Set(65f, 0f);
+            unlockedHintText.Top.Set(rosterY + slotSize + 76f, 0f);
+            mainPanel.Append(unlockedHintText);
 
             unlockedGrid = new UIGrid();
             unlockedGrid.Width.Set(564f, 0f);
@@ -656,6 +730,17 @@ namespace Ben10Mod.Content.Interface {
             mainPanel.Append(closeBtn);
         }
 
+        public override void OnActivate() {
+            base.OnActivate();
+
+            unlockedSearchText = string.Empty;
+            unlockedGridDirty = true;
+            unlockedRosterSignature = string.Empty;
+            unlockedSearchInput?.SetText(string.Empty, invoke: false);
+            unlockedSearchInput?.SetFocused(false);
+            RefreshUnlockedHint(0, 0);
+        }
+
         private void AssignToSlot(int slotIndex) {
             if (string.IsNullOrEmpty(currentlySelectedId)) return;
 
@@ -663,6 +748,7 @@ namespace Ben10Mod.Content.Interface {
             if (player.unlockedTransformations.Contains(currentlySelectedId)) {
                 player.transformationSlots[slotIndex] = currentlySelectedId;
                 player.SyncTransformationStateToServer();
+                UpdateInfoPanelFromTransformationId(player.transformationSlots[slotIndex]);
                 currentlySelectedId = "";
             }
         }
@@ -671,6 +757,7 @@ namespace Ben10Mod.Content.Interface {
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
             player.transformationSlots[slotIndex] = "";
             player.SyncTransformationStateToServer();
+            UpdateInfoPanelFromTransformationId(player.transformationSlots[slotIndex]);
         }
 
         public override void Update(GameTime gameTime) {
@@ -699,6 +786,9 @@ namespace Ben10Mod.Content.Interface {
             unlockedRosterSignature = signature;
             unlockedGrid.Clear();
 
+            int totalUnlockedCount = 0;
+            int visibleUnlockedCount = 0;
+
             foreach (string id in player.GetUnlockedTransformationsForDisplay()) {
                 if (string.IsNullOrEmpty(id))
                     continue;
@@ -706,6 +796,12 @@ namespace Ben10Mod.Content.Interface {
                 var trans = TransformationLoader.Get(id);
                 if (trans == null)
                     continue;
+
+                totalUnlockedCount++;
+                if (!UnlockedTransformationMatchesSearch(trans, player))
+                    continue;
+
+                visibleUnlockedCount++;
 
                 var icon = GetSafeTransformationIcon(trans);
                 var slot = new UIElement();
@@ -740,6 +836,7 @@ namespace Ben10Mod.Content.Interface {
 
             unlockedGrid.Recalculate();
             unlockedGrid.RecalculateChildren();
+            RefreshUnlockedHint(visibleUnlockedCount, totalUnlockedCount);
         }
 
         private static string BuildUnlockedRosterSignature(OmnitrixPlayer player) {
@@ -751,6 +848,7 @@ namespace Ben10Mod.Content.Interface {
                 return string.Empty;
 
             System.Text.StringBuilder builder = new();
+            builder.Append("search=").Append(MainMenuSafeSearchText()).Append('|');
             for (int i = 0; i < displayIds.Count; i++) {
                 string transformationId = displayIds[i];
                 Transformation transformation = TransformationLoader.Get(transformationId);
@@ -765,6 +863,11 @@ namespace Ben10Mod.Content.Interface {
             }
 
             return builder.ToString();
+        }
+
+        private static string MainMenuSafeSearchText() {
+            AlienSelectionScreen state = ModContent.GetInstance<UISystem>()?.AS;
+            return state?.unlockedSearchText ?? string.Empty;
         }
 
         private void UpdateInfoPanel(Transformation trans) {
@@ -808,6 +911,50 @@ namespace Ben10Mod.Content.Interface {
             }
 
             UpdateInfoPanel(TransformationLoader.Get(currentlySelectedId));
+        }
+
+        private void HandleUnlockedSearchChanged(string text) {
+            string normalizedText = text?.Trim() ?? string.Empty;
+            if (string.Equals(unlockedSearchText, normalizedText, StringComparison.Ordinal))
+                return;
+
+            unlockedSearchText = normalizedText;
+            unlockedRosterSignature = string.Empty;
+            unlockedGridDirty = true;
+        }
+
+        private bool UnlockedTransformationMatchesSearch(Transformation transformation, OmnitrixPlayer player) {
+            if (transformation == null || string.IsNullOrWhiteSpace(unlockedSearchText))
+                return transformation != null;
+
+            string query = unlockedSearchText.Trim();
+            if (query.Length == 0)
+                return true;
+
+            string displayName = transformation.GetDisplayName(player) ?? string.Empty;
+            string baseName = transformation.TransformationName ?? string.Empty;
+            string fullId = transformation.FullID ?? string.Empty;
+
+            return displayName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   baseName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   fullId.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void RefreshUnlockedHint(int visibleUnlockedCount, int totalUnlockedCount) {
+            if (unlockedHintText == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(unlockedSearchText)) {
+                unlockedHintText.SetText(string.Empty);
+                return;
+            }
+
+            if (visibleUnlockedCount <= 0) {
+                unlockedHintText.SetText($"No unlocked aliens match \"{unlockedSearchText}\"");
+                return;
+            }
+
+            unlockedHintText.SetText($"Showing {visibleUnlockedCount} of {totalUnlockedCount} unlocked aliens");
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {

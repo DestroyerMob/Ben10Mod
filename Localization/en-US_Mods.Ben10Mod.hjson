@@ -823,6 +823,11 @@ Buffs: {
 		DisplayName: Enemy Electrocuted
 	}
 
+	AlienXSupernovaBurn: {
+		DisplayName: Supernova Burn
+		Description: Scorched by the heart of a newborn star
+	}
+
 	EnergyOverloaded: {
 		Description: Mods.Ben10Mod.Buffs.EnergyOverloaded.Description
 		DisplayName: Energy Overloaded
@@ -1044,15 +1049,18 @@ Projectiles: {
 	ArctiguanaFreezeRayProjectile.DisplayName: Arctiguana Freeze Ray Projectile
 	ArctiguanaIceConstructProjectile.DisplayName: Arctiguana Ice Construct Projectile
 	ArctiguanaUltimateBeamProjectile.DisplayName: Arctiguana Ultimate Beam Projectile
-	AstrodactylCometProjectile.DisplayName: Astrodactyl Comet Projectile
-	AstrodactylDiveProjectile.DisplayName: Astrodactyl Dive Projectile
-	AstrodactylPlasmaBoltProjectile.DisplayName: Astrodactyl Plasma Bolt Projectile
-	AstrodactylStarburstProjectile.DisplayName: Astrodactyl Starburst Projectile
-	BlitzwolferHowlProjectile.DisplayName: Blitzwolfer Howl Projectile
-	BlitzwolferLunarHowlProjectile.DisplayName: Blitzwolfer Lunar Howl Projectile
-	BlitzwolferPounceProjectile.DisplayName: Blitzwolfer Pounce Projectile
-	BlitzwolferSonicBoltProjectile.DisplayName: Blitzwolfer Sonic Bolt Projectile
 	FasttrackClawWaveProjectile.DisplayName: Fasttrack Claw Wave Projectile
+	BlitzwolferSonicBoltProjectile.DisplayName: Blitzwolfer Sonic Bolt Projectile
+	BlitzwolferPounceProjectile.DisplayName: Blitzwolfer Pounce Projectile
+	BlitzwolferLunarHowlProjectile.DisplayName: Blitzwolfer Lunar Howl Projectile
+	BlitzwolferHowlProjectile.DisplayName: Blitzwolfer Howl Projectile
+	AstrodactylStarburstProjectile.DisplayName: Astrodactyl Starburst Projectile
+	AstrodactylPlasmaBoltProjectile.DisplayName: Astrodactyl Plasma Bolt Projectile
+	AstrodactylDiveProjectile.DisplayName: Astrodactyl Dive Projectile
+	AstrodactylCometProjectile.DisplayName: Astrodactyl Comet Projectile
+	AlienXVerdictProjectile.DisplayName: Alien X Verdict Projectile
+	AlienXGravityPulseProjectile.DisplayName: Alien X Gravity Pulse Projectile
+	AlienXForceWaveProjectile.DisplayName: Alien X Force Wave Projectile
 	FasttrackPunchProjectile.DisplayName: Fasttrack Punch Projectile
 	FasttrackPursuitRushProjectile.DisplayName: Fasttrack Pursuit Rush Projectile
 	FasttrackVelocityBarrageProjectile.DisplayName: Fasttrack Velocity Barrage Projectile
@@ -1072,6 +1080,11 @@ Projectiles: {
 	WhampireHypnosisProjectile.DisplayName: Whampire Hypnosis Projectile
 	WhampireNightSwarmProjectile.DisplayName: Whampire Night Swarm Projectile
 	WhampireScreechProjectile.DisplayName: Whampire Screech Projectile
+	BlitzwolferHowlBeamProjectile.DisplayName: Blitzwolfer Howl Beam Projectile
+	BlitzwolferHowlPulseProjectile.DisplayName: Blitzwolfer Howl Pulse Projectile
+	HeatBlastHaloFireballProjectile.DisplayName: Heat Blast Halo Fireball Projectile
+	HeatBlastSolarHaloProjectile.DisplayName: Heat Blast Solar Halo Projectile
+	HeatBlastSuperheatAuraProjectile.DisplayName: Heat Blast Superheat Aura Projectile
 }
 
 Tiles: {

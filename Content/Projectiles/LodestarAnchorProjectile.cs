@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -13,6 +13,7 @@ namespace Ben10Mod.Content.Projectiles;
 public class LodestarAnchorProjectile : ModProjectile {
     private const float PullRadius = 112f;
     private const float DamageRadius = 68f;
+    private bool Repel => Projectile.ai[0] >= 0.5f;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -66,12 +67,14 @@ public class LodestarAnchorProjectile : ModProjectile {
         Vector2 center = Projectile.Center - Main.screenPosition;
         float rotation = Projectile.localAI[0] * 0.028f;
         float pulse = 0.86f + 0.14f * MathF.Sin(Projectile.localAI[0] * 0.1f);
+        Color primaryColor = Repel ? new Color(118, 160, 250, 82) : new Color(225, 95, 82, 82);
+        Color coreColor = Repel ? new Color(120, 165, 255, 210) : new Color(225, 95, 82, 210);
 
         DrawRing(pixel, center, PullRadius * 0.62f * pulse, 3.4f, new Color(175, 185, 205, 48), rotation);
-        DrawRing(pixel, center, PullRadius * 0.4f * pulse, 4f, new Color(225, 95, 82, 82), -rotation * 1.2f);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(225, 95, 82, 210), rotation, Vector2.One * 0.5f,
+        DrawRing(pixel, center, PullRadius * 0.4f * pulse, 4f, primaryColor, -rotation * 1.2f);
+        Main.EntitySpriteDraw(pixel, center, null, coreColor, rotation, Vector2.One * 0.5f,
             new Vector2(20f, 6f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(225, 95, 82, 210), rotation + MathHelper.PiOver2, Vector2.One * 0.5f,
+        Main.EntitySpriteDraw(pixel, center, null, coreColor, rotation + MathHelper.PiOver2, Vector2.One * 0.5f,
             new Vector2(20f, 6f), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center, null, new Color(245, 245, 250, 225), 0f, Vector2.One * 0.5f,
             new Vector2(8f, 8f), SpriteEffects.None, 0);
@@ -79,8 +82,7 @@ public class LodestarAnchorProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 180);
-        target.AddBuff(BuffID.BrokenArmor, 180);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyLodestarPolarity(Projectile.owner, 240, Repel ? 1 : -1);
         target.netUpdate = true;
     }
 
@@ -101,8 +103,11 @@ public class LodestarAnchorProjectile : ModProjectile {
             else if (npc.knockBackResist > 0f)
                 pullStrength *= MathHelper.Lerp(0.65f, 1.08f, npc.knockBackResist);
 
-            Vector2 desiredVelocity = (Projectile.Center - npc.Center).SafeNormalize(Vector2.Zero) * pullStrength;
+            Vector2 desiredVelocity = (Repel
+                ? (npc.Center - Projectile.Center).SafeNormalize(Vector2.UnitX)
+                : (Projectile.Center - npc.Center).SafeNormalize(Vector2.UnitX)) * pullStrength;
             npc.velocity = Vector2.Lerp(npc.velocity, desiredVelocity, npc.boss ? 0.08f : 0.22f);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyLodestarPolarity(Projectile.owner, 60, Repel ? 1 : -1);
             npc.netUpdate = true;
         }
     }

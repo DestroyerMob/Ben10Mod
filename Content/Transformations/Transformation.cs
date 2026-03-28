@@ -131,12 +131,20 @@ namespace Ben10Mod.Content.Transformations {
         public virtual IReadOnlyList<TransformationPaletteChannel> PaletteChannels => Array.Empty<TransformationPaletteChannel>();
         public virtual string PrimaryAttackName => null;
         public virtual string SecondaryAttackName => null;
+        public virtual string PrimaryAbilityName => null;
+        public virtual string SecondaryAbilityName => null;
+        public virtual string TertiaryAbilityName => null;
+        public virtual string UltimateAbilityName => null;
         public virtual string PrimaryAbilityAttackName => null;
         public virtual string SecondaryAbilityAttackName => null;
         public virtual string TertiaryAbilityAttackName => null;
         public virtual string UltimateAttackName => null;
         public virtual string PrimaryAttackDisplayName => ResolveAttackName(PrimaryAttackName, "Primary Attack");
         public virtual string SecondaryAttackDisplayName => ResolveAttackName(SecondaryAttackName, "Secondary Attack");
+        public virtual string PrimaryAbilityDisplayName => ResolveAttackName(PrimaryAbilityName, "Primary Ability");
+        public virtual string SecondaryAbilityDisplayName => ResolveAttackName(SecondaryAbilityName, "Secondary Ability");
+        public virtual string TertiaryAbilityDisplayName => ResolveAttackName(TertiaryAbilityName, "Tertiary Ability");
+        public virtual string UltimateAbilityDisplayName => ResolveAttackName(UltimateAbilityName, "Ultimate Ability");
         public virtual string PrimaryAbilityAttackDisplayName => ResolveAttackName(PrimaryAbilityAttackName, "Primary Ability");
         public virtual string SecondaryAbilityAttackDisplayName => ResolveAttackName(SecondaryAbilityAttackName, "Secondary Ability");
         public virtual string TertiaryAbilityAttackDisplayName => ResolveAttackName(TertiaryAbilityAttackName, "Tertiary Ability");
@@ -162,6 +170,9 @@ namespace Ben10Mod.Content.Transformations {
         public virtual void UpdateEffects(Player player, OmnitrixPlayer omp) {
             var abilitySlot = ModContent.GetInstance<AbilitySlot>();
             abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
+        }
+        public virtual void UpdateActiveAbilityVisuals(Player player, OmnitrixPlayer omp) {
+            SpawnDefaultActiveAbilityAura(player, omp);
         }
         public virtual void PostUpdate(Player player, OmnitrixPlayer omp) { }
         public virtual void PreUpdateMovement(Player player, OmnitrixPlayer omp) { }
@@ -357,6 +368,15 @@ namespace Ben10Mod.Content.Transformations {
             TransformationAttackProfile profile = GetRawAttackProfile(resolvedSelection, omp);
             return ResolveAttackProfileDisplayName(profile, GetAttackSelectionFallbackDisplayName(resolvedSelection));
         }
+        public virtual string GetAbilitySelectionDisplayName(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => PrimaryAbilityDisplayName,
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => SecondaryAbilityDisplayName,
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => TertiaryAbilityDisplayName,
+                OmnitrixPlayer.AttackSelection.Ultimate => UltimateAbilityDisplayName,
+                _ => "Ability"
+            };
+        }
 
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             var profile = GetSelectedAttackProfile(omp);
@@ -459,6 +479,71 @@ namespace Ben10Mod.Content.Transformations {
                 return configuredName;
 
             return fallback;
+        }
+
+        protected virtual void SpawnDefaultActiveAbilityAura(Player player, OmnitrixPlayer omp) {
+            if (player == null || omp == null || Main.dedServ)
+                return;
+
+            int activeCount = 0;
+            if (omp.IsPrimaryAbilityActive)
+                activeCount++;
+            if (omp.IsSecondaryAbilityActive)
+                activeCount++;
+            if (omp.IsTertiaryAbilityActive)
+                activeCount++;
+            if (omp.IsUltimateAbilityActive)
+                activeCount++;
+
+            if (activeCount <= 0)
+                return;
+
+            float orbitTime = (float)Main.GameUpdateCount * 0.08f;
+            float radiusX = 16f + Math.Max(0, activeCount - 1) * 2f;
+            float radiusY = 28f + Math.Max(0, activeCount - 1) * 2f;
+            int activeIndex = 0;
+
+            if (omp.IsPrimaryAbilityActive)
+                SpawnAbilityAuraDustForSelection(player, omp, OmnitrixPlayer.AttackSelection.PrimaryAbility,
+                    activeIndex++, activeCount, orbitTime, radiusX, radiusY);
+            if (omp.IsSecondaryAbilityActive)
+                SpawnAbilityAuraDustForSelection(player, omp, OmnitrixPlayer.AttackSelection.SecondaryAbility,
+                    activeIndex++, activeCount, orbitTime, radiusX, radiusY);
+            if (omp.IsTertiaryAbilityActive)
+                SpawnAbilityAuraDustForSelection(player, omp, OmnitrixPlayer.AttackSelection.TertiaryAbility,
+                    activeIndex++, activeCount, orbitTime, radiusX, radiusY);
+            if (omp.IsUltimateAbilityActive)
+                SpawnAbilityAuraDustForSelection(player, omp, OmnitrixPlayer.AttackSelection.Ultimate,
+                    activeIndex, activeCount, orbitTime, radiusX, radiusY);
+        }
+
+        private static void SpawnAbilityAuraDustForSelection(Player player, OmnitrixPlayer omp,
+            OmnitrixPlayer.AttackSelection selection, int activeIndex, int activeCount, float orbitTime,
+            float radiusX, float radiusY) {
+            if (Main.GameUpdateCount % 2 != 0)
+                return;
+
+            Color auraColor = Color.Lerp(omp.GetAbilityAccentColor(selection), Color.White, 0.25f);
+            float angle = orbitTime + MathHelper.TwoPi * activeIndex / Math.Max(1, activeCount);
+            Vector2 auraCenter = player.Center + new Vector2(player.direction * -5f, -12f);
+            Vector2 offset = new Vector2((float)Math.Cos(angle) * radiusX, (float)Math.Sin(angle) * radiusY);
+            Vector2 driftVelocity = new Vector2(offset.X * 0.012f, -0.65f + offset.Y * 0.004f);
+
+            Dust torchDust = Dust.NewDustPerfect(auraCenter + offset, DustID.Torch, driftVelocity, 100, auraColor,
+                Main.rand.NextFloat(1f, 1.35f));
+            torchDust.noGravity = true;
+            torchDust.fadeIn = 0.8f;
+
+            if (!Main.rand.NextBool(3))
+                return;
+
+            float innerAngle = angle + 0.45f;
+            Vector2 innerOffset = new Vector2((float)Math.Cos(innerAngle) * radiusX * 0.68f,
+                (float)Math.Sin(innerAngle) * radiusY * 0.78f);
+            Dust flareDust = Dust.NewDustPerfect(auraCenter + innerOffset, DustID.Flare,
+                new Vector2(innerOffset.X * 0.01f, -0.5f + innerOffset.Y * 0.003f), 120,
+                Color.Lerp(auraColor, Color.White, 0.35f), Main.rand.NextFloat(0.7f, 0.95f));
+            flareDust.noGravity = true;
         }
 
         protected static void SpawnDustBurst(Player player, int dustType, Color color, int count = 25, float scale = 4f) {

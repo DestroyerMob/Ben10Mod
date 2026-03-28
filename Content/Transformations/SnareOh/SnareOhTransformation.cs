@@ -19,19 +19,21 @@ public class SnareOhTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<SnareOh_Buff>();
 
     public override string Description =>
-        "A Thep Khufan who dominates fights with living bandages, locking enemies in place before exposing his cursed core and flooding the area around him with weakening radiation.";
+        "A Thep Khufan who mummifies enemies in burial curses, then unseals his core to turn those bindings into crushing follow-up damage.";
 
     public override List<string> Abilities => new() {
-        "Bandage lash primary",
-        "Constricting wrap secondary",
-        "Expose core weaken stance",
-        "Burial bind prison",
-        "Irradiated core aura ultimate"
+        "Bandage lashes that wrap enemies in burial curses",
+        "Constricting wraps that tighten the curse",
+        "Expose Core to trade defense for harsher payoffs",
+        "Burial Bind that seals enemies inside a tomb",
+        "Irradiated Core that punishes cursed targets nearby"
     };
 
     public override string PrimaryAttackName => "Bandage Lash";
     public override string SecondaryAttackName => "Constricting Wrap";
+    public override string PrimaryAbilityName => "Expose Core";
     public override string SecondaryAbilityAttackName => "Burial Bind";
+    public override string UltimateAbilityName => "Irradiated Core";
     public override string UltimateAttackName => "Irradiated Core";
 
     public override int PrimaryAttack => ModContent.ProjectileType<SnareOhBandageProjectile>();
@@ -67,7 +69,7 @@ public class SnareOhTransformation : Transformation {
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetCritChance<HeroDamage>() += 4f;
         player.statDefense += 6;
         player.endurance += 0.04f;
         player.moveSpeed += 0.08f;
@@ -75,12 +77,7 @@ public class SnareOhTransformation : Transformation {
         player.noFallDmg = true;
 
         if (omp.PrimaryAbilityEnabled) {
-            player.GetDamage<HeroDamage>() += 0.14f;
-            player.GetAttackSpeed<HeroDamage>() += 0.1f;
-            player.GetCritChance<HeroDamage>() += 4f;
             player.statDefense -= 6;
-            player.moveSpeed += 0.08f;
-            player.maxRunSpeed += 0.4f;
             player.armorEffectDrawShadow = true;
             Lighting.AddLight(player.Center, new Vector3(0.62f, 0.46f, 0.18f));
         }
@@ -88,13 +85,7 @@ public class SnareOhTransformation : Transformation {
         if (!omp.IsUltimateAbilityActive)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetArmorPenetration<HeroDamage>() += 10;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.statDefense -= 4;
-        player.moveSpeed += 0.12f;
-        player.maxRunSpeed += 0.8f;
-        player.endurance += 0.03f;
+        player.GetArmorPenetration<HeroDamage>() += 8;
         player.armorEffectDrawShadow = true;
         Lighting.AddLight(player.Center, new Vector3(0.38f, 0.72f, 0.18f));
     }

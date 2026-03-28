@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -14,6 +14,7 @@ public class LodestarPolarVortexProjectile : ModProjectile {
     private const float BaseRadius = 148f;
     private const float MaxRadius = 220f;
     private const float InnerRadius = 76f;
+    private bool Repel => Projectile.ai[0] >= 0.5f;
 
     private float CurrentRadius {
         get => Projectile.ai[0];
@@ -75,21 +76,26 @@ public class LodestarPolarVortexProjectile : ModProjectile {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 center = Projectile.Center - Main.screenPosition;
         float rotation = Projectile.localAI[0] * 0.025f;
+        Color ringColor = Repel ? new Color(115, 160, 250, 72) : new Color(225, 90, 78, 72);
+        Color coreColor = Repel ? new Color(85, 125, 225, 225) : new Color(145, 28, 24, 225);
+        Color centerGlow = Repel ? new Color(120, 180, 255, 220) : new Color(245, 110, 96, 220);
 
         DrawRing(pixel, center, CurrentRadius, 4.2f, new Color(165, 175, 198, 44), rotation * 0.55f);
-        DrawRing(pixel, center, CurrentRadius * 0.72f, 5f, new Color(225, 90, 78, 72), -rotation);
+        DrawRing(pixel, center, CurrentRadius * 0.72f, 5f, ringColor, -rotation);
         DrawRing(pixel, center, CurrentRadius * 0.44f, 5.4f, new Color(245, 235, 235, 90), rotation * 1.3f);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(145, 28, 24, 225), 0f, Vector2.One * 0.5f,
+        Main.EntitySpriteDraw(pixel, center, null, coreColor, 0f, Vector2.One * 0.5f,
             new Vector2(InnerRadius * 0.9f, InnerRadius * 0.9f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(245, 110, 96, 220), 0f, Vector2.One * 0.5f,
+        Main.EntitySpriteDraw(pixel, center, null, centerGlow, 0f, Vector2.One * 0.5f,
             new Vector2(18f, 18f), SpriteEffects.None, 0);
         return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 240);
-        target.AddBuff(BuffID.BrokenArmor, 240);
-        target.AddBuff(BuffID.Electrified, 90);
+        Vector2 forceDirection = Repel
+            ? (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX)
+            : (Projectile.Center - target.Center).SafeNormalize(Vector2.UnitX);
+        target.velocity = Vector2.Lerp(target.velocity, forceDirection * (Repel ? 10f : 8.5f), 0.5f);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyLodestarPolarity(Projectile.owner, 300, Repel ? 1 : -1);
         target.netUpdate = true;
     }
 
@@ -113,8 +119,11 @@ public class LodestarPolarVortexProjectile : ModProjectile {
             else if (npc.knockBackResist > 0f)
                 pullStrength *= MathHelper.Lerp(0.7f, 1.15f, npc.knockBackResist);
 
-            Vector2 desiredVelocity = (Projectile.Center - npc.Center).SafeNormalize(Vector2.Zero) * pullStrength;
+            Vector2 desiredVelocity = (Repel
+                ? (npc.Center - Projectile.Center).SafeNormalize(Vector2.UnitX)
+                : (Projectile.Center - npc.Center).SafeNormalize(Vector2.UnitX)) * pullStrength;
             npc.velocity = Vector2.Lerp(npc.velocity, desiredVelocity, npc.boss ? 0.09f : 0.28f);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyLodestarPolarity(Projectile.owner, 60, Repel ? 1 : -1);
             npc.netUpdate = true;
         }
     }

@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -42,13 +42,13 @@ public class BlitzwolferLunarHowlProjectile : ModProjectile {
 
         Projectile.rotation = Projectile.velocity.SafeNormalize(Vector2.UnitX).ToRotation();
         Projectile.velocity *= 0.985f;
-        Lighting.AddLight(Projectile.Center, new Vector3(0.82f, 0.84f, 1f) * 0.7f);
+        Lighting.AddLight(Projectile.Center, new Vector3(0.2f, 1.1f, 0.3f) * 0.75f);
 
         if (Main.rand.NextBool(2)) {
             Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
             Vector2 spawnPosition = Projectile.Center + direction.RotatedByRandom(1.08f) * Main.rand.NextFloat(CurrentRadius * 0.28f, CurrentRadius);
-            Dust dust = Dust.NewDustPerfect(spawnPosition, Main.rand.NextBool(3) ? DustID.GemDiamond : DustID.Smoke,
-                direction.RotatedByRandom(0.65f) * Main.rand.NextFloat(0.8f, 2.2f), 115, new Color(235, 245, 255),
+            Dust dust = Dust.NewDustPerfect(spawnPosition, Main.rand.NextBool(3) ? DustID.GemEmerald : DustID.GreenTorch,
+                direction.RotatedByRandom(0.65f) * Main.rand.NextFloat(0.8f, 2.2f), 115, new Color(175, 255, 165),
                 Main.rand.NextFloat(1f, 1.26f));
             dust.noGravity = true;
         }
@@ -65,18 +65,24 @@ public class BlitzwolferLunarHowlProjectile : ModProjectile {
         float opacity = Utils.GetLerpValue(0f, 0.12f, progress, true) *
             Utils.GetLerpValue(0f, 0.28f, Projectile.timeLeft / (float)MaxLifetime, true);
 
-        DrawArc(pixel, Projectile.Center, CurrentRadius, 5.2f, 1.08f, rotation, new Color(145, 175, 220, 90) * opacity);
-        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.78f, 4.1f, 1.22f, rotation, new Color(225, 235, 255, 130) * opacity);
-        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.52f, 3.2f, 1.34f, rotation, new Color(255, 255, 255, 170) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius, 5.5f, 1.08f, rotation, new Color(40, 140, 65, 105) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.78f, 4.3f, 1.22f, rotation, new Color(90, 255, 115, 145) * opacity);
+        DrawArc(pixel, Projectile.Center, CurrentRadius * 0.52f, 3.4f, 1.34f, rotation, new Color(220, 255, 215, 180) * opacity);
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int resonance = identity.GetBlitzwolferResonanceStacks(Projectile.owner);
+        if (resonance > 0)
+            modifiers.SourceDamage *= 1f + resonance * 0.16f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int resonance = identity.ConsumeBlitzwolferResonance(Projectile.owner);
         Vector2 pushDirection = (target.Center - Projectile.Center).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX));
-        target.velocity = Vector2.Lerp(target.velocity, pushDirection * 8f, 0.5f);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 180);
-        target.AddBuff(BuffID.Confused, 180);
-        target.AddBuff(BuffID.BrokenArmor, 180);
+        target.velocity = Vector2.Lerp(target.velocity, pushDirection * (9f + resonance * 1.2f), 0.58f);
         target.netUpdate = true;
     }
 

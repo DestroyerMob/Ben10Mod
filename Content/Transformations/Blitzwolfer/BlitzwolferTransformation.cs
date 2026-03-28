@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
@@ -12,12 +13,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.Blitzwolfer;
 
 public class BlitzwolferTransformation : Transformation {
-    private const int HeightenedSensesDuration = 8 * 60;
-    private const int HeightenedSensesCooldown = 26 * 60;
-    private const int HeightenedSensesCost = 18;
+    private const int OmegaHowlEnergyCost = 14;
     private const int PounceEnergyCost = 24;
     private const int PounceCooldown = 14 * 60;
     private const float PrimaryDamageMultiplier = 0.9f;
+    private const float OmegaHowlDamageMultiplier = 0.26f;
     private const float SecondaryDamageMultiplier = 1.1f;
     private const float PounceDamageMultiplier = 1.34f;
     private const float UltimateDamageMultiplier = 1.38f;
@@ -28,18 +28,20 @@ public class BlitzwolferTransformation : Transformation {
     public override string TransformationName => "Blitzwolfer";
     public override int TransformationBuffId => ModContent.BuffType<Blitzwolfer_Buff>();
     public override string Description =>
-        "A sonic apex hunter that overwhelms targets with rapid bark blasts, destabilizing howls, predatory lunges, and a devastating lunar roar.";
+        "A sonic apex hunter who tags prey with resonance, tracks them through echolocation, and tears them apart with savage pounces, pulse howls, and lunar detonations.";
 
     public override List<string> Abilities => new() {
-        "Rapid sonic bark projectiles",
-        "Wide destabilizing howl burst",
-        "Heightened senses combat mode",
-        "Lupine pounce lunge attack",
-        "Massive lunar howl ultimate"
+        "Sonic barks that build resonance",
+        "Wide howls that spread resonance through a crowd",
+        "Echolocation that highlights hunted prey",
+        "Omega Howl, a channeled stream of sonic pulses",
+        "Lupine Pounce that tears through resonating targets",
+        "Lunar Howl that detonates built-up resonance"
     };
 
     public override string PrimaryAttackName => "Sonic Bark";
     public override string SecondaryAttackName => "Howl Burst";
+    public override string PrimaryAbilityAttackName => "Omega Howl";
     public override string SecondaryAbilityAttackName => "Lupine Pounce";
     public override string UltimateAttackName => "Lunar Howl";
 
@@ -55,10 +57,20 @@ public class BlitzwolferTransformation : Transformation {
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override float SecondaryAttackModifier => SecondaryDamageMultiplier;
 
-    public override bool HasPrimaryAbility => true;
-    public override int PrimaryAbilityDuration => HeightenedSensesDuration;
-    public override int PrimaryAbilityCooldown => HeightenedSensesCooldown;
-    public override int PrimaryAbilityCost => HeightenedSensesCost;
+    public override bool HasPrimaryAbility => false;
+    public override int PrimaryAbilityDuration => 0;
+    public override int PrimaryAbilityCooldown => 0;
+    public override int PrimaryAbilityCost => 0;
+
+    public override int PrimaryAbilityAttack => ModContent.ProjectileType<BlitzwolferHowlBeamProjectile>();
+    public override int PrimaryAbilityAttackSpeed => 14;
+    public override int PrimaryAbilityAttackShootSpeed => 0;
+    public override int PrimaryAbilityAttackUseStyle => ItemUseStyleID.Shoot;
+    public override bool PrimaryAbilityAttackChannel => true;
+    public override float PrimaryAbilityAttackModifier => OmegaHowlDamageMultiplier;
+    public override int PrimaryAbilityAttackEnergyCost => OmegaHowlEnergyCost;
+    public override int PrimaryAbilityAttackSustainEnergyCost => 6;
+    public override int PrimaryAbilityAttackSustainInterval => 14;
 
     public override int SecondaryAbilityAttack => ModContent.ProjectileType<BlitzwolferPounceProjectile>();
     public override int SecondaryAbilityAttackSpeed => 18;
@@ -80,9 +92,8 @@ public class BlitzwolferTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
-        player.GetDamage<HeroDamage>() += 0.1f;
-        player.GetAttackSpeed<HeroDamage>() += 0.06f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetCritChance<HeroDamage>() += 4f;
         player.GetKnockback<HeroDamage>() += 0.55f;
         player.statDefense += 6;
         player.moveSpeed += 0.14f;
@@ -91,40 +102,37 @@ public class BlitzwolferTransformation : Transformation {
         player.jumpSpeedBoost += 1.8f;
         player.noFallDmg = true;
         player.blackBelt = true;
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetAttackSpeed<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 8f;
-        player.moveSpeed += 0.2f;
-        player.runAcceleration += 0.12f;
-        player.maxRunSpeed += 1.1f;
-        player.jumpSpeedBoost += 1.2f;
         player.detectCreature = true;
         player.nightVision = true;
-        player.armorEffectDrawShadow = true;
+        player.dangerSense = true;
+        player.armorEffectDrawShadow = HasTrackedPrey(player);
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
-
-        if (!omp.PrimaryAbilityEnabled)
-            return;
-
-        item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * 0.86f));
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 spawnPosition = player.MountedCenter + direction * 14f;
+        bool heightened = HasTrackedPrey(player);
 
         if (omp.ultimateAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
             Projectile.NewProjectile(source, player.Center + direction * 18f, direction * UltimateShootSpeed,
                 UltimateAttack, finalDamage, knockback + 1.8f, player.whoAmI);
+            return false;
+        }
+
+        if (omp.IsPrimaryAbilityAttackLoaded) {
+            int beamType = ModContent.ProjectileType<BlitzwolferHowlBeamProjectile>();
+            if (HasActiveOwnedProjectile(player, beamType))
+                return false;
+
+            int finalDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAbilityAttackModifier));
+            Projectile.NewProjectile(source, player.MountedCenter, direction, beamType, finalDamage, knockback + 0.4f,
+                player.whoAmI);
             return false;
         }
 
@@ -137,7 +145,6 @@ public class BlitzwolferTransformation : Transformation {
             if (offset == Vector2.Zero)
                 offset = new Vector2(player.direction, 0f);
 
-            bool heightened = omp.PrimaryAbilityEnabled;
             float maxRange = heightened ? HeightenedPounceRange : BasePounceRange;
             float requestedDistance = Math.Min(offset.Length(), maxRange);
             Vector2 pounceDirection = offset.SafeNormalize(new Vector2(player.direction, 0f));
@@ -161,13 +168,18 @@ public class BlitzwolferTransformation : Transformation {
         if (omp.altAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack,
-                finalDamage, knockback + 0.8f, player.whoAmI);
+                finalDamage, knockback + 0.8f, player.whoAmI, heightened ? 1f : 0f);
             return false;
         }
 
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage,
-            knockback, player.whoAmI);
+            knockback, player.whoAmI, heightened ? 1f : 0f);
+        if (heightened) {
+            Vector2 resonantDirection = FindResonantTargetDirection(player, direction);
+            Projectile.NewProjectile(source, spawnPosition, resonantDirection * (PrimaryShootSpeed - 1f), PrimaryAttack,
+                Math.Max(1, (int)Math.Round(primaryDamage * 0.72f)), knockback, player.whoAmI, 1f);
+        }
         return false;
     }
 
@@ -187,5 +199,55 @@ public class BlitzwolferTransformation : Transformation {
         }
 
         return direction;
+    }
+
+    private static Vector2 FindResonantTargetDirection(Player player, Vector2 fallbackDirection) {
+        NPC bestTarget = null;
+        int highestStacks = 0;
+        float bestDistanceSquared = 520f * 520f;
+
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            int stacks = identity.GetBlitzwolferResonanceStacks(player.whoAmI);
+            if (stacks <= 0)
+                continue;
+
+            float distanceSquared = Vector2.DistanceSquared(player.Center, npc.Center);
+            if (stacks < highestStacks || distanceSquared > bestDistanceSquared)
+                continue;
+
+            highestStacks = stacks;
+            bestDistanceSquared = distanceSquared;
+            bestTarget = npc;
+        }
+
+        return bestTarget != null ? player.DirectionTo(bestTarget.Center) : fallbackDirection;
+    }
+
+    internal static bool HasTrackedPrey(Player player) {
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            if (npc.GetGlobalNPC<AlienIdentityGlobalNPC>().GetBlitzwolferResonanceStacks(player.whoAmI) > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasActiveOwnedProjectile(Player player, int projectileType) {
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile projectile = Main.projectile[i];
+            if (projectile.active && projectile.owner == player.whoAmI && projectile.type == projectileType)
+                return true;
+        }
+
+        return false;
     }
 }

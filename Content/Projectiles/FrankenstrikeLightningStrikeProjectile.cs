@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -11,7 +11,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
-    private bool Overcharged => Projectile.ai[1] >= 0.5f;
+    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
+    private bool Overcharged => ChargeRatio >= 0.55f;
     private bool Activated {
         get => Projectile.localAI[0] >= 0.5f;
         set => Projectile.localAI[0] = value ? 1f : 0f;
@@ -22,7 +23,7 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         set => Projectile.localAI[1] = value;
     }
 
-    private float CurrentRadius => Overcharged ? 72f : 58f;
+    private float CurrentRadius => MathHelper.Lerp(58f, 78f, ChargeRatio);
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -99,11 +100,18 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
+        modifiers.SourceDamage *= 1f + ChargeRatio * 0.18f + conductiveStacks * 0.1f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        identity.ApplyFrankenstrikeConductive(Projectile.owner, Overcharged ? 3 : 2, 260);
+        identity.ConsumeFrankenstrikeConductive(Projectile.owner, Overcharged ? 3 : 2);
         target.velocity = Vector2.Lerp(target.velocity, new Vector2(target.velocity.X * 0.35f, -2.4f), 0.5f);
         target.AddBuff(BuffID.Electrified, Overcharged ? 300 : 240);
-        target.AddBuff(BuffID.BrokenArmor, Overcharged ? 240 : 180);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), Overcharged ? 150 : 105);
         target.netUpdate = true;
     }
 

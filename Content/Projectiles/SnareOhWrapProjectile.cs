@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -40,16 +40,24 @@ public class SnareOhWrapProjectile : ModProjectile {
         }
     }
 
-    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        bool exposedCore = OwnerExposedCore();
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), exposedCore ? 210 : 150);
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int curseStacks = identity.GetSnareOhCurseStacks(Projectile.owner);
+        if (curseStacks > 0)
+            modifiers.SourceDamage *= 1f + curseStacks * (OwnerExposedCore() ? 0.11f : 0.07f);
+    }
 
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool exposedCore = OwnerExposedCore();
+        identity.ApplySnareOhCurse(Projectile.owner, exposedCore ? 3 : 2, exposedCore ? 300 : 240);
         Vector2 constrictDirection = (Projectile.Center - target.Center).SafeNormalize(Vector2.Zero);
-        target.velocity = Vector2.Lerp(target.velocity, constrictDirection * 1.8f, 0.6f);
-        target.velocity *= 0.25f;
+        float constrictSpeed = exposedCore ? 2.6f : 1.8f;
+        target.velocity = Vector2.Lerp(target.velocity, constrictDirection * constrictSpeed, 0.6f);
+        target.velocity *= exposedCore ? 0.14f : 0.25f;
 
         if (exposedCore)
-            target.AddBuff(BuffID.BrokenArmor, 240);
+            identity.ConsumeSnareOhCurse(Projectile.owner, 2);
 
         target.netUpdate = true;
     }

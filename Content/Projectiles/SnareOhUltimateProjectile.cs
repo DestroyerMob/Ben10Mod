@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -72,6 +72,13 @@ public class SnareOhUltimateProjectile : ModProjectile {
         return targetHitbox.Distance(Projectile.Center) <= CurrentRadius;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int curseStacks = identity.GetSnareOhCurseStacks(Projectile.owner);
+        if (curseStacks > 0)
+            modifiers.SourceDamage *= 1f + curseStacks * 0.12f + (ExposedCore ? 0.15f : 0f);
+    }
+
     public override bool PreDraw(ref Color lightColor) {
         if (Main.dedServ)
             return false;
@@ -91,11 +98,10 @@ public class SnareOhUltimateProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), ExposedCore ? 240 : 180);
-        target.AddBuff(BuffID.Weak, ExposedCore ? 360 : 240);
-        target.AddBuff(BuffID.BrokenArmor, ExposedCore ? 300 : 180);
-        target.velocity *= ExposedCore ? 0.14f : 0.32f;
-
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int spent = identity.ConsumeSnareOhCurse(Projectile.owner, ExposedCore ? 2 : 1);
+        if (spent > 0)
+            target.velocity *= ExposedCore ? 0.08f : 0.2f;
         target.netUpdate = true;
     }
 
@@ -110,8 +116,17 @@ public class SnareOhUltimateProjectile : ModProjectile {
                 continue;
 
             float distanceFactor = 1f - distance / CurrentRadius;
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            int curseStacks = identity.GetSnareOhCurseStacks(Projectile.owner);
             float damping = MathHelper.Lerp(0.985f, ExposedCore ? 0.915f : 0.95f, distanceFactor);
-            npc.velocity *= damping;
+            if (curseStacks > 0) {
+                damping *= ExposedCore ? 0.84f : 0.9f;
+                Vector2 inward = (owner.Center - npc.Center).SafeNormalize(Vector2.UnitY);
+                npc.velocity = Vector2.Lerp(npc.velocity, inward * (1.4f + curseStacks * 0.4f), ExposedCore ? 0.16f : 0.08f);
+            }
+            else {
+                npc.velocity *= damping;
+            }
         }
     }
 

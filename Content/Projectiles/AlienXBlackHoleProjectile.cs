@@ -1,17 +1,31 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
+using System;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class AlienXBlackHoleProjectile : ModProjectile {
-    private const float PullRadius = 220f;
-    private const float DamageRadius = 42f;
-    private const float StrongPullRadius = 112f;
+    private const float PullRadius = 184f;
+    private const float DamageRadius = 34f;
+    private const float StrongPullRadius = 96f;
+    private bool Deliberation => Projectile.ai[0] >= 0.5f;
+    private float CurrentPullRadius => Deliberation ? PullRadius + 42f : PullRadius;
+    private float CurrentDamageRadius => Deliberation ? DamageRadius + 8f : DamageRadius;
+    private float CurrentStrongPullRadius => Deliberation ? StrongPullRadius + 18f : StrongPullRadius;
+
+    private float VisualRadius {
+        get => Projectile.localAI[0];
+        set => Projectile.localAI[0] = value;
+    }
+
+    private float VisualTimer {
+        get => Projectile.localAI[1];
+        set => Projectile.localAI[1] = value;
+    }
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -23,15 +37,16 @@ public class AlienXBlackHoleProjectile : ModProjectile {
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.penetrate = -1;
-        Projectile.timeLeft = 150;
+        Projectile.timeLeft = 110;
         Projectile.hide = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 20;
+        Projectile.localNPCHitCooldown = 26;
     }
 
     public override void AI() {
         Projectile.rotation += 0.08f;
+        VisualTimer++;
         Projectile.velocity *= 0.965f;
         if (Projectile.velocity.LengthSquared() < 0.16f)
             Projectile.velocity = Vector2.Zero;
@@ -39,12 +54,24 @@ public class AlienXBlackHoleProjectile : ModProjectile {
         if (Main.netMode != NetmodeID.MultiplayerClient)
             PullNPCs();
 
-        Lighting.AddLight(Projectile.Center, new Vector3(0.06f, 0.06f, 0.12f));
+        float fadeIn = Utils.GetLerpValue(0f, 12f, VisualTimer, true);
+        float fadeOut = Utils.GetLerpValue(0f, 18f, Projectile.timeLeft, true);
+        float pulse = 0.5f + 0.5f * MathF.Sin(VisualTimer * 0.12f);
+        float maxVisualRadius = Deliberation ? 132f : 104f;
+        VisualRadius = MathHelper.Lerp(maxVisualRadius * 0.58f, maxVisualRadius, pulse) * fadeIn * fadeOut;
+
+        Lighting.AddLight(Projectile.Center, new Vector3(0.56f, 0.6f, 0.95f));
         SpawnSingularityDust();
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
-        return targetHitbox.Distance(Projectile.Center) <= DamageRadius;
+        return targetHitbox.Distance(Projectile.Center) <= CurrentDamageRadius;
+    }
+
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        int judgement = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetAlienXJudgementStacks(Projectile.owner);
+        if (judgement > 0)
+            modifiers.SourceDamage *= 1f + judgement * 0.12f;
     }
 
     private void PullNPCs() {
@@ -54,14 +81,14 @@ public class AlienXBlackHoleProjectile : ModProjectile {
                 continue;
 
             float distance = Vector2.Distance(npc.Center, Projectile.Center);
-            if (distance > PullRadius || distance <= 4f)
+            if (distance > CurrentPullRadius || distance <= 4f)
                 continue;
 
             Vector2 pullDirection = (Projectile.Center - npc.Center) / distance;
-            float distanceFactor = 1f - distance / PullRadius;
-            float pullStrength = MathHelper.Lerp(1.8f, 15.5f, distanceFactor);
-            if (distance <= StrongPullRadius)
-                pullStrength *= MathHelper.Lerp(1.25f, 1.8f, 1f - distance / StrongPullRadius);
+            float distanceFactor = 1f - distance / CurrentPullRadius;
+            float pullStrength = MathHelper.Lerp(1.4f, 12.5f, distanceFactor);
+            if (distance <= CurrentStrongPullRadius)
+                pullStrength *= MathHelper.Lerp(1.15f, 1.55f, 1f - distance / CurrentStrongPullRadius);
 
             if (npc.boss)
                 pullStrength *= 0.55f;
@@ -70,55 +97,50 @@ public class AlienXBlackHoleProjectile : ModProjectile {
 
             Vector2 targetVelocity = pullDirection * pullStrength;
             npc.velocity = Vector2.Lerp(npc.velocity, targetVelocity, npc.boss ? 0.12f : 0.3f);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyAlienXJudgement(Projectile.owner, 1, 45);
             npc.netUpdate = true;
         }
+    }
+
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        identity.ApplyAlienXJudgement(Projectile.owner, Deliberation ? 3 : 2, Deliberation ? 320 : 260);
+        if (target.Center.Distance(Projectile.Center) <= CurrentStrongPullRadius)
+            identity.ApplyAlienXStasis(Projectile.owner, Deliberation ? 38 : 24);
+        target.netUpdate = true;
     }
 
     private void SpawnSingularityDust() {
         if (Main.dedServ)
             return;
 
-        float orbitRotation = Main.GlobalTimeWrappedHourly * 2.8f;
-        for (int i = 0; i < 3; i++) {
-            float angle = orbitRotation + MathHelper.TwoPi * i / 3f + Main.rand.NextFloat(-0.18f, 0.18f);
-            float radius = Main.rand.NextFloat(DamageRadius + 6f, PullRadius * 0.55f);
-            Vector2 offset = angle.ToRotationVector2() * radius;
-            Vector2 tangential = offset.SafeNormalize(Vector2.UnitX).RotatedBy(MathHelper.PiOver2) * 0.7f;
+        int points = Deliberation ? 8 : 6;
+        float rotation = VisualTimer * 0.035f;
 
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + offset, i == 0 ? DustID.PurpleTorch : DustID.ShadowbeamStaff,
-                tangential - offset * 0.009f, 120, new Color(95, 95, 130), Main.rand.NextFloat(0.95f, 1.25f));
-            dust.noGravity = true;
-        }
+        for (int i = 0; i < points; i++) {
+            float angle = rotation + MathHelper.TwoPi * i / points;
+            Vector2 direction = angle.ToRotationVector2();
+            Vector2 ringPosition = Projectile.Center + direction * VisualRadius;
 
-        if (Main.rand.NextBool(2)) {
-            Dust core = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(8f, 8f), DustID.GemAmethyst,
-                Main.rand.NextVector2Circular(0.5f, 0.5f), 150, new Color(210, 210, 255), Main.rand.NextFloat(0.8f, 1.1f));
-            core.noGravity = true;
+            Dust ringDust = Dust.NewDustPerfect(ringPosition, i % 2 == 0 ? DustID.GemDiamond : DustID.BlueTorch,
+                -direction * Main.rand.NextFloat(0.2f, 1.05f), 115, new Color(215, 228, 255),
+                Main.rand.NextFloat(1f, 1.3f));
+            ringDust.noGravity = true;
+
+            if (Main.rand.NextBool(2)) {
+                Dust interiorDust = Dust.NewDustPerfect(
+                    Projectile.Center + direction * Main.rand.NextFloat(VisualRadius * 0.2f, VisualRadius * 0.75f),
+                    DustID.ShadowbeamStaff,
+                    Main.rand.NextVector2Circular(0.5f, 0.5f),
+                    120,
+                    new Color(150, 175, 255),
+                    Main.rand.NextFloat(0.75f, 1.05f));
+                interiorDust.noGravity = true;
+            }
         }
     }
 
     public override bool PreDraw(ref Color lightColor) {
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Vector2 center = Projectile.Center - Main.screenPosition;
-
-        DrawRing(pixel, center, PullRadius * 0.37f, new Color(32, 32, 56, 38), 3.2f, Projectile.rotation * 0.35f);
-        DrawRing(pixel, center, PullRadius * 0.26f, new Color(82, 82, 128, 72), 4.2f, -Projectile.rotation * 0.65f);
-        DrawRing(pixel, center, PullRadius * 0.16f, new Color(170, 170, 235, 105), 5f, Projectile.rotation);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(25, 25, 35, 230), 0f, Vector2.One * 0.5f,
-            new Vector2(DamageRadius * 1.2f, DamageRadius * 1.2f), SpriteEffects.None);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(95, 95, 145, 95), 0f, Vector2.One * 0.5f,
-            new Vector2(DamageRadius * 1.75f, DamageRadius * 1.75f), SpriteEffects.None);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(180, 180, 235, 110), 0f, Vector2.One * 0.5f,
-            new Vector2(10f, 10f), SpriteEffects.None);
         return false;
-    }
-
-    private static void DrawRing(Texture2D pixel, Vector2 center, float radius, Color color, float thickness, float rotation) {
-        for (int i = 0; i < 18; i++) {
-            float angle = rotation + MathHelper.TwoPi * i / 18f;
-            Vector2 position = center + angle.ToRotationVector2() * radius;
-            Main.EntitySpriteDraw(pixel, position, null, color, angle, Vector2.One * 0.5f,
-                new Vector2(thickness, thickness * 3.6f), SpriteEffects.None);
-        }
     }
 }

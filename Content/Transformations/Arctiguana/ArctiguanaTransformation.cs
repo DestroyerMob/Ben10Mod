@@ -27,20 +27,21 @@ public class ArctiguanaTransformation : Transformation {
     public override string TransformationName => "Arctiguana";
     public override int TransformationBuffId => ModContent.BuffType<Arctiguana_Buff>();
     public override string Description =>
-        "A cold-blooded reptilian bruiser that controls space with focused freeze rays, freezing breath, ice constructs, and recoil-powered movement.";
+        "A cold-blooded reptilian bruiser that controls space with focused freeze rays, icy breath, solid constructs, and recoil-powered movement.";
 
     public override List<string> Abilities => new() {
-        "Freeze ray primary fire",
-        "Freezing breath cone attack",
-        "Freeze-ray propulsion burst",
-        "Ice construct placement",
+        "Freeze ray that chills and locks enemies down",
+        "Freezing breath for close-range control",
+        "Freeze-Ray Propulsion for instant repositioning",
+        "Ice constructs that block space and punish approach",
         "Enhanced strength, durability, and jumping",
-        "Cold immunity and wall scaling",
-        "Ultimate absolute zero beam"
+        "Cold immunity and wall climbing",
+        "Absolute Zero Ray for sustained freezing pressure"
     };
 
     public override string PrimaryAttackName => "Freeze Ray";
     public override string SecondaryAttackName => "Freezing Breath";
+    public override string PrimaryAbilityName => "Freeze-Ray Propulsion";
     public override string SecondaryAbilityAttackName => "Ice Construct";
     public override string UltimateAttackName => "Absolute Zero Ray";
 

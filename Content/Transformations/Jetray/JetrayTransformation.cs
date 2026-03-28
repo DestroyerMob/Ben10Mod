@@ -4,6 +4,7 @@ using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories.Wings;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -22,20 +23,22 @@ public class JetrayTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Jetray_Buff>();
 
     public override string Description =>
-        "A hyperspeed Aerophibian that hunts from the air with rapid neuro-lasers, guided neuroshock bolts, and long-range dive strikes.";
+        "A hyperspeed Aerophibian who tags prey with neuro-lasers, lines them up with blistering strafe runs, and turns the sky into a neuroshock kill zone.";
 
     public override List<string> Abilities => new() {
-        "Rapid neuro-laser fire",
-        "Focused neuroshock bolt",
-        "Hyperspeed flight mode",
-        "Jetstream dive ability",
-        "Lightspeed ram ultimate"
+        "Neuro-lasers that mark and track prey",
+        "Neuroshock bolt that punishes marked targets",
+        "Natural flight",
+        "Strafe Lock for tighter high-speed flight control",
+        "Jetstream Dive that spears locked targets",
+        "Neurostorm Circuit that floods the area with charged fire"
     };
 
     public override string PrimaryAttackName => "Neuro Laser";
     public override string SecondaryAttackName => "Neuroshock Bolt";
+    public override string PrimaryAbilityName => "Strafe Lock";
     public override string SecondaryAbilityAttackName => "Jetstream Dive";
-    public override string UltimateAttackName => "Lightspeed Ram";
+    public override string UltimateAttackName => "Neurostorm Circuit";
 
     public override int PrimaryAttack => ModContent.ProjectileType<JetrayLaserProjectile>();
     public override int PrimaryAttackSpeed => 11;
@@ -73,8 +76,7 @@ public class JetrayTransformation : Transformation {
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 8f;
-        player.GetAttackSpeed<HeroDamage>() += 0.1f;
+        player.GetCritChance<HeroDamage>() += 6f;
         player.moveSpeed += 0.18f;
         player.maxRunSpeed += 1.8f;
         player.accRunSpeed += 1.6f;
@@ -86,13 +88,6 @@ public class JetrayTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetAttackSpeed<HeroDamage>() += 0.18f;
-        player.GetCritChance<HeroDamage>() += 6f;
-        player.moveSpeed += 0.26f;
-        player.maxRunSpeed += 2.6f;
-        player.accRunSpeed += 2.2f;
-        player.jumpSpeedBoost += 1.8f;
-        player.endurance += 0.04f;
         player.armorEffectDrawShadow = true;
         player.wingTimeMax += 90;
         player.wingTime = Math.Max(player.wingTime, 24f);
@@ -119,29 +114,55 @@ public class JetrayTransformation : Transformation {
         Vector2 direction = ResolveAimDirection(player, velocity);
 
         if (omp.ultimateAttack || omp.IsSecondaryAbilityAttackLoaded) {
-            int finalDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
-            float diveVariant = omp.ultimateAttack ? JetrayDiveProjectile.VariantUltimate : JetrayDiveProjectile.VariantAbility;
+            if (omp.ultimateAttack) {
+                Vector2 focusPoint = ResolveLockedFocusPoint(player, direction, 280f);
+                int finalDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
+                const int boltCount = 8;
+                for (int i = 0; i < boltCount; i++) {
+                    float angle = MathHelper.TwoPi * i / boltCount;
+                    Vector2 spawnOffset = angle.ToRotationVector2() * 54f;
+                    Vector2 boltVelocity = (focusPoint - (player.Center + spawnOffset)).SafeNormalize(direction) * 18f;
+                    Projectile.NewProjectile(source, player.Center + spawnOffset, boltVelocity,
+                        ModContent.ProjectileType<JetrayBoltProjectile>(), finalDamage, knockback + 1.8f, player.whoAmI, 1f);
+                }
+                return false;
+            }
+
+            int diveDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
             Projectile.NewProjectile(source, player.Center + direction * 12f, direction,
-                ModContent.ProjectileType<JetrayDiveProjectile>(), finalDamage, knockback + (omp.ultimateAttack ? 2.5f : 1.5f),
-                player.whoAmI, diveVariant);
+                ModContent.ProjectileType<JetrayDiveProjectile>(), diveDamage, knockback + 1.5f,
+                player.whoAmI, JetrayDiveProjectile.VariantAbility, omp.PrimaryAbilityEnabled ? 1f : 0f);
             return false;
         }
 
         if (omp.altAttack) {
             int boltDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
-            Vector2 boltVelocity = direction * SecondaryShootSpeed;
-            Projectile.NewProjectile(source, player.Center + direction * 18f, boltVelocity,
-                ModContent.ProjectileType<JetrayBoltProjectile>(), boltDamage, knockback + 1f, player.whoAmI);
+            int boltCount = omp.PrimaryAbilityEnabled ? 2 : 1;
+            Vector2 perpendicular = direction.RotatedBy(MathHelper.PiOver2);
+            for (int i = 0; i < boltCount; i++) {
+                float offset = boltCount == 1 ? 0f : (i == 0 ? -12f : 12f);
+                Vector2 spawn = player.Center + direction * 18f + perpendicular * offset;
+                Vector2 boltVelocity = direction * SecondaryShootSpeed;
+                Projectile.NewProjectile(source, spawn, boltVelocity, ModContent.ProjectileType<JetrayBoltProjectile>(),
+                    boltDamage, knockback + 1f, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
+            }
 
             return false;
         }
 
-        int laserCount = omp.PrimaryAbilityEnabled ? 2 : 1;
+        int laserCount = omp.PrimaryAbilityEnabled ? 3 : 1;
         for (int i = 0; i < laserCount; i++) {
-            float offset = laserCount == 1 ? 0f : (i == 0 ? -0.06f : 0.06f);
+            float offset = laserCount switch {
+                3 when i == 0 => -0.08f,
+                3 when i == 2 => 0.08f,
+                2 when i == 0 => -0.06f,
+                2 => 0.06f,
+                _ => 0f
+            };
             Vector2 laserVelocity = direction.RotatedBy(offset) * PrimaryShootSpeed;
             Projectile.NewProjectile(source, player.Center + direction * 12f, laserVelocity,
-                ModContent.ProjectileType<JetrayLaserProjectile>(), damage, knockback, player.whoAmI);
+                ModContent.ProjectileType<JetrayLaserProjectile>(), damage, knockback, player.whoAmI,
+                omp.PrimaryAbilityEnabled ? 1f : 0f);
         }
 
         return false;
@@ -183,5 +204,29 @@ public class JetrayTransformation : Transformation {
 
         player.fallStart = (int)(player.position.Y / 16f);
         player.maxFallSpeed = 8.5f;
+    }
+
+    private static Vector2 ResolveLockedFocusPoint(Player player, Vector2 fallbackDirection, float fallbackDistance) {
+        NPC lockedTarget = null;
+        float closestDistanceSquared = float.MaxValue;
+
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            if (!identity.IsJetrayLockedFor(player.whoAmI))
+                continue;
+
+            float distanceSquared = Vector2.DistanceSquared(player.Center, npc.Center);
+            if (distanceSquared >= closestDistanceSquared)
+                continue;
+
+            closestDistanceSquared = distanceSquared;
+            lockedTarget = npc;
+        }
+
+        return lockedTarget != null ? lockedTarget.Center : player.Center + fallbackDirection * fallbackDistance;
     }
 }

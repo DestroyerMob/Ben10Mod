@@ -17,7 +17,7 @@ namespace Ben10Mod.Content.Transformations.FourArms
             "Main attack: heavy melee punches.",
             "Alt attack: thunderous clap attack for close-range impact.",
             "Passive: increased melee speed, high crit chance, stronger jumps, and no fall damage.",
-            "Ultimate attack: overpowering melee finisher for burst damage.",
+            "Ultimate attack: overpowering melee burst damage at close range.",
             "Role: close-range bruiser built for smashing bosses and crowds."
         };
 

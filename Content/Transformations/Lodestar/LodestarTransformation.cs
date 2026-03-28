@@ -27,18 +27,19 @@ public class LodestarTransformation : Transformation {
     public override string TransformationName => "Lodestar";
     public override int TransformationBuffId => ModContent.BuffType<Lodestar_Buff>();
     public override string Description =>
-        "A magnetic battlefield controller that bends enemy movement with polarized bolts, drag orbs, anchored fields, and a crushing polarity vortex.";
+        "A magnetic controller who flips whole encounters between pull and repel, reshaping every bolt, field, anchor, and vortex around his current polarity.";
 
     public override List<string> Abilities => new() {
-        "Polarized magnetic bolt primary",
-        "Dragging magnetic orb secondary",
-        "Mag-lev hover stance",
-        "Magnetic anchor field placement",
-        "Polar vortex ultimate"
+        "Polarized bolts that shift with your current polarity",
+        "Magnetic field orb that pulls or shoves enemies",
+        "Mag-Lev that flips your polarity and lets you hover",
+        "Magnetic Anchor that pins down a point in space",
+        "Polar Vortex that implodes or erupts based on polarity"
     };
 
     public override string PrimaryAttackName => "Polarized Bolt";
     public override string SecondaryAttackName => "Magnetic Drag";
+    public override string PrimaryAbilityName => "Mag-Lev";
     public override string SecondaryAbilityAttackName => "Magnetic Anchor";
     public override string UltimateAttackName => "Polar Vortex";
 
@@ -97,11 +98,6 @@ public class LodestarTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.GetAttackSpeed<HeroDamage>() += 0.1f;
-        player.moveSpeed += 0.16f;
-        player.runAcceleration += 0.08f;
-        player.maxRunSpeed += 0.9f;
-        player.jumpSpeedBoost += 1.6f;
         player.ignoreWater = true;
         player.wingTimeMax += 30;
         player.wingTime = Math.Max(player.wingTime, 14f);
@@ -127,7 +123,7 @@ public class LodestarTransformation : Transformation {
             Vector2 vortexPosition = ResolveTargetPosition(player, direction, 180f);
             int finalDamage = Math.Max(1, (int)Math.Round(damage * UltimateAttackModifier));
             Projectile.NewProjectile(source, vortexPosition, Vector2.Zero, UltimateAttack, finalDamage, knockback + 1f,
-                player.whoAmI);
+                player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
             return false;
         }
 
@@ -138,7 +134,7 @@ public class LodestarTransformation : Transformation {
 
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
             int projectileIndex = Projectile.NewProjectile(source, anchorPosition, Vector2.Zero, anchorType, finalDamage,
-                knockback + 0.6f, player.whoAmI);
+                knockback + 0.6f, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
                 omp.transformationAttackSerial++;
                 Main.projectile[projectileIndex].localAI[1] = omp.transformationAttackSerial;
@@ -151,13 +147,13 @@ public class LodestarTransformation : Transformation {
         if (omp.altAttack) {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack, finalDamage,
-                knockback + 0.7f, player.whoAmI);
+                knockback + 0.7f, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
             return false;
         }
 
         int primaryDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage,
-            knockback, player.whoAmI);
+            knockback, player.whoAmI, omp.PrimaryAbilityEnabled ? 1f : 0f);
         return false;
     }
 

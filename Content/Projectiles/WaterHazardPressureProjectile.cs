@@ -1,5 +1,5 @@
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -8,6 +8,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class WaterHazardPressureProjectile : ModProjectile {
+    private float PressureRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private bool VentMode => Projectile.ai[1] >= 0.5f;
+
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
@@ -37,8 +40,18 @@ public class WaterHazardPressureProjectile : ModProjectile {
         mist.noGravity = true;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        int soak = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetWaterHazardSoak(Projectile.owner);
+        if (soak > 0)
+            modifiers.SourceDamage *= 1f + 0.04f + soak / 220f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 60);
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int existingSoak = identity.GetWaterHazardSoak(Projectile.owner);
+        identity.AddWaterHazardSoak(Projectile.owner, VentMode ? 18 : 12, 240);
+        if (existingSoak >= 45)
+            target.velocity = Vector2.Lerp(target.velocity, Projectile.velocity.SafeNormalize(Vector2.UnitX) * 7.5f, 0.48f);
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {

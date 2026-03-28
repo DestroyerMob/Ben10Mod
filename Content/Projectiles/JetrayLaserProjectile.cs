@@ -1,4 +1,5 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -8,6 +9,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class JetrayLaserProjectile : ModProjectile {
+    private bool StrafeLock => Projectile.ai[0] >= 0.5f;
+
     public override string Texture => "Ben10Mod/Content/Projectiles/EyeGuyLaserbeam";
 
     public override void SetDefaults() {
@@ -54,7 +57,13 @@ public class JetrayLaserProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        if (target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner))
+            modifiers.SourceDamage *= StrafeLock ? 1.16f : 1.08f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, StrafeLock ? 300 : 220);
         target.AddBuff(BuffID.Electrified, 90);
     }
 

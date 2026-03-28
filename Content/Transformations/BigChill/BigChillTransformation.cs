@@ -25,7 +25,7 @@ public class BigChillTransformation : Transformation {
     
 
     public override string Description =>
-        "A spectral Necrofriggian that glides through the air, freezes enemies solid, and can evolve into an ultimate form.";
+        "A spectral Necrofriggian that glides through the air, freezes enemies solid, and can evolve into an even deadlier ultimate form.";
 
     public override List<string> Abilities => new() {
         "Homing ice volley",
@@ -37,6 +37,7 @@ public class BigChillTransformation : Transformation {
 
     public override string PrimaryAttackName => "Ice Volley";
     public override string SecondaryAttackName => "Frost Breath";
+    public override string PrimaryAbilityName => "Phase Movement";
     public override string UltimateAttackName => "Phase Strike";
     public override int PrimaryAttack => ModContent.ProjectileType<BigChillProjectile>();
     public override int PrimaryAttackSpeed => 25;

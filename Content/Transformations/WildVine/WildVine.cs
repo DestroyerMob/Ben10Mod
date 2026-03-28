@@ -16,7 +16,7 @@ namespace Ben10Mod.Content.Transformations.WildVine
         public static IReadOnlyList<string> TransformationAbilities => new[] {
             "Main attack: vine projectile attack.",
             "Alt attack: grapple vine for mobility and positioning.",
-            "Ultimate attack: explosive plant-based finisher.",
+            "Ultimate attack: explosive seed burst for crowd control.",
             "Role: control-focused hybrid that can poke, reposition, and lock down fights."
         };
 

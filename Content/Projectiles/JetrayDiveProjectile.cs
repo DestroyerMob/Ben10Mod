@@ -1,5 +1,6 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -12,6 +13,7 @@ public class JetrayDiveProjectile : ModProjectile {
     public const float VariantUltimate = 1f;
 
     private bool IsUltimate => Projectile.ai[0] >= VariantUltimate;
+    private bool StrafeLock => Projectile.ai[1] >= 0.5f;
     private float DashSpeed => IsUltimate ? 36f : 28f;
     private int LifetimeTicks => IsUltimate ? 40 : 28;
 
@@ -54,6 +56,15 @@ public class JetrayDiveProjectile : ModProjectile {
             Projectile.velocity = direction * currentSpeed;
         }
 
+        if (StrafeLock) {
+            NPC lockedTarget = FindLockedTarget(900f);
+            if (lockedTarget != null) {
+                float currentSpeed = Math.Max(DashSpeed * 0.86f, Projectile.velocity.Length());
+                Vector2 desiredVelocity = Projectile.DirectionTo(lockedTarget.Center) * currentSpeed;
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.14f);
+            }
+        }
+
         direction = Projectile.velocity.SafeNormalize(direction);
         owner.velocity = Projectile.velocity;
         owner.direction = direction.X >= 0f ? 1 : -1;
@@ -81,6 +92,11 @@ public class JetrayDiveProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (identity.IsJetrayLockedFor(Projectile.owner))
+            identity.JetrayLockTime = 0;
+        else
+            identity.ApplyJetrayLock(Projectile.owner, 180);
         target.AddBuff(BuffID.Electrified, IsUltimate ? 240 : 150);
     }
 
@@ -132,5 +148,29 @@ public class JetrayDiveProjectile : ModProjectile {
             Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
                 ModContent.ProjectileType<JetrayBoltProjectile>(), boltDamage, Projectile.knockBack, Projectile.owner);
         }
+    }
+
+    private NPC FindLockedTarget(float maxDistance) {
+        NPC bestTarget = null;
+        float bestDistance = maxDistance;
+
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy(Projectile))
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            if (!identity.IsJetrayLockedFor(Projectile.owner))
+                continue;
+
+            float distance = Vector2.Distance(Projectile.Center, npc.Center);
+            if (distance >= bestDistance)
+                continue;
+
+            bestDistance = distance;
+            bestTarget = npc;
+        }
+
+        return bestTarget;
     }
 }

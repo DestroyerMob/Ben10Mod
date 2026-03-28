@@ -38,19 +38,21 @@ public class UpgradeTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Upgrade_Buff>();
 
     public override string Description =>
-        "A Galvanic Mechamorph who scans a weapon signature, rewrites it into a cleaner combat mode, and then fights through upgraded melee, ranged, magic, or summon tech.";
+        "A Galvanic Mechamorph who scans a weapon signature, rebuilds it into upgraded tech, and then fights through enhanced melee, ranged, magic, or summon tools.";
 
     public override List<string> Abilities => new() {
-        "Adaptive primary fire based on your synced weapon class",
+        "Adaptive fire based on your synced weapon class",
         "Assimilate a held, remembered, or hotbar weapon signature",
         "Overclock your current sync",
-        "Deploy a class-based recompiled construct",
-        "Full Integration weapon matrix"
+        "Deploy a recompiled construct based on your current class",
+        "Full Integration for maximum upgraded output"
     };
 
     public override string PrimaryAttackName => "Adaptive Fire";
     public override string SecondaryAttackName => "Assimilate Weapon";
+    public override string PrimaryAbilityName => "Overclock";
     public override string SecondaryAbilityAttackName => "Recompile Construct";
+    public override string UltimateAbilityName => "Full Integration";
 
     public override int PrimaryAttack => ModContent.ProjectileType<UpgradeOpticRayProjectile>();
     public override int PrimaryAttackSpeed => DefaultPrimaryUseTime;

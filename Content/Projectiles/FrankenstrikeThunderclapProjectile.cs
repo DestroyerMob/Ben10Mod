@@ -1,6 +1,6 @@
 using System;
-using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -15,10 +15,11 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
     private const int LifetimeTicks = 24;
     private const float StartRadius = 28f;
     private const float EndRadius = 108f;
+    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
 
     private float CurrentRadius {
-        get => Projectile.ai[0];
-        set => Projectile.ai[0] = value;
+        get => Projectile.localAI[1];
+        set => Projectile.localAI[1] = value;
     }
 
     public override string Texture => "Terraria/Images/Projectile_0";
@@ -55,7 +56,7 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
         Projectile.Center = owner.Center;
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float easedProgress = 1f - MathF.Pow(1f - progress, 2f);
-        CurrentRadius = MathHelper.Lerp(StartRadius, EndRadius, easedProgress);
+        CurrentRadius = MathHelper.Lerp(StartRadius, EndRadius + 56f * ChargeRatio, easedProgress);
         Lighting.AddLight(Projectile.Center, new Vector3(0.28f, 0.48f, 0.95f));
 
         if (Main.rand.NextBool(2)) {
@@ -85,12 +86,18 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
+        if (conductiveStacks > 0)
+            modifiers.SourceDamage *= 1f + conductiveStacks * 0.1f + ChargeRatio * 0.12f;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         Vector2 push = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX) * 6.6f;
         target.velocity = Vector2.Lerp(target.velocity, push + new Vector2(0f, -1.8f), 0.6f);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyFrankenstrikeConductive(Projectile.owner, 2, 240);
         target.AddBuff(BuffID.Electrified, 180);
-        target.AddBuff(ModContent.BuffType<EnemySlow>(), 90);
-        target.AddBuff(BuffID.BrokenArmor, 120);
         target.netUpdate = true;
     }
 
