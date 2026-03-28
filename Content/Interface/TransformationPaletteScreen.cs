@@ -422,7 +422,7 @@ public sealed class PalettePreviewSwatch : UIElement {
             Texture2D baseToDraw = masksForBase.Count > 0
                 ? TransformationPaletteTextureCache.GetMaskedBaseTexture(texture, masksForBase)
                 : texture;
-            Rectangle previewFrame = TransformationPaletteTextureCache.ResolvePreviewFrame(texture, masksForBase);
+            Rectangle previewFrame = ResolvePreviewFrame(previewBase.TexturePath, texture, masksForBase);
             previewFramesByBaseTexture[texture] = previewFrame;
 
             spriteBatch.Draw(baseToDraw, drawPosition, previewFrame,
@@ -445,7 +445,7 @@ public sealed class PalettePreviewSwatch : UIElement {
 
             Rectangle previewFrame = previewFramesByBaseTexture.TryGetValue(overlay.BaseTexture, out Rectangle resolvedFrame)
                 ? resolvedFrame
-                : TransformationPaletteTextureCache.ResolvePreviewFrame(overlay.BaseTexture, new[] { overlay.MaskTexture });
+                : ResolvePreviewFrame(overlay.TexturePath, overlay.BaseTexture, new[] { overlay.MaskTexture });
 
             spriteBatch.Draw(processedOverlay, drawPosition, previewFrame,
                 Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
@@ -464,6 +464,37 @@ public sealed class PalettePreviewSwatch : UIElement {
         catch {
             return false;
         }
+    }
+
+    private static Rectangle ResolvePreviewFrame(string texturePath, Texture2D texture, IReadOnlyList<Texture2D> maskTextures) {
+        if (texture == null)
+            return Rectangle.Empty;
+
+        const int previewFrameWidth = 40;
+        const int previewFrameHeight = 56;
+        if (texture.Width < previewFrameWidth || texture.Height < previewFrameHeight ||
+            texture.Width % previewFrameWidth != 0 || texture.Height % previewFrameHeight != 0) {
+            return new Rectangle(0, 0, texture.Width, texture.Height);
+        }
+
+        int columns = texture.Width / previewFrameWidth;
+        int rows = texture.Height / previewFrameHeight;
+
+        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase) && columns >= 5)
+            return new Rectangle(previewFrameWidth * 4, 0, previewFrameWidth, previewFrameHeight);
+
+        if (texturePath.EndsWith("_Legs", StringComparison.OrdinalIgnoreCase)) {
+            int standingFrame = Math.Min(9, rows - 1);
+            return new Rectangle(0, standingFrame * previewFrameHeight, previewFrameWidth, previewFrameHeight);
+        }
+
+        if (texturePath.EndsWith("_Head", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Back", StringComparison.OrdinalIgnoreCase) ||
+            texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase)) {
+            return new Rectangle(0, 0, previewFrameWidth, previewFrameHeight);
+        }
+
+        return TransformationPaletteTextureCache.ResolvePreviewFrame(texture, maskTextures, previewFrameWidth, previewFrameHeight);
     }
 
     private static int ComparePreviewLayerOrder(string leftPath, string rightPath) {

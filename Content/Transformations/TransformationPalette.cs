@@ -281,24 +281,10 @@ public static class TransformationPaletteTextureCache {
         if (sourcePixels == null || sourcePixels.Length == 0)
             return maskTexture;
 
-        float maxBrightness = 0f;
-        for (int i = 0; i < sourcePixels.Length; i++) {
-            Color pixel = sourcePixels[i];
-            if (pixel.A == 0)
-                continue;
-
-            maxBrightness = Math.Max(maxBrightness, GetMaskBrightness(pixel));
-        }
-
-        if (maxBrightness <= 0f)
-            maxBrightness = 1f;
-
         Color[] preparedPixels = new Color[sourcePixels.Length];
         for (int i = 0; i < sourcePixels.Length; i++) {
             Color pixel = sourcePixels[i];
-            float brightness = GetMaskBrightness(pixel);
-            float normalizedCoverage = brightness / maxBrightness;
-            byte coverage = (byte)Math.Clamp((int)Math.Round(normalizedCoverage * pixel.A), 0, 255);
+            byte coverage = pixel.A;
             preparedPixels[i] = new Color(255, 255, 255, coverage);
         }
 
@@ -481,10 +467,6 @@ public static class TransformationPaletteTextureCache {
 
         ids.Sort();
         return string.Join("|", ids);
-    }
-
-    private static float GetMaskBrightness(Color pixel) {
-        return Math.Max(pixel.R, Math.Max(pixel.G, pixel.B)) / 255f;
     }
 
     private static int CountOpaquePixels(Color[] pixels, int textureWidth, Rectangle frame) {
