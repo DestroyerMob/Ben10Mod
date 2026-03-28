@@ -13,10 +13,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStoneTransformation : Transformation {
-    public override string FullID => "Ben10Mod:ChromaStone";
-    public override string TransformationName => "Chromastone";
-    public override string IconPath => "Ben10Mod/Content/Interface/ChromaStoneSelect";
-    public override int TransformationBuffId => ModContent.BuffType<ChromaStone_Buff>();
+    public override string FullID               => "Ben10Mod:ChromaStone";
+    public override string TransformationName   => "Chromastone";
+    public override string IconPath             => "Ben10Mod/Content/Interface/ChromaStoneSelect";
+    public override int    TransformationBuffId => ModContent.BuffType<ChromaStone_Buff>();
+
     public override string Description =>
         "A living crystal conduit that absorbs punishment, turns it into extra firepower, and shines brighter as the pressure rises.";
 
@@ -27,29 +28,30 @@ public class ChromaStoneTransformation : Transformation {
         "Chromatic glow that flares brighter as charge rises"
     };
 
-    public override string PrimaryAttackName => "Crystal Bolt";
+    public override string PrimaryAttackName  => "Crystal Bolt";
     public override string PrimaryAbilityName => "Crystal Guard";
-    public override int PrimaryAttack => ModContent.ProjectileType<ChromaStoneProjectile>();
+    public override int    PrimaryAttack      => ModContent.ProjectileType<ChromaStoneProjectile>();
 
     public override int PrimaryAbilityDuration => 60 * 60;
     public override int PrimaryAbilityCooldown => 30 * 60;
-    public override int PrimaryAttackSpeed => 20;
+    public override int PrimaryAttackSpeed     => 20;
 
     private int _chromastoneAbsobtion = 0;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         int storedCharge = Math.Min(_chromastoneAbsobtion, 80);
 
-        player.GetDamage<HeroDamage>() += 0.1f + storedCharge / 500f;
-        player.statDefense += 8 + storedCharge / 12;
-        player.endurance += 0.04f;
+        player.GetDamage<HeroDamage>()           += 0.1f + storedCharge / 500f;
+        player.statDefense                       += 8 + storedCharge / 12;
+        player.endurance                         += 0.04f;
         player.GetArmorPenetration<HeroDamage>() += 6 + storedCharge / 20;
 
         if (omp.PrimaryAbilityEnabled)
             player.endurance += 0.08f;
     }
 
-    public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity,
+    public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
+        Vector2 position, Vector2 velocity,
         int damage, float knockback) {
         damage += _chromastoneAbsobtion;
         return base.Shoot(player, omp, source, position, velocity, damage, knockback);
@@ -65,7 +67,7 @@ public class ChromaStoneTransformation : Transformation {
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
-        
+
         if (omp.PrimaryAbilityEnabled) {
             GameShaders.Armor.GetShaderFromItemId(ModContent.ItemType<DiscoDye>()).UseColor(Main.DiscoColor);
             player.cHead = GameShaders.Armor.GetShaderIdFromItemId(ModContent.ItemType<DiscoDye>());
@@ -73,4 +75,17 @@ public class ChromaStoneTransformation : Transformation {
             player.cLegs = GameShaders.Armor.GetShaderIdFromItemId(ModContent.ItemType<DiscoDye>());
         }
     }
+
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
+        new TransformationPaletteChannel(
+            "crystal",
+            "crystal",
+            Color.White,
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
+                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Body",
+                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body"))
+    ];
 }

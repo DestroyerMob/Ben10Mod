@@ -9,83 +9,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Buffs/Debuffs/AlienXSupernovaBurn.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Legs.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockBatterySecondaryMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockChargeMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockChargeMask_Head.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/AlienSelectionScreen.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/NPCs/AlienIdentityGlobalNPC.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/NPCs/AlienIdentityGlobalNPC.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Players/AlienIdentityPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Players/AlienIdentityPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/AlienXBlackHoleProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/AlienXBlackHoleProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferHowlProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferHowlProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferLunarHowlProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferLunarHowlProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferPounceProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferPounceProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferSonicBoltProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/BlitzwolferSonicBoltProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeLightningStrikeProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeLightningStrikeProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeStormLeapProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeStormLeapProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeTeslaProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeTeslaProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeThunderclapProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/FrankenstrikeThunderclapProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayBoltProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayBoltProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayDiveProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/JetrayLaserProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/JetrayLaserProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/LodestarAnchorProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/LodestarAnchorProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/LodestarMagnetBoltProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/LodestarMagnetBoltProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/LodestarMagneticOrbProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/LodestarMagneticOrbProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/LodestarPolarVortexProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/LodestarPolarVortexProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/SnareOhBandageProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/SnareOhBandageProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/SnareOhBindFieldProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/SnareOhBindFieldProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/SnareOhUltimateProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/SnareOhUltimateProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/SnareOhWrapProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/SnareOhWrapProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/WaterHazardBurstProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/WaterHazardBurstProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/WaterHazardPressureProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/WaterHazardPressureProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/WaterHazardSnareProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/WaterHazardSnareProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/WaterHazardUltimateProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/WaterHazardUltimateProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/AlienX/AlienXTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/AlienX/AlienXTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/AmpFibian/AmpFibianTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/AmpFibian/AmpFibianTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Anodite/Anodite.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Anodite/Anodite.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Anodite/AnoditeTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Anodite/AnoditeTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Arctiguana/ArctiguanaTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Arctiguana/ArctiguanaTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Armodrillo/ArmodrilloTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Armodrillo/ArmodrilloTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Astrodactyl/AstrodactylTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Astrodactyl/AstrodactylTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChill.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChill.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BigChill/BigChillTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Blitzwolfer/BlitzwolferTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Blitzwolfer/BlitzwolferTransformation.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/BuzzShock/BuzzShockTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Cannonbolt/CannonboltTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Cannonbolt/CannonboltTransformation.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/ChromaStone/ChromaStoneTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Clockwork/ClockworkTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Clockwork/ClockworkTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHead.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHead.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/DiamondHead/DiamondHeadTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/EyeGuy/EyeGuyTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/EyeGuy/EyeGuyTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Fasttrack/FasttrackTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Fasttrack/FasttrackTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArms.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/FourArms/FourArms.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Frankenstrike/FrankenstrikeTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Frankenstrike/FrankenstrikeTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/GhostFreak/GhostFreakTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/GhostFreak/GhostFreakTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Goop/GoopTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Goop/GoopTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlast.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlast.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/HeatBlast/HeatBlastTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Humungousaur/HumungousaurTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Jetray/JetrayTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Lodestar/LodestarTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Lodestar/LodestarTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/NRG/NRGTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/PeskyDust/PeskyDustTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/PeskyDust/PeskyDustTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Rath/RathTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/SnareOh/SnareOhTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/SnareOh/SnareOhTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFly.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFly.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFlyTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/StinkFly/StinkFlyTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Swampfire/SwampfireTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Swampfire/SwampfireTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Terraspin/TerraspinTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Upgrade/UpgradeTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Upgrade/UpgradeTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/WaterHazard/WaterHazardTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/WaterHazard/WaterHazardTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/WayBig/WayBigTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/WayBig/WayBigTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Whampire/WhampireTransformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Whampire/WhampireTransformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/WildVine/WildVine.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/WildVine/WildVine.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/XLR8/XLR8Transformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/AddonAPI.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/AddonAPI.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/Development.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/Development.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/PLAYER_GUIDE.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,25 +63,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Launch Settings Profile.Ben10Mod: Terraria.executor&quot;: &quot;Debug&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Launch Settings Profile.Ben10Mod: Terraria.executor": "Debug",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "master",
+    "junie.onboarding.icon.badge.shown": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected=".NET Launch Settings Profile.Ben10Mod: Terraria">
     <configuration name="Ben10Mod: Terraria" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/Ben10Mod.csproj" />
@@ -257,7 +192,8 @@
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="Added fourarms" />
     <MESSAGE value="change" />
-    <option name="LAST_COMMIT_MESSAGE" value="change" />
+    <MESSAGE value="Yeah" />
+    <option name="LAST_COMMIT_MESSAGE" value="Yeah" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

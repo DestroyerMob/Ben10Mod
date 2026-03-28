@@ -142,4 +142,40 @@ public class BuzzShockTransformation : Transformation {
             Main.dust[dustNum].noGravity = true;
         }
     }
+    
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => new[] {
+        new TransformationPaletteChannel(
+            "charge",
+            "Charge",
+            new Color(255, 255, 255),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Head",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockChargeMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Body",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockChargeMask_Body")
+        ),
+        new TransformationPaletteChannel(
+            "primary",
+            "Primary",
+            new Color(255, 255, 255),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Head",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Head"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Body",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Body"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Legs",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockBatteryPrimaryMask_Legs")
+        ),
+        new TransformationPaletteChannel(
+            "secondary",
+            "Secondary",
+            new Color(255, 255, 255),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShock_Body",
+                "Ben10Mod/Content/Transformations/BuzzShock/BuzzShockBatterySecondaryMask_Body")
+        )
+    };
 }
