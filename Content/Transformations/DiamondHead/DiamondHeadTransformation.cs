@@ -245,7 +245,10 @@ public class DiamondHeadTransformation : Transformation {
                 "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Head"),
             new TransformationPaletteOverlay(
                 "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Body",
-                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Body")
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Body"),
+            new TransformationPaletteOverlay(
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Back",
+                "Ben10Mod/Content/Transformations/DiamondHead/DiamondHeadDiamondMask_Back")
         ),
     };
 
