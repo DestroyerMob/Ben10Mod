@@ -221,7 +221,6 @@ public class DiamondHeadTransformation : Transformation {
     }
 
     public override IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) => new[] {
-        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Back",
         "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Legs",
         "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Body",
         "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Head"

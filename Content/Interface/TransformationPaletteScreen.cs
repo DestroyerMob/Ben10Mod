@@ -342,6 +342,13 @@ public sealed class PalettePreviewSwatch : UIElement {
         List<ResolvedPreviewBase> baseLayers = new();
         List<ResolvedPreviewOverlay> overlays = new();
         HashSet<string> seenBasePaths = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> allowedPreviewBasePaths = new(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
+            string texturePath = previewBaseTexturePaths[i];
+            if (!string.IsNullOrWhiteSpace(texturePath))
+                allowedPreviewBasePaths.Add(texturePath);
+        }
 
         for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
             string texturePath = previewBaseTexturePaths[i];
@@ -361,6 +368,10 @@ public sealed class PalettePreviewSwatch : UIElement {
                 new TransformationPaletteChannelSettings(channel.DefaultColor);
             for (int j = 0; j < channel.Overlays.Count; j++) {
                 TransformationPaletteOverlay overlay = channel.Overlays[j];
+                if (allowedPreviewBasePaths.Count > 0 &&
+                    !allowedPreviewBasePaths.Contains(overlay?.BaseTexturePath ?? string.Empty))
+                    continue;
+
                 if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
                     continue;
 
