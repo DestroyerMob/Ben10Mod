@@ -133,6 +133,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                 return false;
 
             int energyCost = trans.GetEnergyCost(omp);
+            int sustainEnergyCost = trans.GetAttackSustainEnergyCost(omp.setAttack, omp);
             if (!trans.TryConsumeCurrentAttackCost(omp))
                 return false;
 
@@ -141,6 +142,9 @@ namespace Ben10Mod.Content.Items.Weapons {
                     omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + energyCost);
                 return false;
             }
+
+            omp.NotifyCurrentAttackSpentEnergy(energyCost, sustainEnergyCost,
+                Math.Max(player.itemAnimationMax, player.itemTimeMax));
 
             if (firingUltimate)
                 state.ultimateStarted = true;

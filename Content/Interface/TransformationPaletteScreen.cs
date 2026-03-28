@@ -400,9 +400,10 @@ public sealed class PalettePreviewSwatch : UIElement {
 
             Vector2 previewTopLeft = new Vector2(previewArea.Center.X, previewArea.Center.Y + 6f) -
                 new Vector2(previewFrameWidth * 0.5f, previewFrameHeight * 0.5f) * scale;
+            Vector2 previewWorldTopLeft = Main.screenPosition + previewTopLeft;
 
-            player.position = previewTopLeft;
-            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewTopLeft, 0f, Vector2.Zero, 0f, scale);
+            player.position = previewWorldTopLeft;
+            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewWorldTopLeft, 0f, Vector2.Zero, 0f, scale);
             return true;
         }
         catch {

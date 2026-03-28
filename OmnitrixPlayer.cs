@@ -85,6 +85,8 @@ namespace Ben10Mod {
         public int absorbedMaterialItemType = 0;
         public int absorbedMaterialTime = 0;
         public int attackSelectionPulseTime = 0;
+        private int attackEnergyGainLockTime = 0;
+        private int markAttackProjectilesNoEnergyGainTime = 0;
 
         public int cooldownTime = 120;
         public int transformationTime = 300;
@@ -782,6 +784,10 @@ namespace Ben10Mod {
 
             if (attackSelectionPulseTime > 0)
                 attackSelectionPulseTime--;
+            if (attackEnergyGainLockTime > 0)
+                attackEnergyGainLockTime--;
+            if (markAttackProjectilesNoEnergyGainTime > 0)
+                markAttackProjectilesNoEnergyGainTime--;
             if (ultimateReadyCueTime > 0)
                 ultimateReadyCueTime--;
 
@@ -1050,6 +1056,18 @@ namespace Ben10Mod {
 
         public string GetCurrentAttackDisplayName() {
             return CurrentTransformation?.GetAttackSelectionDisplayName(setAttack, this) ?? "No Attack";
+        }
+
+        internal void NotifyCurrentAttackSpentEnergy(int energyCost, int sustainEnergyCost, int attackLockFrames) {
+            if (energyCost <= 0 && sustainEnergyCost <= 0)
+                return;
+
+            attackEnergyGainLockTime = Math.Max(attackEnergyGainLockTime, Math.Max(8, attackLockFrames));
+            markAttackProjectilesNoEnergyGainTime = Math.Max(markAttackProjectilesNoEnergyGainTime, 3);
+        }
+
+        internal bool ShouldMarkSpawnedAttackProjectilesAsNoEnergyGain() {
+            return markAttackProjectilesNoEnergyGainTime > 0;
         }
 
         public string GetAbilityDisplayName(AttackSelection selection) {
@@ -2175,6 +2193,7 @@ namespace Ben10Mod {
             trans?.OnHitNPCWithItem(Player, this, item, target, hit, damageDone);
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithItem(item, target, hit, damageDone);
+            TryGrantOmnitrixEnergyFromDamage(damageDone);
         }
 
         public override bool? CanHitNPCWithProj(Projectile proj, NPC target) {
@@ -2192,6 +2211,7 @@ namespace Ben10Mod {
             trans?.OnHitNPCWithProjectile(Player, this, proj, target, hit, damageDone);
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithProj(proj, target, hit, damageDone);
+            TryGrantOmnitrixEnergyFromDamage(damageDone, proj);
         }
 
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
@@ -2524,10 +2544,36 @@ namespace Ben10Mod {
             ApplyAbsorptionHitEffects(target);
 
             base.OnHitNPC(target, hit, damageDone);
+        }
 
-            var activeOmnitrix = GetActiveOmnitrix();
-            if (isTransformed && !ultimateAttack && !IsUltimateAbilityActive && activeOmnitrix != null)
-                omnitrixEnergy += activeOmnitrix.GetEnergyGainFromDamage(hit.Damage);
+        private bool ShouldBlockOmnitrixEnergyGain(Projectile projectile = null) {
+            if (projectile != null && projectile.GetGlobalProjectile<OmnitrixProjectile>().BlocksOmnitrixEnergyGain)
+                return true;
+
+            if (attackEnergyGainLockTime > 0)
+                return true;
+
+            Transformation transformation = CurrentTransformation;
+            if (Player.HeldItem?.ModItem is not PlumbersBadge || transformation == null)
+                return false;
+
+            if (transformation.GetEnergyCost(this) > 0)
+                return true;
+
+            AttackSelection selection = transformation.ResolveAttackSelection(setAttack, this);
+            return transformation.GetAttackSustainEnergyCost(selection, this) > 0;
+        }
+
+        private void TryGrantOmnitrixEnergyFromDamage(int damageDone, Projectile projectile = null) {
+            Omnitrix activeOmnitrix = GetActiveOmnitrix();
+            if (!isTransformed || ultimateAttack || IsUltimateAbilityActive || activeOmnitrix == null || damageDone <= 0)
+                return;
+
+            if (ShouldBlockOmnitrixEnergyGain(projectile))
+                return;
+
+            omnitrixEnergy = Math.Min(omnitrixEnergyMax,
+                omnitrixEnergy + activeOmnitrix.GetEnergyGainFromDamage(damageDone));
         }
 
         public override void PreUpdate() {
