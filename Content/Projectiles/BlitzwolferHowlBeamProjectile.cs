@@ -10,7 +10,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class BlitzwolferHowlBeamProjectile : ModProjectile {
-    private const int FireInterval = 14;
+    private const int DefaultPulseInterval = 14;
     private const float PulseSpeed = 10.5f;
     private const float MouthOffset = 16f;
     private const float PulseSpawnOffset = 26f;
@@ -18,6 +18,7 @@ public class BlitzwolferHowlBeamProjectile : ModProjectile {
     private SlotId _loopSlot;
     private bool _loopStarted;
     private int _shotTimer;
+    private int _sustainTimer;
     private bool _spawnedInitialPulse;
     private Vector2 _syncedAimDirection = Vector2.UnitX;
     private bool _hasSyncedAimDirection;
@@ -62,8 +63,15 @@ public class BlitzwolferHowlBeamProjectile : ModProjectile {
         owner.itemAnimation = 2;
         owner.itemRotation = (float)Math.Atan2(direction.Y * owner.direction, direction.X * owner.direction);
 
-        if (Projectile.owner == Main.myPlayer)
+        if (Projectile.owner == Main.myPlayer) {
+            if (!TryUpdateSustain(owner, omp)) {
+                owner.channel = false;
+                Projectile.Kill();
+                return;
+            }
+
             TryFirePulse(owner, omp, direction);
+        }
 
         UpdateLoopSound();
         Lighting.AddLight(Projectile.Center, 0.16f, 0.85f, 0.24f);
@@ -105,19 +113,21 @@ public class BlitzwolferHowlBeamProjectile : ModProjectile {
     }
 
     private void TryFirePulse(Player owner, OmnitrixPlayer omp, Vector2 direction) {
-        _shotTimer++;
-        if (_shotTimer != 1 && _shotTimer < FireInterval)
-            return;
-
-        _shotTimer = 0;
-
-        if (_spawnedInitialPulse && !TryConsumePulseSustainCost(owner, omp)) {
-            owner.channel = false;
-            Projectile.Kill();
+        if (!_spawnedInitialPulse) {
+            _spawnedInitialPulse = true;
+            SpawnPulse(owner, direction);
             return;
         }
 
-        _spawnedInitialPulse = true;
+        _shotTimer++;
+        if (_shotTimer < GetPulseInterval(omp))
+            return;
+
+        _shotTimer = 0;
+        SpawnPulse(owner, direction);
+    }
+
+    private void SpawnPulse(Player owner, Vector2 direction) {
         Vector2 shotDirection = direction.RotatedBy(Main.rand.NextFloat(-0.06f, 0.06f));
         Vector2 spawnPosition = owner.MountedCenter + shotDirection * PulseSpawnOffset;
         bool heightened = global::Ben10Mod.Content.Transformations.Blitzwolfer.BlitzwolferTransformation.HasTrackedPrey(owner);
@@ -135,12 +145,34 @@ public class BlitzwolferHowlBeamProjectile : ModProjectile {
         }, spawnPosition);
     }
 
-    private bool TryConsumePulseSustainCost(Player owner, OmnitrixPlayer omp) {
+    private bool TryUpdateSustain(Player owner, OmnitrixPlayer omp) {
+        if (!_spawnedInitialPulse)
+            return true;
+
         var transformation = omp.CurrentTransformation;
         if (transformation == null || owner.whoAmI != Main.myPlayer)
             return true;
 
+        int sustainInterval = transformation.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp);
+        int sustainCost = transformation.GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp);
+        if (sustainInterval <= 0 || sustainCost <= 0)
+            return true;
+
+        _sustainTimer++;
+        if (_sustainTimer < sustainInterval)
+            return true;
+
+        _sustainTimer = 0;
         return transformation.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp);
+    }
+
+    private int GetPulseInterval(OmnitrixPlayer omp) {
+        var transformation = omp.CurrentTransformation;
+        if (transformation == null)
+            return DefaultPulseInterval;
+
+        int sustainInterval = transformation.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.PrimaryAbility, omp);
+        return sustainInterval > 0 ? sustainInterval : DefaultPulseInterval;
     }
 
     private void UpdateLoopSound() {

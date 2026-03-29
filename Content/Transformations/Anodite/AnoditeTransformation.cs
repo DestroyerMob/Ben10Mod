@@ -22,6 +22,7 @@ public class AnoditeTransformation : Transformation {
     public override string TransformationName => "Anodite";
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
     public override int TransformationBuffId => ModContent.BuffType<Anodite_Buff>();
+    public override bool IsAccessoryTransformation(OmnitrixPlayer omp) => true;
 
     public override string Description =>
         "A living mana-form that rides the air, threads targets with raw energy, and shapes shields and wards out of pure anodite power.";

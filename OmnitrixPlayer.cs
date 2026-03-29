@@ -212,6 +212,11 @@ namespace Ben10Mod {
         private const int EventPumpkinMoon = -4;
         private const int EventFrostMoon = -5;
         private const int EventOldOnesArmy = -6;
+        private static readonly string[] UpgradeRequiredTransformationIds = {
+            "Ben10Mod:Humungousaur",
+            "Ben10Mod:EyeGuy",
+            "Ben10Mod:EchoEcho"
+        };
 
         public Transformation CurrentTransformation
             => TransformationLoader.Get(currentTransformationId);
@@ -254,6 +259,19 @@ namespace Ben10Mod {
 
             for (int i = 0; i < Player.armor.Length; i++) {
                 if (Player.armor[i]?.ModItem is Omnitrix)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool HasEquippedAnoditeCatalyst() {
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+            if (omnitrixSlot?.FunctionalItem?.ModItem is AnoditeCatalyst)
+                return true;
+
+            for (int i = 0; i < Player.armor.Length; i++) {
+                if (Player.armor[i]?.ModItem is AnoditeCatalyst)
                     return true;
             }
 
@@ -1188,6 +1206,48 @@ namespace Ben10Mod {
             return CurrentTransformation?.CanAffordCurrentAttack(this) ?? true;
         }
 
+        public string GetCurrentAttackModeSummary() {
+            return CurrentTransformation?.GetAttackModeSummary(setAttack, this) ?? string.Empty;
+        }
+
+        public string GetCurrentAttackResourceSummary(bool compact = false) {
+            return CurrentTransformation?.GetAttackResourceSummary(setAttack, this, compact) ?? string.Empty;
+        }
+
+        public string GetSelectedTransformationStatusSummary() {
+            string selectedTransformationId = GetSelectedTransformationId();
+            if (string.IsNullOrEmpty(selectedTransformationId))
+                return "Assign a form to this slot";
+
+            List<string> parts = new() {
+                GetTransformationCooldownTicks() > 0 ? GetTransformationCooldownDisplayText() : "Ready to transform"
+            };
+
+            if (IsNewlyUnlockedTransformation(selectedTransformationId))
+                parts.Add("New");
+            if (IsFavoriteTransformation(selectedTransformationId))
+                parts.Add("Favorite");
+
+            return string.Join("  |  ", parts);
+        }
+
+        public string GetSelectedTransformationCustomizationSummary() {
+            string selectedTransformationId = GetSelectedTransformationId();
+            if (string.IsNullOrEmpty(selectedTransformationId))
+                return string.Empty;
+
+            List<string> parts = new();
+            string paletteText = GetSelectedTransformationPaletteStatusText();
+            if (!string.IsNullOrWhiteSpace(paletteText))
+                parts.Add(paletteText);
+
+            string costumeName = GetSelectedTransformationCostumeDisplayName(selectedTransformationId);
+            if (!string.IsNullOrWhiteSpace(costumeName))
+                parts.Add($"Costume: {costumeName}");
+
+            return string.Join("  |  ", parts);
+        }
+
         public string GetCurrentTransformationPaletteStatusText() {
             return BuildPaletteStatusText(CurrentTransformation);
         }
@@ -1413,10 +1473,173 @@ namespace Ben10Mod {
             if (transformation == null)
                 return "Unlock condition not available.";
 
+            if (!TransformationHasUnlockCondition(transformation)) {
+                if (transformation.ParentTransformation != null) {
+                    string parentName = transformation.ParentTransformation.GetDisplayName(this);
+                    return $"No separate unlock required. Access this evolution from {parentName} with an Omnitrix that supports evolution.";
+                }
+
+                if (transformation.IsAccessoryTransformation(this))
+                    return "No unlock required. Equip the Anodite Catalyst in the DNA Alteration slot and press the transformation key to assume this form.";
+
+                if (transformation.IsStarterTransformation(this))
+                    return "No unlock required. This starter transformation is available from the beginning.";
+            }
+
             string unlockConditionText = transformation.GetUnlockConditionText(this);
-            return string.IsNullOrWhiteSpace(unlockConditionText)
-                ? "Unlock condition not yet documented in the codex."
-                : unlockConditionText;
+            if (!string.IsNullOrWhiteSpace(unlockConditionText))
+                return unlockConditionText;
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:AlienX", StringComparison.OrdinalIgnoreCase))
+                return "Defeat the Moon Lord, then use a Celestialsapien DNA Sample.";
+
+            return "Unlock condition not yet documented in the codex.";
+        }
+
+        public string GetTransformationUnlockCategoryText(Transformation transformation) {
+            if (transformation == null)
+                return "Unknown unlock";
+
+            if (transformation.ParentTransformation != null)
+                return "Evolution form";
+
+            if (transformation.IsStarterTransformation(this))
+                return "Starter transformation";
+
+            if (transformation.IsAccessoryTransformation(this))
+                return "DNA alteration form";
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:Upgrade", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(transformation.FullID, "Ben10Mod:AlienX", StringComparison.OrdinalIgnoreCase))
+                return "Special unlock";
+
+            return TryGetTrackedEventForTransformation(transformation.FullID, out _)
+                ? "Event unlock"
+                : "Boss unlock";
+        }
+
+        public string GetTransformationUnlockProgressText(Transformation transformation) {
+            if (transformation == null)
+                return string.Empty;
+
+            if (IsTransformationUnlocked(transformation))
+                return "Unlocked on this character.";
+
+            if (!TransformationHasUnlockCondition(transformation) && transformation.ParentTransformation != null) {
+                string parentName = transformation.ParentTransformation.GetDisplayName(this);
+                if (!IsTransformationUnlocked(transformation.ParentTransformation))
+                    return $"Unlock {parentName} on this character first, then evolve into this form.";
+
+                Omnitrix activeOmnitrix = GetActiveOmnitrix();
+                return activeOmnitrix?.CanUseEvolutionFeature(Player, this, transformation.ParentTransformation) == true
+                    ? $"{parentName} is unlocked. Transform into {parentName} with your current Omnitrix, then press the transformation key again to evolve."
+                    : $"{parentName} is unlocked. Equip an Omnitrix with evolution support, such as the Ultimatrix, to access this form.";
+            }
+
+            if (!TransformationHasUnlockCondition(transformation) && transformation.IsAccessoryTransformation(this)) {
+                return HasEquippedAnoditeCatalyst()
+                    ? "Anodite Catalyst equipped. Press the transformation key to assume this form."
+                    : "Equip an Anodite Catalyst in the DNA Alteration slot to access this form.";
+            }
+
+            if (!TransformationHasUnlockCondition(transformation) && transformation.IsStarterTransformation(this))
+                return "Starter transformation.";
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:Upgrade", StringComparison.OrdinalIgnoreCase)) {
+                List<string> remainingForms = new();
+                if (!IsTransformationUnlocked("Ben10Mod:Humungousaur"))
+                    remainingForms.Add("Humungousaur (Destroyer)");
+                if (!IsTransformationUnlocked("Ben10Mod:EyeGuy"))
+                    remainingForms.Add("Eye Guy (Twins)");
+                if (!IsTransformationUnlocked("Ben10Mod:EchoEcho"))
+                    remainingForms.Add("Echo Echo (Skeletron Prime)");
+
+                return remainingForms.Count == 0
+                    ? "Humungousaur, Eye Guy, and Echo Echo are unlocked on this character. Upgrade should unlock automatically."
+                    : $"Still needed on this character: {string.Join(", ", remainingForms)}.";
+            }
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:AlienX", StringComparison.OrdinalIgnoreCase)) {
+                return NPC.downedMoonlord
+                    ? "Moon Lord defeated. Use a Celestialsapien DNA Sample to unlock Alien X."
+                    : "Moon Lord must be defeated before the DNA Sample can be used.";
+            }
+
+            if (TryGetTrackedEventForTransformation(transformation.FullID, out int eventId)) {
+                string eventName = GetTrackedEventDisplayName(eventId);
+                if (IsTrackedEventCurrentlyActive(eventId)) {
+                    return participatedEvents.Contains(eventId)
+                        ? $"Participation recorded for the current {eventName}. Finish it to unlock this form."
+                        : $"{eventName} is active. Deal damage during the event to qualify.";
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public string GetTransformationCodexSubtitle(Transformation transformation) {
+            if (transformation == null)
+                return string.Empty;
+
+            if (IsTransformationUnlocked(transformation)) {
+                List<string> parts = new() { "Unlocked" };
+                if (IsNewlyUnlockedTransformation(transformation))
+                    parts.Add("New");
+                if (IsFavoriteTransformation(transformation))
+                    parts.Add("Favorite");
+                parts.Add(GetTransformationUnlockCategoryText(transformation));
+                return string.Join("  |  ", parts);
+            }
+
+            if (!TransformationHasUnlockCondition(transformation))
+                return $"{GetTransformationAvailabilityStateText(transformation)}  |  {GetTransformationUnlockCategoryText(transformation)}";
+
+            if (TryGetTrackedEventForTransformation(transformation.FullID, out int eventId) &&
+                IsTrackedEventCurrentlyActive(eventId)) {
+                return participatedEvents.Contains(eventId)
+                    ? "Locked  |  Event active  |  Participation recorded"
+                    : "Locked  |  Event active  |  Deal damage to qualify";
+            }
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:Upgrade", StringComparison.OrdinalIgnoreCase))
+                return "Locked  |  Mech trio required";
+
+            if (string.Equals(transformation.FullID, "Ben10Mod:AlienX", StringComparison.OrdinalIgnoreCase)) {
+                return NPC.downedMoonlord
+                    ? "Locked  |  DNA Sample required"
+                    : "Locked  |  Moon Lord required";
+            }
+
+            string condensedCondition = CondenseUnlockConditionLabel(GetTransformationUnlockConditionText(transformation));
+            if (!string.IsNullOrWhiteSpace(condensedCondition))
+                return $"Locked  |  {condensedCondition}";
+
+            return $"Locked  |  {GetTransformationUnlockCategoryText(transformation)}";
+        }
+
+        public bool TransformationHasUnlockCondition(Transformation transformation) {
+            return transformation?.HasUnlockCondition(this) == true;
+        }
+
+        public string GetTransformationAvailabilityStateText(Transformation transformation) {
+            if (transformation == null)
+                return "Unavailable";
+
+            if (IsTransformationUnlocked(transformation))
+                return "Unlocked";
+
+            if (TransformationHasUnlockCondition(transformation))
+                return "Locked";
+
+            return transformation.ParentTransformation != null
+                ? "No separate unlock"
+                : "No unlock required";
+        }
+
+        public string GetTransformationAccessHeaderText(Transformation transformation) {
+            return TransformationHasUnlockCondition(transformation)
+                ? "Unlock Condition"
+                : "Access";
         }
 
         public IReadOnlyList<string> GetUnlockedTransformationsForDisplay() {
@@ -1473,6 +1696,84 @@ namespace Ben10Mod {
             string leftKey = leftTransformation?.FullID ?? leftTransformationId ?? string.Empty;
             string rightKey = rightTransformation?.FullID ?? rightTransformationId ?? string.Empty;
             return string.Compare(leftKey, rightKey, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string CondenseUnlockConditionLabel(string unlockConditionText) {
+            if (string.IsNullOrWhiteSpace(unlockConditionText))
+                return string.Empty;
+
+            string condensed = unlockConditionText.Trim().TrimEnd('.');
+            condensed = condensed.Replace("Participate in and complete ", "Complete ", StringComparison.OrdinalIgnoreCase);
+            condensed = condensed.Replace("Participate in and defeat ", "Defeat ", StringComparison.OrdinalIgnoreCase);
+            condensed = condensed.Replace("Access this evolution from ", "Evolve from ", StringComparison.OrdinalIgnoreCase);
+            return condensed;
+        }
+
+        private static bool TryGetTrackedEventForTransformation(string transformationId, out int eventId) {
+            switch (transformationId) {
+                case "Ben10Mod:GhostFreak":
+                    eventId = EventBloodMoon;
+                    return true;
+                case "Ben10Mod:Frankenstrike":
+                    eventId = EventSolarEclipse;
+                    return true;
+                case "Ben10Mod:Goop":
+                    eventId = EventSlimeRain;
+                    return true;
+                case "Ben10Mod:Whampire":
+                    eventId = EventPumpkinMoon;
+                    return true;
+                case "Ben10Mod:Lodestar":
+                    eventId = EventFrostMoon;
+                    return true;
+                case "Ben10Mod:RipJaws":
+                    eventId = InvasionID.GoblinArmy;
+                    return true;
+                case "Ben10Mod:Fasttrack":
+                    eventId = InvasionID.SnowLegion;
+                    return true;
+                case "Ben10Mod:WaterHazard":
+                    eventId = InvasionID.PirateInvasion;
+                    return true;
+                case "Ben10Mod:Astrodactyl":
+                    eventId = InvasionID.MartianMadness;
+                    return true;
+                default:
+                    eventId = 0;
+                    return false;
+            }
+        }
+
+        private static string GetTrackedEventDisplayName(int eventId) {
+            return eventId switch {
+                EventBloodMoon => "Blood Moon",
+                EventSolarEclipse => "Solar Eclipse",
+                EventSlimeRain => "Slime Rain",
+                EventPumpkinMoon => "Pumpkin Moon",
+                EventFrostMoon => "Frost Moon",
+                EventOldOnesArmy => "Old One's Army",
+                InvasionID.GoblinArmy => "Goblin Army",
+                InvasionID.SnowLegion => "Frost Legion",
+                InvasionID.PirateInvasion => "Pirate Invasion",
+                InvasionID.MartianMadness => "Martian Madness",
+                _ => "event"
+            };
+        }
+
+        private static bool IsTrackedEventCurrentlyActive(int eventId) {
+            return eventId switch {
+                EventBloodMoon => Main.bloodMoon,
+                EventSolarEclipse => Main.eclipse,
+                EventSlimeRain => Main.slimeRain,
+                EventPumpkinMoon => Main.pumpkinMoon,
+                EventFrostMoon => Main.snowMoon,
+                EventOldOnesArmy => DD2Event.Ongoing,
+                InvasionID.GoblinArmy => Main.invasionType == InvasionID.GoblinArmy && Main.invasionSize > 0,
+                InvasionID.SnowLegion => Main.invasionType == InvasionID.SnowLegion && Main.invasionSize > 0,
+                InvasionID.PirateInvasion => Main.invasionType == InvasionID.PirateInvasion && Main.invasionSize > 0,
+                InvasionID.MartianMadness => Main.invasionType == InvasionID.MartianMadness && Main.invasionSize > 0,
+                _ => false
+            };
         }
 
         public int GetBuffRemainingTicks(int buffType) {
@@ -2869,6 +3170,7 @@ namespace Ben10Mod {
 
             string name = GetTransformationBaseName(transformation);
             Main.NewText($"{name} has been unlocked!", Color.LimeGreen);
+            Main.NewText($"Open the roster with L to slot {name} into your active five.", new Color(180, 255, 210));
             CombatText.NewText(Player.getRect(), Color.LimeGreen, $"{name}!", dramatic: true);
         }
 
@@ -3643,7 +3945,7 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.MultiplayerClient)
                 return;
 
-            if (NPC.downedMechBoss1 && NPC.downedMechBoss2 && NPC.downedMechBoss3)
+            if (HasAllUpgradeRequirementsUnlocked())
                 UnlockTransformation("Ben10Mod:Upgrade");
         }
 
@@ -3674,9 +3976,6 @@ namespace Ben10Mod {
 
             if (Main.invasionType == InvasionID.MartianMadness && Main.invasionSize > 0)
                 yield return InvasionID.MartianMadness;
-
-            if (DD2Event.Ongoing)
-                yield return EventOldOnesArmy;
         }
 
         private static bool DoesNpcCountForEventParticipation(int eventId, NPC npc) {
@@ -3724,11 +4023,20 @@ namespace Ben10Mod {
                     return "Ben10Mod:Fasttrack";
                 case InvasionID.PirateInvasion:
                     return "Ben10Mod:WaterHazard";
-                case EventOldOnesArmy:
+                case InvasionID.MartianMadness:
                     return "Ben10Mod:Astrodactyl";
                 default:
                     return string.Empty;
             }
+        }
+
+        private bool HasAllUpgradeRequirementsUnlocked() {
+            for (int i = 0; i < UpgradeRequiredTransformationIds.Length; i++) {
+                if (!IsTransformationUnlocked(UpgradeRequiredTransformationIds[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool IsGoblinArmyNpc(NPC npc) {

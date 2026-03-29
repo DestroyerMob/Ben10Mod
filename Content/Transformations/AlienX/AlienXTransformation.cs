@@ -100,6 +100,22 @@ public class AlienXTransformation : Transformation {
         Lighting.AddLight(player.Center, new Vector3(0.34f, 0.34f, 0.48f));
     }
 
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        if (!base.CanStartCurrentAttack(player, omp))
+            return false;
+
+        TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+        if (profile == null)
+            return true;
+
+        if (profile.ProjectileType == ModContent.ProjectileType<AlienXVerdictProjectile>() ||
+            profile.ProjectileType == ModContent.ProjectileType<AlienXForceWaveProjectile>() ||
+            profile.ProjectileType == ModContent.ProjectileType<AlienXBlackHoleProjectile>())
+            return !HasActiveOwnedProjectile(player, profile.ProjectileType);
+
+        return true;
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = ResolveAimDirection(player, velocity);

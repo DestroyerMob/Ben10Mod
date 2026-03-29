@@ -64,7 +64,7 @@ public class XLR8Transformation : Transformation {
     public override int    SecondaryAbilityCooldown => VectorDashCooldown;
     public override bool   SecondaryAbilityAttackSingleUse => true;
     public override bool   HasUltimateAbility      => true;
-    public override int    UltimateAbilityCost     => 100;
+    public override int    UltimateAbilityCost     => 85;
     public override int    UltimateAbilityDuration => 4 * 60;
     public override int    UltimateAbilityCooldown => 60 * 60;
 
@@ -96,6 +96,17 @@ public class XLR8Transformation : Transformation {
         int minUseTime = firingPrimary ? 7 : 6;
 
         item.useTime = item.useAnimation = Math.Max(minUseTime, (int)Math.Round(item.useTime * speedMultiplier));
+    }
+
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        if (!base.CanStartCurrentAttack(player, omp))
+            return false;
+
+        TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+        if (profile?.ProjectileType == ModContent.ProjectileType<XLR8StarlightProjectile>())
+            return !HasActiveOwnedProjectile(player, profile.ProjectileType);
+
+        return true;
     }
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,

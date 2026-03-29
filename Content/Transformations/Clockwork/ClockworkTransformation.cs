@@ -61,8 +61,8 @@ public class ClockworkTransformation : Transformation {
     public override int PrimaryAbilityCooldown => 28 * 60;
     public override bool HasSecondaryAbility => true;
     public override int SecondaryAbilityDuration => 10 * 60;
-    public override int SecondaryAbilityCooldown => 34 * 60;
-    public override int SecondaryAbilityCost => 35;
+    public override int SecondaryAbilityCooldown => 28 * 60;
+    public override int SecondaryAbilityCost => 25;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.08f;

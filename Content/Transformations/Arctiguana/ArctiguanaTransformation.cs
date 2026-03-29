@@ -139,6 +139,17 @@ public class ArctiguanaTransformation : Transformation {
         ExecuteFreezeRayPropulsion(player);
     }
 
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        if (!base.CanStartCurrentAttack(player, omp))
+            return false;
+
+        TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+        if (profile?.ProjectileType == UltimateAttack)
+            return !HasActiveOwnedProjectile(player, profile.ProjectileType);
+
+        return true;
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction, 0f));
