@@ -220,12 +220,6 @@ public class DiamondHeadTransformation : Transformation {
         player.back = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Back);
     }
 
-    public override IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(OmnitrixPlayer omp) => new[] {
-        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Legs",
-        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Body",
-        "Ben10Mod/Content/Transformations/DiamondHead/DiamondHead_Head"
-    };
-
     public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => new[] {
         new TransformationPaletteChannel(
             "eyes",

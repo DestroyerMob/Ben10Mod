@@ -105,10 +105,6 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
             if (masksForBase == null || masksForBase.Count == 0)
                 continue;
 
-            DrawData maskedBaseDraw = source;
-            maskedBaseDraw.texture = TransformationPaletteTextureCache.GetMaskedBaseTexture(source.texture, masksForBase);
-            drawInfo.DrawDataCache[i] = maskedBaseDraw;
-
             for (int j = 0; j < overlays.Count; j++) {
                 ResolvedOverlay overlay = overlays[j];
                 if (overlay.BaseTexture != source.texture)

@@ -52,11 +52,6 @@ namespace Ben10Mod.Content.Transformations {
             return transformation?.GetTransformationIcon();
         }
 
-        public virtual IReadOnlyList<string> GetPalettePreviewBaseTexturePaths(Transformation transformation,
-            OmnitrixPlayer omp) {
-            return BuildPreviewBaseTexturePaths(GetMergedPaletteChannels(transformation, omp));
-        }
-
         public virtual void ApplyVisuals(Player player, OmnitrixPlayer omp, Transformation transformation) {
             ApplyVisualSlot(player, EquipType.Head, slot => player.head = slot);
             ApplyVisualSlot(player, EquipType.Body, slot => player.body = slot);
@@ -216,32 +211,6 @@ namespace Ben10Mod.Content.Transformations {
             int slot = GetRegisteredSlot(equipType);
             if (slot >= 0)
                 applyAction(slot);
-        }
-
-        private static IReadOnlyList<string> BuildPreviewBaseTexturePaths(
-            IReadOnlyList<TransformationPaletteChannel> channels) {
-            if (channels == null || channels.Count == 0)
-                return Array.Empty<string>();
-
-            List<string> previewBaseTexturePaths = new();
-            HashSet<string> seenPreviewKeys = new(StringComparer.OrdinalIgnoreCase);
-
-            for (int i = 0; i < channels.Count; i++) {
-                TransformationPaletteChannel channel = channels[i];
-                if (channel == null || !channel.IsValid)
-                    continue;
-
-                for (int j = 0; j < channel.Overlays.Count; j++) {
-                    TransformationPaletteOverlay overlay = channel.Overlays[j];
-                    if (overlay == null || string.IsNullOrWhiteSpace(overlay.BaseTexturePath))
-                        continue;
-
-                    if (seenPreviewKeys.Add(overlay.BaseTexturePath))
-                        previewBaseTexturePaths.Add(overlay.BaseTexturePath);
-                }
-            }
-
-            return previewBaseTexturePaths;
         }
     }
 }

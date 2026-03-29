@@ -51,10 +51,28 @@ internal static class XLR8TailDrawHelper {
 
         OmnitrixPlayer omp = drawInfo.drawPlayer.GetModPlayer<OmnitrixPlayer>();
         Transformation transformation = omp.CurrentTransformation;
-        Texture2D drawTexture = ResolveTailTexture(transformation, omp, tailTexture, tailMaskTexture);
+        if (!TryResolveTailPaletteTextures(transformation, omp, tailTexture, tailMaskTexture,
+                out Texture2D overlayTexture)) {
+            DrawData tailDraw = new(
+                tailTexture,
+                anchor,
+                sourceRectangle,
+                bodyDrawData.color,
+                bodyDrawData.rotation,
+                tailOrigin,
+                bodyDrawData.scale,
+                bodyDrawData.effect,
+                0
+            ) {
+                shader = bodyDrawData.shader
+            };
 
-        DrawData tailDraw = new(
-            drawTexture,
+            drawInfo.DrawDataCache.Insert(bodyDrawIndex, tailDraw);
+            return;
+        }
+
+        DrawData baseTailDraw = new(
+            tailTexture,
             anchor,
             sourceRectangle,
             bodyDrawData.color,
@@ -67,21 +85,39 @@ internal static class XLR8TailDrawHelper {
             shader = bodyDrawData.shader
         };
 
-        drawInfo.DrawDataCache.Insert(bodyDrawIndex, tailDraw);
+        DrawData overlayDraw = new(
+            overlayTexture,
+            anchor,
+            sourceRectangle,
+            Color.White,
+            bodyDrawData.rotation,
+            tailOrigin,
+            bodyDrawData.scale,
+            bodyDrawData.effect,
+            0
+        ) {
+            shader = bodyDrawData.shader
+        };
+
+        drawInfo.DrawDataCache.Insert(bodyDrawIndex, baseTailDraw);
+        drawInfo.DrawDataCache.Insert(bodyDrawIndex + 1, overlayDraw);
     }
 
-    private static Texture2D ResolveTailTexture(Transformation transformation, OmnitrixPlayer omp, Texture2D baseTexture,
-        Texture2D maskTexture) {
+    private static bool TryResolveTailPaletteTextures(Transformation transformation, OmnitrixPlayer omp, Texture2D baseTexture,
+        Texture2D maskTexture, out Texture2D overlayTexture) {
+        overlayTexture = null;
+
         if (transformation == null || baseTexture == null || maskTexture == null)
-            return baseTexture;
+            return false;
 
         TransformationPaletteChannelSettings settings = omp.GetPaletteSettings(transformation, BasePaletteChannelId);
         bool usePaletteColor = omp.IsPaletteChannelEnabled(transformation, BasePaletteChannelId);
         if (!usePaletteColor && settings.HasNeutralAdjustments)
-            return baseTexture;
+            return false;
 
-        return TransformationPaletteTextureCache.GetProcessedOverlayTexture(baseTexture, maskTexture, settings, usePaletteColor) ??
-               baseTexture;
+        overlayTexture = TransformationPaletteTextureCache.GetProcessedOverlayTexture(baseTexture, maskTexture, settings,
+            usePaletteColor);
+        return overlayTexture != null;
     }
 
     private static int ResolveFrameIndex(DrawData bodyDrawData) {

@@ -324,7 +324,7 @@ public static class TransformationPaletteTextureCache {
                 if (maskedPixels[i].A == 0 || maskPixels[i].A == 0)
                     continue;
 
-                maskedPixels[i].A = 0;
+                maskedPixels[i].A = (byte)(maskedPixels[i].A * (255 - maskPixels[i].A) / 255);
             }
         }
 

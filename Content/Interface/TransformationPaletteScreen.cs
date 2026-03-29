@@ -147,6 +147,79 @@ public sealed class PaletteChannelButton : UIPanel {
     }
 }
 
+public sealed class DraggableUIPanel : UIPanel {
+    private bool _dragging;
+    private Vector2 _dragOffset;
+
+    public DraggableUIPanel() {
+        PaddingTop = 0f;
+        PaddingBottom = 0f;
+        PaddingLeft = 0f;
+        PaddingRight = 0f;
+    }
+
+    public float HandleHeight { get; set; } = 28f;
+    public string DragLabel { get; set; } = "Move";
+
+    public override void LeftMouseDown(UIMouseEvent evt) {
+        base.LeftMouseDown(evt);
+        if (!IsWithinHandle(evt.MousePosition))
+            return;
+
+        CalculatedStyle dims = GetDimensions();
+        _dragging = true;
+        _dragOffset = evt.MousePosition - new Vector2(dims.X, dims.Y);
+    }
+
+    public override void LeftMouseUp(UIMouseEvent evt) {
+        base.LeftMouseUp(evt);
+        _dragging = false;
+    }
+
+    public override void Update(GameTime gameTime) {
+        base.Update(gameTime);
+
+        if (!_dragging)
+            return;
+
+        if (!Main.mouseLeft) {
+            _dragging = false;
+            return;
+        }
+
+        CalculatedStyle dims = GetDimensions();
+        float maxLeft = Math.Max(0f, Main.screenWidth - dims.Width);
+        float maxTop = Math.Max(0f, Main.screenHeight - dims.Height);
+        Vector2 topLeft = Main.MouseScreen - _dragOffset;
+        Left.Set(MathHelper.Clamp(topLeft.X, 0f, maxLeft), 0f);
+        Top.Set(MathHelper.Clamp(topLeft.Y, 0f, maxTop), 0f);
+        Recalculate();
+        Main.LocalPlayer.mouseInterface = true;
+    }
+
+    protected override void DrawSelf(SpriteBatch spriteBatch) {
+        base.DrawSelf(spriteBatch);
+
+        CalculatedStyle dims = GetDimensions();
+        Texture2D pixel = TextureAssets.MagicPixel.Value;
+        Rectangle handle = new((int)dims.X + 2, (int)dims.Y + 2, Math.Max(0, (int)dims.Width - 4), Math.Max(0, (int)HandleHeight - 2));
+        if (handle.Width <= 0 || handle.Height <= 0)
+            return;
+
+        spriteBatch.Draw(pixel, handle, new Color(26, 34, 44, 230));
+        spriteBatch.Draw(pixel, new Rectangle(handle.X, handle.Bottom - 1, handle.Width, 1), new Color(78, 92, 110));
+        Utils.DrawBorderString(spriteBatch, DragLabel, new Vector2(dims.X + 12f, dims.Y + 6f), new Color(220, 230, 240), 0.72f);
+    }
+
+    private bool IsWithinHandle(Vector2 mousePosition) {
+        CalculatedStyle dims = GetDimensions();
+        return mousePosition.X >= dims.X &&
+               mousePosition.X <= dims.X + dims.Width &&
+               mousePosition.Y >= dims.Y &&
+               mousePosition.Y <= dims.Y + HandleHeight;
+    }
+}
+
 public sealed class CustomNameTextInputPanel : UIElement {
     private readonly object _innerInputObject;
     private readonly UIElement _innerInputElement;
@@ -267,546 +340,17 @@ public sealed class CustomNameTextInputPanel : UIElement {
     }
 }
 
-public sealed class PalettePreviewSwatch : UIElement {
-    private readonly struct PreviewPlayerState {
-        public string TransformationId { get; init; }
-        public bool PrimaryAbilityEnabled { get; init; }
-        public bool SecondaryAbilityEnabled { get; init; }
-        public bool TertiaryAbilityEnabled { get; init; }
-        public bool UltimateAbilityEnabled { get; init; }
-        public bool IsDisplayDollOrInanimate { get; init; }
-        public Vector2 Position { get; init; }
-        public Vector2 Velocity { get; init; }
-        public int Direction { get; init; }
-        public float GravDir { get; init; }
-        public Rectangle HeadFrame { get; init; }
-        public Rectangle BodyFrame { get; init; }
-        public Rectangle LegFrame { get; init; }
-        public float HeadRotation { get; init; }
-        public float BodyRotation { get; init; }
-        public float LegRotation { get; init; }
-        public float ItemRotation { get; init; }
-        public float FullRotation { get; init; }
-        public Vector2 FullRotationOrigin { get; init; }
-        public int ItemAnimation { get; init; }
-        public int ItemTime { get; init; }
-        public bool ArmorEffectDrawShadow { get; init; }
-        public int HeadSlot { get; init; }
-        public int BodySlot { get; init; }
-        public int LegsSlot { get; init; }
-        public int BackSlot { get; init; }
-        public int WaistSlot { get; init; }
-        public int WingsSlot { get; init; }
-        public int ShoeSlot { get; init; }
-        public int HandOffSlot { get; init; }
-        public int HandOnSlot { get; init; }
-        public int ShieldSlot { get; init; }
-        public int NeckSlot { get; init; }
-        public int FaceSlot { get; init; }
-        public int FrontSlot { get; init; }
-    }
-
-    private readonly struct ResolvedPreviewBase {
-        public ResolvedPreviewBase(string texturePath, Texture2D texture) {
-            TexturePath = texturePath ?? string.Empty;
-            Texture = texture;
-        }
-
-        public string TexturePath { get; }
-        public Texture2D Texture { get; }
-    }
-
-    private readonly struct ResolvedPreviewOverlay {
-        public ResolvedPreviewOverlay(string texturePath, Texture2D baseTexture, Texture2D maskTexture,
-            TransformationPaletteChannelSettings settings, bool usePaletteColor) {
-            TexturePath = texturePath ?? string.Empty;
-            BaseTexture = baseTexture;
-            MaskTexture = maskTexture;
-            Settings = settings;
-            UsePaletteColor = usePaletteColor;
-        }
-
-        public string TexturePath { get; }
-        public Texture2D BaseTexture { get; }
-        public Texture2D MaskTexture { get; }
-        public TransformationPaletteChannelSettings Settings { get; }
-        public bool UsePaletteColor { get; }
-    }
-
-    public Func<Color> ResolveColor { get; set; }
-    public Func<string> ResolveLabel { get; set; }
-    public Func<IReadOnlyList<string>> ResolveBaseTexturePaths { get; set; }
-    public Func<IReadOnlyList<TransformationPaletteChannel>> ResolveChannels { get; set; }
-    public Func<string, TransformationPaletteChannelSettings> ResolveChannelSettings { get; set; }
-    public Func<string, bool> ResolveChannelEnabled { get; set; }
-
-    protected override void DrawSelf(SpriteBatch spriteBatch) {
-        CalculatedStyle dims = GetDimensions();
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Rectangle outer = dims.ToRectangle();
-        Color color = ResolveColor?.Invoke() ?? Color.Transparent;
-        string label = ResolveLabel?.Invoke() ?? "Preview";
-        IReadOnlyList<string> previewBaseTexturePaths = ResolveBaseTexturePaths?.Invoke() ??
-            Array.Empty<string>();
-        IReadOnlyList<TransformationPaletteChannel> channels = ResolveChannels?.Invoke() ??
-            Array.Empty<TransformationPaletteChannel>();
-        IReadOnlyList<string> equipPreviewBaseTexturePaths = ResolvePreviewEquipTexturePaths();
-        List<string> effectivePreviewBaseTexturePaths = new();
-
-        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
-            string texturePath = previewBaseTexturePaths[i];
-            if (!string.IsNullOrWhiteSpace(texturePath) &&
-                !effectivePreviewBaseTexturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
-                effectivePreviewBaseTexturePaths.Add(texturePath);
-        }
-
-        for (int i = 0; i < equipPreviewBaseTexturePaths.Count; i++) {
-            string texturePath = equipPreviewBaseTexturePaths[i];
-            if (!string.IsNullOrWhiteSpace(texturePath) &&
-                !effectivePreviewBaseTexturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
-                effectivePreviewBaseTexturePaths.Add(texturePath);
-        }
-
-        spriteBatch.Draw(pixel, outer, new Color(18, 22, 28, 220));
-        spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Y, outer.Width, 2), new Color(110, 140, 160));
-        spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Bottom - 2, outer.Width, 2), new Color(110, 140, 160));
-        spriteBatch.Draw(pixel, new Rectangle(outer.X, outer.Y, 2, outer.Height), new Color(110, 140, 160));
-        spriteBatch.Draw(pixel, new Rectangle(outer.Right - 2, outer.Y, 2, outer.Height), new Color(110, 140, 160));
-
-        Rectangle previewArea = new Rectangle(outer.X + 18, outer.Y + 18, outer.Width - 36, outer.Height - 68);
-        spriteBatch.Draw(pixel, previewArea, new Color(11, 14, 18, 235));
-        spriteBatch.Draw(pixel, new Rectangle(previewArea.X, previewArea.Bottom - 18, previewArea.Width, 18),
-            new Color(20, 28, 34, 245));
-
-        DrawPreviewFigure(spriteBatch, previewArea, effectivePreviewBaseTexturePaths, channels);
-        TryDrawLivePreview(previewArea);
-
-        Rectangle swatch = new Rectangle(outer.Right - 62, outer.Bottom - 38, 30, 18);
-        spriteBatch.Draw(pixel, swatch, color);
-        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Y, swatch.Width, 1), Color.Black);
-        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Bottom - 1, swatch.Width, 1), Color.Black);
-        spriteBatch.Draw(pixel, new Rectangle(swatch.X, swatch.Y, 1, swatch.Height), Color.Black);
-        spriteBatch.Draw(pixel, new Rectangle(swatch.Right - 1, swatch.Y, 1, swatch.Height), Color.Black);
-
-        Utils.DrawBorderString(spriteBatch, label, new Vector2(dims.X + 12f, dims.Y + dims.Height - 28f),
-            Color.White, 0.82f);
-    }
-
-    private static bool TryDrawLivePreview(Rectangle previewArea) {
-        if (Main.dedServ)
-            return false;
-
-        Player player = Main.LocalPlayer;
-        if (player == null || !player.active)
-            return false;
-
-        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
-        if (targetTransformation == null)
-            return false;
-
-        PreviewPlayerState savedState = CapturePreviewPlayerState(player, omp);
-        try {
-            PreparePreviewPlayer(player, omp, targetTransformation, previewArea);
-
-            const float previewFrameWidth = 40f;
-            const float previewFrameHeight = 56f;
-            float scale = Math.Min((previewArea.Width - 40f) / previewFrameWidth, (previewArea.Height - 26f) / previewFrameHeight);
-            scale = MathHelper.Clamp(scale, 1.6f, 4.2f);
-
-            Vector2 previewTopLeft = new Vector2(previewArea.Center.X, previewArea.Center.Y + 6f) -
-                new Vector2(previewFrameWidth * 0.5f, previewFrameHeight * 0.5f) * scale;
-            Vector2 previewWorldTopLeft = Main.screenPosition + previewTopLeft;
-
-            player.position = previewWorldTopLeft;
-            Main.PlayerRenderer.DrawPlayer(Main.Camera, player, previewTopLeft, 0f, Vector2.Zero, 0f, scale);
-            return true;
-        }
-        catch {
-            return false;
-        }
-        finally {
-            RestorePreviewPlayerState(player, omp, savedState);
-        }
-    }
-
-    private static IReadOnlyList<string> ResolvePreviewEquipTexturePaths() {
-        if (Main.dedServ)
-            return Array.Empty<string>();
-
-        Player player = Main.LocalPlayer;
-        if (player == null || !player.active)
-            return Array.Empty<string>();
-
-        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
-        if (targetTransformation == null)
-            return Array.Empty<string>();
-
-        PreviewPlayerState savedState = CapturePreviewPlayerState(player, omp);
-        try {
-            PreparePreviewPlayer(player, omp, targetTransformation, Rectangle.Empty);
-            List<string> texturePaths = new();
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Back, player.back);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Waist, player.waist);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Body, player.body);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Legs, player.legs);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Head, player.head);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Wings, player.wings);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.HandsOff, player.handoff);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.HandsOn, player.handon);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Shield, player.shield);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Neck, player.neck);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Face, player.face);
-            AddPreviewEquipTexturePath(texturePaths, EquipType.Front, player.front);
-            return texturePaths;
-        }
-        catch {
-            return Array.Empty<string>();
-        }
-        finally {
-            RestorePreviewPlayerState(player, omp, savedState);
-        }
-    }
-
-    private static void AddPreviewEquipTexturePath(List<string> texturePaths, EquipType equipType, int slot) {
-        if (slot < 0)
-            return;
-
-        EquipTexture equipTexture = EquipLoader.GetEquipTexture(equipType, slot);
-        string texturePath = equipTexture?.Texture;
-        if (!string.IsNullOrWhiteSpace(texturePath) &&
-            !texturePaths.Contains(texturePath, StringComparer.OrdinalIgnoreCase))
-            texturePaths.Add(texturePath);
-    }
-
-    private void DrawPreviewFigure(SpriteBatch spriteBatch, Rectangle previewArea,
-        IReadOnlyList<string> previewBaseTexturePaths, IReadOnlyList<TransformationPaletteChannel> channels) {
-        List<ResolvedPreviewBase> baseLayers = new();
-        List<ResolvedPreviewOverlay> overlays = new();
-        HashSet<string> seenBasePaths = new(StringComparer.OrdinalIgnoreCase);
-        HashSet<string> allowedPreviewBasePaths = new(StringComparer.OrdinalIgnoreCase);
-
-        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
-            string texturePath = previewBaseTexturePaths[i];
-            if (!string.IsNullOrWhiteSpace(texturePath))
-                allowedPreviewBasePaths.Add(texturePath);
-        }
-
-        for (int i = 0; i < previewBaseTexturePaths.Count; i++) {
-            string texturePath = previewBaseTexturePaths[i];
-            if (!seenBasePaths.Add(texturePath) || !TryGetPreviewTexture(texturePath, out Texture2D baseTexture))
-                continue;
-
-            baseLayers.Add(new ResolvedPreviewBase(texturePath, baseTexture));
-        }
-
-        for (int i = 0; i < channels.Count; i++) {
-            TransformationPaletteChannel channel = channels[i];
-            if (channel == null || !channel.IsValid)
-                continue;
-
-            bool channelEnabled = ResolveChannelEnabled?.Invoke(channel.Id) ?? true;
-            TransformationPaletteChannelSettings settings = ResolveChannelSettings?.Invoke(channel.Id) ??
-                new TransformationPaletteChannelSettings(channel.DefaultColor);
-            for (int j = 0; j < channel.Overlays.Count; j++) {
-                TransformationPaletteOverlay overlay = channel.Overlays[j];
-                if (allowedPreviewBasePaths.Count > 0 &&
-                    !allowedPreviewBasePaths.Contains(overlay?.BaseTexturePath ?? string.Empty))
-                    continue;
-
-                if (overlay == null || !overlay.TryGetTextures(out Texture2D baseTexture, out Texture2D maskTexture))
-                    continue;
-
-                if (seenBasePaths.Add(overlay.BaseTexturePath))
-                    baseLayers.Add(new ResolvedPreviewBase(overlay.BaseTexturePath, baseTexture));
-
-                overlays.Add(new ResolvedPreviewOverlay(overlay.BaseTexturePath, baseTexture, maskTexture,
-                    settings, channelEnabled));
-            }
-        }
-
-        if (baseLayers.Count == 0) {
-            Utils.DrawBorderString(spriteBatch, "No preview available", new Vector2(previewArea.X + 14f, previewArea.Y + 14f),
-                new Color(160, 170, 182), 0.82f);
-            return;
-        }
-
-        baseLayers.Sort(static (left, right) => ComparePreviewLayerOrder(left.TexturePath, right.TexturePath));
-        overlays.Sort(static (left, right) => ComparePreviewLayerOrder(left.TexturePath, right.TexturePath));
-
-        const int previewFrameWidth = 40;
-        const int previewFrameHeight = 56;
-        float scale = Math.Min((previewArea.Width - 40f) / previewFrameWidth, (previewArea.Height - 26f) / previewFrameHeight);
-        scale = MathHelper.Clamp(scale, 1.6f, 4.2f);
-
-        Vector2 drawPosition = new(previewArea.Center.X, previewArea.Center.Y + 6f);
-        Vector2 origin = new(previewFrameWidth * 0.5f, previewFrameHeight * 0.5f);
-
-        int shadowWidth = (int)(previewFrameWidth * scale * 0.7f);
-        Rectangle shadow = new(previewArea.Center.X - shadowWidth / 2, previewArea.Bottom - 20, shadowWidth, 10);
-        spriteBatch.Draw(TextureAssets.MagicPixel.Value, shadow, new Color(0, 0, 0, 105));
-
-        Dictionary<Texture2D, Rectangle> previewFramesByBaseTexture = new();
-
-        for (int i = 0; i < baseLayers.Count; i++) {
-            ResolvedPreviewBase previewBase = baseLayers[i];
-            Texture2D texture = previewBase.Texture;
-            if (texture == null)
-                continue;
-
-            List<Texture2D> masksForBase = new();
-            for (int overlayIndex = 0; overlayIndex < overlays.Count; overlayIndex++) {
-                ResolvedPreviewOverlay overlay = overlays[overlayIndex];
-                if (overlay.BaseTexture == texture)
-                    masksForBase.Add(overlay.MaskTexture);
-            }
-
-            Texture2D baseToDraw = masksForBase.Count > 0
-                ? TransformationPaletteTextureCache.GetMaskedBaseTexture(texture, masksForBase)
-                : texture;
-            Rectangle previewFrame = ResolvePreviewFrame(previewBase.TexturePath, texture, masksForBase);
-            previewFramesByBaseTexture[texture] = previewFrame;
-
-            spriteBatch.Draw(baseToDraw, drawPosition, previewFrame,
-                Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
-        }
-
-        for (int i = 0; i < overlays.Count; i++) {
-            ResolvedPreviewOverlay overlay = overlays[i];
-            if (overlay.MaskTexture == null || overlay.BaseTexture == null)
-                continue;
-
-            Texture2D processedOverlay = TransformationPaletteTextureCache.GetProcessedOverlayTexture(
-                overlay.BaseTexture,
-                overlay.MaskTexture,
-                overlay.Settings,
-                overlay.UsePaletteColor
-            );
-            if (processedOverlay == null)
-                continue;
-
-            Rectangle previewFrame = previewFramesByBaseTexture.TryGetValue(overlay.BaseTexture, out Rectangle resolvedFrame)
-                ? resolvedFrame
-                : ResolvePreviewFrame(overlay.TexturePath, overlay.BaseTexture, new[] { overlay.MaskTexture });
-
-            spriteBatch.Draw(processedOverlay, drawPosition, previewFrame,
-                Color.White, 0f, origin, scale, SpriteEffects.None, 0f);
-        }
-    }
-
-    private static bool TryGetPreviewTexture(string texturePath, out Texture2D texture) {
-        texture = null;
-        if (Main.dedServ || string.IsNullOrWhiteSpace(texturePath))
-            return false;
-
-        try {
-            texture = ModContent.Request<Texture2D>(texturePath).Value;
-            return texture != null;
-        }
-        catch {
-            return false;
-        }
-    }
-
-    private static PreviewPlayerState CapturePreviewPlayerState(Player player, OmnitrixPlayer omp) {
-        return new PreviewPlayerState {
-            TransformationId = omp.currentTransformationId,
-            PrimaryAbilityEnabled = omp.PrimaryAbilityEnabled,
-            SecondaryAbilityEnabled = omp.SecondaryAbilityEnabled,
-            TertiaryAbilityEnabled = omp.TertiaryAbilityEnabled,
-            UltimateAbilityEnabled = omp.UltimateAbilityEnabled,
-            IsDisplayDollOrInanimate = player.isDisplayDollOrInanimate,
-            Position = player.position,
-            Velocity = player.velocity,
-            Direction = player.direction,
-            GravDir = player.gravDir,
-            HeadFrame = player.headFrame,
-            BodyFrame = player.bodyFrame,
-            LegFrame = player.legFrame,
-            HeadRotation = player.headRotation,
-            BodyRotation = player.bodyRotation,
-            LegRotation = player.legRotation,
-            ItemRotation = player.itemRotation,
-            FullRotation = player.fullRotation,
-            FullRotationOrigin = player.fullRotationOrigin,
-            ItemAnimation = player.itemAnimation,
-            ItemTime = player.itemTime,
-            ArmorEffectDrawShadow = player.armorEffectDrawShadow,
-            HeadSlot = player.head,
-            BodySlot = player.body,
-            LegsSlot = player.legs,
-            BackSlot = player.back,
-            WaistSlot = player.waist,
-            WingsSlot = player.wings,
-            ShoeSlot = player.shoe,
-            HandOffSlot = player.handoff,
-            HandOnSlot = player.handon,
-            ShieldSlot = player.shield,
-            NeckSlot = player.neck,
-            FaceSlot = player.face,
-            FrontSlot = player.front
-        };
-    }
-
-    private static void PreparePreviewPlayer(Player player, OmnitrixPlayer omp, Transformation targetTransformation,
-        Rectangle previewArea) {
-        omp.currentTransformationId = targetTransformation.FullID;
-        omp.PrimaryAbilityEnabled = false;
-        omp.SecondaryAbilityEnabled = false;
-        omp.TertiaryAbilityEnabled = false;
-        omp.UltimateAbilityEnabled = false;
-
-        player.isDisplayDollOrInanimate = true;
-        player.velocity = Vector2.Zero;
-        player.direction = 1;
-        player.gravDir = 1f;
-        player.headFrame = new Rectangle(0, 0, 40, 56);
-        player.bodyFrame = new Rectangle(0, 0, 40, 56);
-        player.legFrame = new Rectangle(0, 9 * 56, 40, 56);
-        player.headRotation = 0f;
-        player.bodyRotation = 0f;
-        player.legRotation = 0f;
-        player.itemRotation = 0f;
-        player.fullRotation = 0f;
-        player.fullRotationOrigin = Vector2.Zero;
-        player.itemAnimation = 0;
-        player.itemTime = 0;
-        player.armorEffectDrawShadow = false;
-
-        ClearPreviewVisualSlots(player);
-        targetTransformation.FrameEffects(player, omp);
-        omp.ApplySelectedTransformationCostumeVisuals(player, targetTransformation);
-    }
-
-    private static void RestorePreviewPlayerState(Player player, OmnitrixPlayer omp, PreviewPlayerState state) {
-        omp.currentTransformationId = state.TransformationId;
-        omp.PrimaryAbilityEnabled = state.PrimaryAbilityEnabled;
-        omp.SecondaryAbilityEnabled = state.SecondaryAbilityEnabled;
-        omp.TertiaryAbilityEnabled = state.TertiaryAbilityEnabled;
-        omp.UltimateAbilityEnabled = state.UltimateAbilityEnabled;
-
-        player.isDisplayDollOrInanimate = state.IsDisplayDollOrInanimate;
-        player.position = state.Position;
-        player.velocity = state.Velocity;
-        player.direction = state.Direction;
-        player.gravDir = state.GravDir;
-        player.headFrame = state.HeadFrame;
-        player.bodyFrame = state.BodyFrame;
-        player.legFrame = state.LegFrame;
-        player.headRotation = state.HeadRotation;
-        player.bodyRotation = state.BodyRotation;
-        player.legRotation = state.LegRotation;
-        player.itemRotation = state.ItemRotation;
-        player.fullRotation = state.FullRotation;
-        player.fullRotationOrigin = state.FullRotationOrigin;
-        player.itemAnimation = state.ItemAnimation;
-        player.itemTime = state.ItemTime;
-        player.armorEffectDrawShadow = state.ArmorEffectDrawShadow;
-        player.head = state.HeadSlot;
-        player.body = state.BodySlot;
-        player.legs = state.LegsSlot;
-        player.back = state.BackSlot;
-        player.waist = state.WaistSlot;
-        player.wings = state.WingsSlot;
-        player.shoe = state.ShoeSlot;
-        player.handoff = state.HandOffSlot;
-        player.handon = state.HandOnSlot;
-        player.shield = state.ShieldSlot;
-        player.neck = state.NeckSlot;
-        player.face = state.FaceSlot;
-        player.front = state.FrontSlot;
-    }
-
-    private static void ClearPreviewVisualSlots(Player player) {
-        player.head = -1;
-        player.body = -1;
-        player.legs = -1;
-        player.back = -1;
-        player.waist = -1;
-        player.wings = -1;
-        player.shoe = -1;
-        player.handoff = -1;
-        player.handon = -1;
-        player.shield = -1;
-        player.neck = -1;
-        player.face = -1;
-        player.front = -1;
-    }
-
-    private static Rectangle ResolvePreviewFrame(string texturePath, Texture2D texture, IReadOnlyList<Texture2D> maskTextures) {
-        if (texture == null)
-            return Rectangle.Empty;
-
-        const int previewFrameWidth = 40;
-        const int previewFrameHeight = 56;
-        if (texture.Width < previewFrameWidth || texture.Height < previewFrameHeight ||
-            texture.Width % previewFrameWidth != 0 || texture.Height % previewFrameHeight != 0) {
-            return new Rectangle(0, 0, texture.Width, texture.Height);
-        }
-
-        int columns = texture.Width / previewFrameWidth;
-        int rows = texture.Height / previewFrameHeight;
-
-        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase)) {
-            int standingColumn = columns >= 5 ? 4 : 0;
-            return new Rectangle(standingColumn * previewFrameWidth, 0, previewFrameWidth, previewFrameHeight);
-        }
-
-        if (texturePath.EndsWith("_Legs", StringComparison.OrdinalIgnoreCase)) {
-            int standingFrame = Math.Min(9, rows - 1);
-            return new Rectangle(0, standingFrame * previewFrameHeight, previewFrameWidth, previewFrameHeight);
-        }
-
-        if (texturePath.EndsWith("_Head", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Back", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Wings", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_HandsOff", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_HandsOn", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Shield", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Neck", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Face", StringComparison.OrdinalIgnoreCase) ||
-            texturePath.EndsWith("_Front", StringComparison.OrdinalIgnoreCase)) {
-            return new Rectangle(0, 0, previewFrameWidth, previewFrameHeight);
-        }
-
-        return TransformationPaletteTextureCache.ResolvePreviewFrame(texture, maskTextures, previewFrameWidth, previewFrameHeight);
-    }
-
-    private static int ComparePreviewLayerOrder(string leftPath, string rightPath) {
-        int leftOrder = GetPreviewLayerOrder(leftPath);
-        int rightOrder = GetPreviewLayerOrder(rightPath);
-        if (leftOrder != rightOrder)
-            return leftOrder.CompareTo(rightOrder);
-
-        return string.Compare(leftPath, rightPath, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static int GetPreviewLayerOrder(string texturePath) {
-        if (string.IsNullOrWhiteSpace(texturePath))
-            return 99;
-
-        if (texturePath.EndsWith("_Back", StringComparison.OrdinalIgnoreCase))
-            return 0;
-
-        if (texturePath.EndsWith("_Waist", StringComparison.OrdinalIgnoreCase))
-            return 1;
-
-        if (texturePath.EndsWith("_Legs", StringComparison.OrdinalIgnoreCase))
-            return 2;
-
-        if (texturePath.EndsWith("_Body", StringComparison.OrdinalIgnoreCase))
-            return 3;
-
-        if (texturePath.EndsWith("_Head", StringComparison.OrdinalIgnoreCase))
-            return 4;
-
-        return 5;
-    }
-}
-
 public class TransformationPaletteScreen : UIState {
+    private const float HeaderPanelWidth = 980f;
+    private const float HeaderPanelHeight = 142f;
+    private const float FloatingListPanelWidth = 336f;
+    private const float FloatingDetailPanelWidth = 606f;
+    private const float FloatingPanelHeight = 556f;
+    private const float FloatingPanelMargin = 24f;
+    private const float FloatingPanelGap = 18f;
+    private const float FloatingPanelContentTop = 36f;
+    private const float FloatingPanelInnerMargin = 8f;
+
     private enum CustomizationTab {
         Palette,
         Costumes,
@@ -842,20 +386,24 @@ public class TransformationPaletteScreen : UIState {
         s_paletteClipboard = null;
     }
 
-    private UIPanel mainPanel;
+    private DraggableUIPanel mainPanel;
+    private DraggableUIPanel selectionPanel;
+    private DraggableUIPanel detailPanel;
     private UIText titleText;
     private UIText targetText;
     private UIText statusText;
     private UITextPanel<string> paletteTabButton;
     private UITextPanel<string> costumesTabButton;
     private UITextPanel<string> customNamesTabButton;
-    private UIElement paletteContentRoot;
-    private UIElement costumesContentRoot;
-    private UIElement customNamesContentRoot;
+    private UIPanel paletteListPanel;
+    private UIPanel costumeListPanel;
+    private UIPanel customNameListPanel;
+    private UIPanel paletteDetailPanel;
+    private UIPanel costumeDetailPanel;
+    private UIPanel customNameDetailPanel;
     private UIList channelList;
     private UIScrollbar channelScrollbar;
     private UIText selectedChannelText;
-    private PalettePreviewSwatch previewSwatch;
     private UIList sliderList;
     private UIScrollbar sliderScrollbar;
     private PaletteByteSlider redSlider;
@@ -877,7 +425,6 @@ public class TransformationPaletteScreen : UIState {
     private UIText costumeSourceText;
     private UIText costumeDescriptionText;
     private UIText costumeHintText;
-    private PalettePreviewSwatch costumePreviewSwatch;
     private UITextPanel<string> useDefaultCostumeButton;
     private UIList customNameList;
     private UIScrollbar customNameScrollbar;
@@ -892,7 +439,6 @@ public class TransformationPaletteScreen : UIState {
     private CustomizationTab _activeTab = CustomizationTab.Palette;
     private string _currentTransformationId = string.Empty;
     private string _currentChannelSignature = string.Empty;
-    private string _currentPreviewBaseSignature = string.Empty;
     private string _currentChannelEnabledSignature = string.Empty;
     private string _currentPaletteCostumeId = string.Empty;
     private string _currentCustomNameSignature = string.Empty;
@@ -906,7 +452,6 @@ public class TransformationPaletteScreen : UIState {
     private bool _suppressCustomNameCallbacks;
     private bool _hasPendingCustomNameChanges;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
-    private readonly List<string> _activePreviewBaseTexturePaths = new();
     private readonly List<CostumeListEntry> _availableCostumeEntries = new();
     private readonly List<string> _availableCustomNameTransformationIds = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
@@ -914,40 +459,36 @@ public class TransformationPaletteScreen : UIState {
     private readonly Dictionary<string, byte> _pendingSaturationValues = new(StringComparer.OrdinalIgnoreCase);
 
     public override void OnInitialize() {
-        mainPanel = new UIPanel();
-        mainPanel.Width.Set(980f, 0f);
-        mainPanel.Height.Set(714f, 0f);
-        mainPanel.HAlign = 0.5f;
-        mainPanel.VAlign = 0.5f;
+        mainPanel = new DraggableUIPanel {
+            DragLabel = "Customization"
+        };
+        mainPanel.Width.Set(HeaderPanelWidth, 0f);
+        mainPanel.Height.Set(HeaderPanelHeight, 0f);
         Append(mainPanel);
 
-        paletteContentRoot = new UIElement();
-        paletteContentRoot.Width.Set(0f, 1f);
-        paletteContentRoot.Height.Set(0f, 1f);
-        paletteContentRoot.Left.Set(0f, 0f);
-        mainPanel.Append(paletteContentRoot);
+        selectionPanel = new DraggableUIPanel {
+            DragLabel = "Move List"
+        };
+        selectionPanel.Width.Set(FloatingListPanelWidth, 0f);
+        selectionPanel.Height.Set(FloatingPanelHeight, 0f);
+        Append(selectionPanel);
 
-        costumesContentRoot = new UIElement();
-        costumesContentRoot.Width.Set(0f, 1f);
-        costumesContentRoot.Height.Set(0f, 1f);
-        costumesContentRoot.Left.Set(-1600f, 0f);
-        mainPanel.Append(costumesContentRoot);
-
-        customNamesContentRoot = new UIElement();
-        customNamesContentRoot.Width.Set(0f, 1f);
-        customNamesContentRoot.Height.Set(0f, 1f);
-        customNamesContentRoot.Left.Set(-1600f, 0f);
-        mainPanel.Append(customNamesContentRoot);
+        detailPanel = new DraggableUIPanel {
+            DragLabel = "Move Details"
+        };
+        detailPanel.Width.Set(FloatingDetailPanelWidth, 0f);
+        detailPanel.Height.Set(FloatingPanelHeight, 0f);
+        Append(detailPanel);
 
         titleText = new UIText("Alien Customization", 1.35f);
         titleText.Left.Set(24f, 0f);
-        titleText.Top.Set(20f, 0f);
+        titleText.Top.Set(38f, 0f);
         mainPanel.Append(titleText);
 
-        paletteTabButton = CreateActionButton("Palette", 552f, 20f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
-        costumesTabButton = CreateActionButton("Costumes", 682f, 20f,
+        paletteTabButton = CreateActionButton("Palette", 552f, 34f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
+        costumesTabButton = CreateActionButton("Costumes", 682f, 34f,
             (_, _) => SetActiveTab(CustomizationTab.Costumes), width: 120f);
-        customNamesTabButton = CreateActionButton("Custom Names", 812f, 20f,
+        customNamesTabButton = CreateActionButton("Custom Names", 812f, 34f,
             (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: 140f);
         mainPanel.Append(paletteTabButton);
         mainPanel.Append(costumesTabButton);
@@ -955,25 +496,30 @@ public class TransformationPaletteScreen : UIState {
 
         targetText = new UIText("No transformation selected", 1f);
         targetText.Left.Set(24f, 0f);
-        targetText.Top.Set(58f, 0f);
+        targetText.Top.Set(78f, 0f);
         mainPanel.Append(targetText);
 
         statusText = new UIText("Pick a transformation with palette masks to begin.", 0.9f);
         statusText.Left.Set(24f, 0f);
-        statusText.Top.Set(88f, 0f);
+        statusText.Top.Set(104f, 0f);
         mainPanel.Append(statusText);
 
-        UIPanel channelsPanel = new UIPanel();
-        channelsPanel.Width.Set(320f, 0f);
-        channelsPanel.Height.Set(512f, 0f);
-        channelsPanel.Left.Set(24f, 0f);
-        channelsPanel.Top.Set(126f, 0f);
-        paletteContentRoot.Append(channelsPanel);
+        paletteListPanel = new UIPanel();
+        paletteListPanel.Width.Set(320f, 0f);
+        paletteListPanel.Height.Set(512f, 0f);
+        paletteListPanel.HAlign = 0.5f;
+        paletteListPanel.Left.Set(0f, 0f);
+        paletteListPanel.Top.Set(FloatingPanelContentTop, 0f);
+        paletteListPanel.PaddingTop = 0f;
+        paletteListPanel.PaddingBottom = 0f;
+        paletteListPanel.PaddingLeft = 0f;
+        paletteListPanel.PaddingRight = 0f;
+        selectionPanel.Append(paletteListPanel);
 
-        UIText channelsHeader = new UIText("Custom Parts", 1.05f);
+        UIText channelsHeader = new UIText("Palette Parts", 1.05f);
         channelsHeader.Left.Set(16f, 0f);
         channelsHeader.Top.Set(12f, 0f);
-        channelsPanel.Append(channelsHeader);
+        paletteListPanel.Append(channelsHeader);
 
         channelList = new UIList();
         channelList.Width.Set(-30f, 1f);
@@ -981,56 +527,48 @@ public class TransformationPaletteScreen : UIState {
         channelList.Left.Set(10f, 0f);
         channelList.Top.Set(40f, 0f);
         channelList.ListPadding = 8f;
-        channelsPanel.Append(channelList);
+        paletteListPanel.Append(channelList);
 
         channelScrollbar = new UIScrollbar();
         channelScrollbar.Height.Set(-52f, 1f);
         channelScrollbar.Left.Set(-20f, 1f);
         channelScrollbar.Top.Set(40f, 0f);
-        channelsPanel.Append(channelScrollbar);
+        paletteListPanel.Append(channelScrollbar);
         channelList.SetScrollbar(channelScrollbar);
 
-        UIPanel controlsPanel = new UIPanel();
-        controlsPanel.Width.Set(590f, 0f);
-        controlsPanel.Height.Set(512f, 0f);
-        controlsPanel.Left.Set(366f, 0f);
-        controlsPanel.Top.Set(126f, 0f);
-        paletteContentRoot.Append(controlsPanel);
+        paletteDetailPanel = new UIPanel();
+        paletteDetailPanel.Width.Set(590f, 0f);
+        paletteDetailPanel.Height.Set(512f, 0f);
+        paletteDetailPanel.HAlign = 0.5f;
+        paletteDetailPanel.Left.Set(0f, 0f);
+        paletteDetailPanel.Top.Set(FloatingPanelContentTop, 0f);
+        paletteDetailPanel.PaddingTop = 0f;
+        paletteDetailPanel.PaddingBottom = 0f;
+        paletteDetailPanel.PaddingLeft = 0f;
+        paletteDetailPanel.PaddingRight = 0f;
+        detailPanel.Append(paletteDetailPanel);
 
         selectedChannelText = new UIText("No part selected", 1.05f);
-        selectedChannelText.Left.Set(18f, 0f);
-        selectedChannelText.Top.Set(16f, 0f);
-        controlsPanel.Append(selectedChannelText);
+        selectedChannelText.Left.Set(16f, 0f);
+        selectedChannelText.Top.Set(18f, 0f);
+        selectedChannelText.Width.Set(276f, 0f);
+        paletteDetailPanel.Append(selectedChannelText);
 
-        copyPaletteButton = CreateActionButton("Copy Palette", 336f, 12f, (_, _) => CopyCurrentPalette(), width: 110f);
-        pastePaletteButton = CreateActionButton("Paste Palette", 454f, 12f, (_, _) => PastePalette(), width: 118f);
-        controlsPanel.Append(copyPaletteButton);
-        controlsPanel.Append(pastePaletteButton);
-
-        previewSwatch = new PalettePreviewSwatch {
-            ResolveColor = GetSelectedPendingColor,
-            ResolveLabel = GetSelectedChannelPreviewLabel,
-            ResolveBaseTexturePaths = () => _activePreviewBaseTexturePaths,
-            ResolveChannels = () => _activeChannels,
-            ResolveChannelSettings = GetPendingSettings,
-            ResolveChannelEnabled = IsPaletteChannelEnabled
-        };
-        previewSwatch.Left.Set(18f, 0f);
-        previewSwatch.Top.Set(54f, 0f);
-        previewSwatch.Width.Set(554f, 0f);
-        previewSwatch.Height.Set(156f, 0f);
-        controlsPanel.Append(previewSwatch);
+        copyPaletteButton = CreateActionButton("Copy Palette", 304f, 12f, (_, _) => CopyCurrentPalette(), width: 124f);
+        pastePaletteButton = CreateActionButton("Paste Palette", 436f, 12f, (_, _) => PastePalette(), width: 138f);
+        paletteDetailPanel.Append(copyPaletteButton);
+        paletteDetailPanel.Append(pastePaletteButton);
 
         UIPanel sliderPanel = new UIPanel();
-        sliderPanel.Left.Set(18f, 0f);
-        sliderPanel.Top.Set(222f, 0f);
-        sliderPanel.Width.Set(554f, 0f);
-        sliderPanel.Height.Set(164f, 0f);
+        sliderPanel.Left.Set(16f, 0f);
+        sliderPanel.Top.Set(62f, 0f);
+        sliderPanel.Width.Set(558f, 0f);
+        sliderPanel.Height.Set(286f, 0f);
         sliderPanel.PaddingTop = 8f;
         sliderPanel.PaddingBottom = 8f;
         sliderPanel.PaddingLeft = 8f;
         sliderPanel.PaddingRight = 8f;
-        controlsPanel.Append(sliderPanel);
+        paletteDetailPanel.Append(sliderPanel);
 
         sliderList = new UIList();
         sliderList.Left.Set(0f, 0f);
@@ -1058,42 +596,47 @@ public class TransformationPaletteScreen : UIState {
         sliderList.Add(hueSlider);
         sliderList.Add(saturationSlider);
 
-        paletteToggleButton = CreateActionButton("Use Original", 18f, 398f, (_, _) => TogglePaletteEnabled(), width: 131f);
-        applyButton = CreateActionButton("Apply Changes", 159f, 398f, (_, _) => ApplyPendingColors(), width: 131f);
-        resetChannelButton = CreateActionButton("Reset Part", 300f, 398f, (_, _) => ResetSelectedPendingColor(), width: 131f);
-        resetAllButton = CreateActionButton("Reset All", 441f, 398f, (_, _) => ResetAllPendingColors(), width: 131f);
-        controlsPanel.Append(paletteToggleButton);
-        controlsPanel.Append(applyButton);
-        controlsPanel.Append(resetChannelButton);
-        controlsPanel.Append(resetAllButton);
+        paletteToggleButton = CreateActionButton("Use Original", 16f, 360f, (_, _) => TogglePaletteEnabled(), width: 132f);
+        applyButton = CreateActionButton("Apply Changes", 156f, 360f, (_, _) => ApplyPendingColors(), width: 132f);
+        resetChannelButton = CreateActionButton("Reset Part", 296f, 360f, (_, _) => ResetSelectedPendingColor(), width: 132f);
+        resetAllButton = CreateActionButton("Reset All", 436f, 360f, (_, _) => ResetAllPendingColors(), width: 138f);
+        paletteDetailPanel.Append(paletteToggleButton);
+        paletteDetailPanel.Append(applyButton);
+        paletteDetailPanel.Append(resetChannelButton);
+        paletteDetailPanel.Append(resetAllButton);
 
         palettePresetHintText = new UIText(
             "Left click loads a preset. Right click saves the current colours and mask toggles.",
             0.74f);
-        palettePresetHintText.Left.Set(18f, 0f);
-        palettePresetHintText.Top.Set(438f, 0f);
-        palettePresetHintText.Width.Set(554f, 0f);
-        controlsPanel.Append(palettePresetHintText);
+        palettePresetHintText.Left.Set(16f, 0f);
+        palettePresetHintText.Top.Set(402f, 0f);
+        palettePresetHintText.Width.Set(558f, 0f);
+        paletteDetailPanel.Append(palettePresetHintText);
 
-        const float presetButtonWidth = 176f;
-        const float presetButtonSpacing = 13f;
+        const float presetButtonWidth = 180f;
+        const float presetButtonSpacing = 9f;
         for (int presetIndex = 0; presetIndex < OmnitrixPlayer.PalettePresetSlotCount; presetIndex++) {
             int capturedPresetIndex = presetIndex;
-            UITextPanel<string> presetButton = CreateActionButton($"Preset {presetIndex + 1}", 18f + presetIndex * (presetButtonWidth + presetButtonSpacing),
-                464f, (_, _) => LoadPalettePreset(capturedPresetIndex), width: presetButtonWidth);
+            UITextPanel<string> presetButton = CreateActionButton($"Preset {presetIndex + 1}", 16f + presetIndex * (presetButtonWidth + presetButtonSpacing),
+                442f, (_, _) => LoadPalettePreset(capturedPresetIndex), width: presetButtonWidth);
             presetButton.OnRightClick += (_, _) => SavePalettePreset(capturedPresetIndex);
             palettePresetButtons.Add(presetButton);
-            controlsPanel.Append(presetButton);
+            paletteDetailPanel.Append(presetButton);
         }
 
-        UIPanel costumeListPanel = new UIPanel();
+        costumeListPanel = new UIPanel();
         costumeListPanel.Width.Set(320f, 0f);
         costumeListPanel.Height.Set(512f, 0f);
-        costumeListPanel.Left.Set(24f, 0f);
-        costumeListPanel.Top.Set(126f, 0f);
-        costumesContentRoot.Append(costumeListPanel);
+        costumeListPanel.HAlign = 0.5f;
+        costumeListPanel.Left.Set(0f, 0f);
+        costumeListPanel.Top.Set(FloatingPanelContentTop, 0f);
+        costumeListPanel.PaddingTop = 0f;
+        costumeListPanel.PaddingBottom = 0f;
+        costumeListPanel.PaddingLeft = 0f;
+        costumeListPanel.PaddingRight = 0f;
+        selectionPanel.Append(costumeListPanel);
 
-        UIText costumeListHeader = new UIText("Costumes", 1.05f);
+        UIText costumeListHeader = new UIText("Available Costumes", 1.05f);
         costumeListHeader.Left.Set(16f, 0f);
         costumeListHeader.Top.Set(12f, 0f);
         costumeListPanel.Append(costumeListHeader);
@@ -1113,48 +656,39 @@ public class TransformationPaletteScreen : UIState {
         costumeListPanel.Append(costumeScrollbar);
         costumeList.SetScrollbar(costumeScrollbar);
 
-        UIPanel costumeControlsPanel = new UIPanel();
-        costumeControlsPanel.Width.Set(590f, 0f);
-        costumeControlsPanel.Height.Set(512f, 0f);
-        costumeControlsPanel.Left.Set(366f, 0f);
-        costumeControlsPanel.Top.Set(126f, 0f);
-        costumesContentRoot.Append(costumeControlsPanel);
+        costumeDetailPanel = new UIPanel();
+        costumeDetailPanel.Width.Set(590f, 0f);
+        costumeDetailPanel.Height.Set(512f, 0f);
+        costumeDetailPanel.HAlign = 0.5f;
+        costumeDetailPanel.Left.Set(0f, 0f);
+        costumeDetailPanel.Top.Set(FloatingPanelContentTop, 0f);
+        costumeDetailPanel.PaddingTop = 0f;
+        costumeDetailPanel.PaddingBottom = 0f;
+        costumeDetailPanel.PaddingLeft = 0f;
+        costumeDetailPanel.PaddingRight = 0f;
+        detailPanel.Append(costumeDetailPanel);
 
         selectedCostumeText = new UIText("Default Costume", 1.05f);
         selectedCostumeText.Left.Set(18f, 0f);
         selectedCostumeText.Top.Set(16f, 0f);
-        costumeControlsPanel.Append(selectedCostumeText);
+        costumeDetailPanel.Append(selectedCostumeText);
 
         useDefaultCostumeButton = CreateActionButton("Use Default Look", 406f, 12f,
             (_, _) => SelectCostume(string.Empty), width: 166f);
-        costumeControlsPanel.Append(useDefaultCostumeButton);
+        costumeDetailPanel.Append(useDefaultCostumeButton);
 
         costumeSourceText = new UIText("Source: Base Ben10Mod look", 0.9f);
         costumeSourceText.Left.Set(18f, 0f);
         costumeSourceText.Top.Set(48f, 0f);
-        costumeControlsPanel.Append(costumeSourceText);
+        costumeDetailPanel.Append(costumeSourceText);
 
-        costumePreviewSwatch = new PalettePreviewSwatch {
-            ResolveColor = () => new Color(145, 205, 255),
-            ResolveLabel = GetCostumePreviewLabel,
-            ResolveBaseTexturePaths = () => _activePreviewBaseTexturePaths,
-            ResolveChannels = () => _activeChannels,
-            ResolveChannelSettings = GetPendingSettings,
-            ResolveChannelEnabled = IsPaletteChannelEnabled
-        };
-        costumePreviewSwatch.Left.Set(18f, 0f);
-        costumePreviewSwatch.Top.Set(78f, 0f);
-        costumePreviewSwatch.Width.Set(554f, 0f);
-        costumePreviewSwatch.Height.Set(156f, 0f);
-        costumeControlsPanel.Append(costumePreviewSwatch);
-
-        costumeDescriptionText = new UIText("Select a costume to preview and apply it to the current transformation.", 0.9f) {
+        costumeDescriptionText = new UIText("Select a costume to apply it to the current transformation.", 0.9f) {
             IsWrapped = true
         };
         costumeDescriptionText.Left.Set(18f, 0f);
-        costumeDescriptionText.Top.Set(252f, 0f);
+        costumeDescriptionText.Top.Set(84f, 0f);
         costumeDescriptionText.Width.Set(554f, 0f);
-        costumeControlsPanel.Append(costumeDescriptionText);
+        costumeDetailPanel.Append(costumeDescriptionText);
 
         costumeHintText = new UIText(
             "Costumes can come from Ben10Mod or addon mods. Palette colours save separately for each costume.",
@@ -1162,16 +696,21 @@ public class TransformationPaletteScreen : UIState {
             IsWrapped = true
         };
         costumeHintText.Left.Set(18f, 0f);
-        costumeHintText.Top.Set(382f, 0f);
+        costumeHintText.Top.Set(238f, 0f);
         costumeHintText.Width.Set(554f, 0f);
-        costumeControlsPanel.Append(costumeHintText);
+        costumeDetailPanel.Append(costumeHintText);
 
-        UIPanel customNameListPanel = new UIPanel();
+        customNameListPanel = new UIPanel();
         customNameListPanel.Width.Set(320f, 0f);
         customNameListPanel.Height.Set(512f, 0f);
-        customNameListPanel.Left.Set(24f, 0f);
-        customNameListPanel.Top.Set(126f, 0f);
-        customNamesContentRoot.Append(customNameListPanel);
+        customNameListPanel.HAlign = 0.5f;
+        customNameListPanel.Left.Set(0f, 0f);
+        customNameListPanel.Top.Set(FloatingPanelContentTop, 0f);
+        customNameListPanel.PaddingTop = 0f;
+        customNameListPanel.PaddingBottom = 0f;
+        customNameListPanel.PaddingLeft = 0f;
+        customNameListPanel.PaddingRight = 0f;
+        selectionPanel.Append(customNameListPanel);
 
         UIText customNameListHeader = new UIText("Transformations", 1.05f);
         customNameListHeader.Left.Set(16f, 0f);
@@ -1193,29 +732,38 @@ public class TransformationPaletteScreen : UIState {
         customNameListPanel.Append(customNameScrollbar);
         customNameList.SetScrollbar(customNameScrollbar);
 
-        UIPanel customNameControlsPanel = new UIPanel();
-        customNameControlsPanel.Width.Set(590f, 0f);
-        customNameControlsPanel.Height.Set(512f, 0f);
-        customNameControlsPanel.Left.Set(366f, 0f);
-        customNameControlsPanel.Top.Set(126f, 0f);
-        customNamesContentRoot.Append(customNameControlsPanel);
+        customNameDetailPanel = new UIPanel();
+        customNameDetailPanel.Width.Set(590f, 0f);
+        customNameDetailPanel.Height.Set(512f, 0f);
+        customNameDetailPanel.HAlign = 0.5f;
+        customNameDetailPanel.Left.Set(0f, 0f);
+        customNameDetailPanel.Top.Set(FloatingPanelContentTop, 0f);
+        customNameDetailPanel.PaddingTop = 0f;
+        customNameDetailPanel.PaddingBottom = 0f;
+        customNameDetailPanel.PaddingLeft = 0f;
+        customNameDetailPanel.PaddingRight = 0f;
+        detailPanel.Append(customNameDetailPanel);
 
         selectedNameText = new UIText("No transformation selected", 1.05f);
         selectedNameText.Left.Set(18f, 0f);
         selectedNameText.Top.Set(16f, 0f);
-        customNameControlsPanel.Append(selectedNameText);
+        customNameDetailPanel.Append(selectedNameText);
 
         originalNameText = new UIText("Original Name: --", 0.92f);
         originalNameText.Left.Set(18f, 0f);
         originalNameText.Top.Set(48f, 0f);
-        customNameControlsPanel.Append(originalNameText);
+        customNameDetailPanel.Append(originalNameText);
 
         UIPanel customNamePreviewPanel = new UIPanel();
         customNamePreviewPanel.Left.Set(18f, 0f);
         customNamePreviewPanel.Top.Set(82f, 0f);
         customNamePreviewPanel.Width.Set(554f, 0f);
         customNamePreviewPanel.Height.Set(118f, 0f);
-        customNameControlsPanel.Append(customNamePreviewPanel);
+        customNamePreviewPanel.PaddingTop = 0f;
+        customNamePreviewPanel.PaddingBottom = 0f;
+        customNamePreviewPanel.PaddingLeft = 0f;
+        customNamePreviewPanel.PaddingRight = 0f;
+        customNameDetailPanel.Append(customNamePreviewPanel);
 
         UIText previewLabel = new UIText("Current Display", 0.95f);
         previewLabel.Left.Set(14f, 0f);
@@ -1230,7 +778,7 @@ public class TransformationPaletteScreen : UIState {
         UIText inputLabel = new UIText("Custom Name", 0.95f);
         inputLabel.Left.Set(18f, 0f);
         inputLabel.Top.Set(222f, 0f);
-        customNameControlsPanel.Append(inputLabel);
+        customNameDetailPanel.Append(inputLabel);
 
         customNameInput = new CustomNameTextInputPanel("Leave blank to use the original alien name") {
             MaxLength = OmnitrixPlayer.MaxCustomTransformationNameLength
@@ -1241,7 +789,7 @@ public class TransformationPaletteScreen : UIState {
         customNameInput.Height.Set(52f, 0f);
         customNameInput.TextChanged += _ => OnCustomNameInputChanged();
         customNameInput.Submitted += _ => CommitSelectedCustomName();
-        customNameControlsPanel.Append(customNameInput);
+        customNameDetailPanel.Append(customNameInput);
 
         customNameHintText = new UIText("Custom names save with your player data. Press Enter, Apply Name, or close the screen to save.",
             0.88f);
@@ -1249,15 +797,15 @@ public class TransformationPaletteScreen : UIState {
         customNameHintText.Top.Set(318f, 0f);
         customNameHintText.Width.Set(540f, 0f);
         customNameHintText.IsWrapped = true;
-        customNameControlsPanel.Append(customNameHintText);
+        customNameDetailPanel.Append(customNameHintText);
 
         applyNameButton = CreateActionButton("Apply Name", 18f, 442f, (_, _) => CommitSelectedCustomName(), width: 170f);
         resetNameButton = CreateActionButton("Use Original Name", 198f, 442f,
             (_, _) => ResetSelectedCustomName(), width: 190f);
-        customNameControlsPanel.Append(applyNameButton);
-        customNameControlsPanel.Append(resetNameButton);
+        customNameDetailPanel.Append(applyNameButton);
+        customNameDetailPanel.Append(resetNameButton);
 
-        UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 654f, (_, _) => {
+        UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 82f, (_, _) => {
             CommitPendingColors();
             CommitSelectedCustomName();
             ModContent.GetInstance<UISystem>().HideMyUI();
@@ -1265,6 +813,8 @@ public class TransformationPaletteScreen : UIState {
         }, width: 170f);
         mainPanel.Append(closeButton);
 
+        ResetWindowLayout();
+        SetActiveTab(_activeTab, refreshState: false);
         UpdateTabButtonState();
     }
 
@@ -1272,6 +822,7 @@ public class TransformationPaletteScreen : UIState {
         base.OnActivate();
         if (mainPanel == null)
             return;
+        ResetWindowLayout();
         RefreshPaletteContext(force: true);
         RefreshCostumeContext(force: true);
         RefreshCustomNameContext(force: true);
@@ -1294,27 +845,38 @@ public class TransformationPaletteScreen : UIState {
         RefreshCostumeContext(force: false);
         RefreshCustomNameContext(force: false);
 
-        if (mainPanel.ContainsPoint(Main.MouseScreen))
+        if (mainPanel.ContainsPoint(Main.MouseScreen) ||
+            selectionPanel.ContainsPoint(Main.MouseScreen) ||
+            detailPanel.ContainsPoint(Main.MouseScreen))
             Main.LocalPlayer.mouseInterface = true;
     }
 
     private void SetActiveTab(CustomizationTab tab, bool refreshState = true) {
-        if (_activeTab == tab && !refreshState)
-            return;
+        if (_activeTab != tab) {
+            CommitSelectedCustomName();
+            customNameInput?.SetFocused(false);
+            _activeTab = tab;
+        }
 
-        CommitSelectedCustomName();
-        customNameInput?.SetFocused(false);
-        _activeTab = tab;
+        SetPanelVisibility(paletteListPanel, tab == CustomizationTab.Palette);
+        SetPanelVisibility(costumeListPanel, tab == CustomizationTab.Costumes);
+        SetPanelVisibility(customNameListPanel, tab == CustomizationTab.CustomNames);
+        SetPanelVisibility(paletteDetailPanel, tab == CustomizationTab.Palette);
+        SetPanelVisibility(costumeDetailPanel, tab == CustomizationTab.Costumes);
+        SetPanelVisibility(customNameDetailPanel, tab == CustomizationTab.CustomNames);
 
-        float paletteLeft = tab == CustomizationTab.Palette ? 0f : -1600f;
-        float costumesLeft = tab == CustomizationTab.Costumes ? 0f : -1600f;
-        float customNamesLeft = tab == CustomizationTab.CustomNames ? 0f : -1600f;
-        paletteContentRoot.Left.Set(paletteLeft, 0f);
-        costumesContentRoot.Left.Set(costumesLeft, 0f);
-        customNamesContentRoot.Left.Set(customNamesLeft, 0f);
-        paletteContentRoot.Recalculate();
-        costumesContentRoot.Recalculate();
-        customNamesContentRoot.Recalculate();
+        selectionPanel.DragLabel = tab switch {
+            CustomizationTab.Palette => "Palette Parts",
+            CustomizationTab.Costumes => "Costume List",
+            CustomizationTab.CustomNames => "Name Targets",
+            _ => "Selection"
+        };
+        detailPanel.DragLabel = tab switch {
+            CustomizationTab.Palette => "Palette Controls",
+            CustomizationTab.Costumes => "Costume Details",
+            CustomizationTab.CustomNames => "Name Details",
+            _ => "Details"
+        };
 
         UpdateTabButtonState();
 
@@ -1330,6 +892,42 @@ public class TransformationPaletteScreen : UIState {
         UpdateTabButtonVisual(paletteTabButton, _activeTab == CustomizationTab.Palette);
         UpdateTabButtonVisual(costumesTabButton, _activeTab == CustomizationTab.Costumes);
         UpdateTabButtonVisual(customNamesTabButton, _activeTab == CustomizationTab.CustomNames);
+    }
+
+    private void ResetWindowLayout() {
+        float headerLeft = Math.Max(0f, (Main.screenWidth - HeaderPanelWidth) * 0.5f);
+        float headerTop = FloatingPanelMargin;
+        float floatingTop = MathHelper.Clamp(headerTop + HeaderPanelHeight + FloatingPanelGap,
+            0f, Math.Max(0f, Main.screenHeight - FloatingPanelHeight));
+        float listLeft = FloatingPanelMargin;
+        float detailLeft = Math.Max(0f, Main.screenWidth - FloatingDetailPanelWidth - FloatingPanelMargin);
+
+        if (detailLeft <= listLeft + FloatingListPanelWidth + FloatingPanelGap)
+            detailLeft = Math.Min(
+                Math.Max(0f, Main.screenWidth - FloatingDetailPanelWidth),
+                listLeft + FloatingListPanelWidth + FloatingPanelGap
+            );
+
+        mainPanel.Left.Set(headerLeft, 0f);
+        mainPanel.Top.Set(headerTop, 0f);
+        mainPanel.Recalculate();
+
+        selectionPanel.Left.Set(listLeft, 0f);
+        selectionPanel.Top.Set(floatingTop, 0f);
+        selectionPanel.Recalculate();
+
+        detailPanel.Left.Set(detailLeft, 0f);
+        detailPanel.Top.Set(floatingTop, 0f);
+        detailPanel.Recalculate();
+    }
+
+    private static void SetPanelVisibility(UIElement panel, bool visible) {
+        if (panel == null)
+            return;
+
+        panel.Left.Set(visible ? 0f : -2000f, 0f);
+        panel.IgnoresMouseInteraction = !visible;
+        panel.Recalculate();
     }
 
     private static void UpdateTabButtonVisual(UITextPanel<string> button, bool selected) {
@@ -1379,26 +977,19 @@ public class TransformationPaletteScreen : UIState {
         IReadOnlyList<TransformationPaletteChannel> channels = targetTransformation?.GetPaletteChannels(omp)
             ?.Where(channel => channel != null && channel.IsValid)
             .ToArray() ?? Array.Empty<TransformationPaletteChannel>();
-        IReadOnlyList<string> previewBaseTexturePaths = targetTransformation?.GetPalettePreviewBaseTexturePaths(omp)
-            ?.Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray() ?? Array.Empty<string>();
         string channelSignature = BuildChannelSignature(channels);
-        string previewBaseSignature = BuildPreviewBaseSignature(previewBaseTexturePaths);
         string channelEnabledSignature = BuildChannelEnabledSignature(targetTransformation, channels, omp);
         bool channelContentChanged = force || targetTransformationId != _currentTransformationId ||
             selectedCostumeId != _currentPaletteCostumeId ||
             channelSignature != _currentChannelSignature;
-        bool previewChanged = channelContentChanged || previewBaseSignature != _currentPreviewBaseSignature;
         bool channelStateChanged = channelContentChanged || channelEnabledSignature != _currentChannelEnabledSignature;
 
-        if (!previewChanged && !channelStateChanged)
+        if (!channelContentChanged && !channelStateChanged)
             return;
 
         _currentTransformationId = targetTransformationId;
         _currentPaletteCostumeId = selectedCostumeId;
         _currentChannelSignature = channelSignature;
-        _currentPreviewBaseSignature = previewBaseSignature;
         _currentChannelEnabledSignature = channelEnabledSignature;
 
         if (channelContentChanged) {
@@ -1426,11 +1017,6 @@ public class TransformationPaletteScreen : UIState {
             else {
                 _selectedChannelId = string.Empty;
             }
-        }
-
-        if (previewChanged) {
-            _activePreviewBaseTexturePaths.Clear();
-            _activePreviewBaseTexturePaths.AddRange(previewBaseTexturePaths);
         }
 
         _selectedChannelPaletteEnabled = IsPaletteChannelEnabled(_selectedChannelId);
@@ -2223,10 +1809,6 @@ public class TransformationPaletteScreen : UIState {
         return channel?.DefaultColor ?? Color.Transparent;
     }
 
-    private Color GetSelectedPendingColor() {
-        return GetPendingColor(_selectedChannelId);
-    }
-
     private TransformationPaletteChannelSettings GetSelectedPendingSettings() {
         if (string.IsNullOrWhiteSpace(_selectedChannelId) || string.IsNullOrWhiteSpace(_currentTransformationId))
             return new TransformationPaletteChannelSettings(Color.White);
@@ -2269,25 +1851,6 @@ public class TransformationPaletteScreen : UIState {
         return channel?.DisplayName ?? "No part selected";
     }
 
-    private string GetSelectedChannelPreviewLabel() {
-        return string.IsNullOrWhiteSpace(_selectedChannelId)
-            ? "Preview"
-            : $"{GetSelectedChannelDisplayName()} Preview";
-    }
-
-    private string GetCostumePreviewLabel() {
-        Player localPlayer = Main.LocalPlayer;
-        if (localPlayer == null || !localPlayer.active)
-            return "Costume Preview";
-
-        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
-        Transformation targetTransformation = omp.GetPaletteTargetTransformation();
-        CostumeListEntry entry = GetSelectedCostumeEntry(targetTransformation, omp);
-        return string.IsNullOrWhiteSpace(entry?.DisplayName)
-            ? "Costume Preview"
-            : $"{entry.DisplayName} Preview";
-    }
-
     private bool IsPaletteChannelEnabled(string channelId) {
         if (string.IsNullOrWhiteSpace(_currentTransformationId) || string.IsNullOrWhiteSpace(channelId))
             return false;
@@ -2297,16 +1860,6 @@ public class TransformationPaletteScreen : UIState {
             return true;
 
         return localPlayer.GetModPlayer<OmnitrixPlayer>().IsPaletteChannelEnabled(_currentTransformationId, channelId);
-    }
-
-    private static string BuildPreviewBaseSignature(IReadOnlyList<string> previewBaseTexturePaths) {
-        if (previewBaseTexturePaths == null || previewBaseTexturePaths.Count == 0)
-            return string.Empty;
-
-        StringBuilder builder = new();
-        for (int i = 0; i < previewBaseTexturePaths.Count; i++)
-            builder.Append(previewBaseTexturePaths[i]).Append('|');
-        return builder.ToString();
     }
 
     private static string BuildChannelSignature(IReadOnlyList<TransformationPaletteChannel> channels) {
