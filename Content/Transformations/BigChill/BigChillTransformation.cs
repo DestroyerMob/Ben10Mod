@@ -52,7 +52,7 @@ public class BigChillTransformation : Transformation {
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 30 * 60;
-    public override int PrimaryAbilityCooldown => 60 * 60;
+    public override int PrimaryAbilityCooldown => 45 * 60;
 
     public override bool HasUltimateAbility => false;
     public override int UltimateAttack => ModContent.ProjectileType<BigChillPhaseStrikeProjectile>();

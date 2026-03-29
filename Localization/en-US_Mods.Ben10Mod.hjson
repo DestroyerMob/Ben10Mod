@@ -595,6 +595,11 @@ Items: {
 		Tooltip: ""
 		DisplayName: Anodite
 	}
+
+	PotisAltiare: {
+		DisplayName: Potis Altiare
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -1088,6 +1093,13 @@ Projectiles: {
 	WildVineGasCloudProjectile.DisplayName: Wild Vine Gas Cloud Projectile
 	WildVineWhipProjectile.DisplayName: Wild Vine Whip Projectile
 	FourArmsRushProjectile.DisplayName: Four Arms Rush Projectile
+	HeatBlastPotisCoronaProjectile.DisplayName: Heat Blast Potis Corona Projectile
+	HeatBlastPotisLanceProjectile.DisplayName: Heat Blast Potis Lance Projectile
+	HeatBlastPotisMeteorProjectile.DisplayName: Heat Blast Potis Meteor Projectile
+	HeatBlastPotisSolarBurstProjectile.DisplayName: Heat Blast Potis Solar Burst Projectile
+	HeatBlastPotisSunspotProjectile.DisplayName: Heat Blast Potis Sunspot Projectile
+	HeatBlastPotisUltimateProjectile.DisplayName: Heat Blast Potis Ultimate Projectile
+	HeatBlastPotisLanceImpactProjectile.DisplayName: Heat Blast Potis Lance Impact Projectile
 }
 
 Tiles: {

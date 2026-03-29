@@ -340,22 +340,32 @@ namespace Ben10Mod.Content.Interface {
             Texture2D pixel = TextureAssets.MagicPixel.Value;
             string cooldownSummary =
                 showAttackHud ? omp.GetAttackHudCooldownSummary() : omp.GetSelectionHudCooldownSummary();
-            string paletteStatus = showAttackHud
-                ? omp.GetCurrentTransformationPaletteStatusText()
-                : omp.GetSelectedTransformationPaletteStatusText();
+            string detailLabel = showAttackHud
+                ? omp.GetCurrentAttackModeSummary()
+                : omp.GetSelectedTransformationStatusSummary();
+            string selectionSummary = showAttackHud
+                ? string.Empty
+                : CombineHudSummary(cooldownSummary, omp.GetSelectedTransformationCustomizationSummary());
+            string resourceSummary = showAttackHud
+                ? omp.GetCurrentAttackResourceSummary(clientConfig.UseSimplifiedHeroInterface)
+                : string.Empty;
             int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
             bool affordabilityWarning = clientConfig.ShowHeroAffordabilityTinting &&
                                         showAttackHud && trans != null && !omp.CanAffordCurrentAttackForHud();
             string compactFooter = affordabilityWarning
                 ? $"Need {energyCost} OE"
-                : !string.IsNullOrWhiteSpace(cooldownSummary)
+                : showAttackHud && !string.IsNullOrWhiteSpace(resourceSummary)
+                    ? resourceSummary
+                    : !showAttackHud && !string.IsNullOrWhiteSpace(selectionSummary)
+                        ? selectionSummary
+                        : !string.IsNullOrWhiteSpace(cooldownSummary)
                     ? cooldownSummary
                     : energyCost > 0
                         ? $"{energyCost} OE"
-                        : paletteStatus;
+                        : detailLabel;
             Rectangle panelRect = new Rectangle(x, y, width, clientConfig.UseSimplifiedHeroInterface
                 ? (string.IsNullOrWhiteSpace(compactFooter) ? 42 : 58)
-                : string.IsNullOrWhiteSpace(cooldownSummary) ? 66 : 92);
+                : string.IsNullOrWhiteSpace(showAttackHud ? cooldownSummary : selectionSummary) ? 66 : 92);
             bool      holdingBadge = player.HeldItem.ModItem is PlumbersBadge;
             float     pulse        = MathHelper.Clamp(omp.AttackSelectionPulseProgress, 0f, 1f);
             float     ultimateReadyPulse = showAttackHud ? MathHelper.Clamp(omp.UltimateReadyCueProgress, 0f, 1f) : 0f;
@@ -420,27 +430,37 @@ namespace Ben10Mod.Content.Interface {
             Utils.DrawBorderString(Main.spriteBatch, attackName, new Vector2(panelRect.X + 10, panelRect.Y + 25),
                 Color.White, 0.96f);
 
-            string detailLabel = paletteStatus;
-            if (string.IsNullOrWhiteSpace(detailLabel) && energyCost > 0)
-                detailLabel = "Energy";
-
             if (!string.IsNullOrWhiteSpace(detailLabel)) {
                 Utils.DrawBorderString(Main.spriteBatch, detailLabel,
                     new Vector2(panelRect.X + 10, panelRect.Y + 45), new Color(180, 195, 210), 0.72f);
             }
 
-            if (energyCost > 0) {
-                Utils.DrawBorderString(Main.spriteBatch, affordabilityWarning ? $"Need {energyCost} OE" : $"{energyCost} OE",
+            if (!string.IsNullOrWhiteSpace(resourceSummary)) {
+                Utils.DrawBorderString(Main.spriteBatch, affordabilityWarning ? $"Need {energyCost} OE" : resourceSummary,
                     new Vector2(panelRect.Right - 10, panelRect.Y + 43),
                     affordabilityWarning ? new Color(255, 170, 145) : accent, 0.86f, 1f, 0f);
             }
 
-            if (!string.IsNullOrWhiteSpace(cooldownSummary)) {
-                Utils.DrawBorderString(Main.spriteBatch, cooldownSummary,
+            string lowerSummary = showAttackHud ? cooldownSummary : selectionSummary;
+            if (!string.IsNullOrWhiteSpace(lowerSummary)) {
+                Utils.DrawBorderString(Main.spriteBatch, lowerSummary,
                     new Vector2(panelRect.X + 10, panelRect.Bottom - 22), new Color(170, 190, 208), 0.72f);
             }
 
             return panelRect.Height;
+        }
+
+        private static string CombineHudSummary(params string[] parts) {
+            if (parts == null || parts.Length == 0)
+                return string.Empty;
+
+            List<string> visibleParts = new();
+            for (int i = 0; i < parts.Length; i++) {
+                if (!string.IsNullOrWhiteSpace(parts[i]))
+                    visibleParts.Add(parts[i]);
+            }
+
+            return visibleParts.Count == 0 ? string.Empty : string.Join("  |  ", visibleParts);
         }
 
         private int DrawActiveAbilityIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
@@ -1022,6 +1042,7 @@ namespace Ben10Mod.Content.Interface {
         private UIPanel overviewPanel;
         private UIPanel unlockPanel;
         private UIPanel abilitiesPanel;
+        private UIPanel combatPanel;
         private FittedTransformationIcon previewIcon;
         private UIText nameText;
         private UIText statusText;
@@ -1031,6 +1052,8 @@ namespace Ben10Mod.Content.Interface {
         private UIText unlockConditionText;
         private UIText abilitiesHeader;
         private UIList abilityList;
+        private UIText combatHeader;
+        private UIList combatSlotList;
         private UIList detailSectionList;
         private string currentlySelectedId = string.Empty;
         private string codexListSignature = string.Empty;
@@ -1122,7 +1145,7 @@ namespace Ben10Mod.Content.Interface {
             nameText.Top.Set(22f, 0f);
             headerPanel.Append(nameText);
 
-            statusText = new UIText("Choose a form to view its unlock condition and kit details.", 0.78f);
+            statusText = new UIText("Choose a form to view its unlock or access details and kit breakdown.", 0.78f);
             statusText.Left.Set(160f, 0f);
             statusText.Top.Set(64f, 0f);
             statusText.Width.Set(390f, 0f);
@@ -1165,12 +1188,12 @@ namespace Ben10Mod.Content.Interface {
             unlockPanel.Height.Set(94f, 0f);
             detailSectionList.Add(unlockPanel);
 
-            unlockHeader = new UIText("Unlock Condition", 1.08f);
+            unlockHeader = new UIText("Unlock / Access", 1.08f);
             unlockHeader.Left.Set(18f, 0f);
             unlockHeader.Top.Set(12f, 0f);
             unlockPanel.Append(unlockHeader);
 
-            unlockConditionText = new UIText("Select a form to inspect how it is unlocked.", 0.9f);
+            unlockConditionText = new UIText("Select a form to inspect how it is unlocked or accessed.", 0.9f);
             unlockConditionText.Left.Set(18f, 0f);
             unlockConditionText.Top.Set(44f, 0f);
             unlockConditionText.Width.Set(-36f, 1f);
@@ -1193,6 +1216,23 @@ namespace Ben10Mod.Content.Interface {
             abilityList.Top.Set(44f, 0f);
             abilityList.ListPadding = 10f;
             abilitiesPanel.Append(abilityList);
+
+            combatPanel = CreateCodexSectionPanel();
+            combatPanel.Height.Set(96f, 0f);
+            detailSectionList.Add(combatPanel);
+
+            combatHeader = new UIText("Combat Slots", 1.1f);
+            combatHeader.Left.Set(18f, 0f);
+            combatHeader.Top.Set(12f, 0f);
+            combatPanel.Append(combatHeader);
+
+            combatSlotList = new UIList();
+            combatSlotList.Width.Set(-36f, 1f);
+            combatSlotList.Height.Set(40f, 0f);
+            combatSlotList.Left.Set(18f, 0f);
+            combatSlotList.Top.Set(44f, 0f);
+            combatSlotList.ListPadding = 10f;
+            combatPanel.Append(combatSlotList);
 
             var closeBtn = new UITextPanel<string>("Close Codex");
             closeBtn.Width.Set(148f, 0f);
@@ -1303,13 +1343,7 @@ namespace Ben10Mod.Content.Interface {
                 rowName.Top.Set(12f, 0f);
                 row.Append(rowName);
 
-                string rowSubtitle = isUnlocked
-                    ? player.IsNewlyUnlockedTransformation(capturedId)
-                        ? "NEWLY UNLOCKED"
-                        : player.IsFavoriteTransformation(capturedId)
-                            ? "Favorite transformation"
-                            : "Unlocked transformation"
-                    : "Locked form";
+                string rowSubtitle = player.GetTransformationCodexSubtitle(transformation);
                 var subtitle = new UIText(rowSubtitle, 0.68f);
                 subtitle.Left.Set(78f, 0f);
                 subtitle.Top.Set(42f, 0f);
@@ -1365,16 +1399,20 @@ namespace Ben10Mod.Content.Interface {
             if (transformation == null) {
                 previewIcon.SetTexture(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
                 nameText.SetText("Select a form");
-                statusText.SetText("Choose a form to view its unlock condition and kit details.");
+                statusText.SetText("Choose a form to view its unlock or access details and kit breakdown.");
                 descriptionText.SetText("View lore-facing kit info and ability details here.");
                 overviewHeader.SetText("Overview");
-                unlockHeader.SetText("Unlock Condition");
-                unlockConditionText.SetText("Select a form to inspect how it is unlocked.");
+                unlockHeader.SetText("Unlock / Access");
+                unlockConditionText.SetText("Select a form to inspect how it is unlocked or accessed.");
                 overviewPanel.Height.Set(116f, 0f);
                 unlockPanel.Height.Set(94f, 0f);
                 abilitiesPanel.Height.Set(96f, 0f);
                 abilityList.Height.Set(40f, 0f);
                 abilityList.Clear();
+                combatHeader.SetText("Combat Slots");
+                combatPanel.Height.Set(96f, 0f);
+                combatSlotList.Height.Set(40f, 0f);
+                combatSlotList.Clear();
                 detailSectionList.Recalculate();
                 detailSectionList.RecalculateChildren();
                 return;
@@ -1383,12 +1421,13 @@ namespace Ben10Mod.Content.Interface {
             previewIcon.SetTexture(AlienSelectionScreen.GetSafeTransformationIcon(transformation));
             nameText.SetText(transformation.GetDisplayName(player));
 
-            bool isUnlocked = player.IsTransformationUnlocked(transformation);
-            List<string> statusParts = new();
-            statusParts.Add(isUnlocked ? "Unlocked" : "Locked");
-            if (isUnlocked && player.IsFavoriteTransformation(transformation))
+            List<string> statusParts = new() {
+                player.GetTransformationAvailabilityStateText(transformation),
+                player.GetTransformationUnlockCategoryText(transformation)
+            };
+            if (player.IsTransformationUnlocked(transformation) && player.IsFavoriteTransformation(transformation))
                 statusParts.Add("Favorite");
-            if (isUnlocked && player.IsNewlyUnlockedTransformation(transformation))
+            if (player.IsTransformationUnlocked(transformation) && player.IsNewlyUnlockedTransformation(transformation))
                 statusParts.Add("Newly unlocked");
             statusText.SetText(string.Join("  |  ", statusParts));
 
@@ -1396,8 +1435,12 @@ namespace Ben10Mod.Content.Interface {
             descriptionText.SetText(AlienSelectionScreen.GetSafeTransformationDescription(transformation, player));
             descriptionText.Recalculate();
 
-            unlockHeader.SetText("Unlock Condition");
-            unlockConditionText.SetText(player.GetTransformationUnlockConditionText(transformation));
+            unlockHeader.SetText(player.GetTransformationAccessHeaderText(transformation));
+            string unlockConditionTextValue = player.GetTransformationUnlockConditionText(transformation);
+            string unlockProgressText = player.GetTransformationUnlockProgressText(transformation);
+            unlockConditionText.SetText(string.IsNullOrWhiteSpace(unlockProgressText)
+                ? unlockConditionTextValue
+                : $"{unlockConditionTextValue}\n\nStatus: {unlockProgressText}");
             unlockConditionText.Recalculate();
 
             float descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 56f;
@@ -1416,6 +1459,15 @@ namespace Ben10Mod.Content.Interface {
             abilityList.Clear();
             for (int i = 0; i < abilities.Count; i++)
                 abilityList.Add(CreateCodexAbilityEntry(abilities[i] ?? "Unknown ability"));
+
+            IReadOnlyList<string> combatSlotSummaries = transformation.GetCombatSlotSummaries(player);
+            float combatPanelHeight = Math.Max(112f, 44f + Math.Max(56f, combatSlotSummaries.Count * 56f - 10f) + 18f);
+            combatPanel.Height.Set(combatPanelHeight, 0f);
+            combatSlotList.Height.Set(Math.Max(56f, combatPanelHeight - 62f), 0f);
+
+            combatSlotList.Clear();
+            for (int i = 0; i < combatSlotSummaries.Count; i++)
+                combatSlotList.Add(CreateCodexAbilityEntry(combatSlotSummaries[i] ?? "Unknown combat slot"));
 
             detailSectionList.Recalculate();
             detailSectionList.RecalculateChildren();
@@ -1455,13 +1507,13 @@ namespace Ben10Mod.Content.Interface {
         private static UIPanel CreateCodexAbilityEntry(string abilityText) {
             UIPanel row = new UIPanel();
             row.Width.Set(0f, 1f);
-            row.Height.Set(46f, 0f);
+            row.Height.Set(58f, 0f);
             row.BackgroundColor = new Color(28, 38, 54, 220);
             row.BorderColor = new Color(82, 104, 132, 220);
 
             UIText text = new UIText("• " + abilityText, 0.88f);
             text.Left.Set(10f, 0f);
-            text.Top.Set(11f, 0f);
+            text.Top.Set(9f, 0f);
             text.Width.Set(-20f, 1f);
             text.IsWrapped = true;
             row.Append(text);

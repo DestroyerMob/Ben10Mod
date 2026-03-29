@@ -56,10 +56,10 @@ namespace Ben10Mod {
 
 
         public override void OnHitByItem(NPC npc, Player player, Item item, NPC.HitInfo hit, int damageDone) {
-            if (Main.netMode == NetmodeID.MultiplayerClient) return;
-
             if (damageDone > 0)
                 player.GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
+            if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
             if (!CountsAsTrackedEncounter(npc)) return;
 
@@ -67,12 +67,13 @@ namespace Ben10Mod {
         }
 
         public override void OnHitByProjectile(NPC npc, Projectile projectile, NPC.HitInfo hit, int damageDone) {
-            if (Main.netMode == NetmodeID.MultiplayerClient) return;
             if (damageDone <= 0) return;
 
             int owner = projectile.owner;
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
                 Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
+                if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
                 if (!CountsAsTrackedEncounter(npc)) return;
 

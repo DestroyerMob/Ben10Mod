@@ -1,29 +1,25 @@
-using System.IO;
-using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Accessories;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Ben10Mod.Content.DamageClasses;
 
 namespace Ben10Mod.Content.Projectiles;
 
-public class HeatBlastSolarHaloProjectile : ModProjectile {
-    private const int OrbCount = 5;
-    private const int DefaultFireInterval = 9;
-    private const float OrbitRadiusX = 12f;
-    private const float OrbitRadiusY = 42f;
-    private const float OrbitRotationSpeed = 0.065f;
-    private const float CenterYOffset = -6f;
-    private const float BackOffset = 14f;
-    private const float FireballSpeed = 10.5f;
+public class HeatBlastPotisCoronaProjectile : ModProjectile {
+    private const int OrbCount = 6;
+    private const int BaseFireInterval = 7;
+    private const float OrbitRadiusX = 22f;
+    private const float OrbitRadiusY = 48f;
+    private const float OrbitRotationSpeed = 0.085f;
+    private const float CenterYOffset = -8f;
+    private const float BackOffset = 8f;
+    private const float LanceSpeed = 17.8f;
 
     private int _sustainTimer;
-    private Vector2 _syncedAimDirection = Vector2.UnitX;
-    private bool _hasSyncedAimDirection;
-    private int _aimSyncTimer;
 
     private float OrbitRotation {
         get => Projectile.localAI[0];
@@ -40,7 +36,7 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
         set => Projectile.ai[0] = value;
     }
 
-    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
+    public override string Texture => "Terraria/Images/Projectile_0";
 
     public override void SetDefaults() {
         Projectile.width = 12;
@@ -93,17 +89,6 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
         AddOrbitLighting(omp);
     }
 
-    public override void SendExtraAI(BinaryWriter writer) {
-        writer.Write(_syncedAimDirection.X);
-        writer.Write(_syncedAimDirection.Y);
-        writer.Write(_hasSyncedAimDirection);
-    }
-
-    public override void ReceiveExtraAI(BinaryReader reader) {
-        _syncedAimDirection = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-        _hasSyncedAimDirection = reader.ReadBoolean();
-    }
-
     public override bool PreDraw(ref Color lightColor) {
         Texture2D texture = TextureAssets.Projectile[ProjectileID.ImpFireball].Value;
         int frameCount = Main.projFrames[ProjectileID.ImpFireball] > 0 ? Main.projFrames[ProjectileID.ImpFireball] : 1;
@@ -118,13 +103,13 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
 
                 float depth = Utils.GetLerpValue(-OrbitRadiusY, OrbitRadiusY, offset.Y, true);
                 bool activeOrb = i == ActiveOrbIndex;
-                float scale = MathHelper.Lerp(0.48f, 0.78f, depth) + (activeOrb ? 0.16f : 0f);
-                float glowScale = scale * (activeOrb ? 1.55f : 1.26f);
+                float scale = MathHelper.Lerp(0.62f, 0.96f, depth) + (activeOrb ? 0.2f : 0f);
+                float glowScale = scale * (activeOrb ? 1.72f : 1.34f);
                 Color coreColor = GetOrbColor(omp, depth, activeOrb);
-                Color glowColor = Color.Lerp(coreColor, Color.White, activeOrb ? 0.5f : 0.28f) * 0.45f;
+                Color glowColor = Color.Lerp(coreColor, Color.White, activeOrb ? 0.52f : 0.28f) * 0.42f;
                 Vector2 drawPosition = Projectile.Center + offset - Main.screenPosition;
-                float rotation = Main.GlobalTimeWrappedHourly * 4.2f + i * 0.7f;
-                Rectangle frame = texture.Frame(1, frameCount, 0, (int)(Main.GameUpdateCount / 5 + i) % frameCount);
+                float rotation = Main.GlobalTimeWrappedHourly * 5.2f + i * 0.64f;
+                Rectangle frame = texture.Frame(1, frameCount, 0, (int)(Main.GameUpdateCount / 4 + i) % frameCount);
                 Vector2 origin = frame.Size() * 0.5f;
 
                 Main.EntitySpriteDraw(texture, drawPosition, frame, glowColor, rotation, origin, glowScale, SpriteEffects.None, 0);
@@ -139,11 +124,10 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
         if (Main.dedServ)
             return;
 
-        Player owner = Main.player[Projectile.owner];
-        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        OmnitrixPlayer omp = Main.player[Projectile.owner].GetModPlayer<OmnitrixPlayer>();
         for (int i = 0; i < OrbCount; i++) {
             Vector2 position = Projectile.Center + GetOrbitOffset(i);
-            SpawnShotBurst(position, omp, 4);
+            SpawnShotBurst(position, omp, 5);
         }
     }
 
@@ -151,6 +135,7 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
         return owner.active &&
                !owner.dead &&
                omp.currentTransformationId == "Ben10Mod:HeatBlast" &&
+               owner.GetModPlayer<PotisAltiarePlayer>().potisAltiareEquipped &&
                omp.IsSecondaryAbilityAttackLoaded &&
                owner.channel &&
                !owner.noItems &&
@@ -163,7 +148,6 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
             return;
 
         FireTimer = 0f;
-
         int orbIndex = ActiveOrbIndex;
         ActiveOrbIndex = (ActiveOrbIndex + 1) % OrbCount;
         if (Main.netMode != NetmodeID.SinglePlayer)
@@ -171,17 +155,17 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
 
         Vector2 spawnPosition = Projectile.Center + GetOrbitOffset(orbIndex);
         Vector2 shotDirection = (Main.MouseWorld - spawnPosition).SafeNormalize(aimDirection);
-        shotDirection = shotDirection.RotatedBy(Main.rand.NextFloat(-0.07f, 0.07f));
+        shotDirection = shotDirection.RotatedBy(Main.rand.NextFloat(-0.05f, 0.05f));
 
         int projectileIndex = Projectile.NewProjectile(Projectile.GetSource_FromAI(), spawnPosition,
-            shotDirection * FireballSpeed, ModContent.ProjectileType<HeatBlastHaloFireballProjectile>(),
-            Projectile.damage, Projectile.knockBack + 0.5f, owner.whoAmI, omp.snowflake ? 1f : 0f);
+            shotDirection * LanceSpeed, ModContent.ProjectileType<HeatBlastPotisLanceProjectile>(),
+            Projectile.damage, Projectile.knockBack + 0.5f, owner.whoAmI, omp.IsTertiaryAbilityActive ? 1f : 0f,
+            omp.snowflake ? 1f : 0f);
 
         if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
             Main.projectile[projectileIndex].netUpdate = true;
 
         SpawnShotBurst(spawnPosition, omp, 8);
-        SoundEngine.PlaySound(SoundID.Item20 with { Pitch = -0.2f, Volume = 0.44f, MaxInstances = 12 }, spawnPosition);
     }
 
     private void SpawnOrbitDust(OmnitrixPlayer omp) {
@@ -190,23 +174,20 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
 
         int orbIndex = Main.rand.Next(OrbCount);
         Vector2 dustPosition = Projectile.Center + GetOrbitOffset(orbIndex) + Main.rand.NextVector2Circular(5f, 5f);
-        Vector2 dustVelocity = Main.rand.NextVector2Circular(0.6f, 0.6f);
+        Vector2 dustVelocity = Main.rand.NextVector2Circular(0.75f, 0.75f);
         int dustType = omp.snowflake
             ? (Main.rand.NextBool() ? DustID.IceTorch : DustID.SnowflakeIce)
-            : (Main.rand.NextBool(3) ? DustID.Flare : DustID.Torch);
+            : (Main.rand.NextBool(3) ? DustID.InfernoFork : DustID.Flare);
         Color dustColor = omp.snowflake
-            ? Color.Lerp(new Color(155, 225, 255), new Color(225, 245, 255), Main.rand.NextFloat())
-            : Color.Lerp(new Color(255, 145, 55), new Color(255, 218, 125), Main.rand.NextFloat());
+            ? Color.Lerp(new Color(165, 228, 255), new Color(240, 250, 255), Main.rand.NextFloat())
+            : Color.Lerp(new Color(255, 152, 72), new Color(255, 232, 150), Main.rand.NextFloat());
 
-        Dust dust = Dust.NewDustPerfect(dustPosition, dustType, dustVelocity, 96, dustColor, Main.rand.NextFloat(0.85f, 1.25f));
+        Dust dust = Dust.NewDustPerfect(dustPosition, dustType, dustVelocity, 96, dustColor, Main.rand.NextFloat(0.92f, 1.3f));
         dust.noGravity = true;
     }
 
     private void AddOrbitLighting(OmnitrixPlayer omp) {
-        Vector3 lightColor = omp.snowflake
-            ? new Vector3(0.12f, 0.4f, 0.56f)
-            : new Vector3(0.58f, 0.24f, 0.04f);
-
+        Vector3 lightColor = omp.snowflake ? new Vector3(0.16f, 0.48f, 0.7f) : new Vector3(0.66f, 0.24f, 0.04f);
         for (int i = 0; i < OrbCount; i++)
             Lighting.AddLight(Projectile.Center + GetOrbitOffset(i), lightColor);
     }
@@ -218,23 +199,23 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
         for (int i = 0; i < dustCount; i++) {
             int dustType = omp.snowflake
                 ? (Main.rand.NextBool() ? DustID.IceTorch : DustID.SnowflakeIce)
-                : (Main.rand.NextBool(4) ? DustID.Flare : DustID.Torch);
+                : (Main.rand.NextBool(4) ? DustID.InfernoFork : DustID.Flare);
             Color dustColor = omp.snowflake
-                ? Color.Lerp(new Color(165, 228, 255), new Color(240, 250, 255), Main.rand.NextFloat())
-                : Color.Lerp(new Color(255, 162, 72), new Color(255, 228, 150), Main.rand.NextFloat());
+                ? Color.Lerp(new Color(168, 230, 255), new Color(240, 250, 255), Main.rand.NextFloat())
+                : Color.Lerp(new Color(255, 165, 72), new Color(255, 232, 152), Main.rand.NextFloat());
 
-            Dust dust = Dust.NewDustPerfect(position + Main.rand.NextVector2Circular(4f, 4f), dustType,
-                Main.rand.NextVector2Circular(2.6f, 2.6f), 96, dustColor, Main.rand.NextFloat(0.95f, 1.4f));
+            Dust dust = Dust.NewDustPerfect(position + Main.rand.NextVector2Circular(5f, 5f), dustType,
+                Main.rand.NextVector2Circular(2.8f, 2.8f), 96, dustColor, Main.rand.NextFloat(0.95f, 1.45f));
             dust.noGravity = true;
         }
     }
 
     private Color GetOrbColor(OmnitrixPlayer omp, float depth, bool activeOrb) {
         Color baseColor = omp.snowflake
-            ? Color.Lerp(new Color(125, 205, 255), new Color(238, 250, 255), depth)
-            : Color.Lerp(new Color(255, 130, 42), new Color(255, 235, 165), depth);
+            ? Color.Lerp(new Color(128, 210, 255), new Color(238, 250, 255), depth)
+            : Color.Lerp(new Color(255, 128, 42), new Color(255, 238, 165), depth);
 
-        return activeOrb ? Color.Lerp(baseColor, Color.White, 0.34f) : baseColor * 0.92f;
+        return activeOrb ? Color.Lerp(baseColor, Color.White, 0.36f) : baseColor * 0.92f;
     }
 
     private Vector2 GetOrbitOffset(int index) {
@@ -261,53 +242,16 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
     }
 
     private int GetFireInterval(OmnitrixPlayer omp) {
-        var transformation = omp.CurrentTransformation;
-        if (transformation == null)
-            return DefaultFireInterval;
-
-        int sustainInterval = transformation.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.SecondaryAbility, omp);
-        return sustainInterval > 0 ? sustainInterval : DefaultFireInterval;
-    }
-
-    private Vector2 GetLocalAimDirection(Player owner) {
-        Vector2 direction = Main.MouseWorld - owner.Center;
-        if (direction.LengthSquared() < 0.0001f)
-            direction = new Vector2(owner.direction, 0f);
-
-        direction.Normalize();
-        return direction;
+        return omp.IsTertiaryAbilityActive ? BaseFireInterval - 2 : BaseFireInterval;
     }
 
     private Vector2 GetAimDirection(Player owner) {
-        if (Main.netMode == NetmodeID.SinglePlayer || Projectile.owner == Main.myPlayer) {
-            Vector2 localDirection = GetLocalAimDirection(owner);
-            SyncAimDirection(localDirection);
-            return localDirection;
-        }
+        if (Main.netMode == NetmodeID.SinglePlayer || Projectile.owner == Main.myPlayer)
+            return (Main.MouseWorld - owner.MountedCenter).SafeNormalize(new Vector2(owner.direction, 0f));
 
-        return GetSyncedAimDirection(owner);
-    }
+        if (Projectile.velocity.LengthSquared() > 0.0001f)
+            return Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
 
-    private void SyncAimDirection(Vector2 direction) {
-        bool changed = !_hasSyncedAimDirection || Vector2.DistanceSquared(direction, _syncedAimDirection) > 0.0004f;
-        _aimSyncTimer++;
-        if (!changed && _aimSyncTimer < 6)
-            return;
-
-        _syncedAimDirection = direction;
-        _hasSyncedAimDirection = true;
-        _aimSyncTimer = 0;
-        if (Main.netMode != NetmodeID.SinglePlayer)
-            Projectile.netUpdate = true;
-    }
-
-    private Vector2 GetSyncedAimDirection(Player owner) {
-        if (_hasSyncedAimDirection && _syncedAimDirection.LengthSquared() > 0.0001f)
-            return _syncedAimDirection;
-
-        Vector2 fallback = Projectile.velocity.LengthSquared() > 0.0001f
-            ? Projectile.velocity
-            : new Vector2(owner.direction, 0f);
-        return fallback.SafeNormalize(new Vector2(owner.direction, 0f));
+        return new Vector2(owner.direction, 0f);
     }
 }

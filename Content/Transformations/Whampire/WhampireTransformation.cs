@@ -134,6 +134,17 @@ public class WhampireTransformation : Transformation {
         ApplyNightcloak(player);
     }
 
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        if (!base.CanStartCurrentAttack(player, omp))
+            return false;
+
+        TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
+        if (profile?.ProjectileType == UltimateAttack)
+            return !HasActiveOwnedProjectile(player, profile.ProjectileType);
+
+        return true;
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         NPC prey = FindMarkedPrey(player);

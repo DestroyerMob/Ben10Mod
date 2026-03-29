@@ -246,6 +246,13 @@ namespace Ben10Mod.Content.Transformations {
 
         public virtual string GetDisplayName(OmnitrixPlayer omp) => omp?.GetTransformationBaseName(this) ?? TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
+        public virtual bool IsStarterTransformation(OmnitrixPlayer omp) => false;
+        public virtual bool IsAccessoryTransformation(OmnitrixPlayer omp) => false;
+        public virtual bool HasUnlockCondition(OmnitrixPlayer omp) {
+            return ParentTransformation == null &&
+                   !IsStarterTransformation(omp) &&
+                   !IsAccessoryTransformation(omp);
+        }
         public virtual string GetUnlockConditionText(OmnitrixPlayer omp)
             => TransformationUnlockConditionRegistry.Get(FullID);
         public virtual List<string> GetAbilities(OmnitrixPlayer omp) => Abilities;
@@ -355,6 +362,78 @@ namespace Ben10Mod.Content.Transformations {
             };
         }
 
+        public virtual string GetAttackModeSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+            string modeText = resolvedSelection switch {
+                OmnitrixPlayer.AttackSelection.Secondary => "Secondary badge attack",
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => "Loaded F attack",
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => "Loaded G attack",
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => "Loaded H attack",
+                OmnitrixPlayer.AttackSelection.Ultimate => HasUltimateAbilityForState(omp)
+                    ? "Ultimate ability"
+                    : "Ultimate attack mode",
+                _ => "Primary badge attack"
+            };
+
+            TransformationAttackProfile profile = GetRawAttackProfile(resolvedSelection, omp);
+            List<string> traits = new();
+            if (profile?.SingleUse == true)
+                traits.Add("single-use");
+            if (profile?.Channel == true)
+                traits.Add("channeled");
+
+            return traits.Count == 0
+                ? modeText
+                : $"{modeText} - {string.Join(", ", traits)}";
+        }
+
+        public virtual string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+            bool compact = false) {
+            OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+            TransformationAttackProfile profile = GetRawAttackProfile(resolvedSelection, omp);
+            if (profile == null)
+                return string.Empty;
+
+            List<string> parts = new();
+            int activationCost = GetActionActivationCost(resolvedSelection, omp);
+            if (resolvedSelection == OmnitrixPlayer.AttackSelection.Ultimate &&
+                !HasUltimateAbilityForState(omp) &&
+                activationCost > 0) {
+                parts.Add(compact ? $"Req {FormatEnergyCost(activationCost, compact)}" : $"Requires {FormatEnergyCost(activationCost, compact)}");
+            }
+            else if ((resolvedSelection is OmnitrixPlayer.AttackSelection.PrimaryAbility
+                      or OmnitrixPlayer.AttackSelection.SecondaryAbility
+                      or OmnitrixPlayer.AttackSelection.TertiaryAbility) &&
+                     activationCost > 0) {
+                parts.Add(compact ? $"Load {FormatEnergyCost(activationCost, compact)}" : $"Load {FormatEnergyCost(activationCost, compact)}");
+            }
+
+            if (profile.EnergyCost > 0)
+                parts.Add(compact ? FormatEnergyCost(profile.EnergyCost, compact) : $"Cost {FormatEnergyCost(profile.EnergyCost, compact)}");
+
+            if (profile.SustainEnergyCost > 0 && profile.SustainInterval > 0)
+                parts.Add(compact ? FormatEnergyRate(profile.SustainEnergyCost, profile.SustainInterval, compact)
+                    : $"Drain {FormatEnergyRate(profile.SustainEnergyCost, profile.SustainInterval, compact)}");
+
+            if (parts.Count == 0)
+                return compact ? "0 OE" : "No OE cost";
+
+            return string.Join(compact ? " • " : ", ", parts);
+        }
+
+        public virtual IReadOnlyList<string> GetCombatSlotSummaries(OmnitrixPlayer omp) {
+            List<string> summaries = new();
+
+            AppendBaseAttackSummary(summaries, "Primary", OmnitrixPlayer.AttackSelection.Primary, omp);
+            AppendBaseAttackSummary(summaries, "Secondary", OmnitrixPlayer.AttackSelection.Secondary, omp);
+            AppendActionSlotSummary(summaries, "F", OmnitrixPlayer.AttackSelection.PrimaryAbility, omp);
+            AppendActionSlotSummary(summaries, "G", OmnitrixPlayer.AttackSelection.SecondaryAbility, omp);
+            AppendActionSlotSummary(summaries, "H", OmnitrixPlayer.AttackSelection.TertiaryAbility, omp);
+            AppendUltimateSummary(summaries, omp);
+
+            return summaries;
+        }
+
         public virtual void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
             var profile = GetSelectedAttackProfile(omp);
             if (profile == null)
@@ -456,6 +535,21 @@ namespace Ben10Mod.Content.Transformations {
                 return configuredName;
 
             return fallback;
+        }
+
+        protected static string FormatEnergyCost(int cost, bool compact) {
+            return compact ? $"{cost} OE" : $"{cost} OE";
+        }
+
+        protected static string FormatEnergyRate(int sustainCost, int sustainInterval, bool compact) {
+            if (sustainCost <= 0 || sustainInterval <= 0)
+                return compact ? "0/s" : "0 OE/s";
+
+            float ratePerSecond = sustainCost * 60f / sustainInterval;
+            string formattedRate = ratePerSecond >= 10f
+                ? $"{ratePerSecond:0}"
+                : $"{ratePerSecond:0.#}";
+            return compact ? $"{formattedRate}/s" : $"{formattedRate} OE/s";
         }
 
         protected virtual void SpawnDefaultActiveAbilityAura(Player player, OmnitrixPlayer omp) {
@@ -882,6 +976,156 @@ namespace Ben10Mod.Content.Transformations {
         protected virtual TransformationAttackProfile GetSelectedAttackProfile(OmnitrixPlayer omp) {
             OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(omp.setAttack, omp);
             return GetRawAttackProfile(resolvedSelection, omp);
+        }
+
+        private void AppendBaseAttackSummary(List<string> summaries, string label,
+            OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            TransformationAttackProfile profile = GetRawAttackProfile(selection, omp);
+            if (profile == null || profile.ProjectileType <= 0)
+                return;
+
+            string name = ResolveAttackProfileDisplayName(profile, GetAttackSelectionFallbackDisplayName(selection));
+            List<string> detailParts = new() { "badge attack" };
+            AppendAttackCostDetails(detailParts, selection, profile, omp, includeRequirement: false);
+            AppendAttackTraitDetails(detailParts, profile);
+            summaries.Add(BuildSummaryLine(label, name, detailParts));
+        }
+
+        private void AppendActionSlotSummary(List<string> summaries, string hotkey,
+            OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            if (HasTimedAbilityForSelection(selection, omp)) {
+                string name = GetAbilitySelectionDisplayName(selection, omp);
+                List<string> detailParts = new() { "timed ability" };
+                int activationCost = GetActionActivationCost(selection, omp);
+                if (activationCost > 0)
+                    detailParts.Add($"Cost {FormatEnergyCost(activationCost, compact: false)}");
+
+                int duration = GetActionDuration(selection, omp);
+                if (duration > 0)
+                    detailParts.Add($"Duration {OmnitrixPlayer.FormatCooldownTicks(duration)}");
+
+                int cooldown = GetActionCooldown(selection, omp);
+                if (cooldown > 0)
+                    detailParts.Add($"Cooldown {OmnitrixPlayer.FormatCooldownTicks(cooldown)}");
+
+                summaries.Add(BuildSummaryLine(hotkey, name, detailParts));
+                return;
+            }
+
+            TransformationAttackProfile profile = GetRawAttackProfile(selection, omp);
+            if (profile == null || profile.ProjectileType <= 0)
+                return;
+
+            string attackName = GetAttackSelectionDisplayName(selection, omp);
+            List<string> attackParts = new() { selection == OmnitrixPlayer.AttackSelection.Ultimate ? "ultimate attack" : "loaded attack" };
+            AppendAttackCostDetails(attackParts, selection, profile, omp,
+                includeRequirement: selection == OmnitrixPlayer.AttackSelection.Ultimate);
+            int actionCooldown = GetActionCooldown(selection, omp);
+            if (actionCooldown > 0)
+                attackParts.Add($"Cooldown {OmnitrixPlayer.FormatCooldownTicks(actionCooldown)}");
+
+            AppendAttackTraitDetails(attackParts, profile);
+            summaries.Add(BuildSummaryLine(hotkey, attackName, attackParts));
+        }
+
+        private void AppendUltimateSummary(List<string> summaries, OmnitrixPlayer omp) {
+            if (HasUltimateAbilityForState(omp)) {
+                string name = GetAbilitySelectionDisplayName(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+                List<string> detailParts = new() { "timed ability" };
+                int activationCost = GetActionActivationCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+                if (activationCost > 0)
+                    detailParts.Add($"Cost {FormatEnergyCost(activationCost, compact: false)}");
+
+                int duration = GetActionDuration(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+                if (duration > 0)
+                    detailParts.Add($"Duration {OmnitrixPlayer.FormatCooldownTicks(duration)}");
+
+                int cooldown = GetActionCooldown(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+                if (cooldown > 0)
+                    detailParts.Add($"Cooldown {OmnitrixPlayer.FormatCooldownTicks(cooldown)}");
+
+                summaries.Add(BuildSummaryLine("U", name, detailParts));
+                return;
+            }
+
+            AppendActionSlotSummary(summaries, "U", OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        }
+
+        private static string BuildSummaryLine(string label, string name, IReadOnlyList<string> detailParts) {
+            string cleanName = string.IsNullOrWhiteSpace(name) ? "Unknown action" : name;
+            if (detailParts == null || detailParts.Count == 0)
+                return $"{label}: {cleanName}";
+
+            return $"{label}: {cleanName} - {string.Join(", ", detailParts)}";
+        }
+
+        private void AppendAttackCostDetails(List<string> detailParts, OmnitrixPlayer.AttackSelection selection,
+            TransformationAttackProfile profile, OmnitrixPlayer omp, bool includeRequirement) {
+            int activationCost = GetActionActivationCost(selection, omp);
+            if (includeRequirement && activationCost > 0)
+                detailParts.Add($"Requires {FormatEnergyCost(activationCost, compact: false)}");
+            else if ((selection is OmnitrixPlayer.AttackSelection.PrimaryAbility
+                      or OmnitrixPlayer.AttackSelection.SecondaryAbility
+                      or OmnitrixPlayer.AttackSelection.TertiaryAbility) &&
+                     activationCost > 0) {
+                detailParts.Add($"Load {FormatEnergyCost(activationCost, compact: false)}");
+            }
+
+            if (profile.EnergyCost > 0)
+                detailParts.Add($"Cost {FormatEnergyCost(profile.EnergyCost, compact: false)}");
+
+            if (profile.SustainEnergyCost > 0 && profile.SustainInterval > 0)
+                detailParts.Add($"Drain {FormatEnergyRate(profile.SustainEnergyCost, profile.SustainInterval, compact: false)}");
+        }
+
+        private static void AppendAttackTraitDetails(List<string> detailParts, TransformationAttackProfile profile) {
+            if (profile == null)
+                return;
+
+            if (profile.SingleUse)
+                detailParts.Add("Single-use");
+            if (profile.Channel)
+                detailParts.Add("Channeled");
+        }
+
+        private bool HasTimedAbilityForSelection(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => HasPrimaryAbilityForState(omp),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => HasSecondaryAbilityForState(omp),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => HasTertiaryAbilityForState(omp),
+                OmnitrixPlayer.AttackSelection.Ultimate => HasUltimateAbilityForState(omp),
+                _ => false
+            };
+        }
+
+        private int GetActionActivationCost(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => GetPrimaryAbilityCost(omp),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => GetSecondaryAbilityCost(omp),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => GetTertiaryAbilityCost(omp),
+                OmnitrixPlayer.AttackSelection.Ultimate => GetUltimateAbilityCost(omp),
+                _ => 0
+            };
+        }
+
+        private int GetActionDuration(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => GetPrimaryAbilityDuration(omp),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => GetSecondaryAbilityDuration(omp),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => GetTertiaryAbilityDuration(omp),
+                OmnitrixPlayer.AttackSelection.Ultimate => GetUltimateAbilityDuration(omp),
+                _ => 0
+            };
+        }
+
+        private int GetActionCooldown(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+            return selection switch {
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => GetPrimaryAbilityCooldown(omp),
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => GetSecondaryAbilityCooldown(omp),
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => GetTertiaryAbilityCooldown(omp),
+                OmnitrixPlayer.AttackSelection.Ultimate => GetUltimateAbilityCooldown(omp),
+                _ => 0
+            };
         }
 
         protected sealed override void Register() {

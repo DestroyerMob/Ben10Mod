@@ -40,7 +40,7 @@ public class GhostFreakTransformation : Transformation {
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 30 * 60;
-    public override int PrimaryAbilityCooldown => 60 * 60;
+    public override int PrimaryAbilityCooldown => 45 * 60;
 
     public override int UltimateAttack => ModContent.ProjectileType<GhostFreakPossesionProjectile>();
     public override int UltimateAttackSpeed => 14;
