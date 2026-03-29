@@ -381,6 +381,12 @@ public class TransformationPaletteScreen : UIState {
     private const float FloatingPanelGap = 18f;
     private const float FloatingPanelContentTop = 36f;
     private const float FloatingPanelInnerMargin = 8f;
+    private const float PaletteTabButtonWidth = 120f;
+    private const float CostumesTabButtonWidth = 120f;
+    private const float CustomNamesTabButtonWidth = 140f;
+    private const float CloseButtonWidth = 170f;
+    private const float HeaderButtonGap = 10f;
+    private const float MinHeaderPanelWidth = 520f;
 
     private enum CustomizationTab {
         Palette,
@@ -426,6 +432,7 @@ public class TransformationPaletteScreen : UIState {
     private UITextPanel<string> paletteTabButton;
     private UITextPanel<string> costumesTabButton;
     private UITextPanel<string> customNamesTabButton;
+    private UITextPanel<string> closeButton;
     private UIPanel paletteListPanel;
     private UIPanel costumeListPanel;
     private UIPanel customNameListPanel;
@@ -519,11 +526,12 @@ public class TransformationPaletteScreen : UIState {
         titleText.Top.Set(38f, 0f);
         mainPanel.Append(titleText);
 
-        paletteTabButton = CreateActionButton("Palette", 552f, 34f, (_, _) => SetActiveTab(CustomizationTab.Palette), width: 120f);
+        paletteTabButton = CreateActionButton("Palette", 552f, 34f, (_, _) => SetActiveTab(CustomizationTab.Palette),
+            width: PaletteTabButtonWidth);
         costumesTabButton = CreateActionButton("Costumes", 682f, 34f,
-            (_, _) => SetActiveTab(CustomizationTab.Costumes), width: 120f);
+            (_, _) => SetActiveTab(CustomizationTab.Costumes), width: CostumesTabButtonWidth);
         customNamesTabButton = CreateActionButton("Custom Names", 812f, 34f,
-            (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: 140f);
+            (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: CustomNamesTabButtonWidth);
         mainPanel.Append(paletteTabButton);
         mainPanel.Append(costumesTabButton);
         mainPanel.Append(customNamesTabButton);
@@ -533,7 +541,9 @@ public class TransformationPaletteScreen : UIState {
         targetText.Top.Set(78f, 0f);
         mainPanel.Append(targetText);
 
-        statusText = new UIText("Pick a transformation with palette masks to begin.", 0.9f);
+        statusText = new UIText("Pick a transformation with palette masks to begin.", 0.9f) {
+            IsWrapped = true
+        };
         statusText.Left.Set(24f, 0f);
         statusText.Top.Set(104f, 0f);
         mainPanel.Append(statusText);
@@ -839,12 +849,12 @@ public class TransformationPaletteScreen : UIState {
         customNameDetailPanel.Append(applyNameButton);
         customNameDetailPanel.Append(resetNameButton);
 
-        UITextPanel<string> closeButton = CreateActionButton("Close", 786f, 82f, (_, _) => {
+        closeButton = CreateActionButton("Close", 786f, 82f, (_, _) => {
             CommitPendingColors();
             CommitSelectedCustomName();
             ModContent.GetInstance<UISystem>().HideMyUI();
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
-        }, width: 170f);
+        }, width: CloseButtonWidth);
         mainPanel.Append(closeButton);
 
         ResetWindowLayout();
@@ -950,28 +960,83 @@ public class TransformationPaletteScreen : UIState {
 
     private void ResetWindowLayout() {
         Vector2 viewportSize = UIViewportMetrics.GetViewportSize();
-        float headerLeft = Math.Max(0f, (viewportSize.X - HeaderPanelWidth) * 0.5f);
+        float headerWidth = Math.Min(HeaderPanelWidth, Math.Max(MinHeaderPanelWidth, viewportSize.X - FloatingPanelMargin * 2f));
+        if (viewportSize.X <= MinHeaderPanelWidth + FloatingPanelMargin * 2f)
+            headerWidth = Math.Max(320f, viewportSize.X - FloatingPanelMargin * 2f);
+
+        float headerLeft = Math.Max(0f, (viewportSize.X - headerWidth) * 0.5f);
         float headerTop = FloatingPanelMargin;
         float floatingTop = MathHelper.Clamp(headerTop + HeaderPanelHeight + FloatingPanelGap,
             0f, Math.Max(0f, viewportSize.Y - FloatingPanelHeight));
-        float listLeft = Math.Min(FloatingPanelMargin, Math.Max(0f, viewportSize.X - FloatingListPanelWidth));
-        float detailLeft = Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth - FloatingPanelMargin);
+        bool stackPanels = viewportSize.X < FloatingListPanelWidth + FloatingDetailPanelWidth + FloatingPanelGap + FloatingPanelMargin * 2f;
+        float listLeft;
+        float detailLeft;
+        float selectionTop;
+        float detailTop;
 
-        if (detailLeft <= listLeft + FloatingListPanelWidth + FloatingPanelGap)
-            detailLeft = MathHelper.Clamp(listLeft + FloatingListPanelWidth + FloatingPanelGap,
-                0f, Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth));
+        mainPanel.Width.Set(headerWidth, 0f);
+        ApplyHeaderLayout(headerWidth);
+
+        if (stackPanels) {
+            listLeft = Math.Max(0f, (viewportSize.X - FloatingListPanelWidth) * 0.5f);
+            detailLeft = Math.Max(0f, (viewportSize.X - FloatingDetailPanelWidth) * 0.5f);
+            selectionTop = floatingTop;
+            detailTop = Math.Min(selectionTop + FloatingPanelHeight + FloatingPanelGap,
+                Math.Max(selectionTop + 48f, viewportSize.Y - FloatingPanelHeight - FloatingPanelMargin));
+        }
+        else {
+            listLeft = Math.Min(FloatingPanelMargin, Math.Max(0f, viewportSize.X - FloatingListPanelWidth));
+            detailLeft = Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth - FloatingPanelMargin);
+
+            if (detailLeft <= listLeft + FloatingListPanelWidth + FloatingPanelGap)
+                detailLeft = MathHelper.Clamp(listLeft + FloatingListPanelWidth + FloatingPanelGap,
+                    0f, Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth));
+
+            selectionTop = floatingTop;
+            detailTop = floatingTop;
+        }
 
         mainPanel.Left.Set(headerLeft, 0f);
         mainPanel.Top.Set(headerTop, 0f);
         mainPanel.Recalculate();
 
         selectionPanel.Left.Set(listLeft, 0f);
-        selectionPanel.Top.Set(floatingTop, 0f);
+        selectionPanel.Top.Set(selectionTop, 0f);
         selectionPanel.Recalculate();
 
         detailPanel.Left.Set(detailLeft, 0f);
-        detailPanel.Top.Set(floatingTop, 0f);
+        detailPanel.Top.Set(detailTop, 0f);
         detailPanel.Recalculate();
+    }
+
+    private void ApplyHeaderLayout(float headerWidth) {
+        float rightEdge = headerWidth - 24f;
+        float tabsTotalWidth = PaletteTabButtonWidth + CostumesTabButtonWidth + CustomNamesTabButtonWidth + HeaderButtonGap * 2f;
+        float tabsLeft = Math.Max(24f, rightEdge - tabsTotalWidth);
+
+        paletteTabButton.Left.Set(tabsLeft, 0f);
+        paletteTabButton.Top.Set(34f, 0f);
+        paletteTabButton.Recalculate();
+
+        costumesTabButton.Left.Set(tabsLeft + PaletteTabButtonWidth + HeaderButtonGap, 0f);
+        costumesTabButton.Top.Set(34f, 0f);
+        costumesTabButton.Recalculate();
+
+        customNamesTabButton.Left.Set(tabsLeft + PaletteTabButtonWidth + CostumesTabButtonWidth + HeaderButtonGap * 2f, 0f);
+        customNamesTabButton.Top.Set(34f, 0f);
+        customNamesTabButton.Recalculate();
+
+        float closeLeft = Math.Max(24f, rightEdge - CloseButtonWidth);
+        closeButton.Left.Set(closeLeft, 0f);
+        closeButton.Top.Set(82f, 0f);
+        closeButton.Recalculate();
+
+        float infoWidth = Math.Max(200f, closeLeft - 48f);
+        targetText.Width.Set(infoWidth, 0f);
+        targetText.Recalculate();
+
+        statusText.Width.Set(infoWidth, 0f);
+        statusText.Recalculate();
     }
 
     private static void SetPanelVisibility(UIElement panel, bool visible) {
