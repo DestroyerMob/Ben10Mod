@@ -14,6 +14,20 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Interface;
 
+internal static class UIViewportMetrics {
+    // Terraria's UI mouse events and UI element positions already line up with screen-space pixels here,
+    // so viewport bounds should stay in that same coordinate space to preserve full drag range.
+    public static Vector2 GetViewportSize() => new(Main.screenWidth, Main.screenHeight);
+
+    public static float GetHiddenLeftOffset(UIElement panel) {
+        if (panel == null)
+            return -4096f;
+
+        float panelWidth = Math.Max(panel.GetOuterDimensions().Width, panel.Width.Pixels);
+        return -(GetViewportSize().X + panelWidth + 128f);
+    }
+}
+
 public sealed class PaletteByteSlider : UIElement {
     private bool _dragging;
     private int _value;
@@ -179,22 +193,24 @@ public sealed class DraggableUIPanel : UIPanel {
     public override void Update(GameTime gameTime) {
         base.Update(gameTime);
 
-        if (!_dragging)
-            return;
-
-        if (!Main.mouseLeft) {
-            _dragging = false;
-            return;
+        if (_dragging) {
+            if (!Main.mouseLeft) {
+                _dragging = false;
+            }
+            else {
+                CalculatedStyle dims = GetDimensions();
+                Vector2 viewportSize = UIViewportMetrics.GetViewportSize();
+                float maxLeft = Math.Max(0f, viewportSize.X - dims.Width);
+                float maxTop = Math.Max(0f, viewportSize.Y - dims.Height);
+                Vector2 topLeft = Main.MouseScreen - _dragOffset;
+                Left.Set(MathHelper.Clamp(topLeft.X, 0f, maxLeft), 0f);
+                Top.Set(MathHelper.Clamp(topLeft.Y, 0f, maxTop), 0f);
+                Recalculate();
+                Main.LocalPlayer.mouseInterface = true;
+            }
         }
 
-        CalculatedStyle dims = GetDimensions();
-        float maxLeft = Math.Max(0f, Main.screenWidth - dims.Width);
-        float maxTop = Math.Max(0f, Main.screenHeight - dims.Height);
-        Vector2 topLeft = Main.MouseScreen - _dragOffset;
-        Left.Set(MathHelper.Clamp(topLeft.X, 0f, maxLeft), 0f);
-        Top.Set(MathHelper.Clamp(topLeft.Y, 0f, maxTop), 0f);
-        Recalculate();
-        Main.LocalPlayer.mouseInterface = true;
+        ClampToViewport();
     }
 
     protected override void DrawSelf(SpriteBatch spriteBatch) {
@@ -217,6 +233,21 @@ public sealed class DraggableUIPanel : UIPanel {
                mousePosition.X <= dims.X + dims.Width &&
                mousePosition.Y >= dims.Y &&
                mousePosition.Y <= dims.Y + HandleHeight;
+    }
+
+    private void ClampToViewport() {
+        CalculatedStyle dims = GetDimensions();
+        Vector2 viewportSize = UIViewportMetrics.GetViewportSize();
+        float maxLeft = Math.Max(0f, viewportSize.X - dims.Width);
+        float maxTop = Math.Max(0f, viewportSize.Y - dims.Height);
+        float clampedLeft = MathHelper.Clamp(Left.Pixels, 0f, maxLeft);
+        float clampedTop = MathHelper.Clamp(Top.Pixels, 0f, maxTop);
+        if (Math.Abs(clampedLeft - Left.Pixels) < 0.01f && Math.Abs(clampedTop - Top.Pixels) < 0.01f)
+            return;
+
+        Left.Set(clampedLeft, 0f);
+        Top.Set(clampedTop, 0f);
+        Recalculate();
     }
 }
 
@@ -895,18 +926,17 @@ public class TransformationPaletteScreen : UIState {
     }
 
     private void ResetWindowLayout() {
-        float headerLeft = Math.Max(0f, (Main.screenWidth - HeaderPanelWidth) * 0.5f);
+        Vector2 viewportSize = UIViewportMetrics.GetViewportSize();
+        float headerLeft = Math.Max(0f, (viewportSize.X - HeaderPanelWidth) * 0.5f);
         float headerTop = FloatingPanelMargin;
         float floatingTop = MathHelper.Clamp(headerTop + HeaderPanelHeight + FloatingPanelGap,
-            0f, Math.Max(0f, Main.screenHeight - FloatingPanelHeight));
-        float listLeft = FloatingPanelMargin;
-        float detailLeft = Math.Max(0f, Main.screenWidth - FloatingDetailPanelWidth - FloatingPanelMargin);
+            0f, Math.Max(0f, viewportSize.Y - FloatingPanelHeight));
+        float listLeft = Math.Min(FloatingPanelMargin, Math.Max(0f, viewportSize.X - FloatingListPanelWidth));
+        float detailLeft = Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth - FloatingPanelMargin);
 
         if (detailLeft <= listLeft + FloatingListPanelWidth + FloatingPanelGap)
-            detailLeft = Math.Min(
-                Math.Max(0f, Main.screenWidth - FloatingDetailPanelWidth),
-                listLeft + FloatingListPanelWidth + FloatingPanelGap
-            );
+            detailLeft = MathHelper.Clamp(listLeft + FloatingListPanelWidth + FloatingPanelGap,
+                0f, Math.Max(0f, viewportSize.X - FloatingDetailPanelWidth));
 
         mainPanel.Left.Set(headerLeft, 0f);
         mainPanel.Top.Set(headerTop, 0f);
@@ -925,7 +955,7 @@ public class TransformationPaletteScreen : UIState {
         if (panel == null)
             return;
 
-        panel.Left.Set(visible ? 0f : -2000f, 0f);
+        panel.Left.Set(visible ? 0f : UIViewportMetrics.GetHiddenLeftOffset(panel), 0f);
         panel.IgnoresMouseInteraction = !visible;
         panel.Recalculate();
     }

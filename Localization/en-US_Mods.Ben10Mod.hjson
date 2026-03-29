@@ -1085,6 +1085,8 @@ Projectiles: {
 	HeatBlastHaloFireballProjectile.DisplayName: Heat Blast Halo Fireball Projectile
 	HeatBlastSolarHaloProjectile.DisplayName: Heat Blast Solar Halo Projectile
 	HeatBlastSuperheatAuraProjectile.DisplayName: Heat Blast Superheat Aura Projectile
+	WildVineWhipProjectile.DisplayName: Wild Vine Whip Projectile
+	WildVineGasCloudProjectile.DisplayName: Wild Vine Gas Cloud Projectile
 }
 
 Tiles: {

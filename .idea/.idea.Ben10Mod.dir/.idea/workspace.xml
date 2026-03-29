@@ -9,7 +9,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Content/Projectiles/WildVineWhipProjectile.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Interface/TransformationPaletteScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/TransformationPaletteScreen.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/Projectiles/Projectile_464.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,12 +34,12 @@
     &quot;assignee&quot;: &quot;DestroyerMob&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/DestroyerMob/Ben10Mod.git&quot;,
-    &quot;accountId&quot;: &quot;e10becbb-c5ff-41c4-b480-d3cf4848be98&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/DestroyerMob/Ben10Mod.git",
+    "accountId": "24b9852e-9272-4195-bcd7-b287e60d9878"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3524f0f91bb4975db099b58fdc43df9ccd1794af9e431d7ae640eb9efdebd67b/EquipLoader.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/5d863d41b7985f7ceb603b73ff1b47f5953903d1a9abf628293d544645de0/ExtraJumpState.cs" root0="FORCE_HIGHLIGHTING" />
