@@ -16,6 +16,10 @@ using Terraria.WorldBuilding;
 namespace Ben10Mod.Common.Systems {
     public class WorldSystem : ModSystem {
         public override void ModifyWorldGenTasks(List<GenPass> tasks, ref double totalWeight) {
+            if (Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(Ben10FeatureType.WorldGen,
+                    Ben10FeatureBlacklistRegistry.BaseModId))
+                return;
+
             int shiniesIndex = tasks.FindIndex(t => t.Name.Equals("Shinies"));
             int microBiomesIndex = tasks.FindIndex(t => t.Name.Equals("Micro Biomes"));
             

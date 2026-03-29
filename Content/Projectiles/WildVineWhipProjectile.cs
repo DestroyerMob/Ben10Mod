@@ -28,8 +28,8 @@ public class WildVineWhipProjectile : ModProjectile {
         Projectile.CloneDefaults(ProjectileID.ThornWhip);
         AIType = ProjectileID.ThornWhip;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
-        Projectile.WhipSettings.Segments = 20;
-        Projectile.WhipSettings.RangeMultiplier = 1.15f;
+        Projectile.WhipSettings.Segments = 24;
+        Projectile.WhipSettings.RangeMultiplier = 1.4f;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {

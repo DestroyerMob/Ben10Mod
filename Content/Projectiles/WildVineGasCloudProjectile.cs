@@ -12,9 +12,9 @@ namespace Ben10Mod.Content.Projectiles;
 public class WildVineGasCloudProjectile : ModProjectile {
     private const int RegularLifetime = 4 * 60;
     private const int BloomLifetime = 6 * 60;
-    private const float BaseRadius = 18f;
-    private const float RegularMaxRadius = 70f;
-    private const float BloomMaxRadius = 96f;
+    private const float BaseRadius = 24f;
+    private const float RegularMaxRadius = 92f;
+    private const float BloomMaxRadius = 124f;
 
     private bool IsBloomVariant => Projectile.ai[0] >= WildVineBomb.VariantBloom;
     private int MaxLifetime => IsBloomVariant ? BloomLifetime : RegularLifetime;

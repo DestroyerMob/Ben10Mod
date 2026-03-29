@@ -30,9 +30,15 @@ namespace Ben10Mod {
 			return command switch {
 				"RegisterAbsorbableMaterial" => CallRegisterAbsorbableMaterial(args),
 				"RegisterTransformationUnlockCondition" => CallRegisterTransformationUnlockCondition(args),
+				"BlacklistTransformation" => CallBlacklistTransformation(args),
+				"BlacklistFeature" => CallBlacklistFeature(args),
 				"GetTransformationUnlockCondition" => args.Length >= 2 && args[1] is string transformationId
 					? TransformationUnlockConditionRegistry.Get(transformationId)
 					: string.Empty,
+				"IsTransformationBlacklisted" => args.Length >= 2 && args[1] is string blacklistedTransformationId
+					? Ben10FeatureBlacklistRegistry.IsTransformationBlacklisted(blacklistedTransformationId)
+					: false,
+				"IsFeatureBlacklisted" => CallIsFeatureBlacklisted(args),
 				"IsAbsorbableMaterialRegistered" => args.Length >= 2 && args[1] is int itemType &&
 				                                    MaterialAbsorptionRegistry.IsRegistered(itemType),
 				"GetAbsorbableMaterialProfile" => args.Length >= 2 && args[1] is int profileItemType &&
@@ -45,6 +51,7 @@ namespace Ben10Mod {
 		}
 
 		public override void Load() {
+			Ben10FeatureBlacklistRegistry.Clear();
 			TransformationUnlockConditionRegistry.Clear();
 			TransformationUnlockConditionRegistry.RegisterBaseConditions();
 
@@ -71,6 +78,7 @@ namespace Ben10Mod {
 		}
 
 		public override void Unload() {
+			TryUnloadStep("feature blacklist registry", Ben10FeatureBlacklistRegistry.Clear);
 			TryUnloadStep("transformation branches", TransformationBranchRegistry.Clear);
 			TryUnloadStep("transformation loader", TransformationLoader.Clear);
 			TryUnloadStep("transformation costume loader", TransformationCostumeLoader.Clear);
@@ -488,6 +496,65 @@ namespace Ben10Mod {
 
 			TransformationUnlockConditionRegistry.Register(transformationId, unlockConditionText);
 			return null;
+		}
+
+		private static object CallBlacklistTransformation(object[] args) {
+			if (args.Length < 2)
+				throw new ArgumentException(
+					"BlacklistTransformation requires one or more transformation IDs or mod IDs.");
+
+			for (int i = 1; i < args.Length; i++) {
+				if (args[i] is not string transformationIdOrModId)
+					throw new ArgumentException(
+						"BlacklistTransformation entries must be transformation ID strings or mod ID strings.");
+
+				Ben10FeatureBlacklistRegistry.BlacklistTransformation(transformationIdOrModId);
+			}
+
+			return null;
+		}
+
+		private static object CallBlacklistFeature(object[] args) {
+			if (args.Length < 3)
+				throw new ArgumentException(
+					"BlacklistFeature requires a feature type and one or more mod IDs or transformation IDs.");
+
+			if (args[1] is not string featureKey ||
+			    !Ben10FeatureBlacklistRegistry.TryParseFeatureType(featureKey, out Ben10FeatureType featureType))
+				throw new ArgumentException(
+					"BlacklistFeature feature type must be one of: Transformation, Omnitrix, PlumbersBadge, WorldGen.");
+
+			for (int i = 2; i < args.Length; i++) {
+				if (args[i] is not string identifier)
+					throw new ArgumentException(
+						"BlacklistFeature entries must be mod ID strings, or transformation IDs when using the Transformation feature type.");
+
+				if (featureType == Ben10FeatureType.Transformation)
+					Ben10FeatureBlacklistRegistry.BlacklistTransformation(identifier);
+				else
+					Ben10FeatureBlacklistRegistry.BlacklistFeature(featureType, identifier);
+			}
+
+			return null;
+		}
+
+		private static object CallIsFeatureBlacklisted(object[] args) {
+			if (args.Length < 3)
+				throw new ArgumentException(
+					"IsFeatureBlacklisted requires a feature type and a mod ID or transformation ID.");
+
+			if (args[1] is not string featureKey ||
+			    !Ben10FeatureBlacklistRegistry.TryParseFeatureType(featureKey, out Ben10FeatureType featureType))
+				throw new ArgumentException(
+					"IsFeatureBlacklisted feature type must be one of: Transformation, Omnitrix, PlumbersBadge, WorldGen.");
+
+			if (args[2] is not string identifier)
+				throw new ArgumentException(
+					"IsFeatureBlacklisted requires a mod ID string, or a transformation ID when checking Transformation.");
+
+			return featureType == Ben10FeatureType.Transformation
+				? Ben10FeatureBlacklistRegistry.IsTransformationBlacklisted(identifier)
+				: Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(featureType, identifier);
 		}
 	}
 }

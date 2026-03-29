@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Transformations;
@@ -70,11 +71,19 @@ namespace Ben10Mod.Content.Items.Weapons {
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            if (IsBlacklisted()) {
+                tooltips.Add(new TooltipLine(Mod, "Disabled",
+                    "Disabled by the Ben10Mod feature blacklist."));
+            }
+
             tooltips.Add(new TooltipLine(Mod, "badgeHelperLine",
                 "Right click while holding to alternate between primary and secondary attacks"));
         }
 
         public override bool CanUseItem(Player player) {
+            if (IsBlacklisted())
+                return false;
+
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (!omp.IsTransformed)
                 return false;
@@ -98,6 +107,11 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
 
+            if (IsBlacklisted()) {
+                state.ultimateStarted = false;
+                return;
+            }
+
             if (!omp.IsTransformed) {
                 state.ultimateStarted = false;
                 return;
@@ -116,6 +130,9 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source,
             Vector2 position, Vector2 velocity, int type, int damage, float knockback) {
+            if (IsBlacklisted())
+                return false;
+
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             var state = player.GetModPlayer<BadgeUltimateState>();
             if (!omp.IsTransformed || player.altFunctionUse == 2) return false;
@@ -155,6 +172,10 @@ namespace Ben10Mod.Content.Items.Weapons {
                 omp.NotifyLoadedAbilityAttackFired();
 
             return false;
+        }
+
+        private bool IsBlacklisted() {
+            return Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(Ben10FeatureType.PlumbersBadge, Mod);
         }
     }
 

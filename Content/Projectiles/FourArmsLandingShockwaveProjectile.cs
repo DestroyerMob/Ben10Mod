@@ -9,6 +9,7 @@ namespace Ben10Mod.Content.Projectiles;
 public class FourArmsLandingShockwaveProjectile : ModProjectile {
     private const float DustRadius = 42f;
     private const float GroundDustLift = 6f;
+    private float ScaleFactor => Projectile.ai[0] <= 0f ? 1f : Projectile.ai[0];
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -26,6 +27,9 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
     }
 
     public override void AI() {
+        Projectile.scale = ScaleFactor;
+        Projectile.GetGlobalProjectile<OmnitrixProjectile>().EnableScaleHitboxSync(Projectile);
+
         if (Projectile.localAI[0] > 0f)
             return;
 
@@ -34,24 +38,26 @@ public class FourArmsLandingShockwaveProjectile : ModProjectile {
     }
 
     private void SpawnImpactDust() {
-        Vector2 impactLineCenter = new Vector2(Projectile.Center.X, Projectile.Bottom.Y - GroundDustLift);
+        Vector2 impactLineCenter = new Vector2(Projectile.Center.X, Projectile.Bottom.Y - GroundDustLift * ScaleFactor);
 
         for (int i = 0; i < 24; i++) {
             float completion = i / 23f;
             float direction = MathHelper.Lerp(-1f, 1f, completion);
-            Vector2 position = impactLineCenter + new Vector2(direction * DustRadius, Main.rand.NextFloat(-3f, 3f));
-            Vector2 velocity = new Vector2(direction * Main.rand.NextFloat(1.1f, 3.2f), Main.rand.NextFloat(-1.8f, -0.4f));
+            Vector2 position = impactLineCenter + new Vector2(direction * DustRadius * ScaleFactor, Main.rand.NextFloat(-3f, 3f) * ScaleFactor);
+            Vector2 velocity = new Vector2(direction * Main.rand.NextFloat(1.1f, 3.2f) * ScaleFactor,
+                Main.rand.NextFloat(-1.8f, -0.4f) * ScaleFactor);
 
             Dust dust = Dust.NewDustPerfect(position, DustID.Smoke, velocity, 95, new Color(215, 215, 215),
-                Main.rand.NextFloat(0.95f, 1.3f));
+                Main.rand.NextFloat(0.95f, 1.3f) * ScaleFactor);
             dust.noGravity = true;
         }
 
         for (int i = 0; i < 16; i++) {
             float direction = Main.rand.NextBool() ? -1f : 1f;
-            Vector2 velocity = new Vector2(direction * Main.rand.NextFloat(0.9f, 2.4f), Main.rand.NextFloat(-1.4f, -0.2f));
-            Dust dust = Dust.NewDustPerfect(impactLineCenter + Main.rand.NextVector2Circular(10f, 4f), DustID.Stone, velocity, 90,
-                Color.White, Main.rand.NextFloat(0.9f, 1.15f));
+            Vector2 velocity = new Vector2(direction * Main.rand.NextFloat(0.9f, 2.4f) * ScaleFactor,
+                Main.rand.NextFloat(-1.4f, -0.2f) * ScaleFactor);
+            Dust dust = Dust.NewDustPerfect(impactLineCenter + Main.rand.NextVector2Circular(10f * ScaleFactor, 4f * ScaleFactor),
+                DustID.Stone, velocity, 90, Color.White, Main.rand.NextFloat(0.9f, 1.15f) * ScaleFactor);
             dust.noGravity = true;
         }
     }

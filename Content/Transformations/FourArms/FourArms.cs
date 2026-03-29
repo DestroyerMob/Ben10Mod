@@ -11,14 +11,15 @@ namespace Ben10Mod.Content.Transformations.FourArms
 {
     public class FourArms : ModItem {
         public static string TransformationDescription =>
-            "A straightforward Tetramand powerhouse. Four Arms leans into melee pressure with high crit, heavy hits, and shockwave-style crowd control.";
+            "A relentless Tetramand bruiser. Four Arms smashes through targets with crushing punches, shockwave claps, explosive rushdowns, and seismic burst damage.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Main attack: heavy melee punches.",
-            "Alt attack: thunderous clap attack for close-range impact.",
-            "Passive: increased melee speed, high crit chance, stronger jumps, and no fall damage.",
-            "Ultimate attack: overpowering melee burst damage at close range.",
-            "Role: close-range bruiser built for smashing bosses and crowds."
+            "Main attack: Power Punch for heavy melee pressure.",
+            "Alt attack: Shockwave Clap that blasts enemies back.",
+            "Primary ability: Battle Roar for a burst of attack speed, mobility, and toughness.",
+            "Secondary ability: Shoulder Rush that barrels through enemies and slams the ground.",
+            "Ultimate attack: Quad Smash for a huge close-range burst.",
+            "Passive: stronger jumps, fast-fall landing shockwaves, and no fall damage."
         };
 
         public override void Load() {

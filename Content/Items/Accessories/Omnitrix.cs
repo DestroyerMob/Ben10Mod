@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Common.Command;
+using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Transformations;
 using Terraria;
 using Terraria.ID;
@@ -57,6 +58,12 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
+            if (IsBlacklisted()) {
+                tooltips.Add(new TooltipLine(Mod, "Disabled",
+                    "Disabled by the Ben10Mod feature blacklist."));
+                return;
+            }
+
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
 
             if (string.IsNullOrEmpty(player.currentTransformationId)) {
@@ -75,8 +82,15 @@ namespace Ben10Mod.Content.Items.Accessories
             tooltips.Add(new TooltipLine(Mod, "Description", trans.GetDescription(player)));
         }
 
+        public override bool CanEquipAccessory(Player player, int slot, bool modded) {
+            return !IsBlacklisted() && base.CanEquipAccessory(player, slot, modded);
+        }
+
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
+            if (IsBlacklisted())
+                return;
+
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (omp.osmosianEquipped)
                 return;
@@ -442,6 +456,10 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             return GetTransformationDuration(omp);
+        }
+
+        private bool IsBlacklisted() {
+            return Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(Ben10FeatureType.Omnitrix, Mod);
         }
     }
 }

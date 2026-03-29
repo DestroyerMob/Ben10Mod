@@ -623,6 +623,77 @@ Current command:
 
 This is useful if your addon adds new bars or materials that should work with the Osmosian absorption system.
 
+## Runtime Blacklist API
+
+Addons can ask Ben10Mod to hide or disable transformations and major feature groups at runtime.
+
+Transformation blacklist entries support either:
+
+- a full transformation id such as `Ben10Addon:ShockRock`
+- a mod id such as `Ben10Addon`, which blacklists every transformation owned by that mod
+
+Feature blacklist entries currently support:
+
+- `Transformation`
+- `Omnitrix`
+- `PlumbersBadge`
+- `WorldGen`
+
+### API Commands
+
+Blacklist one or more transformations or whole transformation mods:
+
+```csharp
+ModLoader.GetMod("Ben10Mod")?.Call(
+    "BlacklistTransformation",
+    "Ben10Addon:ShockRock",
+    "SomeOtherAddon");
+```
+
+Blacklist one or more feature groups by mod id:
+
+```csharp
+ModLoader.GetMod("Ben10Mod")?.Call("BlacklistFeature", "Omnitrix", "Ben10Addon");
+ModLoader.GetMod("Ben10Mod")?.Call("BlacklistFeature", "PlumbersBadge", "Ben10Addon");
+ModLoader.GetMod("Ben10Mod")?.Call("BlacklistFeature", "WorldGen", "Ben10Addon");
+```
+
+You can also use `BlacklistFeature` with `Transformation` if you prefer one entry point:
+
+```csharp
+ModLoader.GetMod("Ben10Mod")?.Call("BlacklistFeature", "Transformation", "Ben10Addon");
+```
+
+Query the final effective state, including Ben10Mod's config overrides:
+
+```csharp
+bool transformationsBlocked = (bool)(ModLoader.GetMod("Ben10Mod")?.Call(
+    "IsTransformationBlacklisted",
+    "Ben10Addon:ShockRock") ?? false);
+
+bool worldGenBlocked = (bool)(ModLoader.GetMod("Ben10Mod")?.Call(
+    "IsFeatureBlacklisted",
+    "WorldGen",
+    "Ben10Addon") ?? false);
+```
+
+### Base-Mod Override Config
+
+Ben10Mod now exposes server config toggles that let players keep Ben10Mod-owned content even if an addon blacklists it:
+
+- `AllowBlacklistedBaseTransformations`
+- `AllowBlacklistedBaseOmnitrixes`
+- `AllowBlacklistedBasePlumbersBadges`
+- `AllowBlacklistedBaseWorldGen`
+
+That override only applies to content owned by `Ben10Mod`. Addon-owned content still respects the blacklist normally.
+
+### World Generation For Addons
+
+Ben10Mod can automatically enforce transformation, Omnitrix, and badge blacklists for addon content because those features inherit shared base types.
+
+World generation does not have a shared base class, so addon worldgen should check the blacklist explicitly before inserting passes. Use either the `Call(...)` API above or the public `Ben10Mod.Common.Systems.Ben10FeatureBlacklistRegistry` helper.
+
 ## Recommended Checklist Before Shipping An Addon
 
 Make sure:

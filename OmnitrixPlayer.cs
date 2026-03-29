@@ -262,6 +262,7 @@ namespace Ben10Mod {
 
         public override void Initialize() {
             ResetAirborneLungeState();
+            NormalizeStoredTransformationData();
         }
 
         public override void SaveData(TagCompound tag) {
@@ -446,7 +447,8 @@ namespace Ben10Mod {
                 }
             }
 
-            if (!unlockedTransformations.Contains("Ben10Mod:HeatBlast"))
+            if (TransformationLoader.Resolve("Ben10Mod:HeatBlast") != null &&
+                !unlockedTransformations.Contains("Ben10Mod:HeatBlast"))
                 unlockedTransformations.Insert(0, "Ben10Mod:HeatBlast");
 
             NormalizeStoredTransformationData();
@@ -2334,6 +2336,7 @@ namespace Ben10Mod {
                    projectileType == ModContent.ProjectileType<JetrayDiveProjectile>() ||
                    projectileType == ModContent.ProjectileType<BigChillPhaseStrikeProjectile>() ||
                    projectileType == ModContent.ProjectileType<CannonboltRollProjectile>() ||
+                   projectileType == ModContent.ProjectileType<FourArmsRushProjectile>() ||
                    projectileType == ModContent.ProjectileType<GoopDelugeProjectile>();
         }
 
@@ -3404,7 +3407,8 @@ namespace Ben10Mod {
                 }
             }
 
-            if (!normalizedUnlocks.Contains("Ben10Mod:HeatBlast"))
+            if (TransformationLoader.Resolve("Ben10Mod:HeatBlast") != null &&
+                !normalizedUnlocks.Contains("Ben10Mod:HeatBlast"))
                 normalizedUnlocks.Insert(0, "Ben10Mod:HeatBlast");
 
             return normalizedUnlocks.ToArray();

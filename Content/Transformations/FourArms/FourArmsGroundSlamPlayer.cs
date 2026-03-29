@@ -15,6 +15,8 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     private const float FastFallSpeedCap = 55f;
     private const float MinimumImpactSpeed = 8f;
     private const float ShockwaveDamageMultiplier = 0.8f;
+    private const float EmpoweredShockwaveDamageMultiplier = 1.2f;
+    private const float EmpoweredShockwaveScale = 1.28f;
     private const int FallbackBaseDamage = 28;
 
     private bool fourArmsActive;
@@ -79,11 +81,15 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         if (Player.whoAmI != Main.myPlayer)
             return;
 
+        OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+        bool empowered = omp.IsPrimaryAbilityActive;
         int baseDamage = ResolveBaseDamage();
-        int damage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(baseDamage * ShockwaveDamageMultiplier)));
+        float damageMultiplier = ShockwaveDamageMultiplier * (empowered ? EmpoweredShockwaveDamageMultiplier : 1f);
+        int damage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(baseDamage * damageMultiplier)));
         Vector2 spawnPosition = Player.Bottom + new Vector2(0f, -10f);
         Projectile.NewProjectile(Player.GetSource_FromThis(), spawnPosition, Vector2.Zero,
-            ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>(), damage, 6f, Player.whoAmI);
+            ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>(), damage, 6f, Player.whoAmI,
+            empowered ? EmpoweredShockwaveScale : 1f);
     }
 
     private int ResolveBaseDamage() {
