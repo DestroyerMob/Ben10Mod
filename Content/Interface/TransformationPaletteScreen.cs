@@ -457,6 +457,9 @@ public class TransformationPaletteScreen : UIState {
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingHueValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingSaturationValues = new(StringComparer.OrdinalIgnoreCase);
+    private bool _layoutRefreshPending = true;
+    private int _lastLayoutScreenWidth = -1;
+    private int _lastLayoutScreenHeight = -1;
 
     public override void OnInitialize() {
         mainPanel = new DraggableUIPanel {
@@ -822,6 +825,9 @@ public class TransformationPaletteScreen : UIState {
         base.OnActivate();
         if (mainPanel == null)
             return;
+        _layoutRefreshPending = true;
+        _lastLayoutScreenWidth = -1;
+        _lastLayoutScreenHeight = -1;
         ResetWindowLayout();
         RefreshPaletteContext(force: true);
         RefreshCostumeContext(force: true);
@@ -841,6 +847,7 @@ public class TransformationPaletteScreen : UIState {
         if (mainPanel == null)
             return;
 
+        RefreshWindowLayoutIfNeeded();
         RefreshPaletteContext(force: false);
         RefreshCostumeContext(force: false);
         RefreshCustomNameContext(force: false);
@@ -849,6 +856,22 @@ public class TransformationPaletteScreen : UIState {
             selectionPanel.ContainsPoint(Main.MouseScreen) ||
             detailPanel.ContainsPoint(Main.MouseScreen))
             Main.LocalPlayer.mouseInterface = true;
+    }
+
+    private void RefreshWindowLayoutIfNeeded() {
+        int screenWidth = Main.screenWidth;
+        int screenHeight = Main.screenHeight;
+        if (screenWidth <= 0 || screenHeight <= 0)
+            return;
+
+        bool screenChanged = screenWidth != _lastLayoutScreenWidth || screenHeight != _lastLayoutScreenHeight;
+        if (!_layoutRefreshPending && !screenChanged)
+            return;
+
+        ResetWindowLayout();
+        _lastLayoutScreenWidth = screenWidth;
+        _lastLayoutScreenHeight = screenHeight;
+        _layoutRefreshPending = false;
     }
 
     private void SetActiveTab(CustomizationTab tab, bool refreshState = true) {
