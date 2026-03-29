@@ -1087,6 +1087,7 @@ Projectiles: {
 	HeatBlastSuperheatAuraProjectile.DisplayName: Heat Blast Superheat Aura Projectile
 	WildVineGasCloudProjectile.DisplayName: Wild Vine Gas Cloud Projectile
 	WildVineWhipProjectile.DisplayName: Wild Vine Whip Projectile
+	FourArmsRushProjectile.DisplayName: Four Arms Rush Projectile
 }
 
 Tiles: {
@@ -1140,6 +1141,30 @@ Configs: {
 		ShowHeroInterface: {
 			Tooltip: ""
 			Label: Show Hero Interface
+		}
+	}
+
+	Ben10ServerConfig: {
+		DisplayName: Ben10 Server Config
+
+		AllowBlacklistedBaseTransformations: {
+			Label: Allow Blacklisted Base Transformations
+			Tooltip: ""
+		}
+
+		AllowBlacklistedBaseOmnitrixes: {
+			Label: Allow Blacklisted Base Omnitrixes
+			Tooltip: ""
+		}
+
+		AllowBlacklistedBasePlumbersBadges: {
+			Label: Allow Blacklisted Base Plumbers Badges
+			Tooltip: ""
+		}
+
+		AllowBlacklistedBaseWorldGen: {
+			Label: Allow Blacklisted Base World Gen
+			Tooltip: ""
 		}
 	}
 }
