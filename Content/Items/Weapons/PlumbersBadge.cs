@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Content.Transformations;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -17,6 +18,7 @@ namespace Ben10Mod.Content.Items.Weapons {
         public virtual float DamageMultiplier           => 1f;
         public virtual float AttackSpeedMultiplier      => 1f;
         public virtual float AdditionalProjectileChance => 0;
+        public virtual int   UntransformedBoltDamage    => 6 + BadgeRankValue * 2;
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
@@ -59,7 +61,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.useTurn      = false;
             Item.autoReuse    = true;
             Item.noMelee      = true;
-            Item.shoot        = 1;
+            Item.shoot        = ProjectileID.WoodenArrowFriendly;
 
             Item.DamageType = ModContent.GetInstance<HeroDamage>();
             Item.damage     = BaseDamage;
@@ -86,7 +88,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (!omp.IsTransformed)
-                return false;
+                return player.altFunctionUse != 2;
 
             var trans = omp.CurrentTransformation;
             return (trans?.CanAffordCurrentAttack(omp) ?? false) &&
@@ -104,6 +106,10 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.useStyle         = ItemUseStyleID.Swing;
             Item.channel          = false;
             Item.noMelee          = true;
+            Item.noUseGraphic     = true;
+            Item.damage           = BaseDamage;
+            Item.knockBack        = 4f;
+            Item.shoot            = ProjectileID.WoodenArrowFriendly;
             Item.ArmorPenetration = 0;
             Item.UseSound         = null;
 
@@ -114,6 +120,15 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (!omp.IsTransformed) {
                 state.ultimateStarted = false;
+                Item.noUseGraphic = false;
+                Item.useTurn = true;
+                Item.useStyle = ItemUseStyleID.Shoot;
+                Item.useTime = Item.useAnimation = 18;
+                Item.shoot = ModContent.ProjectileType<PlumberBlasterBoltProjectile>();
+                Item.shootSpeed = 11.5f;
+                Item.damage = Math.Max(1, UntransformedBoltDamage);
+                Item.knockBack = 1.75f;
+                Item.UseSound = SoundID.Item91 with { Pitch = -0.14f, Volume = 0.58f };
                 return;
             }
 
@@ -135,7 +150,20 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             var state = player.GetModPlayer<BadgeUltimateState>();
-            if (!omp.IsTransformed || player.altFunctionUse == 2) return false;
+            if (!omp.IsTransformed) {
+                if (player.altFunctionUse == 2)
+                    return false;
+
+                Vector2 shotVelocity = velocity.SafeNormalize(new Vector2(player.direction == 0 ? 1 : player.direction, 0f)) *
+                    Item.shootSpeed;
+                int projectileIndex = Projectile.NewProjectile(source, position, shotVelocity,
+                    ModContent.ProjectileType<PlumberBlasterBoltProjectile>(), damage, knockback, player.whoAmI, 0f);
+                if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                    Main.projectile[projectileIndex].netUpdate = true;
+                return false;
+            }
+
+            if (player.altFunctionUse == 2) return false;
 
             var trans = omp.CurrentTransformation;
             if (trans == null) return false;
