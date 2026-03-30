@@ -165,6 +165,14 @@ namespace Ben10Mod {
         public bool advancedCircuitMatrix = false;
         public bool advancedCircuitMatrixEquippedWhileTransformed = false;
         public bool transformationFailsafeEquipped = false;
+        public bool chronoAcceleratorEquipped = false;
+        public bool heroConvergenceEmblemEquipped = false;
+        public bool omniCoreReactorEquipped = false;
+        private int chronoAcceleratorProcCooldown = 0;
+        private int heroConvergenceProcCooldown = 0;
+        private int heroConvergenceHitCount = 0;
+        private float omniCoreReactorCharge = 0f;
+        private int omniCoreReactorPulseCooldown = 0;
 
         private readonly HashSet<int> participatedEvents = new();
         private readonly HashSet<int> activeEvents = new();
@@ -212,6 +220,11 @@ namespace Ben10Mod {
         private const int EventPumpkinMoon = -4;
         private const int EventFrostMoon = -5;
         private const int EventOldOnesArmy = -6;
+        private const int ChronoAcceleratorProcCooldownMax = 78;
+        private const int HeroConvergenceHitsRequired = 6;
+        private const int HeroConvergenceProcCooldownMax = 24;
+        private const float OmniCoreReactorChargeThreshold = 80f;
+        private const int OmniCoreReactorPulseCooldownMax = 24;
         private static readonly string[] UpgradeRequiredTransformationIds = {
             "Ben10Mod:Humungousaur",
             "Ben10Mod:EyeGuy",
@@ -497,6 +510,9 @@ namespace Ben10Mod {
             advancedCircuitMatrix = false;
             snowflake = false;
             transformationFailsafeEquipped = false;
+            chronoAcceleratorEquipped = false;
+            heroConvergenceEmblemEquipped = false;
+            omniCoreReactorEquipped = false;
             if (currentTransformationId != "Ben10Mod:Goop") {
                 GoopVisualScale = Vector2.One;
                 goopWasGrounded = false;
@@ -802,6 +818,8 @@ namespace Ben10Mod {
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
+            UpdateAccessoryProcStates();
+
             if (attackSelectionPulseTime > 0)
                 attackSelectionPulseTime--;
             if (attackEnergyGainLockTime > 0)
@@ -1084,6 +1102,8 @@ namespace Ben10Mod {
 
             attackEnergyGainLockTime = Math.Max(attackEnergyGainLockTime, Math.Max(8, attackLockFrames));
             markAttackProjectilesNoEnergyGainTime = Math.Max(markAttackProjectilesNoEnergyGainTime, 3);
+            AccumulateOmniCoreReactorCharge(energyCost, sustainEnergyCost);
+            TryTriggerChronoAccelerator(energyCost, sustainEnergyCost);
         }
 
         internal bool ShouldMarkSpawnedAttackProjectilesAsNoEnergyGain() {
@@ -2497,6 +2517,7 @@ namespace Ben10Mod {
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithItem(item, target, hit, damageDone);
             TryGrantOmnitrixEnergyFromDamage(damageDone);
+            TryTriggerHeroConvergence(target, damageDone, IsHeroConvergenceItem(item));
         }
 
         public override bool? CanHitNPCWithProj(Projectile proj, NPC target) {
@@ -2515,6 +2536,7 @@ namespace Ben10Mod {
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithProj(proj, target, hit, damageDone);
             TryGrantOmnitrixEnergyFromDamage(damageDone, proj);
+            TryTriggerHeroConvergence(target, damageDone, IsHeroConvergenceProjectile(proj));
         }
 
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
@@ -2873,11 +2895,161 @@ namespace Ben10Mod {
             if (!isTransformed || ultimateAttack || IsUltimateAbilityActive || activeOmnitrix == null || damageDone <= 0)
                 return;
 
+            if (IsAccessoryProcProjectile(projectile))
+                return;
+
             if (ShouldBlockOmnitrixEnergyGain(projectile))
                 return;
 
             omnitrixEnergy = Math.Min(omnitrixEnergyMax,
                 omnitrixEnergy + activeOmnitrix.GetEnergyGainFromDamage(damageDone));
+        }
+
+        private void UpdateAccessoryProcStates() {
+            if (chronoAcceleratorProcCooldown > 0)
+                chronoAcceleratorProcCooldown--;
+
+            if (heroConvergenceProcCooldown > 0)
+                heroConvergenceProcCooldown--;
+
+            if (omniCoreReactorPulseCooldown > 0)
+                omniCoreReactorPulseCooldown--;
+
+            if (!heroConvergenceEmblemEquipped)
+                heroConvergenceHitCount = 0;
+
+            if (!omniCoreReactorEquipped || !IsTransformed) {
+                omniCoreReactorCharge = 0f;
+                return;
+            }
+
+            if (!Main.dedServ && Main.rand.NextBool(4) &&
+                omniCoreReactorCharge >= OmniCoreReactorChargeThreshold * 0.65f) {
+                Vector2 orbit = Main.rand.NextVector2Circular(26f, 26f);
+                Dust dust = Dust.NewDustPerfect(Player.Center + orbit, DustID.AncientLight,
+                    orbit.SafeNormalize(Vector2.UnitY).RotatedBy(MathHelper.PiOver2) * 1.1f, 110,
+                    new Color(110, 255, 230), Main.rand.NextFloat(0.85f, 1.2f));
+                dust.noGravity = true;
+                Lighting.AddLight(Player.Center, new Vector3(0.1f, 0.42f, 0.36f));
+            }
+
+            if (Player.whoAmI != Main.myPlayer || omniCoreReactorPulseCooldown > 0 ||
+                omniCoreReactorCharge < OmniCoreReactorChargeThreshold)
+                return;
+
+            float chargePower = MathHelper.Clamp(1f + (omniCoreReactorCharge - OmniCoreReactorChargeThreshold) / 90f, 1f, 1.45f);
+            int pulseDamage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(54f * chargePower)));
+            int projectileIndex = Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Vector2.Zero,
+                ModContent.ProjectileType<OmniCorePulseProjectile>(), pulseDamage, 2.2f, Player.whoAmI, chargePower);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                Main.projectile[projectileIndex].netUpdate = true;
+
+            omniCoreReactorCharge -= OmniCoreReactorChargeThreshold;
+            omniCoreReactorPulseCooldown = OmniCoreReactorPulseCooldownMax;
+            SoundEngine.PlaySound(SoundID.Item92 with { Pitch = 0.1f, Volume = 0.7f }, Player.Center);
+        }
+
+        private void TryTriggerChronoAccelerator(int energyCost, int sustainEnergyCost) {
+            if (!chronoAcceleratorEquipped || !IsTransformed || chronoAcceleratorProcCooldown > 0 ||
+                Player.whoAmI != Main.myPlayer)
+                return;
+
+            Transformation transformation = CurrentTransformation;
+            if (transformation == null)
+                return;
+
+            AttackSelection selection = transformation.ResolveAttackSelection(setAttack, this);
+            if (selection is not AttackSelection.PrimaryAbility and not AttackSelection.SecondaryAbility and
+                not AttackSelection.TertiaryAbility and not AttackSelection.Ultimate)
+                return;
+
+            int effectiveEnergy = energyCost + sustainEnergyCost * 2;
+            float powerScale = MathHelper.Clamp(1f + effectiveEnergy / 95f, 1f, 1.65f);
+            int damage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(34f + effectiveEnergy * 0.45f)));
+
+            Vector2 origin = Player.MountedCenter;
+            Vector2 aimTarget = Main.MouseWorld;
+            Vector2 aimDirection = origin.DirectionTo(aimTarget);
+            if (aimDirection == Vector2.Zero)
+                aimDirection = new Vector2(Player.direction == 0 ? 1f : Player.direction, 0f);
+
+            float aimDistance = Vector2.Distance(origin, aimTarget);
+            Vector2 spawnPosition = origin + aimDirection * MathHelper.Clamp(aimDistance, 96f, 360f);
+            int projectileIndex = Projectile.NewProjectile(Player.GetSource_FromThis(), spawnPosition, Vector2.Zero,
+                ModContent.ProjectileType<ChronoAcceleratorFieldProjectile>(), damage, 0.6f, Player.whoAmI, powerScale);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                Main.projectile[projectileIndex].netUpdate = true;
+
+            chronoAcceleratorProcCooldown = ChronoAcceleratorProcCooldownMax;
+            SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.2f, Volume = 0.55f }, spawnPosition);
+        }
+
+        private void AccumulateOmniCoreReactorCharge(int energyCost, int sustainEnergyCost) {
+            if (!omniCoreReactorEquipped || !IsTransformed)
+                return;
+
+            int effectiveEnergy = energyCost + sustainEnergyCost * 2;
+            if (effectiveEnergy <= 0)
+                return;
+
+            omniCoreReactorCharge = Math.Min(OmniCoreReactorChargeThreshold * 2.4f, omniCoreReactorCharge + effectiveEnergy);
+        }
+
+        private void TryTriggerHeroConvergence(NPC target, int damageDone, bool shouldCountHit) {
+            if (!heroConvergenceEmblemEquipped || !shouldCountHit || target == null || !target.active || damageDone <= 0)
+                return;
+
+            if (heroConvergenceProcCooldown > 0)
+                return;
+
+            heroConvergenceHitCount = Math.Min(heroConvergenceHitCount + 1, HeroConvergenceHitsRequired);
+            if (heroConvergenceHitCount < HeroConvergenceHitsRequired)
+                return;
+
+            heroConvergenceHitCount = 0;
+            heroConvergenceProcCooldown = HeroConvergenceProcCooldownMax;
+
+            if (Player.whoAmI != Main.myPlayer)
+                return;
+
+            int boltDamage = Math.Max(1, (int)Math.Round(damageDone * 0.68f));
+            for (int i = 0; i < 3; i++) {
+                float angle = -MathHelper.PiOver2 + (i - 1) * 0.42f;
+                Vector2 spawnOffset = angle.ToRotationVector2() * Main.rand.NextFloat(180f, 230f);
+                spawnOffset.Y -= 120f;
+                Vector2 spawnPosition = target.Center + spawnOffset;
+                Vector2 velocity = (target.Center - spawnPosition).SafeNormalize(Vector2.UnitY) * Main.rand.NextFloat(14.5f, 17.5f);
+                int projectileIndex = Projectile.NewProjectile(Player.GetSource_FromThis(), spawnPosition, velocity,
+                    ModContent.ProjectileType<HeroConvergenceBoltProjectile>(), boltDamage, 1.4f, Player.whoAmI,
+                    target.whoAmI + 1f, i);
+                if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                    Main.projectile[projectileIndex].netUpdate = true;
+            }
+
+            SoundEngine.PlaySound(SoundID.Item117 with { Pitch = 0.2f, Volume = 0.65f }, target.Center);
+        }
+
+        private static bool IsHeroConvergenceItem(Item item) {
+            if (item == null || item.IsAir || !item.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
+                return false;
+
+            return item.ModItem is not PlumbersBadge;
+        }
+
+        private static bool IsHeroConvergenceProjectile(Projectile projectile) {
+            if (projectile == null || !projectile.active || !projectile.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
+                return false;
+
+            return projectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed != ModContent.ItemType<PlumbersBadge>();
+        }
+
+        private static bool IsAccessoryProcProjectile(Projectile projectile) {
+            if (projectile == null)
+                return false;
+
+            return projectile.type == ModContent.ProjectileType<ChronoAcceleratorFieldProjectile>() ||
+                   projectile.type == ModContent.ProjectileType<HeroConvergenceBoltProjectile>() ||
+                   projectile.type == ModContent.ProjectileType<OmniCorePulseProjectile>();
         }
 
         public override void PreUpdate() {

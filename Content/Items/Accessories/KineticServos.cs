@@ -12,8 +12,8 @@ public class KineticServos : ModItem {
         Item.width = 28;
         Item.height = 28;
         Item.accessory = true;
-        Item.value = Item.buyPrice(gold: 4);
-        Item.rare = ItemRarityID.LightRed;
+        Item.value = Item.buyPrice(gold: 2);
+        Item.rare = ItemRarityID.Orange;
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
@@ -28,7 +28,7 @@ public class KineticServos : ModItem {
         CreateRecipe()
             .AddIngredient(ItemID.FeralClaws)
             .AddIngredient(ItemID.MeteoriteBar, 10)
-            .AddIngredient(ItemID.SoulofFright, 6)
+            .AddIngredient(ItemID.Stinger, 10)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

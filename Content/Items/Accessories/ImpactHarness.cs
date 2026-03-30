@@ -6,32 +6,32 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Accessories;
 
 public class ImpactHarness : ModItem {
-    public override string Texture => $"Terraria/Images/Item_{ItemID.PowerGlove}";
+    public override string Texture => $"Terraria/Images/Item_{ItemID.SharkToothNecklace}";
 
     public override void SetDefaults() {
         Item.width = 32;
         Item.height = 28;
         Item.accessory = true;
-        Item.value = Item.buyPrice(gold: 5);
-        Item.rare = ItemRarityID.LightRed;
+        Item.value = Item.buyPrice(gold: 3);
+        Item.rare = ItemRarityID.Orange;
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "HeroArmorPen", "+8 hero armor penetration"));
-        tooltips.Add(new TooltipLine(Mod, "HeroKnockback", "+1.2 hero knockback"));
+        tooltips.Add(new TooltipLine(Mod, "HeroArmorPen", "+6 hero armor penetration"));
+        tooltips.Add(new TooltipLine(Mod, "HeroKnockback", "+0.8 hero knockback"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.heroArmorPenBonus += 8;
-        omp.heroKnockbackBonus += 1.2f;
+        omp.heroArmorPenBonus += 6;
+        omp.heroKnockbackBonus += 0.8f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.PowerGlove)
-            .AddIngredient(ItemID.SoulofMight, 8)
-            .AddIngredient(ItemID.HallowedBar, 8)
+            .AddIngredient(ItemID.SharkToothNecklace)
+            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ItemID.HellstoneBar, 10)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

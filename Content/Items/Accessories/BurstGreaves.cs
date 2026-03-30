@@ -12,8 +12,8 @@ public class BurstGreaves : ModItem {
         Item.width = 28;
         Item.height = 28;
         Item.accessory = true;
-        Item.value = Item.buyPrice(gold: 6);
-        Item.rare = ItemRarityID.LightRed;
+        Item.value = Item.buyPrice(gold: 3);
+        Item.rare = ItemRarityID.Orange;
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
@@ -31,8 +31,8 @@ public class BurstGreaves : ModItem {
     public override void AddRecipes() {
         CreateRecipe()
             .AddIngredient(ItemID.LightningBoots)
-            .AddIngredient(ItemID.SoulofFlight, 10)
-            .AddIngredient(ItemID.HallowedBar, 8)
+            .AddIngredient(ItemID.HellstoneBar, 10)
+            .AddIngredient(ItemID.Feather, 6)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

@@ -29,7 +29,7 @@ public class HeatBlastPotisLanceProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
 
     public override void SetStaticDefaults() {
-        ProjectileID.Sets.TrailCacheLength[Type] = 9;
+        ProjectileID.Sets.TrailCacheLength[Type] = 12;
         ProjectileID.Sets.TrailingMode[Type] = 2;
     }
 
@@ -83,62 +83,58 @@ public class HeatBlastPotisLanceProjectile : ModProjectile {
 
     public override bool PreDraw(ref Color lightColor) {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
-        int trailTextureType = Snowflake ? ProjectileID.BallofFrost : ProjectileID.ImpFireball;
-        Texture2D trailTexture = TextureAssets.Projectile[trailTextureType].Value;
-        int trailFrameCount = Main.projFrames[trailTextureType] > 0 ? Main.projFrames[trailTextureType] : 1;
-        Rectangle trailFrame = trailTexture.Frame(1, trailFrameCount, 0,
-            (int)(Main.GameUpdateCount / 3 + Projectile.identity) % trailFrameCount);
-        Vector2 trailOrigin = trailFrame.Size() * 0.5f;
+        Texture2D streakTexture = TextureAssets.Projectile[ProjectileID.PiercingStarlight].Value;
+        int flareTextureType = Snowflake ? ProjectileID.BallofFrost : ProjectileID.ImpFireball;
+        Texture2D flareTexture = TextureAssets.Projectile[flareTextureType].Value;
+        int flareFrameCount = Main.projFrames[flareTextureType] > 0 ? Main.projFrames[flareTextureType] : 1;
+        Rectangle flareFrame = flareTexture.Frame(1, flareFrameCount, 0,
+            (int)(Main.GameUpdateCount / 3 + Projectile.identity) % flareFrameCount);
+        Vector2 flareOrigin = flareFrame.Size() * 0.5f;
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitY);
         float rotation = direction.ToRotation();
         Vector2 sideDirection = direction.RotatedBy(MathHelper.PiOver2);
         float launchPulse = Utils.GetLerpValue(10f, 0f, SpawnTime, true);
-        Color outerColor = Snowflake ? new Color(105, 205, 255, 110) : new Color(255, 115, 28, 110);
-        Color innerColor = Snowflake ? new Color(235, 248, 255, 220) : new Color(255, 236, 185, 220);
+        float opacity = Projectile.Opacity;
+        Color outerColor = Snowflake ? new Color(85, 210, 255, 110) : new Color(255, 110, 26, 110);
+        Color midColor = Snowflake ? new Color(165, 234, 255, 180) : new Color(255, 176, 84, 180);
+        Color innerColor = Snowflake ? new Color(245, 252, 255, 235) : new Color(255, 242, 198, 235);
 
         Vector2 center = Projectile.Center - Main.screenPosition;
         Vector2 rearCenter = center - direction * 9f;
-
-        Main.spriteBatch.End();
-        Main.spriteBatch.Begin(
-            SpriteSortMode.Deferred,
-            BlendState.Additive,
-            Main.DefaultSamplerState,
-            DepthStencilState.None,
-            RasterizerState.CullNone,
-            null,
-            Main.GameViewMatrix.TransformationMatrix);
-
-        DrawTrailRibbon(pixel, trailTexture, trailFrame, trailOrigin, outerColor, innerColor);
+        DrawTexturedTrail(streakTexture, direction, outerColor, midColor, innerColor, opacity);
         DrawRing(pixel, rearCenter, MathHelper.Lerp(10f, 28f, launchPulse) * Projectile.scale, 4.2f * Projectile.scale,
-            outerColor * (launchPulse * 0.55f), SpawnTime * 0.2f);
-        DrawPixel(pixel, rearCenter, rotation, new Vector2(34f, 18f) * Projectile.scale, outerColor * (0.48f + 0.58f * launchPulse));
-        DrawPixel(pixel, center - direction * 11f, rotation, new Vector2(56f, 14f) * Projectile.scale, outerColor);
-        DrawPixel(pixel, center - direction * 5f + sideDirection * 6f, rotation + 0.52f, new Vector2(24f, 5.2f) * Projectile.scale,
-            outerColor * 0.88f);
-        DrawPixel(pixel, center - direction * 5f - sideDirection * 6f, rotation - 0.52f, new Vector2(24f, 5.2f) * Projectile.scale,
-            outerColor * 0.88f);
-        Main.EntitySpriteDraw(trailTexture, center, trailFrame, innerColor, rotation + MathHelper.PiOver2, trailOrigin,
-            Projectile.scale * 1.28f, SpriteEffects.None, 0);
+            outerColor * (launchPulse * 0.42f) * opacity, SpawnTime * 0.2f);
+        DrawPixel(pixel, rearCenter, rotation, new Vector2(28f, 12f) * Projectile.scale,
+            outerColor * (0.28f + 0.3f * launchPulse) * opacity);
 
-        Main.spriteBatch.End();
-        Main.spriteBatch.Begin(
-            SpriteSortMode.Deferred,
-            BlendState.AlphaBlend,
-            Main.DefaultSamplerState,
-            DepthStencilState.None,
-            RasterizerState.CullNone,
-            null,
-            Main.GameViewMatrix.TransformationMatrix);
+        Vector2 worldTip = Projectile.Center + direction * 8f;
+        Vector2 worldMid = Projectile.Center - direction * 7f;
+        Vector2 worldRear = Projectile.Center - direction * 21f;
+        DrawBeam(streakTexture, worldRear, worldTip, 24f * Projectile.scale, outerColor, opacity * 0.62f);
+        DrawBeam(streakTexture, worldMid, worldTip, 16f * Projectile.scale, midColor, opacity * 0.92f);
+        DrawBeam(streakTexture, Projectile.Center - direction * 2f, worldTip, 9f * Projectile.scale, innerColor, opacity);
 
-        DrawPixel(pixel, center - direction * 10f, rotation, new Vector2(42f, 9f) * Projectile.scale, outerColor * 0.92f);
-        DrawPixel(pixel, center, rotation, new Vector2(30f, 6.1f) * Projectile.scale, innerColor);
-        DrawPixel(pixel, center + direction * 9f, rotation + 0.18f, new Vector2(14f, 2.8f) * Projectile.scale,
-            innerColor * 0.72f);
-        DrawPixel(pixel, center + direction * 9f, rotation - 0.18f, new Vector2(14f, 2.8f) * Projectile.scale,
-            innerColor * 0.72f);
-        DrawPixel(pixel, center + direction * 7f, rotation, new Vector2(16f, 3.1f) * Projectile.scale,
-            Color.White * Projectile.Opacity);
+        Vector2 wingStart = Projectile.Center - direction * 7f;
+        DrawBeam(streakTexture, wingStart + sideDirection * 3f, wingStart - direction * 11f + sideDirection * 11f,
+            8.2f * Projectile.scale, outerColor, opacity * 0.52f);
+        DrawBeam(streakTexture, wingStart - sideDirection * 3f, wingStart - direction * 11f - sideDirection * 11f,
+            8.2f * Projectile.scale, outerColor, opacity * 0.52f);
+        DrawBeam(streakTexture, wingStart + sideDirection * 2f, wingStart - direction * 8f + sideDirection * 7f,
+            4.8f * Projectile.scale, innerColor, opacity * 0.75f);
+        DrawBeam(streakTexture, wingStart - sideDirection * 2f, wingStart - direction * 8f - sideDirection * 7f,
+            4.8f * Projectile.scale, innerColor, opacity * 0.75f);
+
+        Main.EntitySpriteDraw(flareTexture, center - direction * 2f, flareFrame, outerColor * (opacity * 0.95f),
+            rotation + MathHelper.PiOver2, flareOrigin, Projectile.scale * 1.28f, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(flareTexture, center + direction * 4f, flareFrame, innerColor * opacity,
+            rotation + MathHelper.PiOver2, flareOrigin, Projectile.scale * 0.92f, SpriteEffects.None, 0);
+
+        DrawPixel(pixel, center + direction * 6f, rotation + 0.22f, new Vector2(18f, 3.2f) * Projectile.scale,
+            innerColor * (opacity * 0.8f));
+        DrawPixel(pixel, center + direction * 6f, rotation - 0.22f, new Vector2(18f, 3.2f) * Projectile.scale,
+            innerColor * (opacity * 0.8f));
+        DrawPixel(pixel, center + direction * 9f, rotation, new Vector2(12f, 2.6f) * Projectile.scale,
+            Color.White * (opacity * 0.95f));
         return false;
     }
 
@@ -212,50 +208,53 @@ public class HeatBlastPotisLanceProjectile : ModProjectile {
         Main.EntitySpriteDraw(pixel, position, null, color, rotation, Vector2.One * 0.5f, scale, SpriteEffects.None, 0);
     }
 
-    private void DrawTrailRibbon(Texture2D pixel, Texture2D trailTexture, Rectangle trailFrame, Vector2 trailOrigin,
-        Color outerColor, Color innerColor) {
+    private void DrawTexturedTrail(Texture2D streakTexture, Vector2 direction, Color outerColor, Color midColor,
+        Color innerColor, float opacity) {
         Vector2 previousCenter = Projectile.Center;
-        int segmentCount = 0;
 
         for (int i = 0; i < Projectile.oldPos.Length; i++) {
             Vector2 oldPosition = Projectile.oldPos[i];
             if (oldPosition == Vector2.Zero)
-                break;
+                continue;
 
-            segmentCount++;
             Vector2 currentCenter = oldPosition + Projectile.Size * 0.5f;
             float progress = i / (float)Projectile.oldPos.Length;
-            float opacity = (1f - progress) * (Empowered ? 1f : 0.88f);
-            Color segmentOuter = Color.Lerp(innerColor, outerColor, 0.35f + progress * 0.45f) * (opacity * 0.82f);
-            Color segmentInner = Color.White * (opacity * 0.55f);
+            float segmentOpacity = (1f - progress) * (Empowered ? 1f : 0.88f) * opacity;
+            float outerWidth = MathHelper.Lerp(18f, 6f, progress) * Projectile.scale;
+            float innerWidth = outerWidth * 0.62f;
 
-            DrawBeam(pixel, previousCenter - Main.screenPosition, currentCenter - Main.screenPosition,
-                MathHelper.Lerp(24f, 8f, progress) * Projectile.scale, segmentOuter);
-            DrawBeam(pixel, previousCenter - Main.screenPosition, currentCenter - Main.screenPosition,
-                MathHelper.Lerp(10f, 3.4f, progress) * Projectile.scale, segmentInner);
+            DrawBeam(streakTexture, previousCenter, currentCenter, outerWidth, outerColor, segmentOpacity * 0.4f);
+            DrawBeam(streakTexture, previousCenter, currentCenter, innerWidth, midColor, segmentOpacity * 0.62f);
+            DrawBeam(streakTexture, previousCenter, currentCenter, innerWidth * 0.5f, innerColor, segmentOpacity * 0.82f);
 
-            Vector2 drawPosition = currentCenter - Main.screenPosition;
-            float flameScale = MathHelper.Lerp(1.18f, 0.42f, progress) * Projectile.scale;
-            float flameRotation = Main.GlobalTimeWrappedHourly * 4.6f + i * 0.65f;
-            Main.EntitySpriteDraw(trailTexture, drawPosition, trailFrame, segmentOuter, flameRotation, trailOrigin,
-                flameScale, SpriteEffects.None, 0);
-            Main.EntitySpriteDraw(trailTexture, drawPosition, trailFrame, innerColor * (opacity * 0.48f), -flameRotation,
-                trailOrigin, flameScale * 0.62f, SpriteEffects.None, 0);
+            Vector2 nodeCenter = currentCenter - direction * MathHelper.Lerp(0f, 8f, progress);
+            Vector2 nodeScreenPosition = nodeCenter - Main.screenPosition;
+            float nodeRotation = Projectile.rotation + progress * 0.32f;
+            DrawPixel(TextureAssets.MagicPixel.Value, nodeScreenPosition, nodeRotation,
+                new Vector2(MathHelper.Lerp(13f, 4f, progress), MathHelper.Lerp(8f, 2.6f, progress)) * Projectile.scale,
+                outerColor * (segmentOpacity * 0.34f));
+            DrawPixel(TextureAssets.MagicPixel.Value, nodeScreenPosition, nodeRotation,
+                new Vector2(MathHelper.Lerp(7f, 2.4f, progress), MathHelper.Lerp(4f, 1.5f, progress)) * Projectile.scale,
+                innerColor * (segmentOpacity * 0.45f));
 
             previousCenter = currentCenter;
         }
-
-        if (segmentCount == 0)
-            return;
     }
 
-    private static void DrawBeam(Texture2D pixel, Vector2 start, Vector2 end, float width, Color color) {
-        Vector2 delta = end - start;
-        float length = delta.Length();
-        if (length <= 0.5f)
+    private static void DrawBeam(Texture2D texture, Vector2 worldStart, Vector2 worldEnd, float beamWidth, Color color,
+        float opacity) {
+        Vector2 beamVector = worldEnd - worldStart;
+        float beamLength = beamVector.Length();
+        if (beamLength <= 1f)
             return;
 
-        Main.EntitySpriteDraw(pixel, start, null, color, delta.ToRotation(), new Vector2(0f, 0.5f),
-            new Vector2(length, width), SpriteEffects.None, 0);
+        Vector2 center = worldStart + beamVector * 0.5f - Main.screenPosition;
+        float rotation = beamVector.ToRotation();
+        Vector2 origin = texture.Size() * 0.5f;
+        float lengthScale = beamLength / texture.Width;
+        float widthScale = beamWidth / texture.Height * 1.7f;
+
+        Main.EntitySpriteDraw(texture, center, null, color * opacity, rotation, origin, new Vector2(lengthScale, widthScale),
+            SpriteEffects.None, 0);
     }
 }
