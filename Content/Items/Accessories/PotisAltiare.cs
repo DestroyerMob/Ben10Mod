@@ -12,8 +12,8 @@ public class PotisAltiare : ModItem {
         Item.width = 28;
         Item.height = 28;
         Item.accessory = true;
-        Item.value = Item.buyPrice(gold: 8);
-        Item.rare = ItemRarityID.Yellow;
+        Item.value = Item.buyPrice(gold: 14);
+        Item.rare = ItemRarityID.Lime;
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
@@ -22,6 +22,15 @@ public class PotisAltiare : ModItem {
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         player.GetModPlayer<PotisAltiarePlayer>().potisAltiareEquipped = true;
+    }
+
+    public override void AddRecipes() {
+        CreateRecipe()
+            .AddIngredient(ItemID.AvengerEmblem)
+            .AddIngredient(ItemID.Ectoplasm, 10)
+            .AddIngredient(ItemID.ChlorophyteBar, 12)
+            .AddTile(TileID.TinkerersWorkbench)
+            .Register();
     }
 }
 
