@@ -17,6 +17,7 @@ namespace Ben10Mod.Keybinds {
         public static ModKeybind AbsorbMaterial { get; private set; }
         public static ModKeybind OpenTransformationScreen { get; private set; }
         public static ModKeybind OpenTransformationCodex { get; private set; }
+        public static ModKeybind CycleTransformationSpeedBoost { get; private set; }
         public static ModKeybind AlienOneKeybind { get; private set; }
         public static ModKeybind AlienTwoKeybind { get; private set; }
         public static ModKeybind AlienThreeKeybind { get; private set; }
@@ -36,6 +37,7 @@ namespace Ben10Mod.Keybinds {
             AbsorbMaterial = KeybindLoader.RegisterKeybind(Mod, "Absorb Material", "K");
             OpenTransformationScreen = KeybindLoader.RegisterKeybind(Mod, "Open Menu", "L");
             OpenTransformationCodex = KeybindLoader.RegisterKeybind(Mod, "Open Codex", "O");
+            CycleTransformationSpeedBoost = KeybindLoader.RegisterKeybind(Mod, "Cycle Transformation Speed Boost", "Y");
             AlienOneKeybind = KeybindLoader.RegisterKeybind(Mod, "Alien One", "NumPad1");
             AlienTwoKeybind = KeybindLoader.RegisterKeybind(Mod, "Alien Two", "NumPad2");
             AlienThreeKeybind = KeybindLoader.RegisterKeybind(Mod, "Alien Three", "NumPad3");
@@ -56,6 +58,7 @@ namespace Ben10Mod.Keybinds {
             AbsorbMaterial = null;
             OpenTransformationScreen = null;
             OpenTransformationCodex = null;
+            CycleTransformationSpeedBoost = null;
             AlienOneKeybind = null;
             AlienTwoKeybind = null;
             AlienThreeKeybind = null;

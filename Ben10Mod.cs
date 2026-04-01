@@ -122,6 +122,8 @@ namespace Ben10Mod {
 			SyncTransformationState,
 			RequestSyncTransformationPaletteState,
 			SyncTransformationPaletteState,
+			RequestSyncTransformationSpeedBoostSetting,
+			SyncTransformationSpeedBoostSetting,
 			RequestAbsorbMaterial,
 			AbsorbMaterialFeedback,
 			SyncAbsorbedMaterial,
@@ -305,6 +307,39 @@ namespace Ben10Mod {
 					player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries,
 						enabledChannelKeys,
 						selectedCostumeEntries);
+					break;
+				}
+				case MessageType.RequestSyncTransformationSpeedBoostSetting: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[whoAmI];
+					if (!player.active)
+						return;
+
+					byte speedBoostPercent = reader.ReadByte();
+					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+					omp.ApplyTransformationSpeedBoostSettingSync(speedBoostPercent);
+					omp.SyncTransformationSpeedBoostSetting(ignoreClient: whoAmI);
+					break;
+				}
+				case MessageType.SyncTransformationSpeedBoostSetting: {
+					if (Main.netMode != NetmodeID.MultiplayerClient)
+						return;
+
+					int playerIndex = reader.ReadByte();
+					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[playerIndex];
+					if (!player.active)
+						return;
+
+					byte speedBoostPercent = reader.ReadByte();
+					player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationSpeedBoostSettingSync(speedBoostPercent);
 					break;
 				}
 				case MessageType.RequestAbsorbMaterial: {

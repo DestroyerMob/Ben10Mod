@@ -121,9 +121,13 @@ namespace Ben10Mod {
         public const int TransformationSlotCount = 5;
         public const int PalettePresetSlotCount = 3;
         public const int MaxCustomTransformationNameLength = 24;
+        public const byte TransformationSpeedBoostPercentStep = 25;
+        public const byte TransformationSpeedBoostPercentMax = 100;
+        public const byte DefaultTransformationSpeedBoostPercent = 100;
         public string[] transformationSlots = { "Ben10Mod:HeatBlast", "", "", "", "" };
         public string currentTransformationId = "";
         public List<string> unlockedTransformations = new() { "Ben10Mod:HeatBlast" };
+        public byte transformationSpeedBoostPercent = DefaultTransformationSpeedBoostPercent;
 
         public bool showingUI = false;
 
@@ -248,6 +252,7 @@ namespace Ben10Mod {
         public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
         public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
         public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
+        public float TransformationSpeedBoostScale => transformationSpeedBoostPercent / (float)TransformationSpeedBoostPercentMax;
 
         public Omnitrix GetActiveOmnitrix() {
             if (equippedOmnitrix != null)
@@ -294,6 +299,73 @@ namespace Ben10Mod {
         public override void Initialize() {
             ResetAirborneLungeState();
             NormalizeStoredTransformationData();
+            transformationSpeedBoostPercent = DefaultTransformationSpeedBoostPercent;
+        }
+
+        public static byte NormalizeTransformationSpeedBoostPercent(int percent) {
+            int clamped = Utils.Clamp(percent, 0, TransformationSpeedBoostPercentMax);
+            int snapped = (int)Math.Round(clamped / (double)TransformationSpeedBoostPercentStep) *
+                          TransformationSpeedBoostPercentStep;
+            return (byte)Utils.Clamp(snapped, 0, TransformationSpeedBoostPercentMax);
+        }
+
+        public bool SetTransformationSpeedBoostPercent(byte percent, bool sync = true, bool showFeedback = false) {
+            byte normalizedPercent = NormalizeTransformationSpeedBoostPercent(percent);
+            bool changed = transformationSpeedBoostPercent != normalizedPercent;
+            transformationSpeedBoostPercent = normalizedPercent;
+
+            if (showFeedback && Main.netMode != NetmodeID.Server && Player.whoAmI == Main.myPlayer)
+                ShowTransformationSpeedBoostFeedback();
+
+            if (changed && sync)
+                SyncTransformationSpeedBoostSettingToServerOrClients();
+
+            return changed;
+        }
+
+        public void CycleTransformationSpeedBoostPercent(bool sync = true, bool showFeedback = true) {
+            int nextPercent = transformationSpeedBoostPercent >= TransformationSpeedBoostPercentMax
+                ? 0
+                : transformationSpeedBoostPercent + TransformationSpeedBoostPercentStep;
+            SetTransformationSpeedBoostPercent((byte)nextPercent, sync, showFeedback);
+        }
+
+        public void ApplyTransformationSpeedBoostSettingSync(byte percent) {
+            transformationSpeedBoostPercent = NormalizeTransformationSpeedBoostPercent(percent);
+        }
+
+        public float ScaleTransformationSpeedBoost(float boostAmount) {
+            return boostAmount > 0f ? boostAmount * TransformationSpeedBoostScale : boostAmount;
+        }
+
+        public float ScaleTransformationSpeedMultiplier(float multiplier) {
+            return multiplier > 1f
+                ? 1f + (multiplier - 1f) * TransformationSpeedBoostScale
+                : multiplier;
+        }
+
+        private void ShowTransformationSpeedBoostFeedback() {
+            float scale = TransformationSpeedBoostScale;
+            Color textColor = Color.Lerp(new Color(255, 120, 80), Color.LimeGreen, scale);
+            Main.NewText($"Transformation speed boost set to {transformationSpeedBoostPercent}%.", textColor);
+        }
+
+        private float ScalePositiveTransformationMovementDelta(float baseValue, float currentValue) {
+            if (currentValue <= baseValue)
+                return currentValue;
+
+            return baseValue + (currentValue - baseValue) * TransformationSpeedBoostScale;
+        }
+
+        private void ApplyTransformationMovementBoostScale(float baseMoveSpeed, float baseMaxRunSpeed,
+            float baseAccRunSpeed, float baseRunAcceleration) {
+            if (transformationSpeedBoostPercent >= TransformationSpeedBoostPercentMax)
+                return;
+
+            Player.moveSpeed = ScalePositiveTransformationMovementDelta(baseMoveSpeed, Player.moveSpeed);
+            Player.maxRunSpeed = ScalePositiveTransformationMovementDelta(baseMaxRunSpeed, Player.maxRunSpeed);
+            Player.accRunSpeed = ScalePositiveTransformationMovementDelta(baseAccRunSpeed, Player.accRunSpeed);
+            Player.runAcceleration = ScalePositiveTransformationMovementDelta(baseRunAcceleration, Player.runAcceleration);
         }
 
         public override void SaveData(TagCompound tag) {
@@ -303,6 +375,7 @@ namespace Ben10Mod {
             tag["omnitrixEnergy"] = omnitrixEnergy;
             tag["absorbedMaterialItemType"] = absorbedMaterialItemType;
             tag["absorbedMaterialTime"] = absorbedMaterialTime;
+            tag["transformationSpeedBoostPercent"] = (int)transformationSpeedBoostPercent;
 
             tag["transformationRoster"] = transformationSlots;
             tag["unlockedTransformationRoster"] = unlockedTransformations.ToArray();
@@ -357,6 +430,9 @@ namespace Ben10Mod {
             omnitrixEnergy = tag.TryGet("omnitrixEnergy", out omnitrixEnergy) ? omnitrixEnergy : 0f;
             absorbedMaterialItemType = tag.TryGet("absorbedMaterialItemType", out absorbedMaterialItemType) ? absorbedMaterialItemType : 0;
             absorbedMaterialTime = tag.TryGet("absorbedMaterialTime", out absorbedMaterialTime) ? absorbedMaterialTime : 0;
+            transformationSpeedBoostPercent = tag.TryGet("transformationSpeedBoostPercent", out int savedTransformationSpeedBoostPercent)
+                ? NormalizeTransformationSpeedBoostPercent(savedTransformationSpeedBoostPercent)
+                : DefaultTransformationSpeedBoostPercent;
 
             tag.TryGet("currentTransformationId", out currentTransformationId);
             int[] oldUnlockedRoster;
@@ -763,9 +839,16 @@ namespace Ben10Mod {
             }
 
             if (trans != null)
-                trans.UpdateEffects(Player, this);
+            {
+                float baseMoveSpeed = Player.moveSpeed;
+                float baseMaxRunSpeed = Player.maxRunSpeed;
+                float baseAccRunSpeed = Player.accRunSpeed;
+                float baseRunAcceleration = Player.runAcceleration;
 
-            trans?.PostUpdateBuffs(Player, this);
+                trans.UpdateEffects(Player, this);
+                trans.PostUpdateBuffs(Player, this);
+                ApplyTransformationMovementBoostScale(baseMoveSpeed, baseMaxRunSpeed, baseAccRunSpeed, baseRunAcceleration);
+            }
             trans?.UpdateActiveAbilityVisuals(Player, this);
         }
 
@@ -818,6 +901,9 @@ namespace Ben10Mod {
 
             if (Player.whoAmI == Main.myPlayer && KeybindSystem.AbsorbMaterial.JustPressed)
                 TryAbsorbHeldMaterial();
+
+            if (Player.whoAmI == Main.myPlayer && KeybindSystem.CycleTransformationSpeedBoost?.JustPressed == true)
+                CycleTransformationSpeedBoostPercent();
 
             var trans = CurrentTransformation;
             if (trans != null)
@@ -2638,8 +2724,14 @@ namespace Ben10Mod {
             DashMovement();
 
             var trans = CurrentTransformation;
-            if (trans != null)
+            if (trans != null) {
+                float baseMoveSpeed = Player.moveSpeed;
+                float baseMaxRunSpeed = Player.maxRunSpeed;
+                float baseAccRunSpeed = Player.accRunSpeed;
+                float baseRunAcceleration = Player.runAcceleration;
                 trans.PreUpdateMovement(Player, this);
+                ApplyTransformationMovementBoostScale(baseMoveSpeed, baseMaxRunSpeed, baseAccRunSpeed, baseRunAcceleration);
+            }
         }
 
         private void DashMovement() {
@@ -2736,6 +2828,7 @@ namespace Ben10Mod {
             if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer) {
                 SyncTransformationStateToServer();
                 SyncTransformationPaletteStateToServer();
+                SyncTransformationSpeedBoostSettingToServer();
             }
 
             CurrentTransformation?.OnEnterWorld(Player, this);
@@ -2757,6 +2850,26 @@ namespace Ben10Mod {
                 packet.Write(unlockedTransformations[i] ?? string.Empty);
 
             packet.Send();
+        }
+
+        public void SyncTransformationSpeedBoostSettingToServer() {
+            if (Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI != Main.myPlayer)
+                return;
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.RequestSyncTransformationSpeedBoostSetting);
+            packet.Write(transformationSpeedBoostPercent);
+            packet.Send();
+        }
+
+        internal void SyncTransformationSpeedBoostSettingToServerOrClients() {
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer) {
+                SyncTransformationSpeedBoostSettingToServer();
+                return;
+            }
+
+            if (Main.netMode == NetmodeID.Server)
+                SyncTransformationSpeedBoostSetting();
         }
 
         public void ApplyTransformationStateSync(string[] slots, string[] unlocked) {
@@ -3248,9 +3361,21 @@ namespace Ben10Mod {
 
         public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
             if (Main.netMode == NetmodeID.Server) {
+                SyncTransformationSpeedBoostSetting(toWho, fromWho);
                 SyncTransformationPaletteState(toWho, fromWho);
                 SyncAbsorbedMaterial(showEffects: false, toWho: toWho, ignoreClient: fromWho);
             }
+        }
+
+        internal void SyncTransformationSpeedBoostSetting(int toWho = -1, int ignoreClient = -1) {
+            if (Main.netMode != NetmodeID.Server)
+                return;
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.SyncTransformationSpeedBoostSetting);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write(transformationSpeedBoostPercent);
+            packet.Send(toWho, ignoreClient);
         }
 
         private void SetAbsorbedMaterial(int itemType, int timeLeft, bool showEffects, MaterialAbsorptionProfile previousProfile = null,

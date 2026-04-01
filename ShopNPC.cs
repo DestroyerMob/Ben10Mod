@@ -55,7 +55,6 @@ public class ShopNPC : GlobalNPC {
                 ItemID.SummonerEmblem,
                 ModContent.ItemType<HeroEmblem>()
             ));
-            npcLoot.Add(ItemDropRule.BossBagByCondition(new NotNormalMode(), ModContent.ItemType<PlumberHellfireBadge>()));
             npcLoot.Add(ItemDropRule.ByCondition(new IsNormalMode(), ModContent.ItemType<PlumberHellfireBadge>(), 10, 0));
         }
 
@@ -76,4 +75,11 @@ public class IsNormalMode : IItemDropRuleCondition, IProvideItemConditionDescrip
     public bool   CanDrop(DropAttemptInfo info) => !Main.expertMode && !Main.masterMode;
     public bool   CanShowItemDropInUI()         => !Main.expertMode && !Main.masterMode;
     public string GetConditionDescription()     => "Only drops in Normal difficulty";
+}
+
+public class BossBagLootGlobalItem : GlobalItem {
+    public override void ModifyItemLoot(Item item, ItemLoot itemLoot) {
+        if (item.type == ItemID.WallOfFleshBossBag)
+            itemLoot.Add(ItemDropRule.Common(ModContent.ItemType<PlumberHellfireBadge>(), 10));
+    }
 }
