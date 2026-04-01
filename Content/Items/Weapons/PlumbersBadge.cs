@@ -55,6 +55,34 @@ namespace Ben10Mod.Content.Items.Weapons {
             state.ultimateStarted = false;
         }
 
+        protected virtual void ConfigureUntransformedBadgeStats(Player player, OmnitrixPlayer omp) {
+            Item.noUseGraphic = false;
+            Item.useTurn = true;
+            Item.useStyle = ItemUseStyleID.Shoot;
+            Item.useTime = Item.useAnimation = 18;
+            Item.shoot = ModContent.ProjectileType<PlumberBlasterBoltProjectile>();
+            Item.shootSpeed = 11.5f;
+            Item.damage = Math.Max(1, UntransformedBoltDamage);
+            Item.knockBack = 1.75f;
+            Item.UseSound = SoundID.Item91 with { Pitch = -0.14f, Volume = 0.58f };
+        }
+
+        protected virtual bool ShootUntransformedBadge(Player player, EntitySource_ItemUse_WithAmmo source,
+            Vector2 position, Vector2 velocity, int damage, float knockback) {
+            Vector2 shotVelocity = velocity.SafeNormalize(new Vector2(player.direction == 0 ? 1 : player.direction, 0f)) *
+                Item.shootSpeed;
+            int projectileIndex = Projectile.NewProjectile(source, position, shotVelocity,
+                ModContent.ProjectileType<PlumberBlasterBoltProjectile>(), damage, knockback, player.whoAmI, 0f);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                Main.projectile[projectileIndex].netUpdate = true;
+            return false;
+        }
+
+        protected virtual void OnTransformationAttackFired(Player player, OmnitrixPlayer omp,
+            EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int damage, float knockback,
+            bool firingUltimate, bool firingLoadedAbilityAttack) {
+        }
+
         public override void SetDefaults() {
             Item.width        = Item.height = 32;
             Item.noUseGraphic = true;
@@ -120,15 +148,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (!omp.IsTransformed) {
                 state.ultimateStarted = false;
-                Item.noUseGraphic = false;
-                Item.useTurn = true;
-                Item.useStyle = ItemUseStyleID.Shoot;
-                Item.useTime = Item.useAnimation = 18;
-                Item.shoot = ModContent.ProjectileType<PlumberBlasterBoltProjectile>();
-                Item.shootSpeed = 11.5f;
-                Item.damage = Math.Max(1, UntransformedBoltDamage);
-                Item.knockBack = 1.75f;
-                Item.UseSound = SoundID.Item91 with { Pitch = -0.14f, Volume = 0.58f };
+                ConfigureUntransformedBadgeStats(player, omp);
                 return;
             }
 
@@ -154,13 +174,7 @@ namespace Ben10Mod.Content.Items.Weapons {
                 if (player.altFunctionUse == 2)
                     return false;
 
-                Vector2 shotVelocity = velocity.SafeNormalize(new Vector2(player.direction == 0 ? 1 : player.direction, 0f)) *
-                    Item.shootSpeed;
-                int projectileIndex = Projectile.NewProjectile(source, position, shotVelocity,
-                    ModContent.ProjectileType<PlumberBlasterBoltProjectile>(), damage, knockback, player.whoAmI, 0f);
-                if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
-                    Main.projectile[projectileIndex].netUpdate = true;
-                return false;
+                return ShootUntransformedBadge(player, source, position, velocity, damage, knockback);
             }
 
             if (player.altFunctionUse == 2) return false;
@@ -195,6 +209,8 @@ namespace Ben10Mod.Content.Items.Weapons {
                 state.ultimateStarted = true;
 
             trans.Shoot(player, omp, source, position, velocity, damage, knockback);
+            OnTransformationAttackFired(player, omp, source, position, velocity, damage, knockback, firingUltimate,
+                firingLoadedAbilityAttack);
 
             if (firingLoadedAbilityAttack)
                 omp.NotifyLoadedAbilityAttackFired();

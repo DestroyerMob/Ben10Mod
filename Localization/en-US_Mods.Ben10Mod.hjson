@@ -221,6 +221,11 @@ Items: {
 		Tooltip: ""
 	}
 
+	PlumberHellfireBadge: {
+		DisplayName: Plumbers Hellfire Badge
+		Tooltip: Boss-drop badge that conjures infernal scythes
+	}
+
 	PlumberSeniorAgentBadge: {
 		DisplayName: Plumber Senior Agent Badge
 		Tooltip: ""

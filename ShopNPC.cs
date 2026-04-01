@@ -55,6 +55,8 @@ public class ShopNPC : GlobalNPC {
                 ItemID.SummonerEmblem,
                 ModContent.ItemType<HeroEmblem>()
             ));
+            npcLoot.Add(ItemDropRule.BossBagByCondition(new NotNormalMode(), ModContent.ItemType<PlumberHellfireBadge>()));
+            npcLoot.Add(ItemDropRule.ByCondition(new IsNormalMode(), ModContent.ItemType<PlumberHellfireBadge>(), 10, 0));
         }
 
         if (npc.type == NPCID.QueenSlimeBoss) {
