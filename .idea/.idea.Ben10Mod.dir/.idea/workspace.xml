@@ -9,10 +9,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Content/Projectiles/WildVineWhipProjectile.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Interface/TransformationPaletteScreen.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Interface/TransformationPaletteScreen.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/Projectile_464.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -82,6 +79,7 @@
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/Ben10Mod.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
       <option name="LAUNCH_PROFILE_NAME" value="Terraria" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
       <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
@@ -89,7 +87,6 @@
       <option name="SEND_DEBUG_REQUEST" value="1" />
       <option name="ADDITIONAL_IIS_EXPRESS_ARGUMENTS" value="" />
       <option name="AUTO_ATTACH_CHILDREN" value="0" />
-      <option name="MIXED_MODE_DEBUG" value="0" />
       <method v="2">
         <option name="Build" />
       </method>
@@ -98,6 +95,7 @@
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/Ben10Mod.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net8.0" />
       <option name="LAUNCH_PROFILE_NAME" value="TerrariaServer" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
       <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
@@ -105,7 +103,6 @@
       <option name="SEND_DEBUG_REQUEST" value="1" />
       <option name="ADDITIONAL_IIS_EXPRESS_ARGUMENTS" value="" />
       <option name="AUTO_ATTACH_CHILDREN" value="0" />
-      <option name="MIXED_MODE_DEBUG" value="0" />
       <method v="2">
         <option name="Build" />
       </method>
@@ -147,6 +144,7 @@
       <workItem from="1770889767980" duration="732000" />
       <workItem from="1774684698167" duration="7362000" />
       <workItem from="1774789385590" duration="7000" />
+      <workItem from="1774905896203" duration="875000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

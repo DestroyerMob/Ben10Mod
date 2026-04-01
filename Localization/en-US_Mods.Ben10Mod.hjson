@@ -600,6 +600,26 @@ Items: {
 		DisplayName: Potis Altiare
 		Tooltip: ""
 	}
+
+	ChronoAccelerator: {
+		DisplayName: Chrono Accelerator
+		Tooltip: ""
+	}
+
+	HeroConvergenceEmblem: {
+		DisplayName: Hero Convergence Emblem
+		Tooltip: ""
+	}
+
+	OmniCoreReactor: {
+		DisplayName: Omni Core Reactor
+		Tooltip: ""
+	}
+
+	PlumberBlasters: {
+		DisplayName: Plumber Blasters
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -1100,6 +1120,10 @@ Projectiles: {
 	HeatBlastPotisSunspotProjectile.DisplayName: Heat Blast Potis Sunspot Projectile
 	HeatBlastPotisUltimateProjectile.DisplayName: Heat Blast Potis Ultimate Projectile
 	HeatBlastPotisLanceImpactProjectile.DisplayName: Heat Blast Potis Lance Impact Projectile
+	ChronoAcceleratorFieldProjectile.DisplayName: Chrono Accelerator Field Projectile
+	HeroConvergenceBoltProjectile.DisplayName: Hero Convergence Bolt Projectile
+	OmniCorePulseProjectile.DisplayName: Omni Core Pulse Projectile
+	PlumberBlasterBoltProjectile.DisplayName: Plumber Blaster Bolt Projectile
 }
 
 Tiles: {
