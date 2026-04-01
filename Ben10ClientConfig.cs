@@ -6,8 +6,21 @@ namespace Ben10Mod;
 public sealed class Ben10ClientConfig : ModConfig {
     public override ConfigScope Mode => ConfigScope.ClientSide;
 
+    [Browsable(false)]
     [DefaultValue(true)]
-    public bool ShowHeroInterface { get; set; } = true;
+    public bool ShowHeroInterface {
+        get => ShowHeroEnergyBar || ShowHeroMoveInterface;
+        set {
+            ShowHeroEnergyBar = value;
+            ShowHeroMoveInterface = value;
+        }
+    }
+
+    [DefaultValue(true)]
+    public bool ShowHeroEnergyBar { get; set; } = true;
+
+    [DefaultValue(true)]
+    public bool ShowHeroMoveInterface { get; set; } = true;
 
     [DefaultValue(false)]
     public bool UseSimplifiedHeroInterface { get; set; } = false;

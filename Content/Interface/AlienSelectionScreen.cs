@@ -167,11 +167,10 @@ namespace Ben10Mod.Content.Interface {
             Player player            = Main.LocalPlayer;
             var    omp               = player.GetModPlayer<OmnitrixPlayer>();
             var    clientConfig      = ModContent.GetInstance<Ben10ClientConfig>();
-            if (!clientConfig.ShowHeroInterface)
-                return;
-            bool   showEnergyBar     = omp.omnitrixEquipped;
-            bool   showAttackHudOnly = !showEnergyBar && omp.IsTransformed;
-            if (!showEnergyBar && !showAttackHudOnly)
+            bool   showEnergyBar     = clientConfig.ShowHeroEnergyBar && omp.omnitrixEquipped;
+            bool   showMoveInterface = clientConfig.ShowHeroMoveInterface && omp.IsTransformed;
+            bool   showAttackHudOnly = !showEnergyBar && showMoveInterface;
+            if (!showEnergyBar && !showMoveInterface)
                 return;
 
             int uiMargin   = 20;
@@ -212,8 +211,10 @@ namespace Ben10Mod.Content.Interface {
 
                 DrawOmnitrixEnergyText(player, omp, compactBarRect, true, clientConfig.AlwaysShowOmnitrixEnergyText);
 
-                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
-                DrawActiveAbilityIndicator(player, omp, compactX, compactBarRect.Bottom + attackHudHeight + 16, compactWidth);
+                if (showMoveInterface) {
+                    int attackHudHeight = DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
+                    DrawActiveAbilityIndicator(player, omp, compactX, compactBarRect.Bottom + attackHudHeight + 16, compactWidth);
+                }
                 return;
             }
 
@@ -268,8 +269,10 @@ namespace Ben10Mod.Content.Interface {
             Rectangle barRect = new Rectangle(x, y, barWidth, barHeight);
             DrawOmnitrixEnergyText(player, omp, barRect, false, clientConfig.AlwaysShowOmnitrixEnergyText);
 
-            int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
-            DrawActiveAbilityIndicator(player, omp, x, y + barHeight + fullAttackHudHeight + 26, barWidth);
+            if (showMoveInterface) {
+                int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
+                DrawActiveAbilityIndicator(player, omp, x, y + barHeight + fullAttackHudHeight + 26, barWidth);
+            }
         }
 
         private void DrawOmnitrixEnergyText(Player player, OmnitrixPlayer omp, Rectangle barRect, bool simplified, bool alwaysShow) {

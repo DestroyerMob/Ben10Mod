@@ -1,8 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Ben10Mod.Content.DamageClasses;
@@ -12,7 +10,7 @@ namespace Ben10Mod.Content.Projectiles;
 public class PlumberBlasterBoltProjectile : ModProjectile {
     private bool StrongVariant => Projectile.ai[0] >= 0.5f;
 
-    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.MartianTurretBolt}";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.PurpleLaser}";
 
     public override void SetStaticDefaults() {
         ProjectileID.Sets.TrailCacheLength[Type] = 5;
@@ -57,29 +55,6 @@ public class PlumberBlasterBoltProjectile : ModProjectile {
             -Projectile.velocity * 0.08f, 95, StrongVariant ? new Color(165, 255, 255) : new Color(110, 220, 255),
             StrongVariant ? Main.rand.NextFloat(0.95f, 1.18f) : Main.rand.NextFloat(0.82f, 1.02f));
         dust.noGravity = true;
-    }
-
-    public override bool PreDraw(ref Color lightColor) {
-        Texture2D texture = TextureAssets.Projectile[Type].Value;
-        Rectangle frame = texture.Frame();
-        Vector2 origin = frame.Size() * 0.5f;
-
-        for (int i = Projectile.oldPos.Length - 1; i >= 0; i--) {
-            float alpha = (Projectile.oldPos.Length - i) / (float)Projectile.oldPos.Length;
-            Color trailColor = (StrongVariant ? new Color(120, 255, 250, 0) : new Color(95, 210, 255, 0)) * (0.42f * alpha);
-            Vector2 drawPosition = Projectile.oldPos[i] + Projectile.Size * 0.5f - Main.screenPosition;
-            Main.EntitySpriteDraw(texture, drawPosition, frame, trailColor, Projectile.rotation, origin,
-                Projectile.scale * (0.85f + alpha * 0.22f), SpriteEffects.None, 0);
-        }
-
-        Main.EntitySpriteDraw(texture, Projectile.Center - Main.screenPosition, frame, Color.White, Projectile.rotation, origin,
-            Projectile.scale, SpriteEffects.None, 0);
-
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Color coreColor = StrongVariant ? new Color(180, 255, 250, 0) : new Color(125, 225, 255, 0);
-        Main.EntitySpriteDraw(pixel, Projectile.Center - Main.screenPosition, null, coreColor * 0.72f, Projectile.rotation,
-            new Vector2(0.5f, 0.5f), new Vector2(18f, StrongVariant ? 4.6f : 3.4f), SpriteEffects.None, 0);
-        return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {

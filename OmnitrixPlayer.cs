@@ -318,7 +318,8 @@ namespace Ben10Mod {
                     ["g"] = (int)entry.Color.G,
                     ["b"] = (int)entry.Color.B,
                     ["hue"] = (int)entry.Hue,
-                    ["saturation"] = (int)entry.Saturation
+                    ["saturation"] = (int)entry.Saturation,
+                    ["brightness"] = (int)entry.Brightness
                 });
             }
 
@@ -424,12 +425,16 @@ namespace Ben10Mod {
                     byte saturation = paletteEntry.ContainsKey("saturation")
                         ? (byte)paletteEntry.GetInt("saturation")
                         : TransformationPaletteColorEntry.NeutralSaturation;
+                    byte brightness = paletteEntry.ContainsKey("brightness")
+                        ? (byte)paletteEntry.GetInt("brightness")
+                        : TransformationPaletteColorEntry.NeutralBrightness;
                     AddNormalizedTransformationPaletteEntry(new TransformationPaletteColorEntry(
                         transformationId,
                         channelId,
                         new Color(r, g, b),
                         hue,
-                        saturation
+                        saturation,
+                        brightness
                     ));
                 }
             }
@@ -2058,6 +2063,10 @@ namespace Ben10Mod {
             return GetPaletteSettings(TransformationLoader.Resolve(transformationId), channelId).Saturation;
         }
 
+        public byte GetPaletteBrightness(string transformationId, string channelId) {
+            return GetPaletteSettings(TransformationLoader.Resolve(transformationId), channelId).Brightness;
+        }
+
         public bool SetPaletteColor(string transformationId, string channelId, Color color, bool sync = true) {
             Transformation transformation = TransformationLoader.Resolve(transformationId);
             if (transformation == null || string.IsNullOrWhiteSpace(channelId))
@@ -2068,7 +2077,8 @@ namespace Ben10Mod {
                 return false;
 
             TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
-            TransformationPaletteChannelSettings newSettings = new(color, currentSettings.Hue, currentSettings.Saturation);
+            TransformationPaletteChannelSettings newSettings = new(color, currentSettings.Hue, currentSettings.Saturation,
+                currentSettings.Brightness);
             bool changed = SetPaletteSettings(GetActivePaletteOwnerId(transformation), channel, newSettings);
 
             if (changed && sync)
@@ -2088,7 +2098,7 @@ namespace Ben10Mod {
 
             TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
             TransformationPaletteChannelSettings newSettings = new(channel.DefaultColor, currentSettings.Hue,
-                currentSettings.Saturation);
+                currentSettings.Saturation, currentSettings.Brightness);
             bool changed = SetPaletteSettings(GetActivePaletteOwnerId(transformation), channel, newSettings);
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
@@ -2107,7 +2117,8 @@ namespace Ben10Mod {
 
             TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
             bool changed = SetPaletteSettings(GetActivePaletteOwnerId(transformation), channel,
-                new TransformationPaletteChannelSettings(currentSettings.Color, hue, currentSettings.Saturation));
+                new TransformationPaletteChannelSettings(currentSettings.Color, hue, currentSettings.Saturation,
+                    currentSettings.Brightness));
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
 
@@ -2125,7 +2136,27 @@ namespace Ben10Mod {
 
             TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
             bool changed = SetPaletteSettings(GetActivePaletteOwnerId(transformation), channel,
-                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue, saturation));
+                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue, saturation,
+                    currentSettings.Brightness));
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetPaletteBrightness(string transformationId, string channelId, byte brightness, bool sync = true) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null || string.IsNullOrWhiteSpace(channelId))
+                return false;
+
+            TransformationPaletteChannel channel = transformation.GetPaletteChannel(channelId, this);
+            if (channel == null || !channel.IsValid)
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetPaletteSettings(transformation, channel.Id);
+            bool changed = SetPaletteSettings(GetActivePaletteOwnerId(transformation), channel,
+                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue, currentSettings.Saturation,
+                    brightness));
             if (changed && sync)
                 SyncTransformationPaletteStateToServerOrClients();
 
@@ -3474,7 +3505,8 @@ namespace Ben10Mod {
                         continue;
 
                     entries.Add(new TransformationPaletteColorEntry(normalizedOwnerId, channel.Id,
-                        normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation));
+                        normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation,
+                        normalizedSettings.Brightness));
                 }
             }
 
@@ -3541,7 +3573,8 @@ namespace Ben10Mod {
                             ["g"] = (int)entry.Color.G,
                             ["b"] = (int)entry.Color.B,
                             ["hue"] = (int)entry.Hue,
-                            ["saturation"] = (int)entry.Saturation
+                            ["saturation"] = (int)entry.Saturation,
+                            ["brightness"] = (int)entry.Brightness
                         });
                     }
 
@@ -3580,8 +3613,11 @@ namespace Ben10Mod {
                     byte saturation = entryTag.ContainsKey("saturation")
                         ? (byte)entryTag.GetInt("saturation")
                         : TransformationPaletteColorEntry.NeutralSaturation;
+                    byte brightness = entryTag.ContainsKey("brightness")
+                        ? (byte)entryTag.GetInt("brightness")
+                        : TransformationPaletteColorEntry.NeutralBrightness;
                     preset.Entries.Add(new TransformationPaletteColorEntry(entryTransformationId, channelId,
-                        new Color(r, g, b), hue, saturation));
+                        new Color(r, g, b), hue, saturation, brightness));
                 }
             }
 
@@ -3686,7 +3722,7 @@ namespace Ben10Mod {
 
             TransformationPaletteChannelSettings normalizedSettings =
                 NormalizePaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue,
-                    entry.Saturation), channel.DefaultColor);
+                    entry.Saturation, entry.Brightness), channel.DefaultColor);
             if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
                 return;
 
@@ -3720,7 +3756,8 @@ namespace Ben10Mod {
             return new TransformationPaletteChannelSettings(
                 NormalizePaletteColor(settings.Color == default && fallbackColor.HasValue ? fallbackColor.Value : settings.Color),
                 settings.Hue,
-                settings.Saturation
+                settings.Saturation,
+                settings.Brightness
             );
         }
 
@@ -3759,6 +3796,7 @@ namespace Ben10Mod {
                 writer.Write(entry.Color.B);
                 writer.Write(entry.Hue);
                 writer.Write(entry.Saturation);
+                writer.Write(entry.Brightness);
             }
         }
 
@@ -3794,8 +3832,9 @@ namespace Ben10Mod {
                 byte b = reader.ReadByte();
                 byte hue = reader.ReadByte();
                 byte saturation = reader.ReadByte();
+                byte brightness = reader.ReadByte();
                 entries[i] = new TransformationPaletteColorEntry(transformationId, channelId, new Color(r, g, b),
-                    hue, saturation);
+                    hue, saturation, brightness);
             }
 
             return entries;
@@ -4008,13 +4047,15 @@ namespace Ben10Mod {
                             continue;
 
                         TransformationPaletteChannelSettings normalizedSettings =
-                            NormalizePaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue, entry.Saturation),
+                            NormalizePaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue,
+                                    entry.Saturation, entry.Brightness),
                                 channel.DefaultColor);
                         if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
                             continue;
 
                         normalizedPreset.Entries.Add(new TransformationPaletteColorEntry(resolvedOwnerId, channel.Id,
-                            normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation));
+                            normalizedSettings.Color, normalizedSettings.Hue, normalizedSettings.Saturation,
+                            normalizedSettings.Brightness));
                     }
 
                     for (int i = 0; i < preset.EnabledChannelKeys.Count; i++) {

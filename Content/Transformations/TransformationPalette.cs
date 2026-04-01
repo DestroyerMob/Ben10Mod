@@ -11,14 +11,16 @@ namespace Ben10Mod.Content.Transformations;
 public readonly struct TransformationPaletteColorEntry {
     public const byte NeutralHue = 128;
     public const byte NeutralSaturation = 128;
+    public const byte NeutralBrightness = 128;
 
     public TransformationPaletteColorEntry(string transformationId, string channelId, Color color,
-        byte hue = NeutralHue, byte saturation = NeutralSaturation) {
+        byte hue = NeutralHue, byte saturation = NeutralSaturation, byte brightness = NeutralBrightness) {
         TransformationId = transformationId ?? string.Empty;
         ChannelId = channelId ?? string.Empty;
         Color = new Color(color.R, color.G, color.B, 255);
         Hue = hue;
         Saturation = saturation;
+        Brightness = brightness;
     }
 
     public string TransformationId { get; }
@@ -26,23 +28,28 @@ public readonly struct TransformationPaletteColorEntry {
     public Color Color { get; }
     public byte Hue { get; }
     public byte Saturation { get; }
+    public byte Brightness { get; }
 }
 
 public readonly struct TransformationPaletteChannelSettings {
     public TransformationPaletteChannelSettings(Color color, byte hue = TransformationPaletteColorEntry.NeutralHue,
-        byte saturation = TransformationPaletteColorEntry.NeutralSaturation) {
+        byte saturation = TransformationPaletteColorEntry.NeutralSaturation,
+        byte brightness = TransformationPaletteColorEntry.NeutralBrightness) {
         Color = new Color(color.R, color.G, color.B, 255);
         Hue = hue;
         Saturation = saturation;
+        Brightness = brightness;
     }
 
     public Color Color { get; }
     public byte Hue { get; }
     public byte Saturation { get; }
+    public byte Brightness { get; }
 
     public bool HasNeutralAdjustments =>
         Hue == TransformationPaletteColorEntry.NeutralHue &&
-        Saturation == TransformationPaletteColorEntry.NeutralSaturation;
+        Saturation == TransformationPaletteColorEntry.NeutralSaturation &&
+        Brightness == TransformationPaletteColorEntry.NeutralBrightness;
 }
 
 public sealed class TransformationPaletteOverlay {
@@ -117,35 +124,54 @@ public static class TransformationPaletteMath {
             : value / 128f;
     }
 
+    public static float GetBrightnessMultiplier(byte value) {
+        if (value == TransformationPaletteColorEntry.NeutralBrightness)
+            return 1f;
+
+        return value >= TransformationPaletteColorEntry.NeutralBrightness
+            ? 1f + (value - TransformationPaletteColorEntry.NeutralBrightness) / 127f
+            : value / 128f;
+    }
+
     public static Color ApplyHueAndSaturation(Color source, byte hue, byte saturation) {
+        return ApplyHueSaturationAndBrightness(source, hue, saturation, TransformationPaletteColorEntry.NeutralBrightness);
+    }
+
+    public static Color ApplyHueSaturationAndBrightness(Color source, byte hue, byte saturation, byte brightness) {
         if ((source.A == 0) || (hue == TransformationPaletteColorEntry.NeutralHue &&
-            saturation == TransformationPaletteColorEntry.NeutralSaturation))
+            saturation == TransformationPaletteColorEntry.NeutralSaturation &&
+            brightness == TransformationPaletteColorEntry.NeutralBrightness))
             return source;
 
         Vector3 hsv = RgbToHsv(source);
         hsv.X = WrapHue01(hsv.X + GetHueShiftDegrees(hue) / 360f);
         hsv.Y = MathHelper.Clamp(hsv.Y * GetSaturationMultiplier(saturation), 0f, 1f);
+        hsv.Z = MathHelper.Clamp(hsv.Z * GetBrightnessMultiplier(brightness), 0f, 1f);
         Color shifted = HsvToRgb(hsv.X, hsv.Y, hsv.Z);
         shifted.A = source.A;
         return shifted;
     }
 
     public static Color ApplyColorizedPalette(Color source, Color target, byte hue, byte saturation) {
+        return ApplyColorizedPalette(source, target, hue, saturation, TransformationPaletteColorEntry.NeutralBrightness);
+    }
+
+    public static Color ApplyColorizedPalette(Color source, Color target, byte hue, byte saturation, byte brightness) {
         if (source.A == 0)
             return source;
 
-        float brightness = Math.Max(source.R, Math.Max(source.G, source.B)) / 255f;
-        if (brightness <= 0f)
-            brightness = ((source.R + source.G + source.B) / 3f) / 255f;
+        float sourceBrightness = Math.Max(source.R, Math.Max(source.G, source.B)) / 255f;
+        if (sourceBrightness <= 0f)
+            sourceBrightness = ((source.R + source.G + source.B) / 3f) / 255f;
 
         Color tinted = new Color(
-            (byte)Math.Clamp((int)Math.Round(target.R * brightness), 0, 255),
-            (byte)Math.Clamp((int)Math.Round(target.G * brightness), 0, 255),
-            (byte)Math.Clamp((int)Math.Round(target.B * brightness), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(target.R * sourceBrightness), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(target.G * sourceBrightness), 0, 255),
+            (byte)Math.Clamp((int)Math.Round(target.B * sourceBrightness), 0, 255),
             source.A
         );
 
-        return ApplyHueAndSaturation(tinted, hue, saturation);
+        return ApplyHueSaturationAndBrightness(tinted, hue, saturation, brightness);
     }
 
     private static Vector3 RgbToHsv(Color color) {
@@ -223,7 +249,7 @@ public static class TransformationPaletteTextureCache {
     private readonly record struct PreparedMaskKey(Texture2D MaskTexture);
     private readonly record struct MaskedBaseKey(Texture2D BaseTexture, string MaskSignature);
     private readonly record struct ProcessedOverlayKey(Texture2D BaseTexture, Texture2D MaskTexture, Color Color,
-        byte Hue, byte Saturation, bool UsePaletteColor);
+        byte Hue, byte Saturation, byte Brightness, bool UsePaletteColor);
     private readonly record struct PreviewFrameKey(Texture2D BaseTexture, string MaskSignature, int FrameWidth, int FrameHeight);
 
     private static readonly Dictionary<PreparedMaskKey, Texture2D> PreparedMasks = new();
@@ -341,6 +367,7 @@ public static class TransformationPaletteTextureCache {
 
         maskTexture = GetPreparedMaskTexture(maskTexture);
         ProcessedOverlayKey key = new(baseTexture, maskTexture, settings.Color, settings.Hue, settings.Saturation,
+            settings.Brightness,
             usePaletteColor);
         if (ProcessedOverlays.TryGetValue(key, out Texture2D overlay))
             return overlay;
@@ -358,8 +385,10 @@ public static class TransformationPaletteTextureCache {
                 continue;
 
             Color processed = usePaletteColor
-                ? TransformationPaletteMath.ApplyColorizedPalette(basePixel, settings.Color, settings.Hue, settings.Saturation)
-                : TransformationPaletteMath.ApplyHueAndSaturation(basePixel, settings.Hue, settings.Saturation);
+                ? TransformationPaletteMath.ApplyColorizedPalette(basePixel, settings.Color, settings.Hue, settings.Saturation,
+                    settings.Brightness)
+                : TransformationPaletteMath.ApplyHueSaturationAndBrightness(basePixel, settings.Hue, settings.Saturation,
+                    settings.Brightness);
 
             processed.A = (byte)(basePixel.A * maskPixel.A / 255);
             overlayPixels[i] = processed;
