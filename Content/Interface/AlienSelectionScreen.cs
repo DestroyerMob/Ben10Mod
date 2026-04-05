@@ -170,6 +170,8 @@ namespace Ben10Mod.Content.Interface {
             bool   showEnergyBar     = clientConfig.ShowHeroEnergyBar && omp.omnitrixEquipped;
             bool   showMoveInterface = clientConfig.ShowHeroMoveInterface && omp.IsTransformed;
             bool   showAttackHudOnly = !showEnergyBar && showMoveInterface;
+            bool   simplifyEnergyBar = clientConfig.UseSimplifiedHeroEnergyBar;
+            bool   simplifyMoveHud   = clientConfig.UseSimplifiedHeroMoveInterface;
             if (!showEnergyBar && !showMoveInterface)
                 return;
 
@@ -178,18 +180,20 @@ namespace Ben10Mod.Content.Interface {
             int hpBarWidth = 252;
             int y          = 30;
             int hpLeftX    = Main.screenWidth - uiMargin - hpBarWidth;
+            int compactHudWidth = 220;
+            int fullHudWidth = 252;
+            int moveHudWidth = simplifyMoveHud ? compactHudWidth : fullHudWidth;
+            int moveHudX = hpLeftX - gap - moveHudWidth;
 
             if (showAttackHudOnly) {
-                int hudWidth = clientConfig.UseSimplifiedHeroInterface ? 220 : 252;
-                int hudX     = hpLeftX - gap - hudWidth;
-                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, hudX, y, hudWidth);
-                DrawActiveAbilityIndicator(player, omp, hudX, y + attackHudHeight + 8, hudWidth);
+                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, y, moveHudWidth);
+                DrawActiveAbilityIndicator(player, omp, moveHudX, y + attackHudHeight + 8, moveHudWidth);
                 return;
             }
 
             float fillPercent = MathHelper.Clamp(omp.omnitrixEnergy / (float)omp.omnitrixEnergyMax, 0f, 1f);
 
-            if (clientConfig.UseSimplifiedHeroInterface) {
+            if (simplifyEnergyBar) {
                 Texture2D pixel = TextureAssets.MagicPixel.Value;
                 const int compactWidth = 220;
                 const int compactBarHeight = 16;
@@ -212,8 +216,8 @@ namespace Ben10Mod.Content.Interface {
                 DrawOmnitrixEnergyText(player, omp, compactBarRect, true, clientConfig.AlwaysShowOmnitrixEnergyText);
 
                 if (showMoveInterface) {
-                    int attackHudHeight = DrawCurrentAttackIndicator(player, omp, compactX, compactBarRect.Bottom + 8, compactWidth);
-                    DrawActiveAbilityIndicator(player, omp, compactX, compactBarRect.Bottom + attackHudHeight + 16, compactWidth);
+                    int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, compactBarRect.Bottom + 8, moveHudWidth);
+                    DrawActiveAbilityIndicator(player, omp, moveHudX, compactBarRect.Bottom + attackHudHeight + 16, moveHudWidth);
                 }
                 return;
             }
@@ -270,8 +274,8 @@ namespace Ben10Mod.Content.Interface {
             DrawOmnitrixEnergyText(player, omp, barRect, false, clientConfig.AlwaysShowOmnitrixEnergyText);
 
             if (showMoveInterface) {
-                int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, x, y + barHeight + 18, barWidth);
-                DrawActiveAbilityIndicator(player, omp, x, y + barHeight + fullAttackHudHeight + 26, barWidth);
+                int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, y + barHeight + 18, moveHudWidth);
+                DrawActiveAbilityIndicator(player, omp, moveHudX, y + barHeight + fullAttackHudHeight + 26, moveHudWidth);
             }
         }
 
@@ -349,8 +353,9 @@ namespace Ben10Mod.Content.Interface {
             string selectionSummary = showAttackHud
                 ? string.Empty
                 : CombineHudSummary(cooldownSummary, omp.GetSelectedTransformationCustomizationSummary());
+            bool simplifiedMoveHud = clientConfig.UseSimplifiedHeroMoveInterface;
             string resourceSummary = showAttackHud
-                ? omp.GetCurrentAttackResourceSummary(clientConfig.UseSimplifiedHeroInterface)
+                ? omp.GetCurrentAttackResourceSummary(simplifiedMoveHud)
                 : string.Empty;
             int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
             bool affordabilityWarning = clientConfig.ShowHeroAffordabilityTinting &&
@@ -366,7 +371,7 @@ namespace Ben10Mod.Content.Interface {
                     : energyCost > 0
                         ? $"{energyCost} OE"
                         : detailLabel;
-            Rectangle panelRect = new Rectangle(x, y, width, clientConfig.UseSimplifiedHeroInterface
+            Rectangle panelRect = new Rectangle(x, y, width, simplifiedMoveHud
                 ? (string.IsNullOrWhiteSpace(compactFooter) ? 42 : 58)
                 : string.IsNullOrWhiteSpace(showAttackHud ? cooldownSummary : selectionSummary) ? 66 : 92);
             bool      holdingBadge = player.HeldItem.ModItem is PlumbersBadge;
@@ -411,7 +416,7 @@ namespace Ben10Mod.Content.Interface {
                 ? omp.GetCurrentAttackDisplayName()
                 : omp.GetSelectedTransformationDisplayName();
 
-            if (clientConfig.UseSimplifiedHeroInterface) {
+            if (simplifiedMoveHud) {
                 Utils.DrawBorderString(Main.spriteBatch, attackName,
                     new Vector2(panelRect.X + 10, panelRect.Y + 9), Color.White, 0.88f);
                 Utils.DrawBorderString(Main.spriteBatch, slotLabel,
@@ -475,7 +480,7 @@ namespace Ben10Mod.Content.Interface {
                 return 0;
 
             var clientConfig = ModContent.GetInstance<Ben10ClientConfig>();
-            bool simplified = clientConfig.UseSimplifiedHeroInterface;
+            bool simplified = clientConfig.UseSimplifiedHeroMoveInterface;
             int lineHeight = simplified ? 15 : 18;
             int headerHeight = simplified ? 18 : 22;
             int panelHeight = headerHeight + 10 + activeAbilities.Count * lineHeight;

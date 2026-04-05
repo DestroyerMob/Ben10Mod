@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Items.Placeables;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -29,7 +30,8 @@ public class AdaptivePlating : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.CrossNecklace)
+            .AddIngredient(ItemID.ObsidianShield)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
             .AddIngredient(ItemID.HallowedBar, 8)
             .AddIngredient(ItemID.SoulofNight, 8)
             .AddTile(TileID.TinkerersWorkbench)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Placeables;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -33,8 +34,10 @@ public class HeroConvergenceEmblem : ModItem {
             .AddIngredient(ModContent.ItemType<HeroEmblem>())
             .AddIngredient(ModContent.ItemType<KineticServos>())
             .AddIngredient(ModContent.ItemType<ImpactHarness>())
-            .AddIngredient(ItemID.AvengerEmblem)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
             .AddIngredient(ItemID.HallowedBar, 10)
+            .AddIngredient(ItemID.SoulofMight, 8)
+            .AddIngredient(ItemID.SoulofFright, 8)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

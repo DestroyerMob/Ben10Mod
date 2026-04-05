@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -30,9 +32,12 @@ public class BurstGreaves : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.LightningBoots)
+            .AddIngredient(ItemID.HermesBoots)
+            .AddIngredient(ItemID.RocketBoots)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.HellstoneBar, 10)
-            .AddIngredient(ItemID.Feather, 6)
+            .AddIngredient(ItemID.Feather, 4)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

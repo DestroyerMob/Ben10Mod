@@ -20,8 +20,8 @@ public class FourArmsTransformation : Transformation {
     private const int QuadSmashEnergyRequirement = 52;
     private const int QuadSmashEnergyCost = 52;
     private const int QuadSmashCooldown = 42 * 60;
-    private const float PrimaryDamageMultiplier = 1f;
-    private const float SecondaryDamageMultiplier = 1.18f;
+    private const float PrimaryDamageMultiplier = 1.14f;
+    private const float SecondaryDamageMultiplier = 1.42f;
     private const float ShoulderRushDamageMultiplier = 1.24f;
     private const float QuadSmashDamageMultiplier = 1.38f;
 
@@ -51,15 +51,17 @@ public class FourArmsTransformation : Transformation {
     public override string UltimateAttackName => "Quad Smash";
     public override int PrimaryAttack => ModContent.ProjectileType<FourArmsPunchProjectile>();
     public override float PrimaryAttackModifier => PrimaryDamageMultiplier;
-    public override int PrimaryAttackSpeed => 18;
-    public override int PrimaryShootSpeed => 12;
+    public override int PrimaryAttackSpeed => 15;
+    public override int PrimaryShootSpeed => 15;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
+    public override int PrimaryArmorPenetration => 10;
 
     public override int SecondaryAttack => ModContent.ProjectileType<FourArmsClap>();
-    public override int SecondaryAttackSpeed => 32;
-    public override int SecondaryShootSpeed => 14;
+    public override int SecondaryAttackSpeed => 24;
+    public override int SecondaryShootSpeed => 18;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override float SecondaryAttackModifier => SecondaryDamageMultiplier;
+    public override int SecondaryArmorPenetration => 14;
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => BattleRoarDuration;
@@ -133,7 +135,7 @@ public class FourArmsTransformation : Transformation {
             return false;
         }
 
-        float punchScale = omp.IsPrimaryAbilityActive ? 1.15f : 1f;
+        float punchScale = omp.IsPrimaryAbilityActive ? 1.32f : 1.16f;
         int punchDamage = ScaleDamage(damage, PrimaryAttackModifier * rageBonus);
         Projectile.NewProjectile(source, player.MountedCenter + direction * 18f, direction * Math.Max(PrimaryShootSpeed, 10),
             PrimaryAttack, punchDamage, knockback + 1f, player.whoAmI, punchScale);

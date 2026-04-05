@@ -118,6 +118,8 @@ namespace Ben10Mod {
 			RemoveTransformation,
 			RequestUnlockTransformation,
 			RequestRemoveTransformation,
+			RecordEventParticipation,
+			SyncOmnitrixEvolution,
 			RequestSyncTransformationState,
 			SyncTransformationState,
 			RequestSyncTransformationPaletteState,
@@ -215,6 +217,41 @@ namespace Ben10Mod {
 
 					player.GetModPlayer<OmnitrixPlayer>()
 						.RemoveTransformation(transformation.FullID, sync: true, showEffects: false);
+					break;
+				}
+				case MessageType.RecordEventParticipation: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[whoAmI];
+					if (!player.active)
+						return;
+
+					int eventCount = reader.ReadByte();
+					List<int> eventIds = new(eventCount);
+					for (int i = 0; i < eventCount; i++)
+						eventIds.Add(reader.ReadInt32());
+
+					player.GetModPlayer<OmnitrixPlayer>().ApplyRecordedEventParticipation(eventIds);
+					break;
+				}
+				case MessageType.SyncOmnitrixEvolution: {
+					if (Main.netMode != NetmodeID.MultiplayerClient)
+						return;
+
+					int playerIndex = reader.ReadByte();
+					int resultType  = reader.ReadInt32();
+					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[playerIndex];
+					if (!player.active || playerIndex != Main.myPlayer)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>().ApplyOmnitrixEvolutionSync(resultType);
 					break;
 				}
 				case MessageType.RequestSyncTransformationState: {

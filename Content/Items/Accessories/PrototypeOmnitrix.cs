@@ -15,6 +15,8 @@ namespace Ben10Mod.Content.Items.Accessories
     public class PrototypeOmnitrix : Omnitrix
     {
         public override int MaxOmnitrixEnergy => 300;
+        public override int OmnitrixEnergyRegen => 2;
+        public override int EnergyPerDamageDivisor => 0;
         public override string CooldownHandsOnTextureKey => "PrototypeOmnitrixAlt";
         public override string UpdatingHandsOnTextureKey => "PrototypeOmnitrixUpdating";
         public override int EvolutionResultItemType => ModContent.ItemType<RecalibratedOmnitrix>();
@@ -95,6 +97,7 @@ namespace Ben10Mod.Content.Items.Accessories
             CreateRecipe()
                 .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 25)
                 .AddIngredient(ItemID.Lens, 6)
+                .AddIngredient(ItemID.FallenStar, 10)
                 .AddIngredient(ItemID.Emerald, 3)
                 .AddTile(TileID.Anvils).Register();
         }

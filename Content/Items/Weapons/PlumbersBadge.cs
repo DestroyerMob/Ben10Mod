@@ -19,6 +19,7 @@ namespace Ben10Mod.Content.Items.Weapons {
         public virtual float AttackSpeedMultiplier      => 1f;
         public virtual float AdditionalProjectileChance => 0;
         public virtual int   UntransformedBoltDamage    => 6 + BadgeRankValue * 2;
+        public virtual int   UntransformedUseTime       => 30;
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
@@ -59,10 +60,9 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.noUseGraphic = false;
             Item.useTurn = true;
             Item.useStyle = ItemUseStyleID.Shoot;
-            Item.useTime = Item.useAnimation = 18;
+            Item.useTime = Item.useAnimation = UntransformedUseTime;
             Item.shoot = ModContent.ProjectileType<PlumberBlasterBoltProjectile>();
             Item.shootSpeed = 11.5f;
-            Item.damage = Math.Max(1, UntransformedBoltDamage);
             Item.knockBack = 1.75f;
             Item.UseSound = SoundID.Item91 with { Pitch = -0.14f, Volume = 0.58f };
         }
@@ -198,7 +198,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             if (!trans.BeginCurrentAttack(player, omp)) {
                 if (energyCost > 0)
-                    omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + energyCost);
+                    omp.RestoreOmnitrixEnergy(energyCost);
                 return false;
             }
 

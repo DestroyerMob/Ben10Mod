@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Ben10Mod.Common.Command;
 using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Transformations;
+using Ben10Mod.Content.Prefixes;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -12,6 +13,7 @@ using Ben10Mod.Keybinds;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
+using Terraria.Utilities;
 
 namespace Ben10Mod.Content.Items.Accessories
 {
@@ -86,6 +88,14 @@ namespace Ben10Mod.Content.Items.Accessories
             return !IsBlacklisted() && base.CanEquipAccessory(player, slot, modded);
         }
 
+        public override int ChoosePrefix(UnifiedRandom rand) {
+            List<int> rollablePrefixes = OmnitrixPrefix.GetRollablePrefixTypes(Item);
+            if (rollablePrefixes.Count == 0)
+                return -1;
+
+            return rollablePrefixes[rand.Next(rollablePrefixes.Count)];
+        }
+
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
             if (IsBlacklisted())
@@ -98,11 +108,11 @@ namespace Ben10Mod.Content.Items.Accessories
             omp.omnitrixEquipped  = true;
             omp.equippedOmnitrix  = this;
 
-            omp.omnitrixEnergyMax += MaxOmnitrixEnergy + omp.omnitrixEnergyMaxBonus;
+            omp.omnitrixEnergyMax += GetEffectiveOmnitrixEnergyMax(omp);
 
             omp.omnitrixEnergyRegen = omp.isTransformed
-                ? omp.omnitrixEnergyRegen - OmnitrixEnergyDrain
-                : omp.omnitrixEnergyRegen + OmnitrixEnergyRegen + omp.omnitrixEnergyRegenBonus;
+                ? omp.omnitrixEnergyRegen - GetEffectiveOmnitrixEnergyDrain(omp)
+                : omp.omnitrixEnergyRegen + GetEffectiveOmnitrixEnergyRegen(omp);
 
             transformationSlots = omp.transformationSlots;
 
@@ -266,6 +276,19 @@ namespace Ben10Mod.Content.Items.Accessories
                 return false;
             }
 
+            bool wasRandomized = false;
+            string targetId = omp.ResolveRandomizedTransformationTarget(desiredId, out wasRandomized);
+            if (string.IsNullOrEmpty(targetId))
+                targetId = desiredId;
+
+            Transformation targetTransformation = TransformationLoader.Resolve(targetId);
+            if (targetTransformation == null) {
+                omp.ShowTransformFailureFeedback("That transformation is unavailable.");
+                return false;
+            }
+
+            targetId = targetTransformation.FullID;
+
             for (int i = 0; i < transformationSlots.Length; i++) {
                 if (string.Equals(transformationSlots[i], desiredId, StringComparison.OrdinalIgnoreCase)) {
                     transformationNum = i;
@@ -274,40 +297,51 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             if (!omp.isTransformed) {
-                TransformationHandler.Transform(player, desiredId, GetTransformationDuration(omp));
+                TransformationHandler.Transform(player, targetId, GetTransformationDuration(omp));
+                if (wasRandomized)
+                    omp.ShowTransformationRandomizerFeedback(targetId);
                 return true;
             }
 
-            if (omp.currentTransformationId != desiredId) {
+            if (omp.currentTransformationId != targetId) {
                 var currentTransformation = omp.CurrentTransformation;
-                if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
+                if (currentTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, targetId) == true) {
+                    if (wasRandomized)
+                        omp.ShowTransformationRandomizerFeedback(targetId);
                     return true;
+                }
 
                 if (!omp.masterControl && !UseEnergyForTransformation) {
                     omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to switch forms.");
                     return false;
                 }
 
-                if (!omp.masterControl && UseEnergyForTransformation && omp.omnitrixEnergy < TranformationSwapCost) {
-                    omp.ShowTransformFailureFeedback($"Need {TranformationSwapCost} OE to swap forms.");
+                int swapCost = GetEffectiveTransformationSwapCost(omp);
+                if (!omp.masterControl && UseEnergyForTransformation && omp.omnitrixEnergy < swapCost) {
+                    omp.ShowTransformFailureFeedback($"Need {swapCost} OE to swap forms.");
                     return false;
                 }
 
                 if (!omp.masterControl && UseEnergyForTransformation)
-                    omp.omnitrixEnergy -= TranformationSwapCost;
+                    omp.omnitrixEnergy -= swapCost;
 
                 int nextDuration = UseEnergyForTransformation
                     ? GetTransformationDuration(omp)
                     : GetRemainingTransformationDurationSeconds(omp);
 
                 TransformationHandler.Detransform(player, 0, showParticles: false, addCooldown: false);
-                TransformationHandler.Transform(player, desiredId, nextDuration);
+                TransformationHandler.Transform(player, targetId, nextDuration);
+                if (wasRandomized)
+                    omp.ShowTransformationRandomizerFeedback(targetId);
                 return true;
             }
 
             var activeTransformation = omp.CurrentTransformation;
-            if (activeTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, desiredId) == true)
+            if (activeTransformation?.TryHandleTransformKeyWhileActive(player, omp, this, targetId) == true) {
+                if (wasRandomized)
+                    omp.ShowTransformationRandomizerFeedback(targetId);
                 return true;
+            }
 
             if (!UseEnergyForTransformation && !omp.masterControl) {
                 omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
@@ -386,13 +420,23 @@ namespace Ben10Mod.Content.Items.Accessories
             return EvolutionResultItemType;
         }
 
-        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
-            int resultType = GetEvolutionResultItemType(player, omp);
-            if (resultType <= 0 || equippedItem.type == resultType)
-                return;
+	        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
+	            int resultType = GetEvolutionResultItemType(player, omp);
+	            if (resultType <= 0 || equippedItem.type == resultType)
+	                return;
 
-            equippedItem.SetDefaults(resultType);
-        }
+	            equippedItem.SetDefaults(resultType);
+
+	            if (Main.netMode == NetmodeID.Server) {
+	                NetMessage.SendData(MessageID.SyncPlayer, -1, -1, null, player.whoAmI);
+
+	                ModPacket packet = Mod.GetPacket();
+	                packet.Write((byte)Ben10Mod.MessageType.SyncOmnitrixEvolution);
+	                packet.Write((byte)player.whoAmI);
+	                packet.Write(resultType);
+	                packet.Send(toClient: player.whoAmI);
+	            }
+	        }
 
         public virtual string GetHandsOnTextureKey(Player player, OmnitrixPlayer omp) {
             if (omp.omnitrixUpdating && !string.IsNullOrEmpty(UpdatingHandsOnTextureKey))
@@ -420,14 +464,16 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         protected virtual float GetTransformationDurationMultiplier(OmnitrixPlayer omp) {
-            return omp.transformationDurationMultiplier;
+            float prefixMultiplier = GetActiveOmnitrixPrefix()?.TransformationDurationMultiplier ?? 1f;
+            return omp.transformationDurationMultiplier * prefixMultiplier;
         }
 
         protected virtual float GetCooldownDurationMultiplier(OmnitrixPlayer omp) {
+            float prefixMultiplier = GetActiveOmnitrixPrefix()?.CooldownDurationMultiplier ?? 1f;
             if (!string.IsNullOrEmpty(omp.currentTransformationId))
-                return omp.activeCooldownDurationMultiplier;
+                return omp.activeCooldownDurationMultiplier * prefixMultiplier;
 
-            return omp.cooldownDurationMultiplier;
+            return omp.cooldownDurationMultiplier * prefixMultiplier;
         }
 
         protected int ApplyTransformationDurationModifiers(int baseDuration, OmnitrixPlayer omp) {
@@ -456,6 +502,30 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             return GetTransformationDuration(omp);
+        }
+
+        private OmnitrixPrefix GetActiveOmnitrixPrefix() {
+            return PrefixLoader.GetPrefix(Item.prefix) as OmnitrixPrefix;
+        }
+
+        private int GetEffectiveOmnitrixEnergyMax(OmnitrixPlayer omp) {
+            int prefixBonus = GetActiveOmnitrixPrefix()?.OmnitrixEnergyMaxBonus ?? 0;
+            return Math.Max(0, MaxOmnitrixEnergy + omp.omnitrixEnergyMaxBonus + prefixBonus);
+        }
+
+        private int GetEffectiveOmnitrixEnergyRegen(OmnitrixPlayer omp) {
+            int prefixBonus = GetActiveOmnitrixPrefix()?.OmnitrixEnergyRegenBonus ?? 0;
+            return Math.Max(0, OmnitrixEnergyRegen + omp.omnitrixEnergyRegenBonus + prefixBonus);
+        }
+
+        private int GetEffectiveOmnitrixEnergyDrain(OmnitrixPlayer omp) {
+            int prefixBonus = GetActiveOmnitrixPrefix()?.OmnitrixEnergyDrainBonus ?? 0;
+            return Math.Max(0, OmnitrixEnergyDrain + prefixBonus);
+        }
+
+        private int GetEffectiveTransformationSwapCost(OmnitrixPlayer omp) {
+            int prefixBonus = GetActiveOmnitrixPrefix()?.TransformationSwapCostBonus ?? 0;
+            return Math.Max(0, TranformationSwapCost + prefixBonus);
         }
 
         private bool IsBlacklisted() {

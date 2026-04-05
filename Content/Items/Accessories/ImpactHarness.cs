@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -29,8 +31,11 @@ public class ImpactHarness : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.SharkToothNecklace)
-            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ItemID.SharkFin, 6)
+            .AddIngredient(ItemID.Bone, 20)
+            .AddIngredient(ItemID.Chain, 10)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(2)
             .AddIngredient(ItemID.HellstoneBar, 10)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();

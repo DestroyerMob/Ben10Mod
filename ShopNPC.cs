@@ -15,6 +15,7 @@ namespace Ben10Mod;
 public class ShopNPC : GlobalNPC {
     public override void ModifyShop(NPCShop shop) {
         if (shop.NpcType == NPCID.Mechanic) {
+            shop.Add(ModContent.ItemType<IllegalCircuits>());
             shop.Add(ModContent.ItemType<AdvancedCircuitMatrix>());
         }
 

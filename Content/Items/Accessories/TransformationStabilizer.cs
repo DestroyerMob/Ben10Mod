@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -26,9 +28,12 @@ public class TransformationStabilizer : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.BandofStarpower)
-            .AddIngredient(ItemID.MeteoriteBar, 12)
-            .AddIngredient(ItemID.FallenStar, 8)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(2)
+            .AddIngredient(ItemID.MeteoriteBar, 8)
+            .AddIngredient(ItemID.Chain, 6)
+            .AddIngredient(ItemID.Lens, 4)
+            .AddIngredient(ItemID.FallenStar, 10)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

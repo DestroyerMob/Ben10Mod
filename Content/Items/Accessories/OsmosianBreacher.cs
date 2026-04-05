@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,21 +19,24 @@ public class OsmosianBreacher : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianPen", "+15 armor penetration while absorbed"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+20% absorption debuff duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianPen", "+12 armor penetration while absorbed"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+15% absorption debuff duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionArmorPenBonus += 15;
-        omp.absorptionDebuffDurationMultiplier *= 1.2f;
+        omp.absorptionArmorPenBonus += 12;
+        omp.absorptionDebuffDurationMultiplier *= 1.15f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
+            .AddIngredient<OsmosianAmplifier>()
             .AddIngredient(ItemID.StingerNecklace)
             .AddIngredient(ItemID.MeteoriteBar, 12)
             .AddIngredient(ItemID.SharkToothNecklace)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(4)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

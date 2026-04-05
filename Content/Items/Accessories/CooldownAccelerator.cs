@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -26,8 +28,11 @@ public class CooldownAccelerator : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.Stopwatch)
-            .AddIngredient(ItemID.MeteoriteBar, 10)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(2)
+            .AddIngredient(ItemID.MeteoriteBar, 8)
+            .AddIngredient(ItemID.Wire, 25)
+            .AddIngredient(ItemID.Lens, 4)
             .AddIngredient(ItemID.FallenStar, 6)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();

@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,20 +19,21 @@ public class OsmosianInjector : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianRegen", "+4 life regeneration while absorbed"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+25% absorption duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianRegen", "+3 life regeneration while absorbed"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+20% absorption duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionLifeRegenBonus += 4;
-        omp.absorptionDurationMultiplier *= 1.25f;
+        omp.absorptionLifeRegenBonus += 3;
+        omp.absorptionDurationMultiplier *= 1.2f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.BandofRegeneration)
-            .AddIngredient(ItemID.Shackle)
+            .AddIngredient<OsmosianRegulator>()
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(4)
             .AddIngredient(ItemID.MeteoriteBar, 12)
             .AddIngredient(ItemID.LifeCrystal, 2)
             .AddTile(TileID.TinkerersWorkbench)

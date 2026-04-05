@@ -70,7 +70,7 @@ public class OmniCorePulseProjectile : ModProjectile {
             return;
 
         OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
-        omp.omnitrixEnergy = Math.Min(omp.omnitrixEnergyMax, omp.omnitrixEnergy + EnergyRefundPerHit);
+        omp.RestoreOmnitrixEnergy(EnergyRefundPerHit);
     }
 
     public override bool PreDraw(ref Color lightColor) {

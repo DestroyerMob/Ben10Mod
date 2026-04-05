@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -26,8 +28,10 @@ public class OsmosianLens : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.Lens, 6)
+            .AddIngredient(ItemID.Lens, 8)
             .AddIngredient(ItemID.Diamond, 2)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(2)
             .AddIngredient(ItemID.MeteoriteBar, 8)
             .AddTile(TileID.Anvils)
             .Register();

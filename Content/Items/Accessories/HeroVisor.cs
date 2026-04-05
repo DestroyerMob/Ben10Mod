@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ben10Mod.Content.DamageClasses;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -17,18 +18,21 @@ public class HeroVisor : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
+        tooltips.Add(new TooltipLine(Mod, "HeroDamage", "+5% hero damage"));
         tooltips.Add(new TooltipLine(Mod, "HeroCrit", "+10% hero crit chance"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
+        player.GetDamage<HeroDamage>() += 0.05f;
         player.GetModPlayer<OmnitrixPlayer>().heroCritChanceBonus += 10;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.EyeoftheGolem)
-            .AddIngredient(ItemID.SoulofSight, 10)
-            .AddIngredient(ItemID.HallowedBar, 10)
+            .AddIngredient(ItemID.RifleScope)
+            .AddIngredient(ItemID.Lens, 8)
+            .AddIngredient(ItemID.ChlorophyteBar, 10)
+            .AddIngredient(ItemID.Ectoplasm, 8)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

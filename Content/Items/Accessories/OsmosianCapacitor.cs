@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,20 +19,21 @@ public class OsmosianCapacitor : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+90% absorption duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+30% absorption duration"));
         tooltips.Add(new TooltipLine(Mod, "OsmosianMove", "+8% movement speed while absorbed"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionDurationMultiplier *= 1.9f;
+        omp.absorptionDurationMultiplier *= 1.3f;
         omp.absorptionMoveSpeedBonus += 0.08f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
             .AddIngredient<OsmosianRegulator>()
-            .AddIngredient(ItemID.BandofStarpower)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(4)
             .AddIngredient(ItemID.MeteoriteBar, 12)
             .AddIngredient(ItemID.FallenStar, 10)
             .AddTile(TileID.TinkerersWorkbench)

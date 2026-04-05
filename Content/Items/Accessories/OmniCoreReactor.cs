@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -37,6 +39,7 @@ public class OmniCoreReactor : ModItem {
             .AddIngredient(ModContent.ItemType<EnergyRecycler>())
             .AddIngredient(ModContent.ItemType<AdaptivePlating>())
             .AddIngredient(ModContent.ItemType<BurstGreaves>())
+            .AddIngredient<IllegalCircuits>(10)
             .AddIngredient(ItemID.HallowedBar, 12)
             .AddIngredient(ItemID.SoulofLight, 10)
             .AddIngredient(ItemID.SoulofNight, 10)

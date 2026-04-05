@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,19 +19,21 @@ public class OsmosianAmplifier : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianStrength", "+100% absorption strength"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+35% absorption debuff duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianStrength", "+50% absorption strength"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+20% absorption debuff duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionStrengthMultiplier *= 2f;
-        omp.absorptionDebuffDurationMultiplier *= 1.35f;
+        omp.absorptionStrengthMultiplier *= 1.5f;
+        omp.absorptionDebuffDurationMultiplier *= 1.2f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.SharkToothNecklace)
+            .AddIngredient(ModContent.ItemType<OsmosianHarness>())
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.MeteoriteBar, 12)
             .AddIngredient(ItemID.Chain, 6)
             .AddIngredient(ItemID.ShadowScale, 8)
@@ -37,7 +41,9 @@ public class OsmosianAmplifier : ModItem {
             .Register();
 
         CreateRecipe()
-            .AddIngredient(ItemID.SharkToothNecklace)
+            .AddIngredient(ModContent.ItemType<OsmosianHarness>())
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.MeteoriteBar, 12)
             .AddIngredient(ItemID.Chain, 6)
             .AddIngredient(ItemID.TissueSample, 8)

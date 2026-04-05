@@ -16,18 +16,18 @@ public class PlumberSiegeBoomerangProjectile : ModProjectile {
     private const int StateAttack = 1;
     private const int StateReturn = 2;
 
-    private const float HoverSpeed = 11f;
-    private const float HoverInertia = 16f;
-    private const float AttackSpeed = 20f;
-    private const float AttackInertia = 7f;
-    private const float ReturnSpeed = 18f;
-    private const float ReturnInertia = 10f;
+    private const float HoverSpeed = 12f;
+    private const float HoverInertia = 14f;
+    private const float AttackSpeed = 22f;
+    private const float AttackInertia = 6f;
+    private const float ReturnSpeed = 20f;
+    private const float ReturnInertia = 8f;
     private const float HoverSnapDistance = 14f;
     private const float HomeOffsetY = 56f;
     private const float MaxTargetRange = 560f;
     private const float LostTargetRange = 760f;
     private const float TeleportDistance = 1200f;
-    private const int MaxAttackTime = 24;
+    private const int MaxAttackTime = 28;
 
     private ref float State => ref Projectile.ai[0];
     private ref float Timer => ref Projectile.ai[1];
@@ -50,7 +50,7 @@ public class PlumberSiegeBoomerangProjectile : ModProjectile {
         Projectile.ignoreWater = true;
         Projectile.DamageType = HeroClass;
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 20;
+        Projectile.localNPCHitCooldown = 14;
     }
 
     public override bool MinionContactDamage() => true;
@@ -191,7 +191,7 @@ public class PlumberSiegeBoomerangProjectile : ModProjectile {
     }
 
     private static Vector2 GetHomePosition(Player owner) {
-        return owner.MountedCenter + new Vector2(owner.direction * 6f, -HomeOffsetY);
+        return owner.MountedCenter + new Vector2(0f, -HomeOffsetY);
     }
 
     private NPC FindTarget(Player owner, float maxDistance) {

@@ -1,4 +1,5 @@
 using Ben10Mod.Keybinds;
+using Ben10Mod.Content.Items.Placeables;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
@@ -74,6 +75,7 @@ namespace Ben10Mod.Content.Items.Accessories
 
             CreateRecipe()
                 .AddIngredient(ModContent.ItemType<PrototypeOmnitrix>())
+                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 12)
                 .AddIngredient(ItemID.SoulofNight, 8)
                 .AddIngredient(ItemID.SoulofLight, 8)
                 .AddTile(TileID.MythrilAnvil).Register();

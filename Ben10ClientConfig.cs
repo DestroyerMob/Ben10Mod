@@ -15,6 +15,7 @@ public sealed class Ben10ClientConfig : ModConfig {
             ShowHeroMoveInterface = value;
         }
     }
+    public bool ShouldSerializeShowHeroInterface() => false;
 
     [DefaultValue(true)]
     public bool ShowHeroEnergyBar { get; set; } = true;
@@ -22,8 +23,31 @@ public sealed class Ben10ClientConfig : ModConfig {
     [DefaultValue(true)]
     public bool ShowHeroMoveInterface { get; set; } = true;
 
+    [Browsable(false)]
     [DefaultValue(false)]
-    public bool UseSimplifiedHeroInterface { get; set; } = false;
+    public bool UseSimplifiedHeroInterface {
+        get => UseSimplifiedHeroEnergyBar || UseSimplifiedHeroMoveInterface;
+        set {
+            _useSimplifiedHeroEnergyBar = value;
+            _useSimplifiedHeroMoveInterface = value;
+        }
+    }
+    public bool ShouldSerializeUseSimplifiedHeroInterface() => false;
+
+    [DefaultValue(false)]
+    public bool UseSimplifiedHeroEnergyBar {
+        get => _useSimplifiedHeroEnergyBar;
+        set => _useSimplifiedHeroEnergyBar = value;
+    }
+
+    [DefaultValue(false)]
+    public bool UseSimplifiedHeroMoveInterface {
+        get => _useSimplifiedHeroMoveInterface;
+        set => _useSimplifiedHeroMoveInterface = value;
+    }
+
+    [DefaultValue(false)]
+    public bool EnableTransformationRandomizer { get; set; } = false;
 
     [DefaultValue(true)]
     public bool ShowHeroAffordabilityTinting { get; set; } = true;
@@ -33,4 +57,7 @@ public sealed class Ben10ClientConfig : ModConfig {
 
     [DefaultValue(18)]
     public int TransformWheelDeadzonePixels { get; set; } = 18;
+
+    private bool _useSimplifiedHeroEnergyBar;
+    private bool _useSimplifiedHeroMoveInterface;
 }

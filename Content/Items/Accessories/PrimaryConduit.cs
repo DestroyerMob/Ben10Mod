@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -26,9 +28,11 @@ public class PrimaryConduit : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.CelestialCuffs)
+            .AddIngredient(ModContent.ItemType<CooldownAccelerator>())
+            .AddIngredient<IllegalCircuits>(5)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 10)
             .AddIngredient(ItemID.SoulofSight, 8)
-            .AddIngredient(ItemID.HallowedBar, 10)
+            .AddIngredient(ItemID.HallowedBar, 8)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
     }

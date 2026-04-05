@@ -196,6 +196,7 @@ namespace Ben10Mod {
             new(StringComparer.OrdinalIgnoreCase);
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
+        private const float MinimumTransformationScale = 0.35f;
         private const int AttackSelectionPulseDuration = 24;
         private const int UltimateReadyCueDuration = 72;
         private const int TransformFailureFeedbackCooldownTicks = 30;
@@ -254,12 +255,36 @@ namespace Ben10Mod {
         public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
         public float TransformationSpeedBoostScale => transformationSpeedBoostPercent / (float)TransformationSpeedBoostPercentMax;
 
-        public Omnitrix GetActiveOmnitrix() {
-            if (equippedOmnitrix != null)
-                return equippedOmnitrix;
+	        public Omnitrix GetActiveOmnitrix() {
+	            if (equippedOmnitrix != null)
+	                return equippedOmnitrix;
 
-            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
-            return omnitrixSlot?.FunctionalItem?.ModItem as Omnitrix;
+	            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+	            return omnitrixSlot?.FunctionalItem?.ModItem as Omnitrix;
+	        }
+
+	        internal void ApplyOmnitrixEvolutionSync(int resultType) {
+	            if (Player.whoAmI != Main.myPlayer || resultType <= 0)
+	                return;
+
+	            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+	            if (omnitrixSlot?.FunctionalItem == null)
+	                return;
+
+	            omnitrixSlot.FunctionalItem.SetDefaults(resultType);
+	        }
+
+	        public bool CanRestoreOmnitrixEnergy(float amount = 1f) {
+	            return amount > 0f && omnitrixEnergyMax > 0f && omnitrixEnergy < omnitrixEnergyMax;
+	        }
+
+        public float RestoreOmnitrixEnergy(float amount) {
+            if (!CanRestoreOmnitrixEnergy(amount))
+                return 0f;
+
+            float previousEnergy = omnitrixEnergy;
+            omnitrixEnergy = Math.Min(omnitrixEnergyMax, omnitrixEnergy + amount);
+            return omnitrixEnergy - previousEnergy;
         }
 
         public bool HasEquippedOsmosianHarness() {
@@ -664,26 +689,22 @@ namespace Ben10Mod {
 
         public void SetTransformationScale(float targetScale, int transitionTicks = 1,
             float? targetHitboxWidthScale = null, float? targetHitboxHeightScale = null) {
-            requestedTransformationScale = Math.Max(1f, targetScale);
+            requestedTransformationScale = Math.Max(MinimumTransformationScale, targetScale);
             requestedTransformationScaleTime = Math.Max(1, transitionTicks);
             requestedTransformationHitboxScale = new Vector2(
-                Math.Max(1f, targetHitboxWidthScale ?? targetScale),
-                Math.Max(1f, targetHitboxHeightScale ?? targetScale)
+                Math.Max(MinimumTransformationScale, targetHitboxWidthScale ?? targetScale),
+                Math.Max(MinimumTransformationScale, targetHitboxHeightScale ?? targetScale)
             );
 
-            if (requestedTransformationScale > 1f)
+            if (Math.Abs(requestedTransformationScale - 1f) > 0.001f)
                 lastExpandedTransformationScale = requestedTransformationScale;
 
-            if (requestedTransformationHitboxScale.X > 1f || requestedTransformationHitboxScale.Y > 1f) {
-                lastExpandedTransformationHitboxScale = new Vector2(
-                    Math.Max(lastExpandedTransformationHitboxScale.X, requestedTransformationHitboxScale.X),
-                    Math.Max(lastExpandedTransformationHitboxScale.Y, requestedTransformationHitboxScale.Y)
-                );
-            }
+            if (Vector2.DistanceSquared(requestedTransformationHitboxScale, Vector2.One) > 0.0001f)
+                lastExpandedTransformationHitboxScale = requestedTransformationHitboxScale;
         }
 
         public Vector2 GetScaledVisualPoint(Vector2 worldPoint) {
-            if (CurrentTransformationScale <= 1f)
+            if (Math.Abs(CurrentTransformationScale - 1f) <= 0.001f)
                 return worldPoint;
 
             Vector2 pivot = Player.Bottom;
@@ -698,18 +719,24 @@ namespace Ben10Mod {
             }
 
             float targetScale = requestedTransformationScale;
-            float scaleReference = targetScale > 1f ? targetScale : Math.Max(CurrentTransformationScale, lastExpandedTransformationScale);
+            float scaleReference = Math.Abs(targetScale - 1f) > 0.001f
+                ? lastExpandedTransformationScale
+                : (Math.Abs(lastExpandedTransformationScale - 1f) > 0.001f ? lastExpandedTransformationScale : CurrentTransformationScale);
             float step = Math.Abs(scaleReference - 1f) / requestedTransformationScaleTime;
             if (step <= 0f)
                 step = Math.Abs(targetScale - CurrentTransformationScale);
 
             CurrentTransformationScale = MoveTowards(CurrentTransformationScale, targetScale, step);
-            float hitboxReferenceX = requestedTransformationHitboxScale.X > 1f
-                ? requestedTransformationHitboxScale.X
-                : Math.Max(CurrentTransformationHitboxScale.X, lastExpandedTransformationHitboxScale.X);
-            float hitboxReferenceY = requestedTransformationHitboxScale.Y > 1f
-                ? requestedTransformationHitboxScale.Y
-                : Math.Max(CurrentTransformationHitboxScale.Y, lastExpandedTransformationHitboxScale.Y);
+            float hitboxReferenceX = Math.Abs(requestedTransformationHitboxScale.X - 1f) > 0.001f
+                ? lastExpandedTransformationHitboxScale.X
+                : (Math.Abs(lastExpandedTransformationHitboxScale.X - 1f) > 0.001f
+                    ? lastExpandedTransformationHitboxScale.X
+                    : CurrentTransformationHitboxScale.X);
+            float hitboxReferenceY = Math.Abs(requestedTransformationHitboxScale.Y - 1f) > 0.001f
+                ? lastExpandedTransformationHitboxScale.Y
+                : (Math.Abs(lastExpandedTransformationHitboxScale.Y - 1f) > 0.001f
+                    ? lastExpandedTransformationHitboxScale.Y
+                    : CurrentTransformationHitboxScale.Y);
             float hitboxStepX = Math.Abs(hitboxReferenceX - 1f) / requestedTransformationScaleTime;
             float hitboxStepY = Math.Abs(hitboxReferenceY - 1f) / requestedTransformationScaleTime;
 
@@ -726,10 +753,10 @@ namespace Ben10Mod {
 
             ApplyHitboxTransformationScale(CurrentTransformationHitboxScale);
 
-            if (CurrentTransformationScale <= 1f)
+            if (Math.Abs(CurrentTransformationScale - 1f) <= 0.001f)
                 lastExpandedTransformationScale = 1f;
 
-            if (CurrentTransformationHitboxScale == Vector2.One)
+            if (Vector2.DistanceSquared(CurrentTransformationHitboxScale, Vector2.One) <= 0.0001f)
                 lastExpandedTransformationHitboxScale = Vector2.One;
 
             requestedTransformationScale = 1f;
@@ -1508,6 +1535,62 @@ namespace Ben10Mod {
 
             string customName = GetCustomTransformationName(transformation.FullID);
             return string.IsNullOrWhiteSpace(customName) ? transformation.TransformationName : customName;
+        }
+
+        public bool IsTransformationRandomizerEnabled() {
+            return Main.netMode != NetmodeID.Server &&
+                   ModContent.GetInstance<Ben10ClientConfig>().EnableTransformationRandomizer;
+        }
+
+        public string ResolveRandomizedTransformationTarget(string desiredTransformationId, out bool wasRandomized) {
+            wasRandomized = false;
+
+            Transformation desiredTransformation = TransformationLoader.Resolve(desiredTransformationId);
+            if (desiredTransformation == null)
+                return string.Empty;
+
+            string desiredId = desiredTransformation.FullID;
+            if (!IsTransformationRandomizerEnabled())
+                return desiredId;
+
+            List<string> candidateIds = new();
+            for (int i = 0; i < unlockedTransformations.Count; i++) {
+                Transformation unlockedTransformation = TransformationLoader.Resolve(unlockedTransformations[i]);
+                if (unlockedTransformation == null)
+                    continue;
+
+                string unlockedId = unlockedTransformation.FullID;
+                if (!candidateIds.Contains(unlockedId))
+                    candidateIds.Add(unlockedId);
+            }
+
+            if (candidateIds.Count == 0)
+                return desiredId;
+
+            List<string> pool = candidateIds.Where(id =>
+                !string.Equals(id, desiredId, StringComparison.Ordinal) &&
+                !string.Equals(id, currentTransformationId, StringComparison.Ordinal)).ToList();
+
+            if (pool.Count == 0)
+                pool = candidateIds.Where(id => !string.Equals(id, desiredId, StringComparison.Ordinal)).ToList();
+
+            if (pool.Count == 0)
+                return desiredId;
+
+            string randomizedId = pool[Main.rand.Next(pool.Count)];
+            if (string.Equals(randomizedId, desiredId, StringComparison.Ordinal))
+                return desiredId;
+
+            wasRandomized = true;
+            return randomizedId;
+        }
+
+        public void ShowTransformationRandomizerFeedback(string transformationId) {
+            if (Main.netMode == NetmodeID.Server || Player.whoAmI != Main.myPlayer)
+                return;
+
+            string formName = GetTransformationBaseName(transformationId);
+            Main.NewText($"Mistransformed into {formName}!", new Color(255, 205, 95));
         }
 
         public bool IsFavoriteTransformation(string transformationId) {
@@ -3045,8 +3128,7 @@ namespace Ben10Mod {
             if (ShouldBlockOmnitrixEnergyGain(projectile))
                 return;
 
-            omnitrixEnergy = Math.Min(omnitrixEnergyMax,
-                omnitrixEnergy + activeOmnitrix.GetEnergyGainFromDamage(damageDone));
+            RestoreOmnitrixEnergy(activeOmnitrix.GetEnergyGainFromDamage(damageDone));
         }
 
         private void UpdateAccessoryProcStates() {
@@ -3184,7 +3266,8 @@ namespace Ben10Mod {
             if (projectile == null || !projectile.active || !projectile.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
                 return false;
 
-            return projectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed != ModContent.ItemType<PlumbersBadge>();
+            return projectile.GetGlobalProjectile<OmnitrixProjectile>().itemUsed != ModContent.ItemType<PlumbersBadge>() &&
+                   !IsAccessoryProcProjectile(projectile);
         }
 
         private static bool IsAccessoryProcProjectile(Projectile projectile) {
@@ -3193,7 +3276,8 @@ namespace Ben10Mod {
 
             return projectile.type == ModContent.ProjectileType<ChronoAcceleratorFieldProjectile>() ||
                    projectile.type == ModContent.ProjectileType<HeroConvergenceBoltProjectile>() ||
-                   projectile.type == ModContent.ProjectileType<OmniCorePulseProjectile>();
+                   projectile.type == ModContent.ProjectileType<OmniCorePulseProjectile>() ||
+                   projectile.type == ModContent.ProjectileType<ConquestDroneBoltProjectile>();
         }
 
         public override void PreUpdate() {
@@ -3454,10 +3538,45 @@ namespace Ben10Mod {
             if (npc == null || !npc.active || npc.friendly || npc.townNPC || npc.CountsAsACritter)
                 return;
 
+            List<int> newlyRecordedEvents = null;
             foreach (int eventId in GetActiveTrackedEvents()) {
-                if (DoesNpcCountForEventParticipation(eventId, npc))
+                if (!DoesNpcCountForEventParticipation(eventId, npc))
+                    continue;
+
+                if (participatedEvents.Add(eventId) && Main.netMode == NetmodeID.MultiplayerClient &&
+                    Player.whoAmI == Main.myPlayer) {
+                    newlyRecordedEvents ??= new List<int>();
+                    newlyRecordedEvents.Add(eventId);
+                }
+            }
+
+            if (newlyRecordedEvents is { Count: > 0 })
+                RequestServerEventParticipationSync(newlyRecordedEvents);
+        }
+
+        internal void ApplyRecordedEventParticipation(IEnumerable<int> eventIds) {
+            if (eventIds == null)
+                return;
+
+            HashSet<int> activeTrackedEvents = new(GetActiveTrackedEvents());
+            foreach (int eventId in eventIds) {
+                if (activeTrackedEvents.Contains(eventId))
                     participatedEvents.Add(eventId);
             }
+        }
+
+        private void RequestServerEventParticipationSync(IReadOnlyList<int> eventIds) {
+            if (Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI != Main.myPlayer || eventIds == null ||
+                eventIds.Count == 0)
+                return;
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.RecordEventParticipation);
+            packet.Write((byte)eventIds.Count);
+            for (int i = 0; i < eventIds.Count; i++)
+                packet.Write(eventIds[i]);
+
+            packet.Send();
         }
 
         public bool UnlockTransformation(string transformationId, bool sync = true, bool showEffects = true) {
@@ -4391,6 +4510,7 @@ namespace Ben10Mod {
             int cooldownSeconds = activeOmnitrix?.GetDetransformCooldownDuration(this) ?? cooldownTime;
             if (cooldownSeconds <= 0)
                 cooldownSeconds = cooldownTime;
+            cooldownSeconds = Math.Max(cooldownSeconds, (int)Math.Ceiling(cooldownSeconds * 1.35f));
             bool showEffects = Player.whoAmI == Main.myPlayer;
 
             skipAutomaticForcedDetransformHandling = true;
@@ -4401,6 +4521,7 @@ namespace Ben10Mod {
             Player.dead = false;
             Player.immuneNoBlink = true;
             Player.immuneTime = Math.Max(Player.immuneTime, 180);
+            omnitrixEnergy = 0;
 
             if (showEffects)
                 CombatText.NewText(Player.getRect(), new Color(96, 255, 160), "Failsafe!", dramatic: true);

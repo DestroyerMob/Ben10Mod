@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,29 +19,33 @@ public class OsmosianRecycler : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianCost", "35% lower absorption material cost"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+20% absorption duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianCost", "25% lower absorption material cost"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+15% absorption duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionCostMultiplier *= 0.65f;
-        omp.absorptionDurationMultiplier *= 1.2f;
+        omp.absorptionCostMultiplier *= 0.75f;
+        omp.absorptionDurationMultiplier *= 1.15f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.GoldCoin, 1)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.Chain, 6)
             .AddIngredient(ItemID.MeteoriteBar, 10)
+            .AddIngredient(ItemID.FallenStar, 6)
             .AddIngredient(ItemID.ShadowScale, 6)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();
 
         CreateRecipe()
-            .AddIngredient(ItemID.GoldCoin, 1)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.Chain, 6)
             .AddIngredient(ItemID.MeteoriteBar, 10)
+            .AddIngredient(ItemID.FallenStar, 6)
             .AddIngredient(ItemID.TissueSample, 6)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();

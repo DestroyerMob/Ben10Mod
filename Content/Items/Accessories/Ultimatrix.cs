@@ -10,6 +10,7 @@ using Ben10Mod.Content.Interface;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Consumable;
+using Ben10Mod.Content.Items.Placeables;
 
 namespace Ben10Mod.Content.Items.Accessories
 {
@@ -79,6 +80,7 @@ namespace Ben10Mod.Content.Items.Accessories
             CreateRecipe()
                 .AddIngredient(ModContent.ItemType<RecalibratedOmnitrix>())
                 .AddIngredient(ModContent.ItemType<UltimatrixCore>())
+                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 16)
                 .AddIngredient(ItemID.SoulofFright, 8)
                 .AddIngredient(ItemID.SoulofMight, 8)
                 .AddIngredient(ItemID.SoulofSight, 8)

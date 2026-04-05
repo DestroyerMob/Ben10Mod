@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -29,7 +31,9 @@ public class OsmosianTalons : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.FeralClaws)
+            .AddIngredient(ItemID.ClimbingClaws)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
+            .AddIngredient<IllegalCircuits>(2)
             .AddIngredient(ItemID.MeteoriteBar, 10)
             .AddIngredient(ItemID.Stinger, 8)
             .AddTile(TileID.TinkerersWorkbench)

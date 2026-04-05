@@ -14,7 +14,7 @@ public class NpcEffects : GlobalNPC {
 
     private const int ElectrocutedStationaryDamagePerSecond = 4;
     private const int ElectrocutedMovingDamagePerSecond = 16;
-    private const int EnergyOverloadedDamagePerSecond = 45;
+    private const int EnergyOverloadedDamagePerSecond = 60;
     
     private static bool IsPossessed(NPC npc) {
         foreach (Player p in Main.ActivePlayers) {

@@ -71,12 +71,13 @@ internal static class PlumberArmorPalette {
 public class HeroPlumberArmorPlayer : ModPlayer {
     private static DamageClass HeroClass => ModContent.GetInstance<HeroDamage>();
 
-    private const int BulwarkMaxChargeHits = 10;
-    private const float BulwarkExplosionRadius = 132f;
-    private const int BulwarkElectrocutedDuration = 5 * 60;
-    private const int MagistrataOverloadedDuration = 5 * 60;
-    private const float RelayDodgeChance = 0.15f;
-    internal const int SiegeBoomerangBaseDamage = 52;
+    private const int BulwarkMaxChargeHits = 8;
+    private const float BulwarkExplosionRadius = 156f;
+    private const int BulwarkElectrocutedDuration = 6 * 60;
+    private const int BulwarkDischargeBaseDamage = 84;
+    private const int MagistrataOverloadedDuration = 6 * 60;
+    private const float RelayDodgeChance = 0.18f;
+    internal const int SiegeBoomerangBaseDamage = 74;
 
     public bool bulwarkSet;
     public bool relaySet;
@@ -195,10 +196,15 @@ public class HeroPlumberArmorPlayer : ModPlayer {
     }
 
     private void TriggerBulwarkDischarge() {
+        int dischargeDamage = Math.Max(1,
+            (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(BulwarkDischargeBaseDamage)));
+
         foreach (NPC npc in Main.ActiveNPCs) {
             if (!npc.CanBeChasedBy() || Vector2.Distance(npc.Center, Player.Center) > BulwarkExplosionRadius)
                 continue;
 
+            if (Main.netMode != NetmodeID.MultiplayerClient)
+                npc.SimpleStrikeNPC(dischargeDamage, Player.direction, false, 0f, HeroClass);
             npc.AddBuff(ModContent.BuffType<EnemyElectrocuted>(), BulwarkElectrocutedDuration);
             npc.netUpdate = true;
         }
@@ -569,7 +575,7 @@ public class PlumberAssaultHelmet : PlumberArmorPiece {
     protected override string EquipBonusText => "+5% hero damage and +6 hero crit";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.05f;
+        player.GetDamage<HeroDamage>() += 0.06f;
         player.GetCritChance<HeroDamage>() += 6f;
     }
 
@@ -580,18 +586,18 @@ public class PlumberAssaultHelmet : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10% hero damage, +12 hero armor penetration, and +10% hero attack speed while moving quickly";
+            "While transformed: +12% hero damage, +14 hero armor penetration, and +12% hero attack speed while moving quickly";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         if (!omp.isTransformed) {
             return;
         }
 
-        player.GetDamage<HeroDamage>() += 0.10f;
-        player.GetArmorPenetration<HeroDamage>() += 12;
+        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetArmorPenetration<HeroDamage>() += 14;
 
         if (Math.Abs(player.velocity.X) >= 3f || Math.Abs(player.velocity.Y) > 0.1f) {
-            player.GetAttackSpeed<HeroDamage>() += 0.10f;
+            player.GetAttackSpeed<HeroDamage>() += 0.12f;
         }
     }
 
@@ -620,7 +626,7 @@ public class PlumberAssaultHarness : PlumberArmorPiece {
     protected override string EquipBonusText => "+6% hero damage";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.06f;
+        player.GetDamage<HeroDamage>() += 0.08f;
     }
 
     public override void AddRecipes() {
@@ -673,12 +679,12 @@ public class PlumberOverclockHelm : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 7;
     protected override Color ArmorTint => PlumberArmorPalette.Overclock;
-    protected override string EquipBonusText => "+5% hero attack speed and +15 Omnitrix energy";
+    protected override string EquipBonusText => "+6% hero attack speed and +20 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        player.GetAttackSpeed<HeroDamage>() += 0.05f;
-        omp.omnitrixEnergyMaxBonus += 15;
+        player.GetAttackSpeed<HeroDamage>() += 0.06f;
+        omp.omnitrixEnergyMaxBonus += 20;
     }
 
     public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -688,19 +694,20 @@ public class PlumberOverclockHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +35 Omnitrix energy, +1 energy regen, 12% shorter primary/secondary/tertiary cooldowns, and +8% hero attack speed";
+            "While transformed: +50 Omnitrix energy, +2 energy regen, 15% shorter primary/secondary/tertiary cooldowns, +10% hero damage, and +10% hero attack speed";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         if (!omp.isTransformed) {
             return;
         }
 
-        omp.omnitrixEnergyMaxBonus += 35;
-        omp.omnitrixEnergyRegenBonus += 1;
-        omp.primaryAbilityCooldownMultiplier *= 0.88f;
-        omp.secondaryAbilityCooldownMultiplier *= 0.88f;
-        omp.tertiaryAbilityCooldownMultiplier *= 0.88f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
+        omp.omnitrixEnergyMaxBonus += 50;
+        omp.omnitrixEnergyRegenBonus += 2;
+        omp.primaryAbilityCooldownMultiplier *= 0.85f;
+        omp.secondaryAbilityCooldownMultiplier *= 0.85f;
+        omp.tertiaryAbilityCooldownMultiplier *= 0.85f;
+        player.GetDamage<HeroDamage>() += 0.10f;
+        player.GetAttackSpeed<HeroDamage>() += 0.10f;
     }
 
     public override void AddRecipes() {
@@ -721,7 +728,7 @@ public class PlumberOverclockPlate : PlumberArmorPiece {
     protected override string EquipBonusText => "+6% hero damage";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.06f;
+        player.GetDamage<HeroDamage>() += 0.08f;
     }
 
     public override void AddRecipes() {
@@ -739,12 +746,12 @@ public class PlumberOverclockGreaves : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Orange;
     protected override int ArmorDefense => 6;
     protected override Color ArmorTint => PlumberArmorPalette.Overclock;
-    protected override string EquipBonusText => "+6% movement speed and acceleration while transformed";
+    protected override string EquipBonusText => "+7% movement speed and acceleration while transformed";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.transformedMoveSpeedBonus += 0.06f;
-        omp.transformedRunAccelerationBonus += 0.05f;
+        omp.transformedMoveSpeedBonus += 0.07f;
+        omp.transformedRunAccelerationBonus += 0.07f;
     }
 
     public override void AddRecipes() {
@@ -762,12 +769,12 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 10;
     protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
-    protected override string EquipBonusText => "+3 defense while transformed and +4 hero armor penetration";
+    protected override string EquipBonusText => "+4 defense while transformed and +6 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.transformedDefenseBonus += 3;
-        player.GetArmorPenetration<HeroDamage>() += 4;
+        omp.transformedDefenseBonus += 4;
+        player.GetArmorPenetration<HeroDamage>() += 6;
     }
 
     public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -777,7 +784,7 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +6 defense and +3% endurance. Taking damage charges an energy shield; at 10 hits it detonates and electrifies nearby enemies";
+            "While transformed: +8 defense, +5% endurance, and +8% hero damage. Taking damage charges an energy shield; at 8 hits it detonates for heavy area damage and electrifies nearby enemies";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -786,8 +793,9 @@ public class PlumberBulwarkHelm : PlumberArmorPiece {
             return;
         }
 
-        omp.transformedDefenseBonus += 6;
-        omp.transformedEnduranceBonus += 0.03f;
+        omp.transformedDefenseBonus += 8;
+        omp.transformedEnduranceBonus += 0.05f;
+        player.GetDamage<HeroDamage>() += 0.08f;
     }
 
     public override void AddRecipes() {
@@ -806,12 +814,12 @@ public class PlumberBulwarkMail : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 12;
     protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
-    protected override string EquipBonusText => "+4% hero damage and +2 defense while transformed";
+    protected override string EquipBonusText => "+6% hero damage and +3 defense while transformed";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        player.GetDamage<HeroDamage>() += 0.04f;
-        omp.transformedDefenseBonus += 2;
+        player.GetDamage<HeroDamage>() += 0.06f;
+        omp.transformedDefenseBonus += 3;
     }
 
     public override void AddRecipes() {
@@ -830,10 +838,10 @@ public class PlumberBulwarkGreaves : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 8;
     protected override Color ArmorTint => PlumberArmorPalette.Bulwark;
-    protected override string EquipBonusText => "+5% movement speed while transformed";
+    protected override string EquipBonusText => "+6% movement speed while transformed";
 
     public override void UpdateEquip(Player player) {
-        player.GetModPlayer<OmnitrixPlayer>().transformedMoveSpeedBonus += 0.05f;
+        player.GetModPlayer<OmnitrixPlayer>().transformedMoveSpeedBonus += 0.06f;
     }
 
     public override void AddRecipes() {
@@ -852,12 +860,12 @@ public class PlumberRelayVisor : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 11;
     protected override Color ArmorTint => PlumberArmorPalette.Relay;
-    protected override string EquipBonusText => "+5% hero damage and +15 Omnitrix energy";
+    protected override string EquipBonusText => "+6% hero damage and +20 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        player.GetDamage<HeroDamage>() += 0.05f;
-        omp.omnitrixEnergyMaxBonus += 15;
+        player.GetDamage<HeroDamage>() += 0.06f;
+        omp.omnitrixEnergyMaxBonus += 20;
     }
 
     public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -867,7 +875,7 @@ public class PlumberRelayVisor : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +25 Omnitrix energy, 15% longer transformations, and a 15% chance to dodge attacks";
+            "While transformed: +35 Omnitrix energy, +1 energy regen, 20% longer transformations, +10% hero damage, and an 18% chance to dodge attacks";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -876,8 +884,10 @@ public class PlumberRelayVisor : PlumberArmorPiece {
             return;
         }
 
-        omp.omnitrixEnergyMaxBonus += 25;
-        omp.transformationDurationMultiplier *= 1.15f;
+        omp.omnitrixEnergyMaxBonus += 35;
+        omp.omnitrixEnergyRegenBonus += 1;
+        omp.transformationDurationMultiplier *= 1.20f;
+        player.GetDamage<HeroDamage>() += 0.10f;
     }
 
     public override void AddRecipes() {
@@ -897,12 +907,12 @@ public class PlumberRelayCoat : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 13;
     protected override Color ArmorTint => PlumberArmorPalette.Relay;
-    protected override string EquipBonusText => "+6 hero crit and +20 Omnitrix energy";
+    protected override string EquipBonusText => "+8 hero crit and +25 Omnitrix energy";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        player.GetCritChance<HeroDamage>() += 6f;
-        omp.omnitrixEnergyMaxBonus += 20;
+        player.GetCritChance<HeroDamage>() += 8f;
+        omp.omnitrixEnergyMaxBonus += 25;
     }
 
     public override void AddRecipes() {
@@ -922,12 +932,12 @@ public class PlumberRelayLeggings : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 9;
     protected override Color ArmorTint => PlumberArmorPalette.Relay;
-    protected override string EquipBonusText => "+7% movement speed and improved jump height while transformed";
+    protected override string EquipBonusText => "+8% movement speed and improved jump height while transformed";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.transformedMoveSpeedBonus += 0.07f;
-        omp.transformedJumpSpeedBonus += 1.2f;
+        omp.transformedMoveSpeedBonus += 0.08f;
+        omp.transformedJumpSpeedBonus += 1.4f;
     }
 
     public override void AddRecipes() {
@@ -947,11 +957,11 @@ public class PlumberSiegeMask : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 13;
     protected override Color ArmorTint => PlumberArmorPalette.Siege;
-    protected override string EquipBonusText => "+5% hero damage and +8 hero armor penetration";
+    protected override string EquipBonusText => "+7% hero damage and +10 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.05f;
-        player.GetArmorPenetration<HeroDamage>() += 8;
+        player.GetDamage<HeroDamage>() += 0.07f;
+        player.GetArmorPenetration<HeroDamage>() += 10;
     }
 
     public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -961,7 +971,7 @@ public class PlumberSiegeMask : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +10 hero crit. Summons a fast Siege boomerang that must return above you before it can strike again";
+            "While transformed: +10% hero damage and +12 hero crit. Summons a fast Siege boomerang that must return above you before it can strike again";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -970,7 +980,8 @@ public class PlumberSiegeMask : PlumberArmorPiece {
             return;
         }
 
-        player.GetCritChance<HeroDamage>() += 10f;
+        player.GetDamage<HeroDamage>() += 0.10f;
+        player.GetCritChance<HeroDamage>() += 12f;
     }
 
     public override void AddRecipes() {
@@ -989,10 +1000,10 @@ public class PlumberSiegeCuirass : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 15;
     protected override Color ArmorTint => PlumberArmorPalette.Siege;
-    protected override string EquipBonusText => "+8% hero damage";
+    protected override string EquipBonusText => "+10% hero damage";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetDamage<HeroDamage>() += 0.10f;
     }
 
     public override void AddRecipes() {
@@ -1011,10 +1022,10 @@ public class PlumberSiegeBoots : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 11;
     protected override Color ArmorTint => PlumberArmorPalette.Siege;
-    protected override string EquipBonusText => "+4% hero attack speed";
+    protected override string EquipBonusText => "+6% hero attack speed";
 
     public override void UpdateEquip(Player player) {
-        player.GetAttackSpeed<HeroDamage>() += 0.04f;
+        player.GetAttackSpeed<HeroDamage>() += 0.06f;
     }
 
     public override void AddRecipes() {
@@ -1033,11 +1044,11 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 16;
     protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
-    protected override string EquipBonusText => "+7% hero damage and +8 hero crit";
+    protected override string EquipBonusText => "+9% hero damage and +10 hero crit";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.07f;
-        player.GetCritChance<HeroDamage>() += 8f;
+        player.GetDamage<HeroDamage>() += 0.09f;
+        player.GetCritChance<HeroDamage>() += 10f;
     }
 
     public override bool IsArmorSet(Item head, Item body, Item legs) {
@@ -1047,7 +1058,7 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
 
     public override void UpdateArmorSet(Player player) {
         player.setBonus =
-            "While transformed: +100 Omnitrix energy and 10% shorter primary and ultimate cooldowns. Hero attacks overload enemies with unstable Hero Energy";
+            "While transformed: +140 Omnitrix energy, +12% hero damage, and 12% shorter primary, secondary, and ultimate cooldowns. Hero attacks overload enemies with unstable Hero Energy";
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
         var hvap = player.GetModPlayer<HeroPlumberArmorPlayer>();
@@ -1056,9 +1067,11 @@ public class PlumberMagistrataHelm : PlumberArmorPiece {
             return;
         }
 
-        omp.omnitrixEnergyMaxBonus += 100;
-        omp.primaryAbilityCooldownMultiplier *= 0.90f;
-        omp.ultimateAbilityCooldownMultiplier *= 0.90f;
+        omp.omnitrixEnergyMaxBonus += 140;
+        omp.primaryAbilityCooldownMultiplier *= 0.88f;
+        omp.secondaryAbilityCooldownMultiplier *= 0.88f;
+        omp.ultimateAbilityCooldownMultiplier *= 0.88f;
+        player.GetDamage<HeroDamage>() += 0.12f;
     }
 
     public override void AddRecipes() {
@@ -1077,11 +1090,11 @@ public class PlumberMagistrataCoat : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 18;
     protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
-    protected override string EquipBonusText => "+6% hero attack speed and +10 hero armor penetration";
+    protected override string EquipBonusText => "+8% hero attack speed and +12 hero armor penetration";
 
     public override void UpdateEquip(Player player) {
-        player.GetAttackSpeed<HeroDamage>() += 0.06f;
-        player.GetArmorPenetration<HeroDamage>() += 10;
+        player.GetAttackSpeed<HeroDamage>() += 0.08f;
+        player.GetArmorPenetration<HeroDamage>() += 12;
     }
 
     public override void AddRecipes() {
@@ -1100,12 +1113,12 @@ public class PlumberMagistrataGreaves : PlumberArmorPiece {
     protected override int ArmorRarity => ItemRarityID.Red;
     protected override int ArmorDefense => 14;
     protected override Color ArmorTint => PlumberArmorPalette.Magistrata;
-    protected override string EquipBonusText => "+8% movement speed and improved jump height while transformed";
+    protected override string EquipBonusText => "+10% movement speed and improved jump height while transformed";
 
     public override void UpdateEquip(Player player) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.transformedMoveSpeedBonus += 0.08f;
-        omp.transformedJumpSpeedBonus += 1.8f;
+        omp.transformedMoveSpeedBonus += 0.10f;
+        omp.transformedJumpSpeedBonus += 2f;
     }
 
     public override void AddRecipes() {

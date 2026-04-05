@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.NPCs.Bosses;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -196,6 +197,9 @@ namespace Ben10Mod {
         }
 
         private static string GetTransformationIdForBoss(int npcType) {
+            if (npcType == ModContent.NPCType<AlbedoBoss>())
+                return "Ben10Mod:GrayMatter";
+
             switch (npcType) {
                 // Pre-hardmode bosses
                 case NPCID.KingSlime:

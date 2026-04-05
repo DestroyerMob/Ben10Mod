@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -22,7 +24,7 @@ public class ReversionFailsafe : ModItem {
         tooltips.Add(new TooltipLine(Mod, "FailsafeLife",
             "Leaves you at 1 life and grants 3 seconds of immunity"));
         tooltips.Add(new TooltipLine(Mod, "FailsafeCooldown",
-            "Applies transformation cooldown even with Master Control"));
+            "Drains all OE and applies an extended transformation cooldown"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
@@ -31,8 +33,10 @@ public class ReversionFailsafe : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.CrossNecklace)
             .AddIngredient(ModContent.ItemType<TransformationStabilizer>())
+            .AddIngredient<IllegalCircuits>(6)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient(ItemID.LifeCrystal, 2)
             .AddIngredient(ItemID.HallowedBar, 10)
             .AddIngredient(ItemID.SoulofFright, 6)
             .AddTile(TileID.TinkerersWorkbench)

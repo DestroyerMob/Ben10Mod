@@ -47,6 +47,7 @@ namespace Ben10Mod.Common.Systems {
             Register("Ben10Mod:AmpFibian", "Participate in and defeat the Empress of Light.");
             Register("Ben10Mod:Terraspin", "Participate in and defeat the Lunatic Cultist.");
             Register("Ben10Mod:WayBig", "Participate in and defeat the Moon Lord.");
+            Register("Ben10Mod:GrayMatter", "Participate in and defeat Albedo.");
             Register("Ben10Mod:PeskyDust", "Participate in and defeat Dark Mage in the Old One's Army.");
             Register("Ben10Mod:Cannonbolt", "Participate in and defeat Ogre in the Old One's Army.");
             Register("Ben10Mod:Clockwork", "Participate in and defeat Betsy in the Old One's Army.");

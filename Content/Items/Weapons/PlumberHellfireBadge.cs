@@ -10,7 +10,10 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public class PlumberHellfireBadge : PlumbersBadge {
-    private const int ProcCooldownFrames = 24;
+    private const int PrimaryProcCooldownFrames = 24;
+    private const int SecondaryProcCooldownFrames = 42;
+    private const int PrimaryProcChanceDenominator = 3;
+    private const int SecondaryProcChanceDenominator = 5;
 
     public override string Texture => "Ben10Mod/Content/Items/Weapons/PlumberCadetBadge";
 
@@ -36,10 +39,9 @@ public class PlumberHellfireBadge : PlumbersBadge {
         Item.noUseGraphic = false;
         Item.useTurn = true;
         Item.useStyle = ItemUseStyleID.Shoot;
-        Item.useTime = Item.useAnimation = 30;
+        Item.useTime = Item.useAnimation = UntransformedUseTime;
         Item.shoot = ProjectileID.DemonScythe;
         Item.shootSpeed = 10.75f;
-        Item.damage = Math.Max(1, (int)Math.Round(BaseDamage * 0.55f));
         Item.knockBack = 3.5f;
         Item.UseSound = SoundID.Item8 with { Pitch = -0.08f, Volume = 0.74f };
     }
@@ -53,17 +55,19 @@ public class PlumberHellfireBadge : PlumbersBadge {
     protected override void OnTransformationAttackFired(Player player, OmnitrixPlayer omp,
         EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int damage, float knockback,
         bool firingUltimate, bool firingLoadedAbilityAttack) {
+        bool secondaryAttack = omp.setAttack == OmnitrixPlayer.AttackSelection.Secondary;
         if (firingUltimate || firingLoadedAbilityAttack ||
             omp.setAttack is not OmnitrixPlayer.AttackSelection.Primary and not OmnitrixPlayer.AttackSelection.Secondary)
             return;
 
         PlumberHellfireBadgePlayer badgePlayer = player.GetModPlayer<PlumberHellfireBadgePlayer>();
-        if (badgePlayer.ScytheProcCooldown > 0 || !Main.rand.NextBool(3))
+        int procChanceDenominator = secondaryAttack ? SecondaryProcChanceDenominator : PrimaryProcChanceDenominator;
+        if (badgePlayer.ScytheProcCooldown > 0 || !Main.rand.NextBool(procChanceDenominator))
             return;
 
-        badgePlayer.ScytheProcCooldown = ProcCooldownFrames;
+        badgePlayer.ScytheProcCooldown = secondaryAttack ? SecondaryProcCooldownFrames : PrimaryProcCooldownFrames;
 
-        if (omp.setAttack == OmnitrixPlayer.AttackSelection.Secondary) {
+        if (secondaryAttack) {
             int scytheDamage = Math.Max(1, (int)Math.Round(damage * 0.32f));
             SpawnDemonScythe(player, source, position, velocity, scytheDamage, knockback + 0.5f, 11.5f, -0.09f);
             SpawnDemonScythe(player, source, position, velocity, scytheDamage, knockback + 0.5f, 11.5f, 0.09f);

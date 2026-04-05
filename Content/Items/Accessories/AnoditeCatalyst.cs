@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ben10Mod.Keybinds;
+using Ben10Mod.Content.Items.Placeables;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -67,10 +68,11 @@ public class AnoditeCatalyst : ModItem, IHeroAlterationAccessory {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.CelestialCuffs)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 12)
             .AddIngredient(ItemID.CrystalShard, 18)
             .AddIngredient(ItemID.SoulofLight, 14)
             .AddIngredient(ItemID.PixieDust, 20)
+            .AddIngredient(ItemID.FallenStar, 10)
             .AddIngredient(ModContent.ItemType<Content.Items.Weapons.Gwen.AnoditeOrb>())
             .AddIngredient(ModContent.ItemType<Content.Items.Weapons.Gwen.ManaBarrier>())
             .AddTile(TileID.MythrilAnvil)

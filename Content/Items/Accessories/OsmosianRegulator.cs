@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -17,22 +19,24 @@ public class OsmosianRegulator : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+150% absorption duration"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+50% absorption debuff duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDuration", "+75% absorption duration"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianDebuff", "+25% absorption debuff duration"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionDurationMultiplier *= 2.5f;
-        omp.absorptionDebuffDurationMultiplier *= 1.5f;
+        omp.absorptionDurationMultiplier *= 1.75f;
+        omp.absorptionDebuffDurationMultiplier *= 1.25f;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.BandofRegeneration)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.Chain, 8)
             .AddIngredient(ItemID.MeteoriteBar, 10)
             .AddIngredient(ItemID.FallenStar, 6)
+            .AddIngredient(ItemID.Ruby, 2)
             .AddTile(TileID.Anvils)
             .Register();
     }

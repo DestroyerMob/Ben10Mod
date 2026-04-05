@@ -13,7 +13,7 @@ public class GrowthLayer : PlayerDrawLayer {
 
         return !player.dead &&
                !player.invis &&
-               omp.CurrentTransformationScale > 1f;
+               System.Math.Abs(omp.CurrentTransformationScale - 1f) > 0.001f;
     }
 
     public override Position GetDefaultPosition() {

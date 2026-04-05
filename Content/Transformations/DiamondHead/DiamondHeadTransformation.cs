@@ -55,7 +55,7 @@ public class DiamondHeadTransformation : Transformation {
     public override int PrimaryArmorPenetration => 18;
 
     public override int SecondaryAttack => ModContent.ProjectileType<DiamondHeadSpireProjectile>();
-    public override float SecondaryAttackModifier => 0.3f;
+    public override float SecondaryAttackModifier => 0.4f;
     public override int SecondaryAttackSpeed => 24;
     public override int SecondaryShootSpeed => 18;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;

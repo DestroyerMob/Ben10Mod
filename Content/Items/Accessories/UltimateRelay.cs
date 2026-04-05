@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -29,7 +31,9 @@ public class UltimateRelay : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.DestroyerEmblem)
+            .AddIngredient(ModContent.ItemType<PrimaryConduit>())
+            .AddIngredient<IllegalCircuits>(6)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 12)
             .AddIngredient(ItemID.SoulofMight, 10)
             .AddIngredient(ItemID.HallowedBar, 12)
             .AddTile(TileID.TinkerersWorkbench)

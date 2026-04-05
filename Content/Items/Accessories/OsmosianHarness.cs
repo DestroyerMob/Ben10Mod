@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -27,7 +29,8 @@ public class OsmosianHarness : ModItem, IHeroAlterationAccessory {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 10)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.Chain, 10)
             .AddIngredient(ItemID.MeteoriteBar, 14)
             .AddIngredient(ItemID.ShadowScale, 10)
@@ -35,7 +38,8 @@ public class OsmosianHarness : ModItem, IHeroAlterationAccessory {
             .Register();
 
         CreateRecipe()
-            .AddIngredient(ItemID.Shackle)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 10)
+            .AddIngredient<IllegalCircuits>(3)
             .AddIngredient(ItemID.Chain, 10)
             .AddIngredient(ItemID.MeteoriteBar, 14)
             .AddIngredient(ItemID.TissueSample, 10)

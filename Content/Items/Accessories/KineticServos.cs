@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Items.Placeables;
+using Ben10Mod.Content.Items.Materials;
 using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
@@ -26,8 +28,10 @@ public class KineticServos : ModItem {
 
     public override void AddRecipes() {
         CreateRecipe()
-            .AddIngredient(ItemID.FeralClaws)
+            .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 8)
+            .AddIngredient<IllegalCircuits>(2)
             .AddIngredient(ItemID.MeteoriteBar, 10)
+            .AddIngredient(ItemID.Chain, 8)
             .AddIngredient(ItemID.Stinger, 10)
             .AddTile(TileID.TinkerersWorkbench)
             .Register();

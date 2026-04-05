@@ -621,8 +621,68 @@ Items: {
 		Tooltip: ""
 	}
 
+	ConquestDroneRelay: {
+		DisplayName: Conquest Drone Relay
+		Tooltip: ""
+	}
+
 	PlumberBlasters: {
 		DisplayName: Plumber Blasters
+		Tooltip: ""
+	}
+
+	EnergyCell: {
+		DisplayName: Energy Cell
+		Tooltip: ""
+	}
+
+	GreaterEnergyCell: {
+		DisplayName: Greater Energy Cell
+		Tooltip: ""
+	}
+
+	LesserEnergyCell: {
+		DisplayName: Lesser Energy Cell
+		Tooltip: ""
+	}
+
+	SuperEnergyCell: {
+		DisplayName: Super Energy Cell
+		Tooltip: ""
+	}
+
+	IllegalCircuits: {
+		DisplayName: Illegal Circuits
+		Tooltip: ""
+	}
+
+	PlumberAgentBlaster: {
+		DisplayName: Plumber Agent Blaster
+		Tooltip: ""
+	}
+
+	PlumberDeputyBlaster: {
+		DisplayName: Plumber Deputy Blaster
+		Tooltip: ""
+	}
+
+	PlumberMagisterBlaster: {
+		DisplayName: Plumber Magister Blaster
+		Tooltip: ""
+	}
+
+	PlumberProctorBlaster: {
+		DisplayName: Plumber Proctor Blaster
+		Tooltip: ""
+	}
+
+	PlumberSeniorAgentBlaster: {
+		DisplayName: Plumber Senior Agent Blaster
+		Tooltip: ""
+	}
+
+	PlumberSeniorDeputyBlaster: {
+		DisplayName: Plumber Senior Deputy Blaster
 		Tooltip: ""
 	}
 }
@@ -864,6 +924,11 @@ Buffs: {
 		DisplayName: Energy Overloaded
 	}
 
+	OverCharged: {
+		DisplayName: Over Charged
+		Description: Your Omnitrix is still processing that energy burst and can't take another cell yet
+	}
+
 	Blitzwolfer_Buff: {
 		DisplayName: Blitzwolfer
 		Description: Loboan
@@ -957,6 +1022,11 @@ Buffs: {
 	Anodite_Buff: {
 		Description: Mods.Ben10Mod.Buffs.Anodite_Buff.Description
 		DisplayName: Anodite_ Buff
+	}
+
+	GrayMatter_Buff: {
+		DisplayName: Gray Matter_ Buff
+		Description: Mods.Ben10Mod.Buffs.GrayMatter_Buff.Description
 	}
 }
 
@@ -1130,6 +1200,8 @@ Projectiles: {
 	HeroConvergenceBoltProjectile.DisplayName: Hero Convergence Bolt Projectile
 	OmniCorePulseProjectile.DisplayName: Omni Core Pulse Projectile
 	PlumberBlasterBoltProjectile.DisplayName: Plumber Blaster Bolt Projectile
+	GrayMatterLogicOrbProjectile.DisplayName: Gray Matter Logic Orb Projectile
+	GrayMatterNeuronProjectile.DisplayName: Gray Matter Neuron Projectile
 }
 
 Tiles: {
@@ -1180,9 +1252,34 @@ Configs: {
 			Label: Use Simplified Hero Interface
 		}
 
+		UseSimplifiedHeroEnergyBar: {
+			Tooltip: ""
+			Label: Use Simplified Hero Energy Bar
+		}
+
+		UseSimplifiedHeroMoveInterface: {
+			Tooltip: ""
+			Label: Use Simplified Hero Move Interface
+		}
+
+		EnableTransformationRandomizer: {
+			Tooltip: Makes Omnitrix transformations mistransform into a random unlocked alien whenever possible.
+			Label: Enable Transformation Randomizer
+		}
+
 		ShowHeroInterface: {
 			Tooltip: ""
 			Label: Show Hero Interface
+		}
+
+		ShowHeroEnergyBar: {
+			Label: Show Hero Energy Bar
+			Tooltip: ""
+		}
+
+		ShowHeroMoveInterface: {
+			Label: Show Hero Move Interface
+			Tooltip: ""
 		}
 	}
 
@@ -1209,4 +1306,12 @@ Configs: {
 			Tooltip: ""
 		}
 	}
+}
+
+Prefixes: {
+	Calibrated.DisplayName: Calibrated
+	Efficient.DisplayName: Efficient
+	Enduring.DisplayName: Enduring
+	Prime.DisplayName: Prime
+	Responsive.DisplayName: Responsive
 }

@@ -17,20 +17,20 @@ public class OsmosianDynamo : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "OsmosianStrength", "+55% absorption strength"));
-        tooltips.Add(new TooltipLine(Mod, "OsmosianPen", "+8 armor penetration while absorbed"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianStrength", "+35% absorption strength"));
+        tooltips.Add(new TooltipLine(Mod, "OsmosianPen", "+6 armor penetration while absorbed"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.absorptionStrengthMultiplier *= 1.55f;
-        omp.absorptionArmorPenBonus += 8;
+        omp.absorptionStrengthMultiplier *= 1.35f;
+        omp.absorptionArmorPenBonus += 6;
     }
 
     public override void AddRecipes() {
         CreateRecipe()
             .AddIngredient<OsmosianAmplifier>()
-            .AddIngredient(ItemID.AvengerEmblem)
+            .AddIngredient<OsmosianBreacher>()
             .AddIngredient(ItemID.HallowedBar, 10)
             .AddIngredient(ItemID.SoulofMight, 8)
             .AddTile(TileID.TinkerersWorkbench)
