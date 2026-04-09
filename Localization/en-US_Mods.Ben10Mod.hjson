@@ -1202,6 +1202,8 @@ Projectiles: {
 	PlumberBlasterBoltProjectile.DisplayName: Plumber Blaster Bolt Projectile
 	GrayMatterLogicOrbProjectile.DisplayName: Gray Matter Logic Orb Projectile
 	GrayMatterNeuronProjectile.DisplayName: Gray Matter Neuron Projectile
+	ConquestDroneBoltProjectile.DisplayName: Conquest Drone Bolt Projectile
+	ConquestDroneProjectile.DisplayName: Conquest Drone Projectile
 }
 
 Tiles: {
@@ -1288,7 +1290,7 @@ Configs: {
 
 		AllowBlacklistedBaseTransformations: {
 			Label: Allow Blacklisted Base Transformations
-			Tooltip: ""
+			Tooltip: Recommended to leave enabled. This prevents addons or compatibility hooks from hiding Ben10Mod's own base transformations.
 		}
 
 		AllowBlacklistedBaseOmnitrixes: {
@@ -1312,6 +1314,11 @@ Prefixes: {
 	Calibrated.DisplayName: Calibrated
 	Efficient.DisplayName: Efficient
 	Enduring.DisplayName: Enduring
+	Exemplar.DisplayName: Exemplar
+	FieldTested.DisplayName: Field Tested
+	Breaching.DisplayName: Breaching
+	Impact.DisplayName: Impact
+	Pinpoint.DisplayName: Pinpoint
 	Prime.DisplayName: Prime
 	Responsive.DisplayName: Responsive
 }

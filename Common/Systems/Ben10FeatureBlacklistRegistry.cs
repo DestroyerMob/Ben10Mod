@@ -140,9 +140,11 @@ public static class Ben10FeatureBlacklistRegistry {
         if (!string.Equals(ownerModId, BaseModId, StringComparison.OrdinalIgnoreCase))
             return false;
 
+        if (featureType == Ben10FeatureType.Transformation)
+            return true;
+
         Ben10ServerConfig config = ModContent.GetInstance<Ben10ServerConfig>();
         return featureType switch {
-            Ben10FeatureType.Transformation => config.AllowBlacklistedBaseTransformations,
             Ben10FeatureType.Omnitrix => config.AllowBlacklistedBaseOmnitrixes,
             Ben10FeatureType.PlumbersBadge => config.AllowBlacklistedBasePlumbersBadges,
             Ben10FeatureType.WorldGen => config.AllowBlacklistedBaseWorldGen,

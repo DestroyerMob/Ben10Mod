@@ -27,7 +27,6 @@ public class ScreenShaderController : ModSystem {
     }
 
     public override void Unload() {
-        Rules.Clear();
     }
 
     internal static void ClearRules() {

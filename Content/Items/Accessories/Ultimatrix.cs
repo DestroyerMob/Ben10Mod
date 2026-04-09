@@ -17,6 +17,7 @@ namespace Ben10Mod.Content.Items.Accessories
     public class Ultimatrix : Omnitrix
     {
         public override int  MaxOmnitrixEnergy          => 750;
+        public override int  ItemValue                  => Item.buyPrice(gold: 12);
         public override bool UseEnergyForTransformation => true;
         public override int  OmnitrixEnergyRegen        => 4;
         public override int  OmnitrixEnergyDrain        => 6;
@@ -85,7 +86,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 .AddIngredient(ItemID.SoulofMight, 8)
                 .AddIngredient(ItemID.SoulofSight, 8)
                 .AddTile(TileID.MythrilAnvil)
-                .AddTransformationCondition("Ben10Mod:Upgrade")
+                .AddTransformationCondition("Ben10Mod:GrayMatter")
                 .Register();
         }
     }

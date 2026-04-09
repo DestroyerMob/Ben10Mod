@@ -17,6 +17,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public override int  MaxOmnitrixEnergy          => 500;
         public override int  OmnitrixEnergyDrain        => 4;
         public override int  OmnitrixEnergyRegen        => 3;
+        public override int  ItemValue                  => Item.buyPrice(gold: 6);
         public override bool UseEnergyForTransformation => true;
         public override string CooldownHandsOnTextureKey => "RecalibratedOmnitrixAlt";
 

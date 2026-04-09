@@ -23,6 +23,8 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod {
 	public class Ben10Mod : Mod {
+		public static bool IsUnloading { get; private set; }
+
 		public override object Call(params object[] args) {
 			if (args.Length == 0 || args[0] is not string command)
 				throw new ArgumentException("Ben10Mod.Call requires a command string as the first argument.");
@@ -49,6 +51,7 @@ namespace Ben10Mod {
 		}
 
 		public override void Load() {
+			IsUnloading = false;
 			Ben10FeatureBlacklistRegistry.Clear();
 			TransformationUnlockConditionRegistry.Clear();
 			TransformationUnlockConditionRegistry.RegisterBaseConditions();
@@ -76,19 +79,7 @@ namespace Ben10Mod {
 		}
 
 		public override void Unload() {
-			TryUnloadStep("feature blacklist registry", Ben10FeatureBlacklistRegistry.Clear);
-			TryUnloadStep("transformation branches", TransformationBranchRegistry.Clear);
-			TryUnloadStep("transformation loader", TransformationLoader.Clear);
-			TryUnloadStep("transformation costume loader", TransformationCostumeLoader.Clear);
-			TryUnloadStep("transformation unlock conditions", TransformationUnlockConditionRegistry.Clear);
-			TryUnloadStep("palette texture cache", TransformationPaletteTextureCache.Clear);
-			TryUnloadStep("material absorption registry", MaterialAbsorptionRegistry.Clear);
-			TryUnloadStep("screen shader rules", ScreenShaderController.ClearRules);
-
-			if (Main.netMode != NetmodeID.Server) {
-				TryUnloadSceneFilter("Ben10Mod:Grayscale");
-				TryUnloadSceneFilter("Ben10Mod:Bluescale");
-			}
+			IsUnloading = true;
 		}
 
 		private void TryUnloadStep(string stepName, Action action) {
@@ -102,11 +93,16 @@ namespace Ben10Mod {
 
 		private void TryUnloadSceneFilter(string filterKey) {
 			try {
-				if (Filters.Scene == null)
+				var sceneFilters = Filters.Scene;
+				if (sceneFilters == null)
 					return;
 
-				Filters.Scene.Deactivate(filterKey);
-				Filters.Scene[filterKey] = null;
+				Filter filter = sceneFilters[filterKey];
+				if (filter == null)
+					return;
+
+				if (filter.IsActive())
+					sceneFilters.Deactivate(filterKey);
 			}
 			catch (Exception ex) {
 				Logger.Warn($"Ignoring unload error while clearing scene filter '{filterKey}': {ex}");

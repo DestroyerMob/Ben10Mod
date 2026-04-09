@@ -6,8 +6,8 @@ namespace Ben10Mod;
 public sealed class Ben10ServerConfig : ModConfig {
     public override ConfigScope Mode => ConfigScope.ServerSide;
 
-    [DefaultValue(false)]
-    public bool AllowBlacklistedBaseTransformations { get; set; } = false;
+    [DefaultValue(true)]
+    public bool AllowBlacklistedBaseTransformations { get; set; } = true;
 
     [DefaultValue(false)]
     public bool AllowBlacklistedBaseOmnitrixes { get; set; } = false;

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.NPCs.Bosses;
 using Terraria;
 using Terraria.ID;
@@ -23,7 +24,8 @@ namespace Ben10Mod {
             if (CountsAsBoss(npc))
                 return true;
 
-            return !string.IsNullOrEmpty(GetTransformationIdForBoss(npc.type));
+            return !string.IsNullOrEmpty(GetTransformationIdForBoss(npc.type)) ||
+                   !string.IsNullOrEmpty(GetEncounterContributionKey(npc));
         }
 
         private void RecordDamage(NPC npc, int playerIndex, int damage) {
@@ -105,8 +107,9 @@ namespace Ben10Mod {
                 if (!string.IsNullOrEmpty(transformationId))
                     TransformationHandler.AddTransformation(player, transformationId);
 
-                if (omp.equippedOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
-                    omp.equippedOmnitrix.StartEvolution(player, omp);
+                Omnitrix activeOmnitrix = omp.GetActiveOmnitrix();
+                if (activeOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
+                    activeOmnitrix.StartEvolution(player, omp);
             }
 
             ClearEncounterContribution(npc);
@@ -117,7 +120,10 @@ namespace Ben10Mod {
                 NPCID.EaterofWorldsHead or NPCID.EaterofWorldsBody or NPCID.EaterofWorldsTail => "EaterOfWorlds",
                 NPCID.Retinazer or NPCID.Spazmatism => "Twins",
                 NPCID.TheDestroyer or NPCID.TheDestroyerBody or NPCID.TheDestroyerTail => "Destroyer",
+                NPCID.SkeletronHead or NPCID.SkeletronHand => "Skeletron",
+                NPCID.WallofFlesh or NPCID.WallofFleshEye => "WallOfFlesh",
                 NPCID.Golem or NPCID.GolemHead or NPCID.GolemHeadFree or NPCID.GolemFistLeft or NPCID.GolemFistRight => "Golem",
+                NPCID.MoonLordCore or NPCID.MoonLordHead or NPCID.MoonLordHand or NPCID.MoonLordFreeEye => "MoonLord",
                 _ => string.Empty
             };
         }

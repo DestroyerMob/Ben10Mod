@@ -229,6 +229,9 @@ namespace Ben10Mod {
         private const int HeroConvergenceHitsRequired = 6;
         private const int HeroConvergenceProcCooldownMax = 24;
         private const float OmniCoreReactorChargeThreshold = 80f;
+        private const float OmniCoreReactorHitChargeMultiplier = 0.05f;
+        private const float OmniCoreReactorMinHitCharge = 1f;
+        private const float OmniCoreReactorMaxHitCharge = 5f;
         private const int OmniCoreReactorPulseCooldownMax = 24;
         private static readonly string[] UpgradeRequiredTransformationIds = {
             "Ben10Mod:Humungousaur",
@@ -254,25 +257,43 @@ namespace Ben10Mod {
         public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
         public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
         public float TransformationSpeedBoostScale => transformationSpeedBoostPercent / (float)TransformationSpeedBoostPercentMax;
+        public int HeroConvergenceHitCount => heroConvergenceHitCount;
+        public int HeroConvergenceRequiredHits => HeroConvergenceHitsRequired;
+        public int HeroConvergenceCooldownTicks => heroConvergenceProcCooldown;
+        public int HeroConvergenceCooldownMaxTicks => HeroConvergenceProcCooldownMax;
+        public float OmniCoreReactorChargeValue => omniCoreReactorCharge;
+        public float OmniCoreReactorChargeThresholdValue => OmniCoreReactorChargeThreshold;
 
-	        public Omnitrix GetActiveOmnitrix() {
-	            if (equippedOmnitrix != null)
-	                return equippedOmnitrix;
+        public Item GetActiveOmnitrixItem() {
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+            if (omnitrixSlot?.FunctionalItem?.ModItem is Omnitrix)
+                return omnitrixSlot.FunctionalItem;
 
-	            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
-	            return omnitrixSlot?.FunctionalItem?.ModItem as Omnitrix;
-	        }
+            for (int i = 0; i < Player.armor.Length; i++) {
+                if (Player.armor[i]?.ModItem is Omnitrix)
+                    return Player.armor[i];
+            }
 
-	        internal void ApplyOmnitrixEvolutionSync(int resultType) {
-	            if (Player.whoAmI != Main.myPlayer || resultType <= 0)
-	                return;
+            return null;
+        }
 
-	            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
-	            if (omnitrixSlot?.FunctionalItem == null)
-	                return;
+        public Omnitrix GetActiveOmnitrix() {
+            if (equippedOmnitrix != null)
+                return equippedOmnitrix;
 
-	            omnitrixSlot.FunctionalItem.SetDefaults(resultType);
-	        }
+            return GetActiveOmnitrixItem()?.ModItem as Omnitrix;
+        }
+
+        internal void ApplyOmnitrixEvolutionSync(int resultType) {
+            if (Player.whoAmI != Main.myPlayer || resultType <= 0)
+                return;
+
+            Item activeOmnitrixItem = GetActiveOmnitrixItem();
+            if (activeOmnitrixItem == null || activeOmnitrixItem.IsAir)
+                return;
+
+            activeOmnitrixItem.SetDefaults(resultType);
+        }
 
 	        public bool CanRestoreOmnitrixEnergy(float amount = 1f) {
 	            return amount > 0f && omnitrixEnergyMax > 0f && omnitrixEnergy < omnitrixEnergyMax;
@@ -848,7 +869,8 @@ namespace Ben10Mod {
             // Play the update effect once when the Omnitrix enters its updating state, and complete
             // the item replacement when the updating buff falls off.
             if (omnitrixUpdating != omnitrixWasUpdating) {
-                var activeOmnitrix = GetActiveOmnitrix();
+                Item activeOmnitrixItem = GetActiveOmnitrixItem();
+                var activeOmnitrix = activeOmnitrixItem?.ModItem as Omnitrix;
                 if (omnitrixUpdating) {
                     Random random = new Random();
                     for (int i = 0; i < 25; i++) {
@@ -858,8 +880,8 @@ namespace Ben10Mod {
                         Main.dust[dustNum].noGravity = true;
                     }
                 }
-                else if (omnitrixWasUpdating && activeOmnitrix != null) {
-                    activeOmnitrix.CompleteEvolution(Player, this, omnitrixSlot.FunctionalItem);
+                else if (omnitrixWasUpdating && activeOmnitrix != null && activeOmnitrixItem != null) {
+                    activeOmnitrix.CompleteEvolution(Player, this, activeOmnitrixItem);
                 }
 
                 omnitrixWasUpdating = omnitrixUpdating;
@@ -2716,6 +2738,7 @@ namespace Ben10Mod {
             trans?.OnHitNPCWithItem(Player, this, item, target, hit, damageDone);
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithItem(item, target, hit, damageDone);
+            TryAccumulateOmniCoreReactorChargeFromHit(damageDone, item: item);
             TryGrantOmnitrixEnergyFromDamage(damageDone);
             TryTriggerHeroConvergence(target, damageDone, IsHeroConvergenceItem(item));
         }
@@ -2735,6 +2758,7 @@ namespace Ben10Mod {
             trans?.OnHitNPCWithProjectile(Player, this, proj, target, hit, damageDone);
             ApplyAbsorptionHitEffects(target);
             base.OnHitNPCWithProj(proj, target, hit, damageDone);
+            TryAccumulateOmniCoreReactorChargeFromHit(damageDone, projectile: proj);
             TryGrantOmnitrixEnergyFromDamage(damageDone, proj);
             TryTriggerHeroConvergence(target, damageDone, IsHeroConvergenceProjectile(proj));
         }
@@ -3144,10 +3168,13 @@ namespace Ben10Mod {
             if (!heroConvergenceEmblemEquipped)
                 heroConvergenceHitCount = 0;
 
-            if (!omniCoreReactorEquipped || !IsTransformed) {
+            if (!omniCoreReactorEquipped) {
                 omniCoreReactorCharge = 0f;
                 return;
             }
+
+            if (!IsTransformed)
+                return;
 
             if (!Main.dedServ && Main.rand.NextBool(4) &&
                 omniCoreReactorCharge >= OmniCoreReactorChargeThreshold * 0.65f) {
@@ -3211,7 +3238,7 @@ namespace Ben10Mod {
         }
 
         private void AccumulateOmniCoreReactorCharge(int energyCost, int sustainEnergyCost) {
-            if (!omniCoreReactorEquipped || !IsTransformed)
+            if (!omniCoreReactorEquipped)
                 return;
 
             int effectiveEnergy = energyCost + sustainEnergyCost * 2;
@@ -3219,6 +3246,24 @@ namespace Ben10Mod {
                 return;
 
             omniCoreReactorCharge = Math.Min(OmniCoreReactorChargeThreshold * 2.4f, omniCoreReactorCharge + effectiveEnergy);
+        }
+
+        private void TryAccumulateOmniCoreReactorChargeFromHit(int damageDone, Item item = null, Projectile projectile = null) {
+            if (!omniCoreReactorEquipped || damageDone <= 0)
+                return;
+
+            bool countsAsHeroHit = item != null
+                ? !item.IsAir && item.CountsAsClass(ModContent.GetInstance<HeroDamage>())
+                : projectile != null && projectile.active && projectile.CountsAsClass(ModContent.GetInstance<HeroDamage>());
+            if (!countsAsHeroHit)
+                return;
+
+            if (IsAccessoryProcProjectile(projectile))
+                return;
+
+            float chargeGain = MathHelper.Clamp(damageDone * OmniCoreReactorHitChargeMultiplier,
+                OmniCoreReactorMinHitCharge, OmniCoreReactorMaxHitCharge);
+            omniCoreReactorCharge = Math.Min(OmniCoreReactorChargeThreshold * 2.4f, omniCoreReactorCharge + chargeGain);
         }
 
         private void TryTriggerHeroConvergence(NPC target, int damageDone, bool shouldCountHit) {
@@ -3560,7 +3605,7 @@ namespace Ben10Mod {
 
             HashSet<int> activeTrackedEvents = new(GetActiveTrackedEvents());
             foreach (int eventId in eventIds) {
-                if (activeTrackedEvents.Contains(eventId))
+                if (activeTrackedEvents.Contains(eventId) || activeEvents.Contains(eventId))
                     participatedEvents.Add(eventId);
             }
         }

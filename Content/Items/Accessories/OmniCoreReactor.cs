@@ -22,7 +22,7 @@ public class OmniCoreReactor : ModItem {
         tooltips.Add(new TooltipLine(Mod, "EnergyMax", "+40 Omnitrix energy"));
         tooltips.Add(new TooltipLine(Mod, "EnergyRegen", "+1 Omnitrix energy regen"));
         tooltips.Add(new TooltipLine(Mod, "TransformDefense", "+4 defense while transformed"));
-        tooltips.Add(new TooltipLine(Mod, "ReactorCharge", "Badge attacks charge the Omni-Core reactor"));
+        tooltips.Add(new TooltipLine(Mod, "ReactorCharge", "Hero hits charge the Omni-Core reactor"));
         tooltips.Add(new TooltipLine(Mod, "ReactorPulse", "At full charge, unleash an energy pulse that refunds OE on hits"));
     }
 

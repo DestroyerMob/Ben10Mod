@@ -42,9 +42,6 @@ public class PlumberBlasterBoltProjectile : ModProjectile {
             }
         }
 
-        if (StrongVariant)
-            Projectile.velocity = Projectile.velocity.RotatedBy(MathF.Sin((Main.GameUpdateCount + Projectile.identity) * 0.07f) * 0.008f);
-
         Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
         Lighting.AddLight(Projectile.Center, StrongVariant ? new Vector3(0.2f, 0.9f, 1f) : new Vector3(0.12f, 0.68f, 0.82f));
 

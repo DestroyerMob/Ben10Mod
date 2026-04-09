@@ -1,7 +1,7 @@
 displayName = Terraria 10 (Ben 10 mod)
 author = DestroyerMob
-version = 0.085
-buildIgnore = .vs\*, Properties\*, *.csproj, *.user, obj\*, bin\*, *.config, .git\*, .github\*, LICENSE, README.md, .editorconfig, .gitignore, .gitattributes, Effects\Compiler\*
+version = 0.088
+buildIgnore = .vs\*, .vs/*, Properties\*, Properties/*, *.csproj, *.user, obj\*, obj/*, bin\*, bin/*, *.config, .git\*, .git/*, .github\*, .github/*, .idea\*, .idea/*, *.DS_Store, .DS_Store, */.DS_Store, */*/.DS_Store, LICENSE, README.md, docs\*, docs/*, .editorconfig, .gitignore, .gitattributes, Effects\Compiler\*, Effects/Compiler/*, Effects\*.dll, Effects/*.dll, Effects\*.exe, Effects/*.exe, icon_discord.png, icon_workshop.png, TransformationList.png, Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head.png, Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body.png
 hideCode = false
 hideResources = true
 includeSource = false

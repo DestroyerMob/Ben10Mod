@@ -33,6 +33,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual int  EvolutionResultItemType    => 0;
         public virtual int  EvolutionAnimationDuration => 120 * 60;
         public virtual bool HideWhileUpdating          => true;
+        public virtual int  ItemValue                  => Item.buyPrice(gold: 2);
         public virtual string HandsOnTextureKey        => Name;
         public virtual string CooldownHandsOnTextureKey => HandsOnTextureKey;
         public virtual string UpdatingHandsOnTextureKey => HandsOnTextureKey;
@@ -55,6 +56,7 @@ namespace Ben10Mod.Content.Items.Accessories
             Item.width      = 22;
             Item.height     = 28;
             Item.rare       = ItemRarityID.Master;
+            Item.value      = ItemValue;
             Item.DamageType = ModContent.GetInstance<HeroDamage>();
             Item.accessory  = true;
         }
@@ -94,6 +96,10 @@ namespace Ben10Mod.Content.Items.Accessories
                 return -1;
 
             return rollablePrefixes[rand.Next(rollablePrefixes.Count)];
+        }
+
+        public override bool CanReforge() {
+            return !IsBlacklisted();
         }
 
         public override void UpdateAccessory(Player player, bool hideVisual)
@@ -420,23 +426,27 @@ namespace Ben10Mod.Content.Items.Accessories
             return EvolutionResultItemType;
         }
 
-	        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
-	            int resultType = GetEvolutionResultItemType(player, omp);
-	            if (resultType <= 0 || equippedItem.type == resultType)
-	                return;
+        public virtual void CompleteEvolution(Player player, OmnitrixPlayer omp, Item equippedItem) {
+            int resultType = GetEvolutionResultItemType(player, omp);
+            if (resultType <= 0)
+                return;
 
-	            equippedItem.SetDefaults(resultType);
+            equippedItem ??= omp.GetActiveOmnitrixItem();
+            if (equippedItem == null || equippedItem.IsAir || equippedItem.type == resultType)
+                return;
 
-	            if (Main.netMode == NetmodeID.Server) {
-	                NetMessage.SendData(MessageID.SyncPlayer, -1, -1, null, player.whoAmI);
+            equippedItem.SetDefaults(resultType);
 
-	                ModPacket packet = Mod.GetPacket();
-	                packet.Write((byte)Ben10Mod.MessageType.SyncOmnitrixEvolution);
-	                packet.Write((byte)player.whoAmI);
-	                packet.Write(resultType);
-	                packet.Send(toClient: player.whoAmI);
-	            }
-	        }
+            if (Main.netMode == NetmodeID.Server) {
+                NetMessage.SendData(MessageID.SyncPlayer, -1, -1, null, player.whoAmI);
+
+                ModPacket packet = Mod.GetPacket();
+                packet.Write((byte)Ben10Mod.MessageType.SyncOmnitrixEvolution);
+                packet.Write((byte)player.whoAmI);
+                packet.Write(resultType);
+                packet.Send(toClient: player.whoAmI);
+            }
+        }
 
         public virtual string GetHandsOnTextureKey(Player player, OmnitrixPlayer omp) {
             if (omp.omnitrixUpdating && !string.IsNullOrEmpty(UpdatingHandsOnTextureKey))

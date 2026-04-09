@@ -259,40 +259,14 @@ public static class TransformationPaletteTextureCache {
     private static readonly Dictionary<Texture2D, Color[]> PixelCache = new();
 
     public static void Clear() {
-        HashSet<Texture2D> generatedTextures = new();
-
-        foreach (Texture2D texture in PreparedMasks.Values) {
-            if (texture != null)
-                generatedTextures.Add(texture);
-        }
-
-        foreach (Texture2D texture in MaskedBases.Values) {
-            if (texture != null)
-                generatedTextures.Add(texture);
-        }
-
-        foreach (Texture2D texture in ProcessedOverlays.Values) {
-            if (texture != null)
-                generatedTextures.Add(texture);
-        }
-
+        // Mod unload happens on a worker thread during rebuilds. Releasing GPU-backed textures there can
+        // crash FNA on macOS, so we only drop our managed references and let the process/resource teardown
+        // reclaim them safely.
         PreparedMasks.Clear();
         MaskedBases.Clear();
         ProcessedOverlays.Clear();
         PreviewFrames.Clear();
         PixelCache.Clear();
-
-        if (Main.dedServ)
-            return;
-
-        foreach (Texture2D texture in generatedTextures) {
-            try {
-                if (texture is { IsDisposed: false })
-                    texture.Dispose();
-            }
-            catch {
-            }
-        }
     }
 
     public static Texture2D GetPreparedMaskTexture(Texture2D maskTexture) {

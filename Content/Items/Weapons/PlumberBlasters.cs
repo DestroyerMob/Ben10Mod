@@ -12,6 +12,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public abstract class PlumberBlasterBase : ModItem {
+    private float sustainedRandomBoltSpread;
+    private ulong lastBlasterShotTick;
+
     protected abstract int TextureItemID { get; }
     protected abstract int BaseDamage { get; }
     protected abstract int UseTime { get; }
@@ -23,6 +26,10 @@ public abstract class PlumberBlasterBase : ModItem {
     protected virtual int CritChance => 0;
     protected virtual int BoltCount => 1;
     protected virtual float BoltSpread => 0f;
+    protected virtual float RandomBoltSpread => 0f;
+    protected virtual float SustainedRandomBoltSpreadPerShot => 0f;
+    protected virtual float MaxSustainedRandomBoltSpread => 0f;
+    protected virtual int SustainedSpreadResetTicks => 16;
     protected virtual float BoltDamageMultiplier => 1f;
     protected virtual float LateralSpacing => 6f;
     protected virtual float ShootSpeed => 13.5f;
@@ -65,16 +72,23 @@ public abstract class PlumberBlasterBase : ModItem {
 
     public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity,
         int type, int damage, float knockback) {
+        ResetSustainedSpreadIfNeeded();
+
         Vector2 direction = velocity.SafeNormalize(new Vector2(player.direction == 0 ? 1 : player.direction, 0f));
         Vector2 lateral = direction.RotatedBy(MathHelper.PiOver2);
         Vector2 muzzleOffset = direction * (BoltCount >= 4 ? 22f : BoltCount >= 2 ? 20f : 18f);
         float centerOffset = (BoltCount - 1) * 0.5f;
         int boltDamage = Math.Max(1, (int)Math.Round(damage * BoltDamageMultiplier));
+        float currentRandomSpread = RandomBoltSpread + sustainedRandomBoltSpread;
 
         for (int i = 0; i < BoltCount; i++) {
             float boltIndex = i - centerOffset;
             Vector2 spawnPosition = position + muzzleOffset + lateral * boltIndex * LateralSpacing;
-            Vector2 shotVelocity = velocity.RotatedBy(boltIndex * BoltSpread) * Main.rand.NextFloat(0.985f, 1.02f);
+            float shotAngle = boltIndex * BoltSpread;
+            if (currentRandomSpread > 0f)
+                shotAngle += Main.rand.NextFloat(-currentRandomSpread, currentRandomSpread);
+
+            Vector2 shotVelocity = velocity.RotatedBy(shotAngle) * Main.rand.NextFloat(0.985f, 1.02f);
             int projectileIndex = Projectile.NewProjectile(source, spawnPosition, shotVelocity, type, boltDamage, knockback,
                 player.whoAmI, StrongBolts ? 1f : 0f);
 
@@ -82,7 +96,23 @@ public abstract class PlumberBlasterBase : ModItem {
                 Main.projectile[projectileIndex].netUpdate = true;
         }
 
+        if (SustainedRandomBoltSpreadPerShot > 0f && MaxSustainedRandomBoltSpread > 0f)
+            sustainedRandomBoltSpread = Math.Min(MaxSustainedRandomBoltSpread,
+                sustainedRandomBoltSpread + SustainedRandomBoltSpreadPerShot);
+
+        lastBlasterShotTick = Main.GameUpdateCount;
         return false;
+    }
+
+    private void ResetSustainedSpreadIfNeeded() {
+        if (lastBlasterShotTick == 0 || sustainedRandomBoltSpread <= 0f)
+            return;
+
+        ulong currentTick = Main.GameUpdateCount;
+        if (currentTick <= lastBlasterShotTick + (ulong)Math.Max(1, SustainedSpreadResetTicks))
+            return;
+
+        sustainedRandomBoltSpread = 0f;
     }
 }
 
@@ -125,6 +155,7 @@ public class PlumberSeniorDeputyBlaster : PlumberBlasterBase {
     protected override int ItemRarity => ItemRarityID.Orange;
     protected override int BoltCount => 5;
     protected override float BoltSpread => 0.16f;
+    protected override float RandomBoltSpread => 0.11f;
     protected override float BoltDamageMultiplier => 0.23f;
     protected override float LateralSpacing => 2f;
     protected override float ShootSpeed => 11.25f;
@@ -226,19 +257,20 @@ public class PlumberProctorBlaster : PlumberBlasterBase {
 
 public class PlumberMagisterBlaster : PlumberBlasterBase {
     protected override int TextureItemID => ItemID.VortexBeater;
-    protected override int BaseDamage => 60;
-    protected override int UseTime => 10;
+    protected override int BaseDamage => 40;
+    protected override int UseTime => 6;
     protected override int ItemValue => Item.buyPrice(gold: 14);
     protected override int ItemRarity => ItemRarityID.Cyan;
-    protected override int BoltCount => 3;
-    protected override float BoltSpread => 0.055f;
-    protected override float BoltDamageMultiplier => 0.48f;
-    protected override float LateralSpacing => 4.5f;
-    protected override float ShootSpeed => 18.5f;
-    protected override float SoundPitch => 0.06f;
-    protected override float SoundVolume => 0.78f;
+    protected override float RandomBoltSpread => 0.01f;
+    protected override float SustainedRandomBoltSpreadPerShot => 0.0065f;
+    protected override float MaxSustainedRandomBoltSpread => 0.085f;
+    protected override int SustainedSpreadResetTicks => 14;
+    protected override float ShootSpeed => 19.5f;
+    protected override float KnockBack => 3f;
+    protected override float SoundPitch => 0.02f;
+    protected override float SoundVolume => 0.82f;
     protected override bool StrongBolts => true;
-    protected override string CombatStyleText => "Nova repeater: fans out tri-bolts fast enough to blanket a lane.";
+    protected override string CombatStyleText => "Support gun: a heavy automatic blaster that blooms wider the longer you hold the trigger.";
 
     public override void AddRecipes() {
         CreateRecipe()

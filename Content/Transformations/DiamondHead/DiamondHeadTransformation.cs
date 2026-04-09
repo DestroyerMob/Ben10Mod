@@ -13,7 +13,7 @@ namespace Ben10Mod.Content.Transformations.DiamondHead;
 
 public class DiamondHeadTransformation : Transformation {
     private const int SecondaryGroundSearchAttempts = 10;
-    private const float SecondaryBloomSpread = 176f;
+    private const float SecondaryBloomSpread = 132f;
     private const float SecondaryGroundSearchAbove = 6f * 16f;
     private const float SecondaryGroundSearchBelow = 28f * 16f;
     private const int SecondarySpireClearanceWidth = 34;
@@ -55,11 +55,11 @@ public class DiamondHeadTransformation : Transformation {
     public override int PrimaryArmorPenetration => 18;
 
     public override int SecondaryAttack => ModContent.ProjectileType<DiamondHeadSpireProjectile>();
-    public override float SecondaryAttackModifier => 0.4f;
-    public override int SecondaryAttackSpeed => 24;
+    public override float SecondaryAttackModifier => 0.58f;
+    public override int SecondaryAttackSpeed => 20;
     public override int SecondaryShootSpeed => 18;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override int SecondaryArmorPenetration => 10;
+    public override int SecondaryArmorPenetration => 14;
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 12 * 60;
@@ -292,13 +292,18 @@ public class DiamondHeadTransformation : Transformation {
     }
 
     private static bool TryFindGroundBloomSpawn(Vector2 target, out Vector2 spawnCenter, out float groundY) {
+        if (TryFindGroundBloomSpawnAt(target, out spawnCenter, out groundY))
+            return true;
+
         for (int attempt = 0; attempt < SecondaryGroundSearchAttempts; attempt++) {
             float candidateX = target.X + Main.rand.NextFloat(-SecondaryBloomSpread * 0.5f, SecondaryBloomSpread * 0.5f);
             if (TryFindGroundBloomSpawnAt(new Vector2(candidateX, target.Y), out spawnCenter, out groundY))
                 return true;
         }
 
-        return TryFindGroundBloomSpawnAt(target, out spawnCenter, out groundY);
+        spawnCenter = default;
+        groundY = 0f;
+        return false;
     }
 
     private static bool TryFindGroundBloomSpawnAt(Vector2 target, out Vector2 spawnCenter, out float groundY) {

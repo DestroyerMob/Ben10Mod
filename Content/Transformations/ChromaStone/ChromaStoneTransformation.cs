@@ -76,36 +76,46 @@ public class ChromaStoneTransformation : Transformation {
         }
     }
 
-    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
-        new TransformationPaletteChannel(
-            "crystal",
-            "Crystal",
-            Color.White,
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head"),
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Body",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body")),
-        new TransformationPaletteChannel(
-            "base",
-            "Base",
-            Color.White,
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Head"),
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Body",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Body"),
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Legs",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Legs")),
-        new TransformationPaletteChannel(
-            "eye",
-            "Eye",
-            Color.White,
-            new TransformationPaletteOverlay(
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
-                "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneEyeMask_Head"))
-    ];
+    public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels {
+        get {
+            List<TransformationPaletteChannel> channels = new() {
+                new TransformationPaletteChannel(
+                    "base",
+                    "Base",
+                    Color.White,
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Head"),
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Body",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Body"),
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Legs",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneBaseMask_Legs")),
+                new TransformationPaletteChannel(
+                    "eye",
+                    "Eye",
+                    Color.White,
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneEyeMask_Head"))
+            };
+
+            if (ModContent.HasAsset("Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head") &&
+                ModContent.HasAsset("Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body")) {
+                channels.Insert(0, new TransformationPaletteChannel(
+                    "crystal",
+                    "Crystal",
+                    Color.White,
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Head",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Head"),
+                    new TransformationPaletteOverlay(
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStone_Body",
+                        "Ben10Mod/Content/Transformations/ChromaStone/ChromaStoneCrystalMask_Body")));
+            }
+
+            return channels;
+        }
+    }
 }

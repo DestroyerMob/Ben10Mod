@@ -9,7 +9,10 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
 using Terraria.ModLoader.UI.Elements;
 using Terraria.UI;
+using Ben10Mod.Content.Items.Armour;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Items.Weapons;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Transformations;
 
 namespace Ben10Mod.Content.Interface {
@@ -75,6 +78,9 @@ namespace Ben10Mod.Content.Interface {
     }
 
     public class UISystem : ModSystem {
+        private readonly record struct HeroTrackerEntry(string Label, string ValueText, float Progress, Color AccentColor);
+        private readonly record struct HeroTrackerPanel(string Title, List<HeroTrackerEntry> Entries);
+
         internal UserInterface               MyInterface;
         internal AlienSelectionScreen        AS;
         internal TransformationCodexScreen   TCS;
@@ -83,7 +89,7 @@ namespace Ben10Mod.Content.Interface {
         private  GameTime                    _lastUpdateUiGameTime;
 
         private void EnsureInterfaceInitialized() {
-            if (Main.dedServ)
+            if (Main.dedServ || global::Ben10Mod.Ben10Mod.IsUnloading)
                 return;
 
             MyInterface ??= new UserInterface();
@@ -111,9 +117,9 @@ namespace Ben10Mod.Content.Interface {
         }
 
         public override void Unload() {
-            MyInterface?.SetState(null);
+            // Avoid firing UI deactivation callbacks during mod teardown; they can touch player/mod state while
+            // tModLoader is unloading content on a worker thread.
             TransformationPaletteScreen.ClearSharedState();
-            TransformationPaletteTextureCache.Clear();
             MyInterface = null;
             AS          = null;
             TCS         = null;
@@ -123,6 +129,9 @@ namespace Ben10Mod.Content.Interface {
         }
 
         public override void UpdateUI(GameTime gameTime) {
+            if (global::Ben10Mod.Ben10Mod.IsUnloading)
+                return;
+
             EnsureInterfaceInitialized();
             _lastUpdateUiGameTime = gameTime;
             TRM?.Update(this);
@@ -131,6 +140,9 @@ namespace Ben10Mod.Content.Interface {
         }
 
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers) {
+            if (global::Ben10Mod.Ben10Mod.IsUnloading)
+                return;
+
             EnsureInterfaceInitialized();
             int mouseTextIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Mouse Text"));
             if (mouseTextIndex != -1) {
@@ -172,7 +184,11 @@ namespace Ben10Mod.Content.Interface {
             bool   showAttackHudOnly = !showEnergyBar && showMoveInterface;
             bool   simplifyEnergyBar = clientConfig.UseSimplifiedHeroEnergyBar;
             bool   simplifyMoveHud   = clientConfig.UseSimplifiedHeroMoveInterface;
-            if (!showEnergyBar && !showMoveInterface)
+            List<HeroTrackerEntry> trackerEntries = BuildHeroTrackerEntries(player, omp);
+            HeroTrackerPanel targetTracker = BuildFocusedTargetTracker(player);
+            bool showTracker = trackerEntries.Count > 0;
+            bool showTargetTracker = targetTracker.Entries.Count > 0;
+            if (!showEnergyBar && !showMoveInterface && !showTracker && !showTargetTracker)
                 return;
 
             int uiMargin   = 20;
@@ -186,12 +202,42 @@ namespace Ben10Mod.Content.Interface {
             int moveHudX = hpLeftX - gap - moveHudWidth;
 
             if (showAttackHudOnly) {
-                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, y, moveHudWidth);
-                DrawActiveAbilityIndicator(player, omp, moveHudX, y + attackHudHeight + 8, moveHudWidth);
+                int nextTrackerY = y;
+                int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, nextTrackerY, moveHudWidth);
+                if (attackHudHeight > 0)
+                    nextTrackerY += attackHudHeight + 8;
+
+                int activeAbilityHeight = DrawActiveAbilityIndicator(player, omp, moveHudX, nextTrackerY, moveHudWidth);
+                if (activeAbilityHeight > 0)
+                    nextTrackerY += activeAbilityHeight + 8;
+
+                if (showTracker) {
+                    int trackerHeight = DrawHeroTrackerPanel(trackerEntries, moveHudX, nextTrackerY, moveHudWidth);
+                    if (trackerHeight > 0)
+                        nextTrackerY += trackerHeight + 8;
+                }
+
+                if (showTargetTracker)
+                    DrawHeroTrackerPanel(targetTracker.Entries, moveHudX, nextTrackerY, moveHudWidth, targetTracker.Title);
                 return;
             }
 
-            float fillPercent = MathHelper.Clamp(omp.omnitrixEnergy / (float)omp.omnitrixEnergyMax, 0f, 1f);
+            if (!showEnergyBar) {
+                int nextTrackerY = y;
+                if (showTracker) {
+                    int trackerHeight = DrawHeroTrackerPanel(trackerEntries, moveHudX, nextTrackerY, moveHudWidth);
+                    if (trackerHeight > 0)
+                        nextTrackerY += trackerHeight + 8;
+                }
+
+                if (showTargetTracker)
+                    DrawHeroTrackerPanel(targetTracker.Entries, moveHudX, nextTrackerY, moveHudWidth, targetTracker.Title);
+                return;
+            }
+
+            float fillPercent = omp.omnitrixEnergyMax > 0f
+                ? MathHelper.Clamp(omp.omnitrixEnergy / omp.omnitrixEnergyMax, 0f, 1f)
+                : 0f;
 
             if (simplifyEnergyBar) {
                 Texture2D pixel = TextureAssets.MagicPixel.Value;
@@ -215,10 +261,25 @@ namespace Ben10Mod.Content.Interface {
 
                 DrawOmnitrixEnergyText(player, omp, compactBarRect, true, clientConfig.AlwaysShowOmnitrixEnergyText);
 
+                int nextTrackerY = compactBarRect.Bottom + 8;
                 if (showMoveInterface) {
-                    int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, compactBarRect.Bottom + 8, moveHudWidth);
-                    DrawActiveAbilityIndicator(player, omp, moveHudX, compactBarRect.Bottom + attackHudHeight + 16, moveHudWidth);
+                    int attackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, nextTrackerY, moveHudWidth);
+                    if (attackHudHeight > 0)
+                        nextTrackerY += attackHudHeight + 8;
+
+                    int activeAbilityHeight = DrawActiveAbilityIndicator(player, omp, moveHudX, nextTrackerY, moveHudWidth);
+                    if (activeAbilityHeight > 0)
+                        nextTrackerY += activeAbilityHeight + 8;
                 }
+
+                if (showTracker) {
+                    int trackerHeight = DrawHeroTrackerPanel(trackerEntries, moveHudX, nextTrackerY, moveHudWidth);
+                    if (trackerHeight > 0)
+                        nextTrackerY += trackerHeight + 8;
+                }
+
+                if (showTargetTracker)
+                    DrawHeroTrackerPanel(targetTracker.Entries, moveHudX, nextTrackerY, moveHudWidth, targetTracker.Title);
                 return;
             }
 
@@ -273,10 +334,25 @@ namespace Ben10Mod.Content.Interface {
             Rectangle barRect = new Rectangle(x, y, barWidth, barHeight);
             DrawOmnitrixEnergyText(player, omp, barRect, false, clientConfig.AlwaysShowOmnitrixEnergyText);
 
+            int fullHudNextY = y + barHeight + 18;
             if (showMoveInterface) {
-                int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, y + barHeight + 18, moveHudWidth);
-                DrawActiveAbilityIndicator(player, omp, moveHudX, y + barHeight + fullAttackHudHeight + 26, moveHudWidth);
+                int fullAttackHudHeight = DrawCurrentAttackIndicator(player, omp, moveHudX, fullHudNextY, moveHudWidth);
+                if (fullAttackHudHeight > 0)
+                    fullHudNextY += fullAttackHudHeight + 8;
+
+                int activeAbilityHeight = DrawActiveAbilityIndicator(player, omp, moveHudX, fullHudNextY, moveHudWidth);
+                if (activeAbilityHeight > 0)
+                    fullHudNextY += activeAbilityHeight + 8;
             }
+
+            if (showTracker) {
+                int trackerHeight = DrawHeroTrackerPanel(trackerEntries, moveHudX, fullHudNextY, moveHudWidth);
+                if (trackerHeight > 0)
+                    fullHudNextY += trackerHeight + 8;
+            }
+
+            if (showTargetTracker)
+                DrawHeroTrackerPanel(targetTracker.Entries, moveHudX, fullHudNextY, moveHudWidth, targetTracker.Title);
         }
 
         private void DrawOmnitrixEnergyText(Player player, OmnitrixPlayer omp, Rectangle barRect, bool simplified, bool alwaysShow) {
@@ -510,6 +586,261 @@ namespace Ben10Mod.Content.Interface {
                 Utils.DrawBorderString(Main.spriteBatch, status.RemainingText,
                     new Vector2(panelRect.Right - 10, lineY + i * lineHeight),
                     Color.Lerp(status.AccentColor, Color.White, 0.2f), lineScale + 0.02f, 1f, 0f);
+            }
+
+            return panelRect.Height;
+        }
+
+        private List<HeroTrackerEntry> BuildHeroTrackerEntries(Player player, OmnitrixPlayer omp) {
+            List<HeroTrackerEntry> entries = new();
+            AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
+            HeroPlumberArmorPlayer armorPlayer = player.GetModPlayer<HeroPlumberArmorPlayer>();
+
+            if (omp.heroConvergenceEmblemEquipped || omp.HeroConvergenceHitCount > 0 || omp.HeroConvergenceCooldownTicks > 0) {
+                bool burstCoolingDown = omp.HeroConvergenceCooldownTicks > 0;
+                float convergenceProgress = burstCoolingDown
+                    ? 1f - omp.HeroConvergenceCooldownTicks / (float)Math.Max(1, omp.HeroConvergenceCooldownMaxTicks)
+                    : MathHelper.Clamp(omp.HeroConvergenceHitCount / (float)Math.Max(1, omp.HeroConvergenceRequiredHits), 0f, 1f);
+                string convergenceValue = burstCoolingDown
+                    ? $"CD {FormatTrackerSeconds(omp.HeroConvergenceCooldownTicks)}"
+                    : $"{omp.HeroConvergenceHitCount}/{omp.HeroConvergenceRequiredHits}";
+                Color convergenceAccent = burstCoolingDown ? new Color(255, 218, 120) : new Color(132, 255, 176);
+                entries.Add(new HeroTrackerEntry("Convergence", convergenceValue, convergenceProgress, convergenceAccent));
+            }
+
+            if (omp.omniCoreReactorEquipped && (omp.IsTransformed || omp.OmniCoreReactorChargeValue > 0f)) {
+                float threshold = Math.Max(1f, omp.OmniCoreReactorChargeThresholdValue);
+                float chargeProgress = MathHelper.Clamp(omp.OmniCoreReactorChargeValue / threshold, 0f, 1f);
+                string chargeValue = omp.OmniCoreReactorChargeValue >= threshold
+                    ? "Ready"
+                    : $"{(int)Math.Round(omp.OmniCoreReactorChargeValue)}/{(int)Math.Round(threshold)}";
+                Color reactorAccent = omp.OmniCoreReactorChargeValue >= threshold
+                    ? new Color(170, 255, 225)
+                    : new Color(118, 238, 210);
+                entries.Add(new HeroTrackerEntry("Omni-Core", chargeValue, chargeProgress, reactorAccent));
+            }
+
+            switch (omp.currentTransformationId) {
+                case AlienIdentityPlayer.FasttrackTransformationId:
+                    entries.Add(new HeroTrackerEntry("Momentum", $"{(int)Math.Round(identityPlayer.FasttrackMomentumRatio * 100f)}%",
+                        MathHelper.Clamp(identityPlayer.FasttrackMomentumRatio, 0f, 1f), new Color(145, 255, 150)));
+                    break;
+                case AlienIdentityPlayer.AstrodactylTransformationId:
+                    entries.Add(new HeroTrackerEntry("Air Supremacy", $"{(int)Math.Round(identityPlayer.AstrodactylAirSupremacyRatio * 100f)}%",
+                        MathHelper.Clamp(identityPlayer.AstrodactylAirSupremacyRatio, 0f, 1f), new Color(150, 255, 220)));
+                    break;
+                case AlienIdentityPlayer.FrankenstrikeTransformationId:
+                    entries.Add(new HeroTrackerEntry("Static Charge", $"{(int)Math.Round(identityPlayer.FrankenstrikeStaticChargeRatio * 100f)}%",
+                        MathHelper.Clamp(identityPlayer.FrankenstrikeStaticChargeRatio, 0f, 1f), new Color(135, 175, 255)));
+                    break;
+                case AlienIdentityPlayer.WaterHazardTransformationId:
+                    entries.Add(new HeroTrackerEntry("Pressure", $"{(int)Math.Round(identityPlayer.WaterHazardPressureRatio * 100f)}%",
+                        MathHelper.Clamp(identityPlayer.WaterHazardPressureRatio, 0f, 1f), new Color(120, 220, 255)));
+                    break;
+            }
+
+            if (armorPlayer.bulwarkSet && omp.IsTransformed) {
+                entries.Add(new HeroTrackerEntry("Bulwark", $"{armorPlayer.BulwarkVisibleChargeHits}/8",
+                    MathHelper.Clamp(armorPlayer.BulwarkVisibleChargeHits / 8f, 0f, 1f), new Color(245, 228, 155)));
+            }
+
+            return entries;
+        }
+
+        private HeroTrackerPanel BuildFocusedTargetTracker(Player player) {
+            NPC targetNpc = FindTrackedTargetNpc(player);
+            List<HeroTrackerEntry> entries = new();
+            if (targetNpc == null)
+                return new HeroTrackerPanel(null, entries);
+
+            AlienIdentityGlobalNPC npcState = targetNpc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+
+            if (npcState.IsFasttrackComboActiveFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Combo", $"{npcState.FasttrackComboStacks}/6",
+                    MathHelper.Clamp(npcState.FasttrackComboStacks / 6f, 0f, 1f), new Color(255, 182, 102)));
+            }
+
+            if (npcState.IsSkyMarkedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Sky Mark", FormatTrackerSeconds(npcState.AstrodactylSkyMarkTime),
+                    MathHelper.Clamp(npcState.AstrodactylSkyMarkTime / 360f, 0f, 1f), new Color(146, 255, 176)));
+            }
+
+            if (npcState.IsBlitzwolferResonantFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Resonance", $"{npcState.BlitzwolferResonanceStacks}/8",
+                    MathHelper.Clamp(npcState.BlitzwolferResonanceStacks / 8f, 0f, 1f), new Color(126, 255, 154)));
+            }
+
+            if (npcState.IsFrankenstrikeConductiveFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Conductive", $"{npcState.FrankenstrikeConductiveStacks}/6",
+                    MathHelper.Clamp(npcState.FrankenstrikeConductiveStacks / 6f, 0f, 1f), new Color(135, 175, 255)));
+            }
+
+            if (npcState.HasLodestarPolarityFor(player.whoAmI)) {
+                string polarity = npcState.LodestarPolarityDirection >= 0 ? "Pull" : "Push";
+                entries.Add(new HeroTrackerEntry("Polarity", polarity,
+                    MathHelper.Clamp(npcState.LodestarPolarityTime / 300f, 0f, 1f), new Color(212, 140, 255)));
+            }
+
+            if (npcState.IsWaterHazardSoakedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Soak", $"{npcState.WaterHazardSoak}/100",
+                    MathHelper.Clamp(npcState.WaterHazardSoak / 100f, 0f, 1f), new Color(120, 220, 255)));
+            }
+
+            if (npcState.IsJetrayLockedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Lock", FormatTrackerSeconds(npcState.JetrayLockTime),
+                    MathHelper.Clamp(npcState.JetrayLockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
+            }
+
+            if (npcState.IsWhampirePreyFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(npcState.WhampirePreyTime),
+                    MathHelper.Clamp(npcState.WhampirePreyTime / 420f, 0f, 1f), new Color(255, 128, 144)));
+            }
+
+            if (npcState.IsSnareOhCursedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Curse", $"{npcState.SnareOhCurseStacks}/7",
+                    MathHelper.Clamp(npcState.SnareOhCurseStacks / 7f, 0f, 1f), new Color(216, 194, 115)));
+            }
+
+            if (npcState.IsAlienXJudgedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Judgement", $"{npcState.AlienXJudgementStacks}/6",
+                    MathHelper.Clamp(npcState.AlienXJudgementStacks / 6f, 0f, 1f), new Color(215, 215, 255)));
+            }
+
+            if (npcState.IsDreamboundFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Dreambound", FormatTrackerSeconds(npcState.PeskyDustDreamTime),
+                    MathHelper.Clamp(npcState.PeskyDustDreamTime / 360f, 0f, 1f), new Color(255, 188, 244)));
+            }
+
+            return new HeroTrackerPanel(entries.Count > 0 ? $"Target: {ShortenTrackerText(targetNpc.GivenOrTypeName, 18)}" : null,
+                entries);
+        }
+
+        private NPC FindTrackedTargetNpc(Player player) {
+            NPC hoveredNpc = FindHoveredTrackedTargetNpc(player);
+            if (hoveredNpc != null)
+                return hoveredNpc;
+
+            NPC bestNpc = null;
+            float bestScore = float.MaxValue;
+
+            for (int i = 0; i < Main.maxNPCs; i++) {
+                NPC npc = Main.npc[i];
+                if (!npc.CanBeChasedBy())
+                    continue;
+
+                AlienIdentityGlobalNPC npcState = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+                if (!HasTrackedTargetStatus(npcState, player.whoAmI))
+                    continue;
+
+                float mouseDistance = Vector2.DistanceSquared(npc.Center, Main.MouseWorld);
+                float playerDistance = Vector2.DistanceSquared(npc.Center, player.Center);
+                float score = mouseDistance + playerDistance * 0.2f;
+                if (score >= bestScore)
+                    continue;
+
+                bestScore = score;
+                bestNpc = npc;
+            }
+
+            return bestNpc;
+        }
+
+        private NPC FindHoveredTrackedTargetNpc(Player player) {
+            Point mousePoint = Main.MouseWorld.ToPoint();
+            for (int i = 0; i < Main.maxNPCs; i++) {
+                NPC npc = Main.npc[i];
+                if (!npc.CanBeChasedBy())
+                    continue;
+
+                Rectangle hoverRect = npc.Hitbox;
+                hoverRect.Inflate(18, 18);
+                if (!hoverRect.Contains(mousePoint))
+                    continue;
+
+                AlienIdentityGlobalNPC npcState = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+                if (HasTrackedTargetStatus(npcState, player.whoAmI))
+                    return npc;
+            }
+
+            return null;
+        }
+
+        private static bool HasTrackedTargetStatus(AlienIdentityGlobalNPC npcState, int owner) {
+            return npcState.IsFasttrackComboActiveFor(owner)
+                || npcState.IsSkyMarkedFor(owner)
+                || npcState.IsBlitzwolferResonantFor(owner)
+                || npcState.IsFrankenstrikeConductiveFor(owner)
+                || npcState.HasLodestarPolarityFor(owner)
+                || npcState.IsWaterHazardSoakedFor(owner)
+                || npcState.IsJetrayLockedFor(owner)
+                || npcState.IsWhampirePreyFor(owner)
+                || npcState.IsSnareOhCursedFor(owner)
+                || npcState.IsAlienXJudgedFor(owner)
+                || npcState.IsDreamboundFor(owner);
+        }
+
+        private static string FormatTrackerSeconds(int ticks) {
+            return $"{Math.Max(1, (int)Math.Ceiling(ticks / 60f))}s";
+        }
+
+        private static string ShortenTrackerText(string text, int maxLength) {
+            if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
+                return text;
+
+            return text[..Math.Max(1, maxLength - 3)] + "...";
+        }
+
+        private int DrawHeroTrackerPanel(List<HeroTrackerEntry> entries, int x, int y, int width, string title = null) {
+            if (entries == null || entries.Count == 0)
+                return 0;
+
+            var clientConfig = ModContent.GetInstance<Ben10ClientConfig>();
+            bool simplified = clientConfig.UseSimplifiedHeroMoveInterface;
+            int rowHeight = simplified ? 28 : 34;
+            int headerHeight = simplified ? 20 : 24;
+            int panelHeight = headerHeight + 6 + entries.Count * rowHeight;
+            Rectangle panelRect = new Rectangle(x, y, width, panelHeight);
+            Texture2D pixel = TextureAssets.MagicPixel.Value;
+
+            Color borderColor = Color.Lerp(new Color(70, 90, 110), entries[0].AccentColor, 0.55f);
+            Color fillColor = new Color(10, 18, 24, 185);
+            Color subduedText = new Color(182, 196, 212);
+
+            Main.spriteBatch.Draw(pixel, panelRect, fillColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Bottom - 2, panelRect.Width, 2), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.X, panelRect.Y, 2, panelRect.Height), borderColor);
+            Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
+
+            string panelTitle = string.IsNullOrWhiteSpace(title) ? entries.Count == 1 ? "Tracker" : "Trackers" : title;
+            Utils.DrawBorderString(Main.spriteBatch, panelTitle,
+                new Vector2(panelRect.X + 10, panelRect.Y + 6), new Color(220, 230, 240), simplified ? 0.68f : 0.78f);
+
+            for (int i = 0; i < entries.Count; i++) {
+                HeroTrackerEntry entry = entries[i];
+                int rowY = panelRect.Y + headerHeight + i * rowHeight;
+                float labelScale = simplified ? 0.68f : 0.76f;
+                float valueScale = simplified ? 0.72f : 0.82f;
+                int barHeight = simplified ? 6 : 8;
+                int barY = rowY + (simplified ? 15 : 19);
+                Rectangle barBackgroundRect = new Rectangle(panelRect.X + 10, barY, panelRect.Width - 20, barHeight);
+                int barFillWidth = Math.Max(0, (int)Math.Round((barBackgroundRect.Width - 2) * MathHelper.Clamp(entry.Progress, 0f, 1f)));
+
+                Utils.DrawBorderString(Main.spriteBatch, entry.Label, new Vector2(panelRect.X + 10, rowY), subduedText, labelScale);
+                Utils.DrawBorderString(Main.spriteBatch, entry.ValueText, new Vector2(panelRect.Right - 10, rowY),
+                    entry.AccentColor, valueScale, 1f, 0f);
+
+                Main.spriteBatch.Draw(pixel, barBackgroundRect, new Color(26, 34, 42, 220));
+                Main.spriteBatch.Draw(pixel, new Rectangle(barBackgroundRect.X, barBackgroundRect.Y, barBackgroundRect.Width, 1), entry.AccentColor * 0.85f);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barBackgroundRect.X, barBackgroundRect.Bottom - 1, barBackgroundRect.Width, 1), entry.AccentColor * 0.85f);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barBackgroundRect.X, barBackgroundRect.Y, 1, barBackgroundRect.Height), entry.AccentColor * 0.85f);
+                Main.spriteBatch.Draw(pixel, new Rectangle(barBackgroundRect.Right - 1, barBackgroundRect.Y, 1, barBackgroundRect.Height), entry.AccentColor * 0.85f);
+
+                if (barFillWidth > 0) {
+                    Rectangle barFillRect = new Rectangle(barBackgroundRect.X + 1, barBackgroundRect.Y + 1,
+                        barFillWidth, Math.Max(1, barBackgroundRect.Height - 2));
+                    Main.spriteBatch.Draw(pixel, barFillRect, entry.AccentColor);
+                }
             }
 
             return panelRect.Height;

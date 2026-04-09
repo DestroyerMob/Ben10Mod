@@ -9,10 +9,10 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class DiamondHeadSpireProjectile : ModProjectile {
-    private const int LifetimeTicks = 28;
+    private const int LifetimeTicks = 34;
     private const float StartScale = 0.25f;
-    private const float MaxScale = 1.1f;
-    private const float CollisionWidthScale = 0.38f;
+    private const float MaxScale = 1.24f;
+    private const float CollisionWidthScale = 0.5f;
     public const int BaseHeight = 118;
 
     public override string Texture => "Ben10Mod/Content/Projectiles/GiantDiamondProjectile";
@@ -30,7 +30,7 @@ public class DiamondHeadSpireProjectile : ModProjectile {
         Projectile.timeLeft = LifetimeTicks;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 10;
+        Projectile.localNPCHitCooldown = 8;
     }
 
     public override void OnSpawn(IEntitySource source) {
@@ -50,7 +50,7 @@ public class DiamondHeadSpireProjectile : ModProjectile {
         Projectile.rotation = Projectile.ai[0];
         UpdateAnchoredPosition();
 
-        Lighting.AddLight(Projectile.Center, 0.2f, 0.34f, 0.48f);
+        Lighting.AddLight(Projectile.Center, 0.24f, 0.4f, 0.56f);
         SpawnSpireDust();
     }
 

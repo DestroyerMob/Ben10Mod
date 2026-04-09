@@ -10,7 +10,6 @@ public class VanillaMaterialAbsorptionSystem : ModSystem {
     }
 
     public override void Unload() {
-        MaterialAbsorptionRegistry.Clear();
     }
 
     private static void RegisterVanillaBars() {

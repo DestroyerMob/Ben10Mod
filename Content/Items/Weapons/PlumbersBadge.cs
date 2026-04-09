@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Prefixes;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Content.Transformations;
 using Microsoft.Xna.Framework;
@@ -20,6 +21,18 @@ namespace Ben10Mod.Content.Items.Weapons {
         public virtual float AdditionalProjectileChance => 0;
         public virtual int   UntransformedBoltDamage    => 6 + BadgeRankValue * 2;
         public virtual int   UntransformedUseTime       => 30;
+        public virtual int   BadgeItemValue => BadgeRankValue switch {
+            <= 0 => Item.buyPrice(silver: 20),
+            1 => Item.buyPrice(silver: 35),
+            2 => Item.buyPrice(silver: 75),
+            3 => Item.buyPrice(gold: 1, silver: 25),
+            4 => Item.buyPrice(gold: 2),
+            5 => Item.buyPrice(gold: 3, silver: 50),
+            6 => Item.buyPrice(gold: 5),
+            7 => Item.buyPrice(gold: 7, silver: 50),
+            8 => Item.buyPrice(gold: 10),
+            _ => Item.buyPrice(gold: 15)
+        };
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
@@ -90,6 +103,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.autoReuse    = true;
             Item.noMelee      = true;
             Item.shoot        = ProjectileID.WoodenArrowFriendly;
+            Item.value        = BadgeItemValue;
 
             Item.DamageType = ModContent.GetInstance<HeroDamage>();
             Item.damage     = BaseDamage;
@@ -98,6 +112,22 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.useStyle   = ItemUseStyleID.Swing;
             Item.useTime    = Item.useAnimation = 25;
             Item.shootSpeed = 10f;
+        }
+
+        public override bool WeaponPrefix() {
+            return false;
+        }
+
+        public override bool RangedPrefix() {
+            return true;
+        }
+
+        public override bool AllowPrefix(int pre) {
+            return pre <= 0 || BadgePrefix.IsBadgePrefixType(pre);
+        }
+
+        public override bool CanReforge() {
+            return !IsBlacklisted();
         }
 
         public override void ModifyTooltips(List<TooltipLine> tooltips) {
@@ -139,6 +169,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.knockBack        = 4f;
             Item.shoot            = ProjectileID.WoodenArrowFriendly;
             Item.ArmorPenetration = 0;
+            Item.crit             = 0;
             Item.UseSound         = null;
 
             if (IsBlacklisted()) {
@@ -149,6 +180,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (!omp.IsTransformed) {
                 state.ultimateStarted = false;
                 ConfigureUntransformedBadgeStats(player, omp);
+                ApplyBadgePrefixStats();
                 return;
             }
 
@@ -156,6 +188,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             if (trans != null)
                 trans.ModifyPlumbersBadgeStats(Item, omp);
 
+            ApplyBadgePrefixStats();
             Item.useTime = Item.useAnimation = (int)(Item.useTime / AttackSpeedMultiplier);
         }
 
@@ -220,6 +253,16 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         private bool IsBlacklisted() {
             return Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(Ben10FeatureType.PlumbersBadge, Mod);
+        }
+
+        private void ApplyBadgePrefixStats() {
+            if (PrefixLoader.GetPrefix(Item.prefix) is not BadgePrefix prefix)
+                return;
+
+            Item.damage = Math.Max(1, (int)Math.Round(Item.damage * prefix.BadgeDamageMultiplier));
+            Item.crit += prefix.BadgeCritBonus;
+            Item.ArmorPenetration = Math.Max(0, Item.ArmorPenetration + prefix.BadgeArmorPenetrationBonus);
+            Item.knockBack = Math.Max(0f, Item.knockBack * prefix.BadgeKnockbackMultiplier);
         }
     }
 

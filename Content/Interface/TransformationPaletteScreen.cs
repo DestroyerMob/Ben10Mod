@@ -883,6 +883,11 @@ public class TransformationPaletteScreen : UIState {
     }
 
     public override void OnDeactivate() {
+        if (global::Ben10Mod.Ben10Mod.IsUnloading) {
+            base.OnDeactivate();
+            return;
+        }
+
         CommitPendingColors();
         CommitSelectedCustomName();
         customNameInput?.SetFocused(false);
@@ -1639,6 +1644,9 @@ public class TransformationPaletteScreen : UIState {
     }
 
     private void CommitSelectedCustomName() {
+        if (global::Ben10Mod.Ben10Mod.IsUnloading || Main.LocalPlayer == null)
+            return;
+
         if (string.IsNullOrWhiteSpace(_selectedCustomNameTransformationId) || customNameInput == null)
             return;
 
@@ -1757,6 +1765,9 @@ public class TransformationPaletteScreen : UIState {
     }
 
     private void CommitPendingColors(bool forceSync = false) {
+        if (global::Ben10Mod.Ben10Mod.IsUnloading || Main.LocalPlayer == null)
+            return;
+
         if (string.IsNullOrWhiteSpace(_currentTransformationId) || _activeChannels.Count == 0)
             return;
 
