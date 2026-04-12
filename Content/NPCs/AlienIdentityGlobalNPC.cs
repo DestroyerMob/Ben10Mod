@@ -27,6 +27,8 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool EchoEchoResonancePrimed;
     public int EchoEchoFractureOwner = -1;
     public int EchoEchoFractureTime;
+    public int UltimateEchoEchoFocusedOwner = -1;
+    public int UltimateEchoEchoFocusedTime;
 
     public int FrankenstrikeConductiveOwner = -1;
     public int FrankenstrikeConductiveStacks;
@@ -73,6 +75,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsEchoEchoResonantFor(int owner) => EchoEchoResonanceOwner == owner && EchoEchoResonanceTime > 0 && EchoEchoResonanceStacks > 0;
     public bool IsEchoEchoResonancePrimedFor(int owner) => IsEchoEchoResonantFor(owner) && EchoEchoResonancePrimed;
     public bool IsEchoEchoFracturedFor(int owner) => EchoEchoFractureOwner == owner && EchoEchoFractureTime > 0;
+    public bool IsUltimateEchoEchoFocusedFor(int owner) => UltimateEchoEchoFocusedOwner == owner && UltimateEchoEchoFocusedTime > 0;
     public bool IsFrankenstrikeConductiveFor(int owner) => FrankenstrikeConductiveOwner == owner && FrankenstrikeConductiveTime > 0 && FrankenstrikeConductiveStacks > 0;
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
@@ -160,6 +163,11 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public void ApplyEchoEchoFracture(int owner, int time) {
         EchoEchoFractureOwner = owner;
         EchoEchoFractureTime = Utils.Clamp(time, 1, 240);
+    }
+
+    public void ApplyUltimateEchoEchoFocus(int owner, int time) {
+        UltimateEchoEchoFocusedOwner = owner;
+        UltimateEchoEchoFocusedTime = Utils.Clamp(System.Math.Max(UltimateEchoEchoFocusedTime, time), 1, 300);
     }
 
     public void ApplyFrankenstrikeConductive(int owner, int stacks, int time) {
@@ -445,6 +453,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         if (EchoEchoFractureTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(205, 235, 255), 0.18f);
 
+        if (UltimateEchoEchoFocusedTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(165, 228, 255), 0.28f);
+
         if (FrankenstrikeConductiveTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(120, 205, 255), 0.18f + FrankenstrikeConductiveStacks * 0.04f);
 
@@ -546,6 +557,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         }
         else {
             EchoEchoFractureOwner = -1;
+        }
+
+        if (UltimateEchoEchoFocusedTime > 0) {
+            UltimateEchoEchoFocusedTime--;
+        }
+        else {
+            UltimateEchoEchoFocusedOwner = -1;
         }
 
         if (FrankenstrikeConductiveTime > 0) {

@@ -237,6 +237,7 @@ public class EchoEchoTransformation : Transformation {
             owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(2f + consumedStacks * 0.45f);
             if (target.boss)
                 identity.ApplyEchoEchoFracture(projectile.owner, 180);
+            UltimateEchoEchoTransformation.HandleCataclysmResonancePop(owner, target);
             return;
         }
 

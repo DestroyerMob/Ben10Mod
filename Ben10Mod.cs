@@ -129,6 +129,7 @@ namespace Ben10Mod {
 			ExecuteAmpFibianPhaseShift,
 			ExecuteBuzzShockTeleport,
 			ExecuteEchoEchoShift,
+			ExecuteUltimateEchoEchoRelay,
 			RequestGhostFreakPossession,
 			SyncGhostFreakPossessionState
 		}
@@ -477,6 +478,25 @@ namespace Ben10Mod {
 						return;
 
 					global::Ben10Mod.Content.Transformations.EchoEcho.EchoEchoTransformation.ExecuteEchoShift(player);
+					break;
+				}
+				case MessageType.ExecuteUltimateEchoEchoRelay: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					Vector2 cursorWorld = new(reader.ReadSingle(), reader.ReadSingle());
+					Player player = Main.player[whoAmI];
+					if (!player.active || player.dead)
+						return;
+
+					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+					if (omp.currentTransformationId != "Ben10Mod:UltimateEchoEcho")
+						return;
+
+					global::Ben10Mod.Content.Transformations.EchoEcho.UltimateEchoEchoTransformation.ExecuteResonantRelay(player, cursorWorld);
 					break;
 				}
 				case MessageType.ExecuteAmpFibianPhaseShift: {

@@ -862,6 +862,11 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(npcState.EchoEchoFractureTime / 180f, 0f, 1f), new Color(210, 238, 255)));
             }
 
+            if (npcState.IsUltimateEchoEchoFocusedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Focused", FormatTrackerSeconds(npcState.UltimateEchoEchoFocusedTime),
+                    MathHelper.Clamp(npcState.UltimateEchoEchoFocusedTime / 150f, 0f, 1f), new Color(166, 228, 255)));
+            }
+
             if (npcState.IsFrankenstrikeConductiveFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Conductive", $"{npcState.FrankenstrikeConductiveStacks}/6",
                     MathHelper.Clamp(npcState.FrankenstrikeConductiveStacks / 6f, 0f, 1f), new Color(135, 175, 255)));
@@ -963,6 +968,7 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.IsBlitzwolferResonantFor(owner)
                 || npcState.IsEchoEchoResonantFor(owner)
                 || npcState.IsEchoEchoFracturedFor(owner)
+                || npcState.IsUltimateEchoEchoFocusedFor(owner)
                 || npcState.IsFrankenstrikeConductiveFor(owner)
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
