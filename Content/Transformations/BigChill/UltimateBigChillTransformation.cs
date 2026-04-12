@@ -23,19 +23,19 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     public override Transformation ChildTransformation => null;
 
     public override string Description =>
-        "An evolved Necrofriggian air-superiority form that blankets the arena in coldfire, holds targets in Deep Freeze, and chains Shatters through the fight.";
+        "An evolved Necrofriggian air-superiority form that blankets the arena in coldfire, phases through pressure, and chains Hoarfrosted Shiverbursts through the fight.";
 
     public override List<string> Abilities => new() {
-        "Direct hits add Frostbite and light coldfire; Deep Frozen targets lose more defense and spread Frostbite when shattered.",
-        "Coldfire Stream is the long stacking breath and refreshes Deep Freeze briefly while you stay on target.",
-        "Absolute Lance is the piercing cash-out shot that shatters, splinters, and leaves a short coldfire patch.",
-        "Spectral Phase dashes intangible, ends in a frost pulse, and supercharges your next lance window.",
-        "Permafrost Wake keeps building Frostbite and slowing the arena while you stay airborne.",
-        "Shatters refund OE, launch frost wisps, fracture bosses, and Polar Cataclysm keeps targets half-stacked for repeat freezes."
+        "Direct hits apply Hoarfrost and light coldfire, shaving defense while you stay airborne over the fight.",
+        "Coldfire Stream is the long marking breath that blankets air lanes in front of you.",
+        "Absolute Barrage is the evolved black-ice cash-out that detonates Hoarfrost into larger Shiverbursts.",
+        "Spectral Phase dashes intangible, drives through marked enemies, and supercharges your next burst window.",
+        "Permafrost Wake leaves empowered drifting storms behind your movement while you kite.",
+        "Shiverbursts refund OE, launch frost wisps, fracture bosses, and Polar Cataclysm keeps the whole chain rolling."
     };
 
     public override string PrimaryAttackName => "Coldfire Stream";
-    public override string SecondaryAttackName => "Absolute Lance";
+    public override string SecondaryAttackName => "Absolute Barrage";
     public override string PrimaryAbilityName => "Spectral Phase";
     public override string SecondaryAbilityName => "Permafrost Wake";
     public override string UltimateAbilityName => "Polar Cataclysm";
@@ -44,7 +44,7 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     public override int SecondaryAttackSpeed => 18;
     public override int SecondaryShootSpeed => 21;
     public override float PrimaryAttackModifier => 0.44f;
-    public override float SecondaryAttackModifier => 1.36f;
+    public override float SecondaryAttackModifier => 0.5f;
     public override int PrimaryAbilityCost => SpectralPhaseBaseCost;
     public override int SecondaryAbilityCost => PermafrostWakeCost;
     public override int UltimateAbilityCost => PolarCataclysmCost;
@@ -62,28 +62,32 @@ public class UltimateBigChillTransformation : BigChillTransformation {
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => state.AbsoluteZeroActive
-                ? compact ? "Wide refreeze" : "Wider coldfire stream that rebuilds Deep Freeze extremely quickly"
-                : compact ? "Stack Frostbite" : "Long coldfire breath that stacks Frostbite and holds Deep Freeze open",
+                ? compact ? "Wide retag" : "Wider coldfire stream that keeps Hoarfrost cycling rapidly"
+                : compact ? "Apply Hoarfrost" : "Long coldfire breath that keeps Hoarfrost painted on targets",
             OmnitrixPlayer.AttackSelection.Secondary => state.PhaseDriftEmpowered
-                ? compact ? "Lance +" : "Faster empowered lance with stronger Shatter payoff"
-                : compact ? "Shatter lance" : "Piercing payoff spear that cashes Deep Freeze out into Shatter",
+                ? compact ? "Barrage +" : "Empowered barrage with tighter shards and stronger Shiverbursts"
+                : compact ? "Burst barrage" : "Cash Hoarfrost out into larger Shiverbursts",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => omp.IsPrimaryAbilityActive
                 ? compact
                     ? $"Phase {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)}"
                     : $"Spectral Phase active • {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)} left"
                 : compact
                     ? $"{GetPrimaryAbilityCost(omp)} OE"
-                    : $"Dash intangible, pulse on exit, and empower your next lance • {GetPrimaryAbilityCost(omp)} OE",
-            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
-                ? $"{GetSecondaryAbilityCost(omp)} OE"
-                : $"Drifting frost storm that keeps stacking and slowing the arena • {GetSecondaryAbilityCost(omp)} OE",
+                    : $"Dash intangible, surge through marked enemies, and empower your next burst • {GetPrimaryAbilityCost(omp)} OE",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => state.WailingWakeActive
+                ? compact
+                    ? $"Wake {OmnitrixPlayer.FormatCooldownTicks(state.WailingWakeTicksRemaining)}"
+                    : $"Permafrost Wake active • {OmnitrixPlayer.FormatCooldownTicks(state.WailingWakeTicksRemaining)} left"
+                : compact
+                    ? $"{GetSecondaryAbilityCost(omp)} OE"
+                    : $"Drifting frost storms that hold the arena open behind your movement • {GetSecondaryAbilityCost(omp)} OE",
             OmnitrixPlayer.AttackSelection.Ultimate => state.AbsoluteZeroActive
                 ? compact
                     ? $"Polar {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)}"
                     : $"Polar Cataclysm active • {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)} left"
                 : compact
                     ? $"{GetUltimateAbilityCost(omp)} OE"
-                    : $"Air-superiority overdrive with side lances, stronger wake, and repeat freeze-shatters • {GetUltimateAbilityCost(omp)} OE",
+                    : $"Air-superiority overdrive with automatic wake coverage and repeat Hoarfrost bursts • {GetUltimateAbilityCost(omp)} OE",
             _ => base.GetAttackResourceSummary(selection, omp, compact)
         };
     }

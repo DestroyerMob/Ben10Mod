@@ -889,17 +889,10 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(npcState.JetrayLockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
             }
 
-            if (npcState.IsBigChillDeepFrozenFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Deep Freeze", FormatTrackerSeconds(npcState.BigChillDeepFreezeTime),
-                    MathHelper.Clamp(npcState.BigChillDeepFreezeTime / (float)BigChillTransformation.DeepFreezeDurationTicks, 0f, 1f),
-                    new Color(188, 236, 255)));
-            }
-            else if (npcState.HasBigChillFrostbiteFor(player.whoAmI)) {
-                float frostbiteRatio = npcState.GetBigChillFrostbiteStacks(player.whoAmI) /
-                                       (float)BigChillTransformation.FrostbiteThreshold;
-                entries.Add(new HeroTrackerEntry("Frostbite",
-                    $"{npcState.GetBigChillFrostbiteStacks(player.whoAmI)}/{BigChillTransformation.FrostbiteThreshold}",
-                    MathHelper.Clamp(frostbiteRatio, 0f, 1f), new Color(145, 215, 255)));
+            if (npcState.HasBigChillFrostbiteFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Hoarfrost", FormatTrackerSeconds(npcState.BigChillFrostbiteTime),
+                    MathHelper.Clamp(npcState.BigChillFrostbiteTime / (float)BigChillTransformation.HoarfrostDurationTicks, 0f, 1f),
+                    new Color(145, 215, 255)));
             }
 
             if (npcState.IsBigChillFrigidFracturedFor(player.whoAmI)) {

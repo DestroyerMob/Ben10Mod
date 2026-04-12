@@ -19,6 +19,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
     private const float MinWidth = 13f;
     private const float BaseMaxWidth = 28f;
     private const float UltimateFormBonusWidth = 6f;
+    private const float AirborneBonusWidth = 6f;
 
     private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
     private bool PhaseDriftEmpowered => Projectile.ai[1] >= 0.5f;
@@ -69,7 +70,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 end = start + direction * GetBreathLength();
         float collisionPoint = 0f;
 
-        return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), start, end, GetBreathWidth(),
+        return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), start, end, GetBreathWidth(owner),
             ref collisionPoint);
     }
 
@@ -83,7 +84,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Vector2 start = GetBreathStart(owner, direction) - Main.screenPosition;
         float length = GetBreathLength();
-        float width = GetBreathWidth();
+        float width = GetBreathWidth(owner);
         Vector2 center = start + direction * (length * 0.5f);
         float rotation = direction.ToRotation();
 
@@ -121,8 +122,9 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         return MathHelper.Lerp(MinLength, maxLength, MathHelper.Clamp(GetProgress() * 1.25f, 0f, 1f));
     }
 
-    private float GetBreathWidth() {
-        float maxWidth = BaseMaxWidth + (UltimateForm ? UltimateFormBonusWidth : 0f) + (AbsoluteZero ? 12f : 0f);
+    private float GetBreathWidth(Player owner) {
+        float airborneWidth = IsAirborne(owner) ? AirborneBonusWidth : 0f;
+        float maxWidth = BaseMaxWidth + (UltimateForm ? UltimateFormBonusWidth : 0f) + (AbsoluteZero ? 12f : 0f) + airborneWidth;
         return MathHelper.Lerp(MinWidth, maxWidth, MathHelper.Clamp(GetProgress() * 1.2f, 0f, 1f)) * Projectile.scale;
     }
 
@@ -137,7 +139,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 start = GetBreathStart(owner, direction);
         Vector2 normal = new(-direction.Y, direction.X);
         float length = GetBreathLength();
-        float width = GetBreathWidth();
+        float width = GetBreathWidth(owner);
         int dustCount = AbsoluteZero ? 3 : UltimateForm ? 3 : 2;
         for (int i = 0; i < dustCount; i++) {
             if (!Main.rand.NextBool(2))
@@ -152,5 +154,9 @@ public class BigChillFrostBreathProjectile : ModProjectile {
                 Main.rand.NextFloat(0.92f, AbsoluteZero ? 1.24f : 1.1f));
             dust.noGravity = true;
         }
+    }
+
+    private static bool IsAirborne(Player owner) {
+        return owner.velocity.Y < -0.1f || owner.velocity.Y > 0.25f || owner.controlJump || owner.wingTime > 0f;
     }
 }

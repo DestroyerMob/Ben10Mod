@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
@@ -21,23 +22,23 @@ public class BigChillTransformation : Transformation {
     internal const int FrostbiteThreshold = 8;
     internal const int FrostbiteRefreshTicks = 4 * 60;
     internal const int DeepFreezeDurationTicks = 4 * 60;
+    internal const int HoarfrostDurationTicks = 4 * 60;
 
     private const int FallbackBaseDamage = 24;
     private const int PhaseDriftCost = 16;
     private const int GraveMistCost = 18;
     private const int AbsoluteZeroCost = 60;
-    private const int CryoLanceUseTime = 20;
+    private const int WailingWakeDurationTicks = BigChillStatePlayer.WailingWakeDurationTicks;
+    private const int CryoLanceUseTime = 19;
     private const int EctoBreathUseTime = 7;
-    private const int DeepFreezePressureThreshold = 6;
-    private const int BaseDeepFreezeArmorPenetration = 8;
+    private const int BaseDeepFreezeArmorPenetration = 4;
     private const int UltimateDeepFreezeArmorPenetration = 10;
     private const int UltimateBreathRefreshTicks = 8;
     private const int UltimateFrigidFractureDurationTicks = 4 * 60;
-    private const int UltimateResidualFrostbiteStacks = 4;
     private const float EctoBreathDamageMultiplier = 0.34f;
-    private const float CryoLanceDamageMultiplier = 1.12f;
+    private const float CryoLanceDamageMultiplier = 0.42f;
     private const float GraveMistDamageMultiplier = 0.52f;
-    private const float PhaseDriftDamageMultiplier = 0.48f;
+    private const float PhaseDriftDamageMultiplier = 0.38f;
     private const float ShatterDamageMultiplier = 0.76f;
     private const float FinalPulseDamageMultiplier = 0.92f;
     private const float FrostShardDamageMultiplier = 0.34f;
@@ -49,23 +50,23 @@ public class BigChillTransformation : Transformation {
     public override Transformation ChildTransformation => ModContent.GetInstance<UltimateBigChillTransformation>();
 
     public override string Description =>
-        "A spectral Necrofriggian controller who wins from the air, phases out of danger, stacks Frostbite quickly, then cashes Deep Freeze out into explosive Shatters.";
+        "A spectral Necrofriggian skirmisher who paints targets with Hoarfrost, phases through danger and enemies, then cashes that mark out into explosive Shiverbursts while staying airborne.";
 
     public override List<string> Abilities => new() {
-        "All direct hits apply Frostbite; 8 stacks become Deep Freeze, which slows hard and opens a Shatter payoff.",
-        "Ecto Breath is the rapid stacking stream you hold while drifting over the fight.",
-        "Cryo Lance is the piercing cash-out shot that consumes Deep Freeze into Shatter and bonus ice splinters.",
-        "Phase Drift dashes through danger, leaves freezing mist behind, and briefly empowers your next pressure window.",
-        "Grave Mist controls space, keeps Frostbite building, and drags hostile projectiles down while you reposition.",
-        "Necrofriggian Hunger refunds OE and launches homing frost shards whenever you trigger a Shatter.",
-        "Absolute Zero overclocks the full loop for 8 seconds and ends with a battlefield-wide freezing pulse."
+        "Direct hits apply short Hoarfrost, slowing normal enemies, shaving defense, and priming a burst window.",
+        "Coldfire Breath is the rapid marking stream you hold while circling above the fight.",
+        "Black Ice Barrage pops Hoarfrost into Shiverburst, splinter damage, and a brief frost patch.",
+        "Spectral Phase dashes intangible through enemies and projectiles, leaving a freezing trail behind.",
+        "Wailing Wake leaves drifting frost clouds behind your movement and lightly slows hostile projectiles.",
+        "Predator from the Veil boosts damage right after phasing and refunds OE when you trigger Shiverburst well.",
+        "Dead Winter overclocks flight, auto-enables Wailing Wake, and lets Shiverburst spread Hoarfrost back through the arena."
     };
 
-    public override string PrimaryAttackName => "Ecto Breath";
-    public override string SecondaryAttackName => "Cryo Lance";
-    public override string PrimaryAbilityName => "Phase Drift";
-    public override string SecondaryAbilityName => "Grave Mist";
-    public override string UltimateAbilityName => "Absolute Zero";
+    public override string PrimaryAttackName => "Coldfire Breath";
+    public override string SecondaryAttackName => "Black Ice Barrage";
+    public override string PrimaryAbilityName => "Spectral Phase";
+    public override string SecondaryAbilityName => "Wailing Wake";
+    public override string UltimateAbilityName => "Dead Winter";
 
     public override int PrimaryAttack => ModContent.ProjectileType<BigChillFrostBreathProjectile>();
     public override int PrimaryAttackSpeed => EctoBreathUseTime;
@@ -85,7 +86,7 @@ public class BigChillTransformation : Transformation {
     public override int PrimaryAbilityCost => PhaseDriftCost;
 
     public override bool HasSecondaryAbility => true;
-    public override int SecondaryAbilityDuration => 1;
+    public override int SecondaryAbilityDuration => WailingWakeDurationTicks;
     public override int SecondaryAbilityCooldown => BigChillStatePlayer.GraveMistCooldownTicks;
     public override int SecondaryAbilityCost => GraveMistCost;
 
@@ -93,6 +94,17 @@ public class BigChillTransformation : Transformation {
     public override int UltimateAbilityDuration => BigChillStatePlayer.AbsoluteZeroDurationTicks;
     public override int UltimateAbilityCooldown => BigChillStatePlayer.AbsoluteZeroCooldownTicks;
     public override int UltimateAbilityCost => AbsoluteZeroCost;
+
+    public override int GetPrimaryAbilityCost(OmnitrixPlayer omp) {
+        return omp.Player.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive ? 10 : PhaseDriftCost;
+    }
+
+    public override int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) {
+        int baseCooldown = omp.Player.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive
+            ? 8 * 60
+            : BigChillStatePlayer.PhaseDriftCooldownTicks;
+        return ApplyAbilityCooldownMultiplier(baseCooldown, omp.primaryAbilityCooldownMultiplier);
+    }
 
     public override void OnDetransform(Player player, OmnitrixPlayer omp) {
         KillOwnedProjectiles(player,
@@ -109,12 +121,12 @@ public class BigChillTransformation : Transformation {
 
         BigChillStatePlayer state = player.GetModPlayer<BigChillStatePlayer>();
         player.GetDamage<HeroDamage>() += 0.08f;
-        player.moveSpeed += 0.1f;
+        player.moveSpeed += 0.12f;
         player.runAcceleration += 0.08f;
         player.maxRunSpeed += 0.85f;
         player.noFallDmg = true;
         player.ignoreWater = true;
-        player.aggro -= state.PhaseDriftEmpowered ? 520 : 280;
+        player.aggro -= state.PhaseDriftEmpowered ? 560 : 340;
         player.buffImmune[BuffID.Chilled] = true;
         player.buffImmune[BuffID.Frozen] = true;
         player.buffImmune[BuffID.Frostburn] = true;
@@ -123,6 +135,7 @@ public class BigChillTransformation : Transformation {
         player.wingTime = Math.Max(player.wingTime, state.AbsoluteZeroActive ? 28f : 16f);
 
         if (state.PhaseDriftEmpowered) {
+            player.GetDamage<HeroDamage>() += 0.05f;
             player.moveSpeed += 0.12f;
             player.maxRunSpeed += 0.9f;
             player.runAcceleration += 0.12f;
@@ -137,6 +150,7 @@ public class BigChillTransformation : Transformation {
 
         if (state.AbsoluteZeroActive) {
             player.GetDamage<HeroDamage>() += 0.05f;
+            player.GetAttackSpeed<HeroDamage>() += 0.08f;
             player.moveSpeed += 0.12f;
             player.maxRunSpeed += 1.15f;
             player.runAcceleration += 0.14f;
@@ -186,10 +200,12 @@ public class BigChillTransformation : Transformation {
     }
 
     public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        BigChillStatePlayer state = player.GetModPlayer<BigChillStatePlayer>();
+        TrySpawnWailingWakeCloud(player);
+
         if (Main.dedServ)
             return;
 
-        BigChillStatePlayer state = player.GetModPlayer<BigChillStatePlayer>();
         int spawnRate = state.AbsoluteZeroActive ? 1 : state.PhaseDriftEmpowered ? 2 : state.HungerBoostActive ? 2 : 4;
         if (!Main.rand.NextBool(spawnRate))
             return;
@@ -221,7 +237,8 @@ public class BigChillTransformation : Transformation {
     }
 
     public override bool TryActivateSecondaryAbility(Player player, OmnitrixPlayer omp) {
-        if (player.HasBuff<SecondaryAbilityCooldown>() || player.dead || player.CCed)
+        if (player.HasBuff<SecondaryAbilityCooldown>() || player.HasBuff<SecondaryAbility>() ||
+            player.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive || player.dead || player.CCed)
             return true;
 
         if (omp.omnitrixEnergy < GetSecondaryAbilityCost(omp)) {
@@ -231,20 +248,11 @@ public class BigChillTransformation : Transformation {
 
         omp.omnitrixEnergy -= GetSecondaryAbilityCost(omp);
         omp.secondaryAbilityTransformationId = omp.currentTransformationId;
+        player.AddBuff(ModContent.BuffType<SecondaryAbility>(), GetSecondaryAbilityDuration(omp));
         player.AddBuff(ModContent.BuffType<SecondaryAbilityCooldown>(), GetSecondaryAbilityCooldown(omp));
 
-        BigChillStatePlayer state = player.GetModPlayer<BigChillStatePlayer>();
-        Vector2 fallbackDirection = new Vector2(player.direction == 0 ? 1 : player.direction, 0f);
-        Vector2 direction = ResolveAimDirection(player, fallbackDirection);
-        Vector2 targetPosition = ResolveTargetPosition(player, direction, 150f);
-        Vector2 driftVelocity = new Vector2(player.direction * 0.55f, -0.08f);
-        int mistDamage = ResolveHeroDamage(player, GraveMistDamageMultiplier * (state.AbsoluteZeroActive ? 1.08f : 1f));
-        Projectile.NewProjectile(player.GetSource_FromThis(), targetPosition, driftVelocity,
-            ModContent.ProjectileType<BigChillGraveMistProjectile>(), mistDamage, 0.4f, player.whoAmI,
-            BigChillGraveMistProjectile.VariantMist, state.AbsoluteZeroActive ? 1f : 0f);
-
         if (!Main.dedServ)
-            SoundEngine.PlaySound(SoundID.Item30 with { Pitch = -0.24f, Volume = 0.42f }, targetPosition);
+            SoundEngine.PlaySound(SoundID.Item30 with { Pitch = -0.3f, Volume = 0.4f }, player.Center);
 
         return true;
     }
@@ -256,32 +264,22 @@ public class BigChillTransformation : Transformation {
         bool ultimateForm = state.UltimateBigChillActive;
 
         if (omp.altAttack) {
-            float lanceMultiplier = SecondaryAttackModifier * (state.AbsoluteZeroActive ? 1.08f : 1f);
-            if (ultimateForm && state.PhaseDriftEmpowered)
-                lanceMultiplier *= 1.14f;
+            int shardCount = state.PhaseDriftEmpowered ? 4 : 3;
+            if (state.AbsoluteZeroActive)
+                shardCount += ultimateForm ? 2 : 1;
 
-            int lanceDamage = ScaleDamage(damage, lanceMultiplier);
-            float lanceSpeed = SecondaryShootSpeed + (ultimateForm && state.PhaseDriftEmpowered ? 3f : 0f);
+            float spread = state.PhaseDriftEmpowered ? 0.12f : 0.2f;
+            if (state.AbsoluteZeroActive)
+                spread += ultimateForm ? 0.04f : 0.02f;
+
+            float shardSpeed = SecondaryShootSpeed + (state.AbsoluteZeroActive ? 1.6f : 0f) + (state.PhaseDriftEmpowered ? 1f : 0f);
             Vector2 spawnPosition = player.MountedCenter + direction * 18f;
-            Projectile.NewProjectile(source, spawnPosition, direction * lanceSpeed, SecondaryAttack, lanceDamage,
-                knockback + 1f, player.whoAmI, state.AbsoluteZeroActive ? 1f : 0f, state.PhaseDriftEmpowered ? 1f : 0f);
-
-            if (state.AbsoluteZeroActive) {
-                if (ultimateForm) {
-                    int echoDamage = ScaleDamage(damage, SecondaryAttackModifier * 0.66f);
-                    Projectile.NewProjectile(source, spawnPosition, direction.RotatedBy(-0.16f) * (lanceSpeed - 1.6f),
-                        SecondaryAttack, echoDamage, knockback + 0.6f, player.whoAmI, 1f,
-                        state.PhaseDriftEmpowered ? 1f : 0f);
-                    Projectile.NewProjectile(source, spawnPosition, direction.RotatedBy(0.16f) * (lanceSpeed - 1.6f),
-                        SecondaryAttack, echoDamage, knockback + 0.6f, player.whoAmI, 1f,
-                        state.PhaseDriftEmpowered ? 1f : 0f);
-                }
-                else {
-                    int echoDamage = ScaleDamage(damage, SecondaryAttackModifier * 0.78f);
-                    Vector2 sideDirection = direction.RotatedBy(0.14f * state.ConsumeSideLanceDirection());
-                    Projectile.NewProjectile(source, spawnPosition, sideDirection * (SecondaryShootSpeed - 1), SecondaryAttack,
-                        echoDamage, knockback + 0.6f, player.whoAmI, 1f, state.PhaseDriftEmpowered ? 1f : 0f);
-                }
+            for (int i = 0; i < shardCount; i++) {
+                float offset = shardCount == 1 ? 0f : MathHelper.Lerp(-spread, spread, i / (float)(shardCount - 1));
+                int shardDamage = ScaleDamage(damage, SecondaryAttackModifier * (state.AbsoluteZeroActive ? 1.04f : 1f));
+                Projectile.NewProjectile(source, spawnPosition, direction.RotatedBy(offset) * shardSpeed, SecondaryAttack,
+                    shardDamage, knockback + 0.75f, player.whoAmI, state.AbsoluteZeroActive ? 1f : 0f,
+                    state.PhaseDriftEmpowered ? 1f : 0f);
             }
 
             return false;
@@ -304,14 +302,13 @@ public class BigChillTransformation : Transformation {
                 modifiers.SourceDamage *= state.UltimateBigChillActive ? 1.2f : 1.12f;
         }
 
-        if (projectile.type != SecondaryAttack)
+        if (!identity.HasBigChillFrostbiteFor(player.whoAmI) || !state.PhaseDriftEmpowered)
             return;
 
-        if (!identity.IsBigChillDeepFrozenFor(player.whoAmI))
-            return;
-
-        if (state.PhaseDriftEmpowered)
-            modifiers.SourceDamage *= state.UltimateBigChillActive ? 1.3f : 1.22f;
+        if (projectile.type == PrimaryAttack)
+            modifiers.SourceDamage *= state.AbsoluteZeroActive ? 1.18f : 1.12f;
+        else if (projectile.type == SecondaryAttack)
+            modifiers.SourceDamage *= state.AbsoluteZeroActive ? 1.26f : 1.18f;
     }
 
     public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
@@ -321,30 +318,34 @@ public class BigChillTransformation : Transformation {
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => state.AbsoluteZeroActive
-                ? compact ? "Wide Frostbite" : "Wider stream with faster Frostbite during Absolute Zero"
+                ? compact ? "Wide Hoarfrost" : "Longer, wider breath that keeps Hoarfrost painted on targets"
                 : state.PhaseDriftEmpowered
-                    ? compact ? "Long Frostbite" : "Extended stream right after Phase Drift"
-                    : compact ? "Build Frostbite" : "Rapid stream that stacks Frostbite quickly",
+                    ? compact ? "Phase damage +" : "Marking breath with bonus post-phase pressure"
+                    : compact ? "Apply Hoarfrost" : "Rapid breath that marks targets with Hoarfrost",
             OmnitrixPlayer.AttackSelection.Secondary => state.PhaseDriftEmpowered
-                ? compact ? "Shatter +" : "Piercing payoff shot with bonus Deep Freeze damage"
-                : compact ? "Cash out Freeze" : "Consume Deep Freeze into Shatter",
+                ? compact ? "Burst +" : "Tighter barrage with a stronger Shiverburst window"
+                : compact ? "Pop Hoarfrost" : "Consume Hoarfrost into Shiverburst",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => omp.IsPrimaryAbilityActive
                 ? compact
-                    ? $"Drift {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)}"
-                    : $"Phase Drift active • {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)} left"
+                    ? $"Phase {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)}"
+                    : $"Spectral Phase active • {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)} left"
                 : compact
                     ? $"{GetPrimaryAbilityCost(omp)} OE"
-                    : $"Dash intangible and empower your next 2 seconds • {GetPrimaryAbilityCost(omp)} OE",
-            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
-                ? $"{GetSecondaryAbilityCost(omp)} OE"
-                : $"Freeze a zone and slow hostile shots • {GetSecondaryAbilityCost(omp)} OE",
+                    : $"Dash intangible, phase through pressure, and open a damage window • {GetPrimaryAbilityCost(omp)} OE",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => state.WailingWakeActive
+                ? compact
+                    ? $"Wake {OmnitrixPlayer.FormatCooldownTicks(state.WailingWakeTicksRemaining)}"
+                    : $"Wailing Wake active • {OmnitrixPlayer.FormatCooldownTicks(state.WailingWakeTicksRemaining)} left"
+                : compact
+                    ? $"{GetSecondaryAbilityCost(omp)} OE"
+                    : $"Leave drifting mist clouds behind your movement • {GetSecondaryAbilityCost(omp)} OE",
             OmnitrixPlayer.AttackSelection.Ultimate => state.AbsoluteZeroActive
                 ? compact
-                    ? $"Zero {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)}"
-                    : $"Absolute Zero active • {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)} left"
+                    ? $"Winter {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)}"
+                    : $"Dead Winter active • {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)} left"
                 : compact
                     ? $"{GetUltimateAbilityCost(omp)} OE"
-                    : $"Flight overdrive, wider breath, side lances, bigger Shatters • {GetUltimateAbilityCost(omp)} OE",
+                    : $"Flight overdrive with auto Wailing Wake and spreading Shiverbursts • {GetUltimateAbilityCost(omp)} OE",
             _ => base.GetAttackResourceSummary(selection, omp, compact)
         };
     }
@@ -363,56 +364,76 @@ public class BigChillTransformation : Transformation {
         if (!TryGetActiveBigChillOwner(projectile, out Player owner))
             return;
 
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        bool absoluteZero = projectile.ai[0] >= 0.5f;
-        bool ultimateForm = IsUltimateBigChill(owner);
-        if (ultimateForm && identity.RefreshBigChillDeepFreeze(owner.whoAmI, absoluteZero ? UltimateBreathRefreshTicks + 2 : UltimateBreathRefreshTicks)) {
-            target.AddBuff(BuffID.Frostburn2, absoluteZero ? 300 : 240);
-            return;
-        }
-
-        int frostbiteGain = ultimateForm ? (absoluteZero ? 3 : 2) : (absoluteZero ? 2 : 1);
-        int deepFreezePressure = ultimateForm ? 1 : (absoluteZero ? 2 : 1);
-        ResolveColdHit(projectile, target, damageDone, frostbiteGain, deepFreezePressure, directShatter: false,
-            absoluteZero: absoluteZero);
+        BigChillStatePlayer state = owner.GetModPlayer<BigChillStatePlayer>();
+        int duration = state.AbsoluteZeroActive
+            ? HoarfrostDurationTicks + 90
+            : state.UltimateBigChillActive
+                ? HoarfrostDurationTicks + 45
+                : HoarfrostDurationTicks;
+        ApplyHoarfrost(owner, target, duration);
     }
 
     internal static void ResolveCryoLanceHit(Projectile projectile, NPC target, int damageDone) {
-        bool ultimateForm = TryGetActiveBigChillOwner(projectile, out Player owner) && IsUltimateBigChill(owner);
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        bool deepFrozenTarget = identity.IsBigChillDeepFrozenFor(projectile.owner);
-        bool shatterTriggered = ResolveColdHit(projectile, target, damageDone, frostbiteGain: 2, deepFreezePressure: 3,
-            directShatter: true, extraShardCount: ultimateForm ? 2 : 1, absoluteZero: projectile.ai[0] >= 0.5f);
-        if (deepFrozenTarget || shatterTriggered)
-            SpawnCryoSplinters(projectile, target.Center, projectile.damage,
-                ultimateForm ? (projectile.ai[0] >= 0.5f ? 5 : 4) : (projectile.ai[0] >= 0.5f ? 3 : 2));
+        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+            return;
 
-        if (ultimateForm && (deepFrozenTarget || shatterTriggered))
-            SpawnColdfirePatch(projectile, target.Center, projectile.ai[0] >= 0.5f);
+        BigChillStatePlayer state = owner.GetModPlayer<BigChillStatePlayer>();
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!identity.HasBigChillFrostbiteFor(owner.whoAmI)) {
+            ApplyHoarfrost(owner, target, HoarfrostDurationTicks);
+            return;
+        }
+
+        bool shiverburstTriggered = TriggerShiverburst(owner, target, projectile.GetSource_FromThis(),
+            Math.Max(projectile.damage, damageDone), projectile.knockBack + 0.85f, consumeHoarfrost: true,
+            spreadHoarfrost: state.AbsoluteZeroActive || state.UltimateBigChillActive);
+        if (!shiverburstTriggered)
+            return;
+
+        int splinterCount = state.PhaseDriftEmpowered
+            ? (state.AbsoluteZeroActive ? 5 : 4)
+            : (state.AbsoluteZeroActive ? 4 : 3);
+        SpawnCryoSplinters(projectile, target.Center, projectile.damage, splinterCount);
+        SpawnColdfirePatch(projectile, target.Center, state.AbsoluteZeroActive);
     }
 
     internal static void ResolveMistHit(Projectile projectile, NPC target, int damageDone, bool trailSegment) {
-        bool ultimateForm = TryGetActiveBigChillOwner(projectile, out Player owner) && IsUltimateBigChill(owner);
-        int frostbiteGain = trailSegment ? 1 : (ultimateForm ? 3 : 2);
-        int deepFreezePressure = trailSegment ? 1 : (ultimateForm ? 1 : 2);
-        ResolveColdHit(projectile, target, damageDone, frostbiteGain, deepFreezePressure, directShatter: false,
-            absoluteZero: projectile.ai[1] >= 0.5f);
+        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+            return;
+
+        ApplyHoarfrost(owner, target, trailSegment ? HoarfrostDurationTicks / 2 : HoarfrostDurationTicks);
     }
 
     internal static void ResolveShardHit(Projectile projectile, NPC target, int damageDone) {
-        ResolveColdHit(projectile, target, damageDone, frostbiteGain: 1, deepFreezePressure: 2, directShatter: false,
-            absoluteZero: projectile.ai[0] >= 0.5f);
+        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+            return;
+
+        ApplyHoarfrost(owner, target, projectile.ai[0] >= 0.5f ? HoarfrostDurationTicks / 2 : 90);
     }
 
     internal static void ResolvePhaseDriftHit(Projectile projectile, NPC target, int damageDone) {
-        ResolveColdHit(projectile, target, damageDone, frostbiteGain: 2, deepFreezePressure: 2, directShatter: false,
-            absoluteZero: projectile.ai[0] >= 0.5f);
+        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+            return;
+
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (identity.HasBigChillFrostbiteFor(owner.whoAmI)) {
+            TriggerShiverburst(owner, target, projectile.GetSource_FromThis(), Math.Max(projectile.damage, damageDone),
+                projectile.knockBack + 0.55f, consumeHoarfrost: false,
+                spreadHoarfrost: owner.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive);
+            return;
+        }
+
+        ApplyHoarfrost(owner, target, HoarfrostDurationTicks);
     }
 
     internal static void ResolvePulseHit(Projectile projectile, NPC target, int damageDone, bool spreadFrostbite) {
-        int frostbiteGain = spreadFrostbite ? 2 : 1;
-        ResolveColdHit(projectile, target, damageDone, frostbiteGain, deepFreezePressure: 0, directShatter: false,
-            allowPressureOnFrozen: false, absoluteZero: spreadFrostbite);
+        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+            return;
+
+        target.AddBuff(BuffID.Frostburn2, spreadFrostbite ? 150 : 90);
+        target.AddBuff(ModContent.BuffType<EnemySlow>(), spreadFrostbite ? (target.boss ? 20 : 45) : (target.boss ? 12 : 30));
+        if (spreadFrostbite)
+            ApplyHoarfrost(owner, target, HoarfrostDurationTicks / 2);
     }
 
     internal static void HandleAbsoluteZeroActivated(Player player) {
@@ -458,6 +479,27 @@ public class BigChillTransformation : Transformation {
             BigChillGraveMistProjectile.VariantTrail, absoluteZero ? 1f : 0f);
     }
 
+    internal static void TrySpawnWailingWakeCloud(Player player) {
+        if (player.whoAmI != Main.myPlayer)
+            return;
+
+        BigChillStatePlayer state = player.GetModPlayer<BigChillStatePlayer>();
+        if (!state.WailingWakeActive || player.dead || player.velocity.LengthSquared() < 2.56f)
+            return;
+
+        int interval = state.AbsoluteZeroActive ? 10 : 14;
+        if (Main.GameUpdateCount % interval != player.whoAmI % interval)
+            return;
+
+        Vector2 direction = player.velocity.SafeNormalize(new Vector2(player.direction == 0 ? 1 : player.direction, 0f));
+        Vector2 spawnPosition = player.Center - direction * 18f + new Vector2(0f, 6f);
+        Vector2 driftVelocity = -direction * (state.AbsoluteZeroActive ? 0.42f : 0.28f) + new Vector2(0f, -0.06f);
+        Projectile.NewProjectile(player.GetSource_FromThis(), spawnPosition, driftVelocity,
+            ModContent.ProjectileType<BigChillGraveMistProjectile>(),
+            ResolveHeroDamage(player, state.AbsoluteZeroActive ? GraveMistDamageMultiplier * 0.72f : GraveMistDamageMultiplier * 0.58f),
+            0.35f, player.whoAmI, BigChillGraveMistProjectile.VariantMist, state.AbsoluteZeroActive ? 1f : 0f);
+    }
+
     private static void SpawnColdfirePatch(Projectile projectile, Vector2 center, bool absoluteZero) {
         if (projectile.owner != Main.myPlayer)
             return;
@@ -473,88 +515,56 @@ public class BigChillTransformation : Transformation {
         }
     }
 
-    private static bool ResolveColdHit(Projectile projectile, NPC target, int damageDone, int frostbiteGain,
-        int deepFreezePressure, bool directShatter, int extraShardCount = 0, bool allowPressureOnFrozen = true,
-        bool absoluteZero = false) {
-        if (!TryGetActiveBigChillOwner(projectile, out Player owner))
+    private static void ApplyHoarfrost(Player owner, NPC target, int duration) {
+        BigChillStatePlayer state = owner.GetModPlayer<BigChillStatePlayer>();
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int armorPen = state.AbsoluteZeroActive || state.UltimateBigChillActive
+            ? UltimateDeepFreezeArmorPenetration
+            : BaseDeepFreezeArmorPenetration;
+        identity.ApplyBigChillHoarfrost(owner.whoAmI, duration, armorPen);
+        target.AddBuff(BuffID.Frostburn2, Math.Max(90, duration));
+        target.AddBuff(ModContent.BuffType<EnemySlow>(), target.boss ? 18 : 60);
+    }
+
+    private static bool TriggerShiverburst(Player owner, NPC target, IEntitySource source, int referenceDamage, float knockback,
+        bool consumeHoarfrost, bool spreadHoarfrost) {
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        if (!identity.CanTriggerBigChillShiverburst(owner.whoAmI))
             return false;
 
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        bool ultimateForm = IsUltimateBigChill(owner);
-        target.AddBuff(BuffID.Frostburn2, absoluteZero ? 240 : 180);
-
-        if (identity.IsBigChillDeepFrozenFor(owner.whoAmI)) {
-            if (!allowPressureOnFrozen)
+        if (consumeHoarfrost) {
+            if (!identity.ConsumeBigChillHoarfrost(owner.whoAmI))
                 return false;
-
-            if (directShatter ||
-                identity.AddBigChillDeepFreezePressure(owner.whoAmI, deepFreezePressure, DeepFreezePressureThreshold)) {
-                return TriggerShatter(owner, target, projectile.GetSource_FromThis(),
-                    Math.Max(projectile.damage, damageDone), projectile.knockBack + 1.4f, extraShardCount);
-            }
-
+        }
+        else if (!identity.HasBigChillFrostbiteFor(owner.whoAmI)) {
             return false;
         }
 
-        bool deepFrozen = identity.ApplyBigChillFrostbite(owner.whoAmI, frostbiteGain, FrostbiteRefreshTicks,
-            DeepFreezeDurationTicks, ultimateForm ? UltimateDeepFreezeArmorPenetration : BaseDeepFreezeArmorPenetration);
-        if (!deepFrozen)
-            return false;
-
-        HandleDeepFreezeApplied(owner, target);
-        return false;
-    }
-
-    private static void HandleDeepFreezeApplied(Player owner, NPC target) {
-        target.AddBuff(BuffID.Frostburn2, DeepFreezeDurationTicks);
-        target.netUpdate = true;
-
-        if (!Main.dedServ) {
-            SoundEngine.PlaySound(SoundID.Item27 with { Pitch = -0.32f, Volume = 0.38f }, target.Center);
-            for (int i = 0; i < 14; i++) {
-                Dust dust = Dust.NewDustPerfect(target.Center + Main.rand.NextVector2Circular(18f, 18f), DustID.Frost,
-                    Main.rand.NextVector2Circular(2.8f, 2.8f), 105, new Color(190, 240, 255),
-                    Main.rand.NextFloat(0.92f, 1.16f));
-                dust.noGravity = true;
-            }
-        }
-    }
-
-    private static bool TriggerShatter(Player owner, NPC target, IEntitySource source, int referenceDamage, float knockback,
-        int extraShardCount) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        if (!identity.ConsumeBigChillDeepFreeze(owner.whoAmI))
-            return false;
+        identity.TriggerBigChillShiverburstCooldown();
 
         BigChillStatePlayer state = owner.GetModPlayer<BigChillStatePlayer>();
         bool absoluteZero = state.AbsoluteZeroActive;
         bool ultimateForm = state.UltimateBigChillActive;
-        int shatterDamage = ResolveShatterDamage(owner, referenceDamage, absoluteZero);
+        int shatterDamage = ResolveShiverburstDamage(owner, referenceDamage, absoluteZero);
         Projectile.NewProjectile(source, target.Center, Vector2.Zero,
             ModContent.ProjectileType<BigChillAbsoluteZeroPulseProjectile>(), shatterDamage, knockback, owner.whoAmI,
-            BigChillAbsoluteZeroPulseProjectile.VariantShatter, absoluteZero || ultimateForm ? 1f : 0f);
+            BigChillAbsoluteZeroPulseProjectile.VariantShatter, spreadHoarfrost ? 1f : 0f);
 
-        int shardDamage = Math.Max(1, (int)Math.Round(referenceDamage * FrostShardDamageMultiplier));
-        SpawnHomingFrostShards(owner, source, target.Center, shardDamage, knockback * 0.45f, 3 + extraShardCount,
-            absoluteZero);
-        owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(target.boss
-            ? (ultimateForm ? 1.75f : 1.25f)
-            : (ultimateForm ? 3.25f : 2.5f));
-        state.ApplyHungerSurge();
-
-        if (target.boss && ultimateForm)
-            identity.ApplyBigChillFrigidFracture(owner.whoAmI, UltimateFrigidFractureDurationTicks);
-
-        if (ultimateForm || absoluteZero) {
-            float spreadRadius = ultimateForm ? (absoluteZero ? 212f : 184f) : 168f;
-            int spreadStacks = ultimateForm ? (absoluteZero ? 4 : 2) : 2;
-            float spreadDamageMultiplier = ultimateForm ? (absoluteZero ? 0.82f : 0.72f) : 0.65f;
-            SpreadFrostbite(owner, target.Center, spreadRadius, spreadStacks, spreadDamageMultiplier, target.whoAmI);
+        if (state.PhaseDriftEmpowered || absoluteZero) {
+            owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(target.boss
+                ? (absoluteZero ? 1.3f : 0.9f)
+                : (absoluteZero ? 2.2f : 1.5f));
+            state.ApplyHungerSurge();
         }
 
-        if (ultimateForm && absoluteZero)
-            identity.ApplyBigChillFrostbite(owner.whoAmI, UltimateResidualFrostbiteStacks, FrostbiteRefreshTicks,
-                DeepFreezeDurationTicks, UltimateDeepFreezeArmorPenetration);
+        if (ultimateForm) {
+            int shardDamage = Math.Max(1, (int)Math.Round(referenceDamage * FrostShardDamageMultiplier));
+            SpawnHomingFrostShards(owner, source, target.Center, shardDamage, knockback * 0.35f,
+                absoluteZero ? 3 : 2, absoluteZero);
+        }
+
+        if (target.boss && (ultimateForm || absoluteZero))
+            identity.ApplyBigChillFrigidFracture(owner.whoAmI, UltimateFrigidFractureDurationTicks);
 
         if (!Main.dedServ) {
             SoundEngine.PlaySound(SoundID.Item50 with { Pitch = -0.1f, Volume = 0.54f }, target.Center);
@@ -567,28 +577,6 @@ public class BigChillTransformation : Transformation {
         }
 
         return true;
-    }
-
-    private static void SpreadFrostbite(Player owner, Vector2 center, float radius, int stacks, float damageMultiplier,
-        int excludedNpc = -1) {
-        for (int i = 0; i < Main.maxNPCs; i++) {
-            NPC npc = Main.npc[i];
-            if (npc.whoAmI == excludedNpc || !npc.CanBeChasedBy())
-                continue;
-
-            if (Vector2.DistanceSquared(npc.Center, center) > radius * radius)
-                continue;
-
-            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
-            bool newlyFrozen = identity.ApplyBigChillFrostbite(owner.whoAmI, stacks, FrostbiteRefreshTicks, DeepFreezeDurationTicks);
-            npc.AddBuff(BuffID.Frostburn2, 150);
-            if (newlyFrozen)
-                HandleDeepFreezeApplied(owner, npc);
-
-            int splashDamage = ResolveHeroDamage(owner, damageMultiplier);
-            npc.SimpleStrikeNPC(splashDamage, owner.direction == 0 ? 1 : owner.direction, false, 0f,
-                ModContent.GetInstance<HeroDamage>());
-        }
     }
 
     private static void SpawnHomingFrostShards(Player owner, IEntitySource source, Vector2 center, int damage, float knockback,
@@ -619,7 +607,7 @@ public class BigChillTransformation : Transformation {
         }
     }
 
-    private static int ResolveShatterDamage(Player owner, int referenceDamage, bool absoluteZero) {
+    private static int ResolveShiverburstDamage(Player owner, int referenceDamage, bool absoluteZero) {
         bool ultimateForm = IsUltimateBigChill(owner);
         float heroMultiplier = ShatterDamageMultiplier * (absoluteZero ? 1.1f : ultimateForm ? 1.06f : 1f);
         float referenceMultiplier = absoluteZero ? (ultimateForm ? 0.9f : 0.84f) : (ultimateForm ? 0.78f : 0.72f);
@@ -677,19 +665,19 @@ public class BigChillTransformation : Transformation {
         float riseAcceleration = state.AbsoluteZeroActive
             ? 0.56f
             : ultimateForm
-                ? state.HungerBoostActive ? 0.5f : 0.44f
-                : state.HungerBoostActive ? 0.46f : 0.4f;
+                ? state.HungerBoostActive ? 0.54f : 0.48f
+                : state.HungerBoostActive ? 0.5f : 0.44f;
         float gentleRiseAcceleration = state.AbsoluteZeroActive
             ? 0.46f
             : ultimateForm
-                ? state.HungerBoostActive ? 0.4f : 0.34f
-                : state.HungerBoostActive ? 0.36f : 0.3f;
+                ? state.HungerBoostActive ? 0.44f : 0.38f
+                : state.HungerBoostActive ? 0.4f : 0.34f;
         float maxRiseSpeed = state.AbsoluteZeroActive
             ? -7.6f
             : ultimateForm
-                ? state.HungerBoostActive ? -6.9f : -6.3f
-                : state.HungerBoostActive ? -6.6f : -5.9f;
-        float cruiseFallSpeed = state.AbsoluteZeroActive ? 1.2f : ultimateForm ? 1.65f : 2f;
+                ? state.HungerBoostActive ? -7.2f : -6.6f
+                : state.HungerBoostActive ? -6.9f : -6.2f;
+        float cruiseFallSpeed = state.AbsoluteZeroActive ? 1.05f : ultimateForm ? 1.45f : 1.8f;
 
         if (player.controlJump || player.controlUp) {
             float acceleration = player.controlUp ? riseAcceleration : gentleRiseAcceleration;

@@ -18,19 +18,19 @@ public class BigChillProjectile : ModProjectile {
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
-        Projectile.width = 18;
-        Projectile.height = 18;
+        Projectile.width = 14;
+        Projectile.height = 14;
         Projectile.friendly = true;
         Projectile.hostile = false;
         Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
-        Projectile.penetrate = 4;
-        Projectile.timeLeft = 96;
-        Projectile.extraUpdates = 1;
+        Projectile.penetrate = 2;
+        Projectile.timeLeft = 72;
+        Projectile.extraUpdates = 2;
         Projectile.hide = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 10;
+        Projectile.localNPCHitCooldown = 12;
     }
 
     public override void AI() {
@@ -38,8 +38,8 @@ public class BigChillProjectile : ModProjectile {
         Lighting.AddLight(Projectile.Center,
             AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : UltimateForm ? new Vector3(0.18f, 0.4f, 0.64f) : new Vector3(0.14f, 0.32f, 0.56f));
 
-        if (Projectile.velocity.LengthSquared() < (UltimateForm ? 676f : 576f))
-            Projectile.velocity *= AbsoluteZero ? 1.018f : UltimateForm ? 1.014f : 1.01f;
+        if (Projectile.velocity.LengthSquared() < (UltimateForm ? 784f : 676f))
+            Projectile.velocity *= AbsoluteZero ? 1.02f : UltimateForm ? 1.016f : 1.012f;
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f),
@@ -57,13 +57,17 @@ public class BigChillProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         float rotation = direction.ToRotation();
         float drawScale = (UltimateForm ? 1.12f : 1f) * (PhaseDriftEmpowered ? 1.08f : 1f);
-        Color outer = AbsoluteZero ? new Color(118, 214, 255, 210) : UltimateForm ? new Color(96, 208, 255, 206) : new Color(102, 194, 255, 200);
-        Color inner = PhaseDriftEmpowered ? new Color(255, 250, 255, 230) : new Color(232, 246, 255, 222);
+        Color outer = AbsoluteZero
+            ? new Color(126, 216, 255, 218)
+            : UltimateForm
+                ? new Color(102, 208, 255, 212)
+                : new Color(88, 178, 228, 208);
+        Color inner = PhaseDriftEmpowered ? new Color(255, 250, 255, 232) : new Color(220, 242, 255, 224);
 
         Main.EntitySpriteDraw(pixel, center, null, outer, rotation, Vector2.One * 0.5f,
-            new Vector2(28f, 9f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
+            new Vector2(18f, 6f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center - direction * 2f, null, inner, rotation, Vector2.One * 0.5f,
-            new Vector2(16f, 4f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
+            new Vector2(10f, 3f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
         return false;
     }
 

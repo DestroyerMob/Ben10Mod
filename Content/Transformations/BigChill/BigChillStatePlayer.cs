@@ -10,6 +10,7 @@ public class BigChillStatePlayer : ModPlayer {
     public const int PhaseDriftEmpowerDurationTicks = 2 * 60;
     public const int PhaseDriftIntangibleTicks = 18;
     public const int PhaseDriftCooldownTicks = 14 * 60;
+    public const int WailingWakeDurationTicks = 6 * 60;
     public const int GraveMistCooldownTicks = 18 * 60;
     public const int AbsoluteZeroDurationTicks = 8 * 60;
     public const int AbsoluteZeroCooldownTicks = 60 * 60;
@@ -24,6 +25,14 @@ public class BigChillStatePlayer : ModPlayer {
     public bool PhaseDriftEmpowered => bigChillActive && Player.GetModPlayer<OmnitrixPlayer>().IsPrimaryAbilityActive;
     public bool UltimateBigChillActive =>
         bigChillActive && IsUltimateBigChillTransformationId(Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId);
+    public bool WailingWakeActive {
+        get {
+            OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+            return bigChillActive &&
+                   (omp.IsSecondaryAbilityActive && IsBigChillTransformationId(omp.secondaryAbilityTransformationId) ||
+                    AbsoluteZeroActive);
+        }
+    }
 
     public bool AbsoluteZeroActive {
         get {
@@ -58,6 +67,18 @@ public class BigChillStatePlayer : ModPlayer {
     }
 
     public int HungerBoostTicksRemaining => HungerBoostActive ? hungerBoostTime : 0;
+    public int WailingWakeTicksRemaining {
+        get {
+            if (!WailingWakeActive)
+                return 0;
+
+            OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+            if (omp.IsSecondaryAbilityActive && IsBigChillTransformationId(omp.secondaryAbilityTransformationId))
+                return omp.GetActiveAbilityRemainingTicks(OmnitrixPlayer.AttackSelection.SecondaryAbility);
+
+            return AbsoluteZeroTicksRemaining;
+        }
+    }
 
     public static bool IsBigChillTransformationId(string transformationId) {
         return string.Equals(transformationId, TransformationId, StringComparison.Ordinal) ||

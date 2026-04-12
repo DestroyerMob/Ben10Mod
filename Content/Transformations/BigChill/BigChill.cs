@@ -11,15 +11,15 @@ namespace Ben10Mod.Content.Transformations.BigChill
 {
     public class BigChill : ModItem {
         public static string TransformationDescription =>
-            "A spectral aerial controller built around Frostbite stacks, phasing movement, and shattering Deep Frozen targets before they can recover.";
+            "A spectral aerial skirmisher built around Hoarfrost marks, phasing through danger, and bursting targets while staying in motion.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Direct hits stack Frostbite until Deep Freeze opens a Shatter payoff.",
-            "Ecto Breath is the rapid airborne stacking tool.",
-            "Cryo Lance cashes Deep Freeze out into burst damage and splinters.",
-            "Phase Drift dashes intangible and briefly empowers your pressure loop.",
-            "Grave Mist freezes an area and slows hostile projectiles passing through it.",
-            "Absolute Zero amplifies the whole kit and ends with a freezing pulse.",
+            "Direct hits apply Hoarfrost, slowing enemies and opening a burst window.",
+            "Coldfire Breath is the rapid airborne marking tool.",
+            "Black Ice Barrage cashes Hoarfrost out into Shiverburst and splinters.",
+            "Spectral Phase dashes intangible and turns movement into offense.",
+            "Wailing Wake leaves drifting frost clouds behind your movement.",
+            "Dead Winter amplifies the whole loop and ends with a freezing pulse.",
             "Ultimate form available through the Ultimatrix branch."
         };
 
