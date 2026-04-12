@@ -1204,6 +1204,18 @@ Projectiles: {
 	GrayMatterNeuronProjectile.DisplayName: Gray Matter Neuron Projectile
 	ConquestDroneBoltProjectile.DisplayName: Conquest Drone Bolt Projectile
 	ConquestDroneProjectile.DisplayName: Conquest Drone Projectile
+	ChromaStoneSupernovaProjectile.DisplayName: Chroma Stone Supernova Projectile
+	ChromaStoneRadianceBurstProjectile.DisplayName: Chroma Stone Radiance Burst Projectile
+	ChromaStoneLanceProjectile.DisplayName: Chroma Stone Lance Projectile
+	FourArmsFissureProjectile.DisplayName: Four Arms Fissure Projectile
+	FourArmsGroundSlamSequenceProjectile.DisplayName: Four Arms Ground Slam Sequence Projectile
+	FourArmsHaymakerChargeProjectile.DisplayName: Four Arms Haymaker Charge Projectile
+	CannonboltSwipeProjectile.DisplayName: Cannonbolt Swipe Projectile
+	ChromaStoneBeamProjectile.DisplayName: Chroma Stone Beam Projectile
+	ChromaStoneDashHitboxProjectile.DisplayName: Chroma Stone Dash Hitbox Projectile
+	ChromaStoneFacetProjectile.DisplayName: Chroma Stone Facet Projectile
+	ChromaStoneGuardProjectile.DisplayName: Chroma Stone Guard Projectile
+	ChromaStoneLanceEchoProjectile.DisplayName: Chroma Stone Lance Echo Projectile
 }
 
 Tiles: {

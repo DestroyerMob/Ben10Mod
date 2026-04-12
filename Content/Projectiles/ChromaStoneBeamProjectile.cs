@@ -27,7 +27,11 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         set => Projectile.localAI[1] = value;
     }
 
-    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
+    public override string Texture => "Terraria/Images/Projectile_" + ProjectileID.LastPrismLaser;
+
+    public override void SetStaticDefaults() {
+        Main.projFrames[Type] = VanillaBeamDrawHelper.LastPrismFrameCount;
+    }
 
     public override void SetDefaults() {
         Projectile.width = 20;
@@ -146,17 +150,35 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
         Vector2 start = GetBeamStart(owner, direction);
-        Vector2 end = start + direction * BeamDrawLength;
         float thickness = GetMainBeamThickness(state);
         Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.2f + state.FacetPowerRatio * 1.9f, 1.05f) * 0.56f;
         Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.78f + state.FacetPowerRatio * 1.4f, 1.1f) * 0.92f;
         Color core = new Color(246, 250, 255, 225);
+        Color beamColor = Color.Lerp(outer, inner, 0.35f);
+        float mainScale = thickness / 22f;
 
-        DrawBeam(pixel, start, end, thickness * 1.16f, outer);
-        DrawBeam(pixel, start, end, thickness * 0.68f, inner);
-        DrawBeam(pixel, start, end, thickness * 0.3f, core);
+        Main.spriteBatch.End();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.Additive,
+            Main.DefaultSamplerState,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            Main.GameViewMatrix.TransformationMatrix
+        );
+
+        VanillaBeamDrawHelper.DrawLastPrismBeam(start, direction, BeamDrawLength, beamColor, core,
+            new Vector2(1.36f * mainScale, 1f),
+            new Vector2(2.18f * mainScale, 1f),
+            new Vector2(1.62f * mainScale, 1f),
+            new Vector2(1.02f * mainScale, 1f),
+            0.16f,
+            0.30f,
+            0.56f,
+            1.18f);
         DrawBeamNode(pixel, start, 16f + state.VisibleFacetCount * 2f, inner, core);
-        DrawBeamNode(pixel, end, 13f + state.VisibleFacetCount * 1.4f, outer, core);
+        DrawBeamNode(pixel, start + direction * BeamDrawLength, 13f + state.VisibleFacetCount * 1.4f, outer, core);
 
         int refractionCount = GetRefractionCount(state);
         for (int i = 0; i < refractionCount; i++) {
@@ -164,19 +186,34 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             Vector2 refDirection = Vector2.Zero;
             GetRefractionSegment(owner, state, direction, i, ref refStart, ref refDirection);
             float refractionLength = BeamDrawLength * 0.68f;
-            Vector2 refEnd = refStart + refDirection * refractionLength;
             float refThickness = GetRefractionThickness(state);
-            DrawBeam(pixel, refStart, refEnd, refThickness * 1.1f, outer * 0.85f);
-            DrawBeam(pixel, refStart, refEnd, refThickness * 0.66f, inner * 0.94f);
-            DrawBeam(pixel, refStart, refEnd, refThickness * 0.28f, core * 0.88f);
+            float refScale = refThickness / 18f;
+            Color refBeamColor = Color.Lerp(outer * 0.86f, inner, 0.28f);
+
+            VanillaBeamDrawHelper.DrawLastPrismBeam(refStart, refDirection, refractionLength, refBeamColor, core * 0.82f,
+                new Vector2(1.12f * refScale, 1f),
+                new Vector2(1.72f * refScale, 1f),
+                new Vector2(1.28f * refScale, 1f),
+                new Vector2(0.82f * refScale, 1f),
+                0.12f,
+                0.24f,
+                0.46f,
+                1.05f);
             DrawBeamNode(pixel, refStart, 10f + state.VisibleFacetCount, outer * 0.9f, core * 0.82f);
         }
 
-        return false;
-    }
+        Main.spriteBatch.End();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            Main.DefaultSamplerState,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            Main.GameViewMatrix.TransformationMatrix
+        );
 
-    private static void DrawBeam(Texture2D pixel, Vector2 worldStart, Vector2 worldEnd, float width, Color color) {
-        ChromaStonePrismHelper.DrawBeam(pixel, worldStart - Main.screenPosition, worldEnd - Main.screenPosition, width, color);
+        return false;
     }
 
     private static void DrawBeamNode(Texture2D pixel, Vector2 worldCenter, float scale, Color outer, Color inner) {

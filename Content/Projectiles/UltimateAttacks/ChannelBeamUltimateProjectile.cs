@@ -1,10 +1,10 @@
 using System.IO;
+using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Utilities;
 using Terraria;
 using Terraria.Audio;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -283,22 +283,7 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
 
         Vector2 start = GetBeamStart(owner, dir);
         float length = BeamDrawLength;
-
-        Texture2D texture = TextureAssets.Projectile[Type].Value;
-        int frameHeight = texture.Height / BeamFrameCount;
-        int frameWidth = texture.Width;
-
-        Rectangle startFrame = new(0, 0, frameWidth, frameHeight);
-        Rectangle midFrame = new(0, frameHeight, frameWidth, frameHeight);
-        Rectangle endFrame = new(0, frameHeight * 2, frameWidth, frameHeight);
-
-        float rotation = dir.ToRotation() + MathHelper.PiOver2 + MathHelper.Pi;
-        Vector2 origin = new(frameWidth * 0.5f, frameHeight * 0.5f);
-
-        float t = Main.GlobalTimeWrappedHourly;
-        float pulse = 0.88f + 0.12f * (float)System.Math.Sin(t * 10f);
-        float shimmer = 0.82f + 0.18f * (float)System.Math.Sin(t * 6.5f);
-        Color baseColor = BeamColor * (shimmer * 1.25f);
+        Vector2 endPos = start + dir * length;
 
         Main.spriteBatch.End();
         Main.spriteBatch.Begin(
@@ -311,56 +296,13 @@ public abstract class ChannelBeamUltimateProjectile : ModProjectile
             Main.GameViewMatrix.TransformationMatrix
         );
 
-        Main.EntitySpriteDraw(
-            texture,
-            start - Main.screenPosition,
-            startFrame,
-            baseColor,
-            rotation,
-            origin,
-            StartScale * new Vector2(pulse, 1f),
-            SpriteEffects.None,
-            0
-        );
+        VanillaBeamDrawHelper.DrawLastPrismBeam(start, dir, length, BeamColor, BeamHighlightColor, StartScale, OuterScale, MidScale,
+            InnerScale);
 
-        float step = frameHeight * 0.60f;
-        float distance = step * 0.50f;
-
-        while (distance < length - step * 0.50f) {
-            float along = distance / length;
-            float fadeOut = along > 0.90f
-                ? MathHelper.SmoothStep(1f, 0f, (along - 0.90f) / 0.10f)
-                : 1f;
-
-            Vector2 pos = start + dir * distance;
-
-            Main.EntitySpriteDraw(texture, pos - Main.screenPosition, midFrame, baseColor * (0.18f * fadeOut), rotation,
-                origin, OuterScale * new Vector2(pulse, 1f), SpriteEffects.None, 0);
-            Main.EntitySpriteDraw(texture, pos - Main.screenPosition, midFrame, baseColor * (0.32f * fadeOut), rotation,
-                origin, MidScale * new Vector2(pulse, 1f), SpriteEffects.None, 0);
-            Main.EntitySpriteDraw(texture, pos - Main.screenPosition, midFrame, BeamHighlightColor * (0.58f * fadeOut), rotation,
-                origin, InnerScale * new Vector2(pulse, 1f), SpriteEffects.None, 0);
-
-            distance += step;
-        }
-
-        Vector2 endPos = start + dir * length;
         for (int i = 0; i < EndDustCount; i++) {
-            int dustNum = Dust.NewDust(endPos, endFrame.Width, endFrame.Height, EndDustType, 0, 0, 0, Color.White, 3f);
+            int dustNum = Dust.NewDust(endPos, 26, 26, EndDustType, 0, 0, 0, Color.White, 3f);
             Main.dust[dustNum].noGravity = true;
         }
-
-        Main.EntitySpriteDraw(
-            texture,
-            endPos - Main.screenPosition,
-            endFrame,
-            baseColor * 1.15f,
-            rotation,
-            origin,
-            StartScale * new Vector2(pulse, 1f),
-            SpriteEffects.None,
-            0
-        );
 
         Main.spriteBatch.End();
         Main.spriteBatch.Begin(

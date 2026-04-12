@@ -5,7 +5,6 @@ using Ben10Mod.Content.Transformations.ChromaStone;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -30,7 +29,11 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         set => Projectile.localAI[1] = value;
     }
 
-    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
+    public override string Texture => "Terraria/Images/Projectile_" + ProjectileID.LastPrismLaser;
+
+    public override void SetStaticDefaults() {
+        Main.projFrames[Type] = VanillaBeamDrawHelper.LastPrismFrameCount;
+    }
 
     public override void SetDefaults() {
         Projectile.width = 32;
@@ -150,28 +153,64 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         if (!owner.active || owner.dead)
             return false;
 
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
         Vector2 start = GetBeamStart(owner, direction);
-        Vector2 end = start + direction * BeamDrawLength;
         Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.12f + StoredPowerRatio * 1.9f, 1.08f) * 0.58f;
         Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.74f + StoredPowerRatio * 1.4f, 1.12f) * 0.94f;
         Color core = new Color(246, 250, 255, 235);
+        Color beamColor = Color.Lerp(outer, inner, 0.4f);
+        float mainScale = GetMainBeamThickness() / 28f;
 
-        DrawBeam(pixel, start, end, GetMainBeamThickness() * 1.12f, outer);
-        DrawBeam(pixel, start, end, GetMainBeamThickness() * 0.68f, inner);
-        DrawBeam(pixel, start, end, GetMainBeamThickness() * 0.28f, core);
+        Main.spriteBatch.End();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.Additive,
+            Main.DefaultSamplerState,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            Main.GameViewMatrix.TransformationMatrix
+        );
+
+        VanillaBeamDrawHelper.DrawLastPrismBeam(start, direction, BeamDrawLength, beamColor, core,
+            new Vector2(1.58f * mainScale, 1f),
+            new Vector2(2.58f * mainScale, 1.02f),
+            new Vector2(1.92f * mainScale, 1f),
+            new Vector2(1.28f * mainScale, 0.96f),
+            0.18f,
+            0.34f,
+            0.60f,
+            1.22f);
 
         int sideBeamCount = GetSideBeamCount();
         float[] angles = GetSideBeamAngles(sideBeamCount);
         for (int i = 0; i < sideBeamCount; i++) {
             Vector2 refDirection = direction.RotatedBy(angles[i]).SafeNormalize(direction);
             Vector2 refStart = owner.Center + refDirection * 20f;
-            Vector2 refEnd = refStart + refDirection * BeamDrawLength * 0.84f;
-            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 1.08f, outer * 0.88f);
-            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 0.62f, inner * 0.94f);
-            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 0.24f, core * 0.84f);
+            float refScale = GetSideBeamThickness() / 20f;
+            Color refBeamColor = Color.Lerp(outer * 0.88f, inner, 0.3f);
+
+            VanillaBeamDrawHelper.DrawLastPrismBeam(refStart, refDirection, BeamDrawLength * 0.84f, refBeamColor, core * 0.84f,
+                new Vector2(1.22f * refScale, 1f),
+                new Vector2(1.96f * refScale, 1f),
+                new Vector2(1.44f * refScale, 1f),
+                new Vector2(0.92f * refScale, 0.98f),
+                0.14f,
+                0.28f,
+                0.48f,
+                1.08f);
         }
+
+        Main.spriteBatch.End();
+        Main.spriteBatch.Begin(
+            SpriteSortMode.Deferred,
+            BlendState.AlphaBlend,
+            Main.DefaultSamplerState,
+            DepthStencilState.None,
+            RasterizerState.CullNone,
+            null,
+            Main.GameViewMatrix.TransformationMatrix
+        );
 
         return false;
     }
@@ -292,10 +331,6 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         return projectile.damage <= 70 &&
                projectile.width <= 42 &&
                projectile.height <= 42;
-    }
-
-    private static void DrawBeam(Texture2D pixel, Vector2 worldStart, Vector2 worldEnd, float width, Color color) {
-        ChromaStonePrismHelper.DrawBeam(pixel, worldStart - Main.screenPosition, worldEnd - Main.screenPosition, width, color);
     }
 
     private Vector2 GetAimDirection(Player owner) {
