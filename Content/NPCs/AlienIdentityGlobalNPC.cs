@@ -19,6 +19,14 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int BlitzwolferResonanceStacks;
     public int BlitzwolferResonanceTime;
 
+    public int EchoEchoResonanceOwner = -1;
+    public int EchoEchoResonanceStacks;
+    public int EchoEchoResonanceTime;
+    public int EchoEchoResonanceLastSource = -1;
+    public bool EchoEchoResonancePrimed;
+    public int EchoEchoFractureOwner = -1;
+    public int EchoEchoFractureTime;
+
     public int FrankenstrikeConductiveOwner = -1;
     public int FrankenstrikeConductiveStacks;
     public int FrankenstrikeConductiveTime;
@@ -55,6 +63,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsFasttrackComboActiveFor(int owner) => FasttrackComboOwner == owner && FasttrackComboTime > 0 && FasttrackComboStacks > 0;
     public bool IsSkyMarkedFor(int owner) => AstrodactylSkyMarkOwner == owner && AstrodactylSkyMarkTime > 0;
     public bool IsBlitzwolferResonantFor(int owner) => BlitzwolferResonanceOwner == owner && BlitzwolferResonanceTime > 0 && BlitzwolferResonanceStacks > 0;
+    public bool IsEchoEchoResonantFor(int owner) => EchoEchoResonanceOwner == owner && EchoEchoResonanceTime > 0 && EchoEchoResonanceStacks > 0;
+    public bool IsEchoEchoResonancePrimedFor(int owner) => IsEchoEchoResonantFor(owner) && EchoEchoResonancePrimed;
+    public bool IsEchoEchoFracturedFor(int owner) => EchoEchoFractureOwner == owner && EchoEchoFractureTime > 0;
     public bool IsFrankenstrikeConductiveFor(int owner) => FrankenstrikeConductiveOwner == owner && FrankenstrikeConductiveTime > 0 && FrankenstrikeConductiveStacks > 0;
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
@@ -65,6 +76,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsDreamboundFor(int owner) => PeskyDustOwner == owner && PeskyDustDreamTime > 0;
 
     public int GetBlitzwolferResonanceStacks(int owner) => IsBlitzwolferResonantFor(owner) ? BlitzwolferResonanceStacks : 0;
+    public int GetEchoEchoResonanceStacks(int owner) => IsEchoEchoResonantFor(owner) ? EchoEchoResonanceStacks : 0;
     public int GetFrankenstrikeConductiveStacks(int owner) => IsFrankenstrikeConductiveFor(owner) ? FrankenstrikeConductiveStacks : 0;
     public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
     public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
@@ -104,6 +116,42 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         BlitzwolferResonanceTime = 0;
         BlitzwolferResonanceOwner = -1;
         return stacks;
+    }
+
+    public void ApplyEchoEchoResonance(int owner, int sourceId, int stacks, int time) {
+        if (EchoEchoResonanceOwner != owner) {
+            EchoEchoResonanceOwner = owner;
+            EchoEchoResonanceStacks = 0;
+            EchoEchoResonancePrimed = false;
+            EchoEchoResonanceLastSource = -1;
+        }
+
+        int gain = Utils.Clamp(stacks, 1, 3);
+        if (EchoEchoResonanceLastSource >= 0 && EchoEchoResonanceLastSource != sourceId)
+            gain++;
+
+        EchoEchoResonanceStacks = Utils.Clamp(EchoEchoResonanceStacks + gain, 0, 8);
+        EchoEchoResonancePrimed = EchoEchoResonanceStacks >= 8;
+        EchoEchoResonanceLastSource = sourceId;
+        EchoEchoResonanceTime = Utils.Clamp(time, 1, 360);
+    }
+
+    public int ConsumeEchoEchoResonance(int owner) {
+        int stacks = GetEchoEchoResonanceStacks(owner);
+        if (stacks <= 0)
+            return 0;
+
+        EchoEchoResonanceOwner = -1;
+        EchoEchoResonanceStacks = 0;
+        EchoEchoResonanceTime = 0;
+        EchoEchoResonanceLastSource = -1;
+        EchoEchoResonancePrimed = false;
+        return stacks;
+    }
+
+    public void ApplyEchoEchoFracture(int owner, int time) {
+        EchoEchoFractureOwner = owner;
+        EchoEchoFractureTime = Utils.Clamp(time, 1, 240);
     }
 
     public void ApplyFrankenstrikeConductive(int owner, int stacks, int time) {
@@ -292,6 +340,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         if (BlitzwolferResonanceTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(115, 255, 145), 0.16f + BlitzwolferResonanceStacks * 0.03f);
 
+        if (EchoEchoResonanceTime > 0)
+            drawColor = Color.Lerp(drawColor, EchoEchoResonancePrimed ? new Color(178, 238, 255) : new Color(150, 205, 255),
+                0.12f + EchoEchoResonanceStacks * 0.025f);
+
+        if (EchoEchoFractureTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(205, 235, 255), 0.18f);
+
         if (FrankenstrikeConductiveTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(120, 205, 255), 0.18f + FrankenstrikeConductiveStacks * 0.04f);
 
@@ -347,6 +402,23 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         else {
             BlitzwolferResonanceOwner = -1;
             BlitzwolferResonanceStacks = 0;
+        }
+
+        if (EchoEchoResonanceTime > 0) {
+            EchoEchoResonanceTime--;
+        }
+        else {
+            EchoEchoResonanceOwner = -1;
+            EchoEchoResonanceStacks = 0;
+            EchoEchoResonanceLastSource = -1;
+            EchoEchoResonancePrimed = false;
+        }
+
+        if (EchoEchoFractureTime > 0) {
+            EchoEchoFractureTime--;
+        }
+        else {
+            EchoEchoFractureOwner = -1;
         }
 
         if (FrankenstrikeConductiveTime > 0) {

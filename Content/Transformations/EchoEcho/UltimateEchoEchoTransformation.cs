@@ -32,13 +32,20 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
 
     public override string PrimaryAttackName => "Resonance Burst";
     public override string SecondaryAttackName => "Speaker Deployment";
+    public override string PrimaryAbilityName => null;
+    public override string SecondaryAbilityName => null;
+    public override string TertiaryAbilityName => null;
+    public override string UltimateAbilityName => null;
     public override float PrimaryAttackModifier => 1.15f;
     public override int SecondaryAttack => ModContent.ProjectileType<UltimateEchoEchoSpeakerProjectile>();
     public override int SecondaryAttackSpeed => 22;
     public override int SecondaryShootSpeed => 0;
     public override float SecondaryAttackModifier => 0.85f;
-    
-    
+    public override bool HasPrimaryAbility => false;
+    public override int PrimaryAbilityDuration => 0;
+    public override bool HasSecondaryAbility => false;
+    public override int SecondaryAbilityDuration => 0;
+    public override bool HasUltimateAbility => false;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         player.GetDamage<HeroDamage>() += 0.18f;

@@ -597,6 +597,7 @@ namespace Ben10Mod.Content.Interface {
             HeroPlumberArmorPlayer armorPlayer = player.GetModPlayer<HeroPlumberArmorPlayer>();
             var fourArmsPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.FourArms.FourArmsGroundSlamPlayer>();
             var cannonboltPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer>();
+            var echoEchoPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.EchoEcho.EchoEchoStatePlayer>();
             var chromaStonePlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.ChromaStone.ChromaStoneStatePlayer>();
             int cannonboltMaxBounces = global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.MaxBounceCount;
 
@@ -666,6 +667,15 @@ namespace Ben10Mod.Content.Interface {
                         entries.Add(new HeroTrackerEntry("Gyro",
                             FormatTrackerSeconds(cannonboltPlayer.GyroTicksRemaining),
                             MathHelper.Clamp(cannonboltPlayer.GyroProgress, 0f, 1f), new Color(255, 232, 164)));
+                    }
+                    break;
+                case global::Ben10Mod.Content.Transformations.EchoEcho.EchoEchoStatePlayer.TransformationId:
+                    entries.Add(new HeroTrackerEntry("Echoes", $"{echoEchoPlayer.ActiveEchoCount}/{echoEchoPlayer.MaxEchoCount}",
+                        MathHelper.Clamp(echoEchoPlayer.ActiveEchoCount / (float)Math.Max(1, echoEchoPlayer.MaxEchoCount), 0f, 1f),
+                        new Color(150, 210, 255)));
+                    if (echoEchoPlayer.ChorusActive) {
+                        entries.Add(new HeroTrackerEntry("Chorus", FormatTrackerSeconds(echoEchoPlayer.ChorusTicksRemaining),
+                            MathHelper.Clamp(echoEchoPlayer.ChorusProgress, 0f, 1f), new Color(205, 238, 255)));
                     }
                     break;
                 case AlienIdentityPlayer.ChromaStoneTransformationId:
@@ -741,6 +751,19 @@ namespace Ben10Mod.Content.Interface {
             if (npcState.IsBlitzwolferResonantFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Resonance", $"{npcState.BlitzwolferResonanceStacks}/8",
                     MathHelper.Clamp(npcState.BlitzwolferResonanceStacks / 8f, 0f, 1f), new Color(126, 255, 154)));
+            }
+
+            if (npcState.IsEchoEchoResonantFor(player.whoAmI)) {
+                string echoResonanceValue = npcState.IsEchoEchoResonancePrimedFor(player.whoAmI)
+                    ? "Pop Ready"
+                    : $"{npcState.EchoEchoResonanceStacks}/8";
+                entries.Add(new HeroTrackerEntry("Resonance", echoResonanceValue,
+                    MathHelper.Clamp(npcState.EchoEchoResonanceStacks / 8f, 0f, 1f), new Color(166, 224, 255)));
+            }
+
+            if (npcState.IsEchoEchoFracturedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(npcState.EchoEchoFractureTime),
+                    MathHelper.Clamp(npcState.EchoEchoFractureTime / 180f, 0f, 1f), new Color(210, 238, 255)));
             }
 
             if (npcState.IsFrankenstrikeConductiveFor(player.whoAmI)) {
@@ -842,6 +865,8 @@ namespace Ben10Mod.Content.Interface {
             return npcState.IsFasttrackComboActiveFor(owner)
                 || npcState.IsSkyMarkedFor(owner)
                 || npcState.IsBlitzwolferResonantFor(owner)
+                || npcState.IsEchoEchoResonantFor(owner)
+                || npcState.IsEchoEchoFracturedFor(owner)
                 || npcState.IsFrankenstrikeConductiveFor(owner)
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
