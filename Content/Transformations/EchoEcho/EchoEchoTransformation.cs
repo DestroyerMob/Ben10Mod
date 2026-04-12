@@ -33,12 +33,12 @@ public class EchoEchoTransformation : Transformation {
     public override Transformation ChildTransformation => ModContent.GetInstance<UltimateEchoEchoTransformation>();
 
     public override string Description =>
-        "A slippery sonic saboteur that turns the arena into a crossfire. Echo Echo places lightweight sound relays, attacks through multiple angles, stacks Resonance faster with mixed sources, and cashes that setup out in Chorus Overload.";
+        "A slippery sonic splitter that fights through independent duplicates. Echo Echo sets up sentient clones, layers Resonance from multiple sources, and cashes that pressure out in Chorus Overload.";
 
     public override List<string> Abilities => new() {
-        "Sonic Pulse is a free piercing wave that Echoes repeat after a short delay.",
+        "Sonic Pulse uses the older sweeping wave visual and builds Resonance from the player directly.",
         "Feedback Burst spends Omnitrix Energy to detonate shockwaves from you and every active Echo.",
-        "Duplicate places or relocates a lightweight Echo anchor instead of summoning a full minion.",
+        "Duplicate creates independent Echo clones that move, pick targets, and attack on their own.",
         "Echo Shift swaps with the nearest Echo or performs a short backstep if you do not have one out.",
         "Resonance stacks faster when hits come from different sources, then pops for bonus area damage and OE refund.",
         "Chorus Overload briefly raises the Echo cap to three and supercharges the whole setup loop."
@@ -175,13 +175,6 @@ public class EchoEchoTransformation : Transformation {
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, pulseDamage,
             knockback, player.whoAmI, 0f, 0f);
 
-        for (int i = 0; i < echoes.Count; i++) {
-            Projectile echo = echoes[i];
-            int echoDamage = ScaleDamage(damage, PrimaryAttackModifier * state.GetEchoDamageMultiplier(i));
-            Projectile.NewProjectile(source, echo.Center, direction * PrimaryShootSpeed, PrimaryAttack, echoDamage,
-                knockback * 0.9f, player.whoAmI, i + 1, state.GetEchoRepeatDelayTicks(i));
-        }
-
         return false;
     }
 
@@ -193,14 +186,14 @@ public class EchoEchoTransformation : Transformation {
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? echoText
-                : $"Crossfire through {echoText}",
+                ? "Build Resonance"
+                : "Player-fired sonic wave • old arc visual restored",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? $"{FeedbackBurstEnergyCost} OE • {echoText}"
                 : $"Burst from you and every Echo • {FeedbackBurstEnergyCost} OE",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"{DuplicateEnergyCost} OE"
-                : $"Place or relocate an Echo • {DuplicateEnergyCost} OE",
+                : $"Spawn or replace an Echo clone • {DuplicateEnergyCost} OE",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => state.HasAnyEchoes
                 ? compact
                     ? $"{GetSecondaryAbilityCost(omp)} OE • Swap"
