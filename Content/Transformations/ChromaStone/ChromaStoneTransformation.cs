@@ -338,7 +338,7 @@ public class ChromaStoneTransformation : Transformation {
                 : $"Volley + shards • Facets {state.VisibleFacetCount}/3 • {radianceText}",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? $"{state.VisibleFacetCount}/3 Facets • {radianceText}"
-                : $"Beam refractions {state.VisibleFacetCount}/3 • {radianceText}",
+                : $"Beam focus {state.VisibleFacetCount}/3 • {radianceText}",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"Guard • {radianceText}"
                 : $"Absorb projectiles • {radianceText}",

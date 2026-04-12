@@ -11,10 +11,10 @@ public class ChromaStone : ModItem {
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Crystal Volley is the reliable left-click stream: fast crystal bolts pierce once, split after impact, and every fourth shot upgrades into a heavier Prism Bolt.",
-        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that refracts through active Facets and scales up as your Radiance climbs.",
+        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that stays clean and focused while scaling up as your Radiance climbs.",
         "Absorption Guard braces Chromastone behind a crystal shield, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and feeds both Facets and Radiance.",
         "Prismatic Lance cashes out your stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting rainbow spear with a delayed echo hit at full power.",
-        "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, refract the beam, strengthen the lance, and can intercept one very weak projectile each.",
+        "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, strengthen the beam and lance, and can intercept one very weak projectile each.",
         "Radiance climbs when Chromastone takes hits, boosts all of his damage, and makes the prismatic disco aura on his body flare brighter and wilder at higher percentages.",
         "Full Spectrum Discharge is a true ultimate attack: once Radiance reaches 90%, swap to the ultimate slot and fire a massive channeled beam that cashes in stored power instead of toggling a timed mode."
     };

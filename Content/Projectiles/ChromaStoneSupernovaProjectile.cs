@@ -125,23 +125,8 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         Vector2 start = GetBeamStart(owner, direction);
         float collisionPoint = 0f;
 
-        if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), start,
-                start + direction * BeamHitLength, GetMainBeamThickness(), ref collisionPoint)) {
-            return true;
-        }
-
-        int sideBeamCount = GetSideBeamCount();
-        for (int i = 0; i < sideBeamCount; i++) {
-            Vector2 refDirection = direction.RotatedBy(GetSideBeamAngles(sideBeamCount)[i]).SafeNormalize(direction);
-            Vector2 refStart = owner.Center + refDirection * 20f;
-            float refractionLength = BeamHitLength * 0.84f;
-            if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), refStart,
-                    refStart + refDirection * refractionLength, GetSideBeamThickness(), ref collisionPoint)) {
-                return true;
-            }
-        }
-
-        return false;
+        return Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), start,
+            start + direction * BeamHitLength, GetMainBeamThickness(), ref collisionPoint);
     }
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
@@ -181,25 +166,6 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
             0.34f,
             0.60f,
             1.22f);
-
-        int sideBeamCount = GetSideBeamCount();
-        float[] angles = GetSideBeamAngles(sideBeamCount);
-        for (int i = 0; i < sideBeamCount; i++) {
-            Vector2 refDirection = direction.RotatedBy(angles[i]).SafeNormalize(direction);
-            Vector2 refStart = owner.Center + refDirection * 20f;
-            float refScale = GetSideBeamThickness() / 20f;
-            Color refBeamColor = Color.Lerp(outer * 0.88f, inner, 0.3f);
-
-            VanillaBeamDrawHelper.DrawLastPrismBeam(refStart, refDirection, BeamDrawLength * 0.84f, refBeamColor, core * 0.84f,
-                new Vector2(1.22f * refScale, 1f),
-                new Vector2(1.96f * refScale, 1f),
-                new Vector2(1.44f * refScale, 1f),
-                new Vector2(0.92f * refScale, 0.98f),
-                0.14f,
-                0.28f,
-                0.48f,
-                1.08f);
-        }
 
         Main.spriteBatch.End();
         Main.spriteBatch.Begin(
@@ -265,23 +231,6 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
 
     private float GetMainBeamThickness() {
         return 28f + FacetPower * 4f;
-    }
-
-    private float GetSideBeamThickness() {
-        return 16f + FacetPower * 2f;
-    }
-
-    private int GetSideBeamCount() {
-        return FacetPower;
-    }
-
-    private static float[] GetSideBeamAngles(int count) {
-        return count switch {
-            3 => new[] { -0.55f, 0f, 0.55f },
-            2 => new[] { -0.44f, 0.44f },
-            1 => new[] { 0f },
-            _ => Array.Empty<float>()
-        };
     }
 
     private void AbsorbHostileProjectiles(Player owner, ChromaStoneStatePlayer state, Vector2 beamStart, Vector2 direction) {
