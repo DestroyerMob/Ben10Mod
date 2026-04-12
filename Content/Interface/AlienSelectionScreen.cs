@@ -429,10 +429,10 @@ namespace Ben10Mod.Content.Interface {
                 : omp.GetSelectedTransformationStatusSummary();
             string selectionSummary = showAttackHud
                 ? string.Empty
-                : CombineHudSummary(cooldownSummary, omp.GetSelectedTransformationCustomizationSummary());
+                : cooldownSummary;
             bool simplifiedMoveHud = clientConfig.UseSimplifiedHeroMoveInterface;
             string resourceSummary = showAttackHud
-                ? omp.GetCurrentAttackResourceSummary(simplifiedMoveHud)
+                ? omp.GetCurrentAttackResourceSummary(compact: true)
                 : string.Empty;
             int energyCost = showAttackHud ? trans.GetEnergyCost(omp) : 0;
             bool affordabilityWarning = clientConfig.ShowHeroAffordabilityTinting &&
@@ -494,13 +494,19 @@ namespace Ben10Mod.Content.Interface {
                 : omp.GetSelectedTransformationDisplayName();
 
             if (simplifiedMoveHud) {
-                Utils.DrawBorderString(Main.spriteBatch, attackName,
+                float innerWidth = panelRect.Width - 20f;
+                string fittedSlotLabel = FitHudText(slotLabel, innerWidth * 0.34f, 0.72f);
+                float slotWidth = MeasureHudTextWidth(fittedSlotLabel, 0.72f);
+                string fittedAttackName = FitHudText(attackName, Math.Max(48f, innerWidth - slotWidth - 10f), 0.88f);
+                string fittedFooter = FitHudText(compactFooter, innerWidth, 0.68f);
+
+                Utils.DrawBorderString(Main.spriteBatch, fittedAttackName,
                     new Vector2(panelRect.X + 10, panelRect.Y + 9), Color.White, 0.88f);
-                Utils.DrawBorderString(Main.spriteBatch, slotLabel,
+                Utils.DrawBorderString(Main.spriteBatch, fittedSlotLabel,
                     new Vector2(panelRect.Right - 10, panelRect.Y + 10), borderColor, 0.72f, 1f, 0f);
 
-                if (!string.IsNullOrWhiteSpace(compactFooter)) {
-                    Utils.DrawBorderString(Main.spriteBatch, compactFooter,
+                if (!string.IsNullOrWhiteSpace(fittedFooter)) {
+                    Utils.DrawBorderString(Main.spriteBatch, fittedFooter,
                         new Vector2(panelRect.X + 10, panelRect.Bottom - 19),
                         affordabilityWarning ? new Color(255, 170, 145) : new Color(170, 190, 208), 0.68f);
                 }
@@ -508,27 +514,41 @@ namespace Ben10Mod.Content.Interface {
             }
 
             string title = showAttackHud ? "Attack" : "Selection";
-            Utils.DrawBorderString(Main.spriteBatch, title, new Vector2(panelRect.X + 10, panelRect.Y + 7),
+            float fullInnerWidth = panelRect.Width - 20f;
+            string fittedSlotLabelFull = FitHudText(slotLabel, fullInnerWidth * 0.34f, 0.82f);
+            float slotWidthFull = MeasureHudTextWidth(fittedSlotLabelFull, 0.82f);
+            string fittedTitle = FitHudText(title, Math.Max(48f, fullInnerWidth - slotWidthFull - 10f), 0.8f);
+            string fittedAttackNameFull = FitHudText(attackName, fullInnerWidth, 0.96f);
+            string fittedResourceSummary = FitHudText(
+                affordabilityWarning ? $"Need {energyCost} OE" : resourceSummary,
+                Math.Max(72f, fullInnerWidth * 0.42f), 0.86f);
+            float resourceWidth = MeasureHudTextWidth(fittedResourceSummary, 0.86f);
+            string fittedDetailLabel = FitHudText(detailLabel,
+                string.IsNullOrWhiteSpace(fittedResourceSummary) ? fullInnerWidth : Math.Max(48f, fullInnerWidth - resourceWidth - 12f),
+                0.72f);
+            string lowerSummary = showAttackHud ? cooldownSummary : selectionSummary;
+            string fittedLowerSummary = FitHudText(lowerSummary, fullInnerWidth, 0.72f);
+
+            Utils.DrawBorderString(Main.spriteBatch, fittedTitle, new Vector2(panelRect.X + 10, panelRect.Y + 7),
                 new Color(220, 230, 240), 0.8f);
-            Utils.DrawBorderString(Main.spriteBatch, slotLabel, new Vector2(panelRect.Right - 10, panelRect.Y + 7),
+            Utils.DrawBorderString(Main.spriteBatch, fittedSlotLabelFull, new Vector2(panelRect.Right - 10, panelRect.Y + 7),
                 borderColor, 0.82f, 1f, 0f);
-            Utils.DrawBorderString(Main.spriteBatch, attackName, new Vector2(panelRect.X + 10, panelRect.Y + 25),
+            Utils.DrawBorderString(Main.spriteBatch, fittedAttackNameFull, new Vector2(panelRect.X + 10, panelRect.Y + 25),
                 Color.White, 0.96f);
 
-            if (!string.IsNullOrWhiteSpace(detailLabel)) {
-                Utils.DrawBorderString(Main.spriteBatch, detailLabel,
+            if (!string.IsNullOrWhiteSpace(fittedDetailLabel)) {
+                Utils.DrawBorderString(Main.spriteBatch, fittedDetailLabel,
                     new Vector2(panelRect.X + 10, panelRect.Y + 45), new Color(180, 195, 210), 0.72f);
             }
 
-            if (!string.IsNullOrWhiteSpace(resourceSummary)) {
-                Utils.DrawBorderString(Main.spriteBatch, affordabilityWarning ? $"Need {energyCost} OE" : resourceSummary,
+            if (!string.IsNullOrWhiteSpace(fittedResourceSummary)) {
+                Utils.DrawBorderString(Main.spriteBatch, fittedResourceSummary,
                     new Vector2(panelRect.Right - 10, panelRect.Y + 43),
                     affordabilityWarning ? new Color(255, 170, 145) : accent, 0.86f, 1f, 0f);
             }
 
-            string lowerSummary = showAttackHud ? cooldownSummary : selectionSummary;
-            if (!string.IsNullOrWhiteSpace(lowerSummary)) {
-                Utils.DrawBorderString(Main.spriteBatch, lowerSummary,
+            if (!string.IsNullOrWhiteSpace(fittedLowerSummary)) {
+                Utils.DrawBorderString(Main.spriteBatch, fittedLowerSummary,
                     new Vector2(panelRect.X + 10, panelRect.Bottom - 22), new Color(170, 190, 208), 0.72f);
             }
 
@@ -546,6 +566,71 @@ namespace Ben10Mod.Content.Interface {
             }
 
             return visibleParts.Count == 0 ? string.Empty : string.Join("  |  ", visibleParts);
+        }
+
+        private static string NormalizeHudText(string text) {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            StringBuilder builder = new(text.Length);
+            bool lastWasWhitespace = false;
+            for (int i = 0; i < text.Length; i++) {
+                char character = text[i];
+                if (char.IsWhiteSpace(character)) {
+                    if (lastWasWhitespace)
+                        continue;
+
+                    builder.Append(' ');
+                    lastWasWhitespace = true;
+                    continue;
+                }
+
+                builder.Append(character);
+                lastWasWhitespace = false;
+            }
+
+            return builder.ToString().Trim();
+        }
+
+        private static float MeasureHudTextWidth(string text, float scale) {
+            string normalized = NormalizeHudText(text);
+            if (string.IsNullOrWhiteSpace(normalized))
+                return 0f;
+
+            return FontAssets.MouseText.Value.MeasureString(normalized).X * scale;
+        }
+
+        private static string FitHudText(string text, float maxWidth, float scale) {
+            string normalized = NormalizeHudText(text);
+            if (string.IsNullOrWhiteSpace(normalized) || maxWidth <= 8f)
+                return string.Empty;
+
+            if (MeasureHudTextWidth(normalized, scale) <= maxWidth)
+                return normalized;
+
+            const string ellipsis = "...";
+            if (MeasureHudTextWidth(ellipsis, scale) > maxWidth)
+                return string.Empty;
+
+            int low = 0;
+            int high = normalized.Length;
+            while (low < high) {
+                int mid = (low + high + 1) / 2;
+                string candidate = normalized[..mid].TrimEnd(' ', ',', ';', ':', '|', '-') + ellipsis;
+                if (MeasureHudTextWidth(candidate, scale) <= maxWidth)
+                    low = mid;
+                else
+                    high = mid - 1;
+            }
+
+            if (low <= 0)
+                return ellipsis;
+
+            int cutIndex = normalized.LastIndexOf(' ', Math.Min(low - 1, normalized.Length - 1));
+            if (cutIndex < low / 2)
+                cutIndex = low;
+
+            return normalized[..cutIndex].TrimEnd(' ', ',', ';', ':', '|', '-') + ellipsis;
         }
 
         private int DrawActiveAbilityIndicator(Player player, OmnitrixPlayer omp, int x, int y, int width) {
@@ -575,18 +660,28 @@ namespace Ben10Mod.Content.Interface {
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
 
             string title = activeAbilities.Count == 1 ? "Active Ability" : "Active Abilities";
-            Utils.DrawBorderString(Main.spriteBatch, title, new Vector2(panelRect.X + 10, panelRect.Y + 6),
-                new Color(220, 230, 240), simplified ? 0.68f : 0.78f);
+            float titleScale = simplified ? 0.68f : 0.78f;
+            float panelInnerWidth = panelRect.Width - 20f;
+            string fittedTitle = FitHudText(title, panelInnerWidth, titleScale);
+            Utils.DrawBorderString(Main.spriteBatch, fittedTitle, new Vector2(panelRect.X + 10, panelRect.Y + 6),
+                new Color(220, 230, 240), titleScale);
 
             int lineY = panelRect.Y + headerHeight;
             for (int i = 0; i < activeAbilities.Count; i++) {
                 OmnitrixPlayer.ActiveAbilityStatus status = activeAbilities[i];
                 float lineScale = simplified ? 0.7f : 0.78f;
-                Utils.DrawBorderString(Main.spriteBatch, status.DisplayName,
+                float valueScale = lineScale + 0.02f;
+                string fittedRemaining = FitHudText(status.RemainingText, panelInnerWidth * 0.34f, valueScale);
+                float remainingWidth = MeasureHudTextWidth(fittedRemaining, valueScale);
+                string fittedDisplayName = FitHudText(status.DisplayName,
+                    string.IsNullOrWhiteSpace(fittedRemaining) ? panelInnerWidth : Math.Max(48f, panelInnerWidth - remainingWidth - 10f),
+                    lineScale);
+
+                Utils.DrawBorderString(Main.spriteBatch, fittedDisplayName,
                     new Vector2(panelRect.X + 10, lineY + i * lineHeight), status.AccentColor, lineScale);
-                Utils.DrawBorderString(Main.spriteBatch, status.RemainingText,
+                Utils.DrawBorderString(Main.spriteBatch, fittedRemaining,
                     new Vector2(panelRect.Right - 10, lineY + i * lineHeight),
-                    Color.Lerp(status.AccentColor, Color.White, 0.2f), lineScale + 0.02f, 1f, 0f);
+                    Color.Lerp(status.AccentColor, Color.White, 0.2f), valueScale, 1f, 0f);
             }
 
             return panelRect.Height;
@@ -912,8 +1007,11 @@ namespace Ben10Mod.Content.Interface {
             Main.spriteBatch.Draw(pixel, new Rectangle(panelRect.Right - 2, panelRect.Y, 2, panelRect.Height), borderColor);
 
             string panelTitle = string.IsNullOrWhiteSpace(title) ? entries.Count == 1 ? "Tracker" : "Trackers" : title;
-            Utils.DrawBorderString(Main.spriteBatch, panelTitle,
-                new Vector2(panelRect.X + 10, panelRect.Y + 6), new Color(220, 230, 240), simplified ? 0.68f : 0.78f);
+            float titleScale = simplified ? 0.68f : 0.78f;
+            float panelInnerWidth = panelRect.Width - 20f;
+            string fittedPanelTitle = FitHudText(panelTitle, panelInnerWidth, titleScale);
+            Utils.DrawBorderString(Main.spriteBatch, fittedPanelTitle,
+                new Vector2(panelRect.X + 10, panelRect.Y + 6), new Color(220, 230, 240), titleScale);
 
             for (int i = 0; i < entries.Count; i++) {
                 HeroTrackerEntry entry = entries[i];
@@ -925,8 +1023,14 @@ namespace Ben10Mod.Content.Interface {
                 Rectangle barBackgroundRect = new Rectangle(panelRect.X + 10, barY, panelRect.Width - 20, barHeight);
                 int barFillWidth = Math.Max(0, (int)Math.Round((barBackgroundRect.Width - 2) * MathHelper.Clamp(entry.Progress, 0f, 1f)));
 
-                Utils.DrawBorderString(Main.spriteBatch, entry.Label, new Vector2(panelRect.X + 10, rowY), subduedText, labelScale);
-                Utils.DrawBorderString(Main.spriteBatch, entry.ValueText, new Vector2(panelRect.Right - 10, rowY),
+                string fittedValue = FitHudText(entry.ValueText, panelInnerWidth * 0.36f, valueScale);
+                float valueWidth = MeasureHudTextWidth(fittedValue, valueScale);
+                string fittedLabel = FitHudText(entry.Label,
+                    string.IsNullOrWhiteSpace(fittedValue) ? panelInnerWidth : Math.Max(48f, panelInnerWidth - valueWidth - 10f),
+                    labelScale);
+
+                Utils.DrawBorderString(Main.spriteBatch, fittedLabel, new Vector2(panelRect.X + 10, rowY), subduedText, labelScale);
+                Utils.DrawBorderString(Main.spriteBatch, fittedValue, new Vector2(panelRect.Right - 10, rowY),
                     entry.AccentColor, valueScale, 1f, 0f);
 
                 Main.spriteBatch.Draw(pixel, barBackgroundRect, new Color(26, 34, 42, 220));
