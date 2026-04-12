@@ -52,7 +52,7 @@ public class ChromaStoneFacetProjectile : ModProjectile {
 
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 center = Projectile.Center - Main.screenPosition;
-        Color outer = ChromaStonePrismHelper.GetSpectrumColor(FacetSlot * 0.5f + state.PrismChargeRatio * 1.8f, 1.02f) * 0.88f;
+        Color outer = ChromaStonePrismHelper.GetSpectrumColor(FacetSlot * 0.5f + state.FacetPowerRatio * 1.8f, 1.02f) * 0.88f;
         Color inner = new Color(245, 250, 255, 225);
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, Projectile.rotation, new Vector2(16f, 16f), outer * 0.52f);

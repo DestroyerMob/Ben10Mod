@@ -47,10 +47,11 @@ public class ChromaStoneGuardProjectile : ModProjectile {
         state.RegisterGuardFrame(holdRatio);
 
         bool stillHolding = owner.whoAmI == Main.myPlayer &&
-                            KeybindSystem.SecondaryAbility?.Current == true &&
+                            KeybindSystem.PrimaryAbility?.Current == true &&
                             HoldTicks < ChromaStoneStatePlayer.GuardMaxHoldTicks &&
                             !owner.noItems &&
-                            !owner.CCed;
+                            !owner.CCed &&
+                            !state.DischargeActive;
         if (stillHolding) {
             HoldTicks++;
 

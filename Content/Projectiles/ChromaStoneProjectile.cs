@@ -10,17 +10,20 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ChromaStoneProjectile : ModProjectile {
-    private const int ModeMain = 0;
-    private const int ModeShard = 1;
-    private const int ModeOverload = 2;
+    public const int ModeVolleyBolt = 0;
+    public const int ModePrismBolt = 1;
+    public const int ModeVolleyShard = 2;
+    public const int ModeBurstShard = 3;
 
-    private float PrismChargeRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
-    private int Mode => (int)Math.Round(Projectile.ai[1]);
-    private bool IsShard => Mode == ModeShard;
-    private bool IsOverloaded => Mode == ModeOverload;
+    private bool initialized;
+    private bool splitTriggered;
+    private int ricochetCount;
 
-    private ref float InitializedFlag => ref Projectile.localAI[0];
-    private ref float SplitFlag => ref Projectile.localAI[1];
+    private int Mode => (int)Math.Round(Projectile.ai[0]);
+    private float PowerRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
+    private bool IsPrismBolt => Mode == ModePrismBolt;
+    private bool IsShard => Mode == ModeVolleyShard || Mode == ModeBurstShard;
+    private bool IsBurstShard => Mode == ModeBurstShard;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -37,7 +40,7 @@ public class ChromaStoneProjectile : ModProjectile {
         Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
         Projectile.penetrate = 2;
-        Projectile.timeLeft = 86;
+        Projectile.timeLeft = 92;
         Projectile.extraUpdates = 1;
         Projectile.hide = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
@@ -46,62 +49,64 @@ public class ChromaStoneProjectile : ModProjectile {
     }
 
     public override void AI() {
-        if (InitializedFlag == 0f) {
-            InitializedFlag = 1f;
+        if (!initialized) {
+            initialized = true;
             ApplyModeSetup();
         }
 
-        float acceleration = IsOverloaded ? 1.02f : IsShard ? 1.008f : 1.012f;
-        float maxSpeed = IsOverloaded ? 24f : IsShard ? 16.5f : 19.5f;
+        float acceleration = IsPrismBolt ? 1.018f : IsShard ? 1.006f : 1.012f;
+        float maxSpeed = IsPrismBolt ? 23.5f : IsBurstShard ? 16.5f : IsShard ? 15.5f : 19.5f;
         if (Projectile.velocity.LengthSquared() < maxSpeed * maxSpeed)
             Projectile.velocity *= acceleration;
 
         Projectile.rotation = Projectile.velocity.ToRotation();
-        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(PrismChargeRatio * 2.5f + Projectile.identity * 0.07f,
-            IsOverloaded ? 1.08f : 1f);
-        Lighting.AddLight(Projectile.Center, prismColor.ToVector3() * (IsOverloaded ? 0.58f : 0.42f));
+        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(PowerRatio * 2.6f + Projectile.identity * 0.07f,
+            IsPrismBolt ? 1.14f : 1f);
+        Lighting.AddLight(Projectile.Center, prismColor.ToVector3() * (IsPrismBolt ? 0.58f : 0.4f));
 
-        if (!Main.dedServ && Main.rand.NextBool(IsOverloaded ? 1 : 2)) {
+        if (!Main.dedServ && Main.rand.NextBool(IsPrismBolt ? 1 : 2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(6f, 6f), DustID.WhiteTorch,
                 -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.12f), 100, prismColor,
-                Main.rand.NextFloat(0.88f, IsOverloaded ? 1.34f : 1.18f));
+                Main.rand.NextFloat(0.88f, IsPrismBolt ? 1.3f : 1.14f));
             dust.noGravity = true;
         }
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
-        if (IsShard || Projectile.penetrate == -1)
+        if (IsShard || ricochetCount >= 1)
             return true;
+
+        ricochetCount++;
         if (Projectile.velocity.X != oldVelocity.X)
             Projectile.velocity.X = -oldVelocity.X;
         if (Projectile.velocity.Y != oldVelocity.Y)
             Projectile.velocity.Y = -oldVelocity.Y;
 
         Projectile.velocity *= 0.92f;
-        Projectile.tileCollide = false;
         Projectile.netUpdate = true;
         return false;
     }
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        float multiplier = 1f + PrismChargeRatio * (IsOverloaded ? 0.18f : 0.1f);
-        if (IsShard)
+        float multiplier = 1f + PowerRatio * 0.1f;
+        if (IsPrismBolt)
+            multiplier += 0.18f;
+        else if (Mode == ModeBurstShard)
+            multiplier += 0.06f;
+        else if (IsShard)
             multiplier *= 0.86f;
 
         modifiers.SourceDamage *= multiplier;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        if (SplitFlag > 0f || Projectile.owner != Main.myPlayer)
+        if (splitTriggered || Projectile.owner != Main.myPlayer || IsShard)
             return;
 
-        if (IsShard)
-            return;
-
-        SplitFlag = 1f;
-        int shardCount = IsOverloaded ? 3 : 2;
-        int shardDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (IsOverloaded ? 0.46f : 0.42f)));
-        float spread = IsOverloaded ? 0.34f : 0.26f;
+        splitTriggered = true;
+        int shardCount = IsPrismBolt ? 3 : 2;
+        int shardDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (IsPrismBolt ? 0.44f : 0.4f)));
+        float spread = IsPrismBolt ? 0.32f : 0.24f;
         Vector2 baseDirection = Projectile.velocity.SafeNormalize(Vector2.UnitX);
 
         for (int i = 0; i < shardCount; i++) {
@@ -109,7 +114,7 @@ public class ChromaStoneProjectile : ModProjectile {
             float angleOffset = MathHelper.Lerp(-spread, spread, progress);
             Vector2 shardVelocity = baseDirection.RotatedBy(angleOffset) * Main.rand.NextFloat(11.5f, 15.5f);
             Projectile.NewProjectile(Projectile.GetSource_FromThis(), target.Center, shardVelocity, Type, shardDamage,
-                Projectile.knockBack * 0.72f, Projectile.owner, PrismChargeRatio, ModeShard);
+                Projectile.knockBack * 0.7f, Projectile.owner, ModeVolleyShard, PowerRatio);
         }
     }
 
@@ -125,19 +130,19 @@ public class ChromaStoneProjectile : ModProjectile {
 
             float progress = i / (float)Projectile.oldPos.Length;
             Vector2 trailCenter = Projectile.oldPos[i] + Projectile.Size * 0.5f - Main.screenPosition;
-            Color trailColor = ChromaStonePrismHelper.GetSpectrumColor(progress * 2.1f + i * 0.08f) *
-                ((1f - progress) * (IsOverloaded ? 0.52f : 0.38f));
+            Color trailColor = ChromaStonePrismHelper.GetSpectrumColor(progress * 2f + i * 0.08f) *
+                ((1f - progress) * (IsPrismBolt ? 0.56f : 0.38f));
             ChromaStonePrismHelper.DrawRotatedRect(pixel, trailCenter, rotation,
-                new Vector2(MathHelper.Lerp(IsOverloaded ? 36f : 28f, 10f, progress),
-                    MathHelper.Lerp(IsOverloaded ? 12f : 8f, 3f, progress)) * Projectile.scale, trailColor);
+                new Vector2(MathHelper.Lerp(IsPrismBolt ? 38f : 28f, 10f, progress),
+                    MathHelper.Lerp(IsPrismBolt ? 12f : 8f, 3f, progress)) * Projectile.scale, trailColor);
         }
 
         Vector2 center = Projectile.Center - Main.screenPosition;
-        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.14f + PrismChargeRatio * 1.4f, IsOverloaded ? 1.12f : 1.04f) * 0.62f;
-        Color middle = ChromaStonePrismHelper.GetSpectrumColor(0.62f + PrismChargeRatio * 1.1f, 1.08f) * 0.9f;
+        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.14f + PowerRatio * 1.4f, IsPrismBolt ? 1.12f : 1.04f) * 0.62f;
+        Color middle = ChromaStonePrismHelper.GetSpectrumColor(0.62f + PowerRatio * 1.1f, 1.08f) * 0.9f;
         Color core = new Color(245, 250, 255, 230);
-        float bodyLength = IsOverloaded ? 38f : IsShard ? 22f : 30f;
-        float bodyWidth = IsOverloaded ? 12f : IsShard ? 6.4f : 9f;
+        float bodyLength = IsPrismBolt ? 36f : IsShard ? 20f : 28f;
+        float bodyWidth = IsPrismBolt ? 12f : IsShard ? 6f : 8.8f;
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
             new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer);
@@ -156,26 +161,28 @@ public class ChromaStoneProjectile : ModProjectile {
         if (Main.dedServ)
             return;
 
-        int dustCount = IsOverloaded ? 14 : 10;
+        int dustCount = IsPrismBolt ? 14 : 10;
         for (int i = 0; i < dustCount; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.24f + PrismChargeRatio * 0.6f);
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.24f + PowerRatio * 0.6f);
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.WhiteTorch,
-                Main.rand.NextVector2Circular(IsOverloaded ? 3.4f : 2.8f, IsOverloaded ? 3.4f : 2.8f), 95,
-                prismColor, Main.rand.NextFloat(0.95f, IsOverloaded ? 1.36f : 1.18f));
+                Main.rand.NextVector2Circular(IsPrismBolt ? 3.6f : 2.8f, IsPrismBolt ? 3.6f : 2.8f), 95,
+                prismColor, Main.rand.NextFloat(0.95f, IsPrismBolt ? 1.3f : 1.16f));
             dust.noGravity = true;
         }
     }
 
     private void ApplyModeSetup() {
-        Projectile.scale = IsOverloaded
-            ? 1.16f + PrismChargeRatio * 0.18f
-            : IsShard
-                ? 0.76f + PrismChargeRatio * 0.08f
-                : 1f + PrismChargeRatio * 0.12f;
+        Projectile.scale = IsPrismBolt
+            ? 1.18f + PowerRatio * 0.18f
+            : IsBurstShard
+                ? 0.84f + PowerRatio * 0.08f
+                : IsShard
+                    ? 0.76f + PowerRatio * 0.08f
+                    : 1f + PowerRatio * 0.12f;
 
-        Projectile.timeLeft = IsOverloaded ? 112 : IsShard ? 54 : 82;
-        Projectile.extraUpdates = IsOverloaded ? 2 : 1;
-        Projectile.penetrate = IsOverloaded ? -1 : IsShard ? 1 : 2;
-        Projectile.localNPCHitCooldown = IsOverloaded ? 7 : IsShard ? 14 : 10;
+        Projectile.timeLeft = IsPrismBolt ? 110 : IsBurstShard ? 58 : IsShard ? 50 : 86;
+        Projectile.extraUpdates = IsPrismBolt ? 2 : 1;
+        Projectile.penetrate = IsPrismBolt ? 3 : IsShard ? 1 : 2;
+        Projectile.localNPCHitCooldown = IsPrismBolt ? 8 : IsShard ? 14 : 10;
     }
 }

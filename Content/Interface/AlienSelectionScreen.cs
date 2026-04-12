@@ -669,22 +669,20 @@ namespace Ben10Mod.Content.Interface {
                     }
                     break;
                 case AlienIdentityPlayer.ChromaStoneTransformationId:
-                    if (chromaStonePlayer.OverloadActive) {
-                        entries.Add(new HeroTrackerEntry("Overload",
-                            FormatTrackerSeconds(chromaStonePlayer.OverloadTicksRemaining),
-                            MathHelper.Clamp(chromaStonePlayer.OverloadProgress, 0f, 1f), new Color(255, 214, 132)));
+                    if (chromaStonePlayer.DischargeActive) {
+                        entries.Add(new HeroTrackerEntry("Discharge",
+                            FormatTrackerSeconds(chromaStonePlayer.DischargeTicksRemaining),
+                            MathHelper.Clamp(chromaStonePlayer.DischargeProgress, 0f, 1f), new Color(255, 214, 132)));
                     }
 
-                    string chargeValue = chromaStonePlayer.HasFullCharge
-                        ? "Ready"
-                        : $"{(int)Math.Round(identityPlayer.ChromaStonePrismChargeRatio * 100f)}%";
-                    Color chargeAccent = chromaStonePlayer.HasFullCharge
-                        ? new Color(198, 255, 222)
-                        : new Color(166, 255, 222);
-                    entries.Add(new HeroTrackerEntry("Prism", chargeValue,
-                        MathHelper.Clamp(identityPlayer.ChromaStonePrismChargeRatio, 0f, 1f), chargeAccent));
                     entries.Add(new HeroTrackerEntry("Facets", $"{chromaStonePlayer.VisibleFacetCount}/3",
                         MathHelper.Clamp(chromaStonePlayer.VisibleFacetCount / 3f, 0f, 1f), new Color(188, 224, 255)));
+
+                    if (chromaStonePlayer.VisibleFacetCount < 3 && identityPlayer.ChromaStonePrismChargeRatio > 0f) {
+                        entries.Add(new HeroTrackerEntry("Prime",
+                            $"{(int)Math.Round(identityPlayer.ChromaStonePrismChargeRatio * 100f)}%",
+                            MathHelper.Clamp(identityPlayer.ChromaStonePrismChargeRatio, 0f, 1f), new Color(166, 255, 222)));
+                    }
 
                     if (chromaStonePlayer.Guarding) {
                         float guardProgress = Math.Max(chromaStonePlayer.GuardHoldRatio, chromaStonePlayer.GuardStoredRatio);

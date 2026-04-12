@@ -50,12 +50,20 @@ public class AlienIdentityPlayer : ModPlayer {
         ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - amount);
     }
 
+    public void SetChromaStoneRadiance(float amount) {
+        ChromaStoneRadiance = MathHelper.Clamp(amount, 0f, ChromaStoneMaxRadiance);
+    }
+
     public void AddChromaStonePrismCharge(float amount) {
         AddChromaStoneRadiance(amount);
     }
 
     public void ConsumeChromaStonePrismCharge(float amount) {
         ConsumeChromaStoneRadiance(amount);
+    }
+
+    public void SetChromaStonePrismCharge(float amount) {
+        SetChromaStoneRadiance(amount);
     }
 
     public void AddFasttrackMomentum(float amount) {
@@ -110,16 +118,11 @@ public class AlienIdentityPlayer : ModPlayer {
 
     private void UpdateChromaStoneRadiance(OmnitrixPlayer omp) {
         if (omp.currentTransformationId != ChromaStoneTransformationId) {
-            ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - 4.5f);
+            ChromaStoneRadiance = 0f;
             return;
         }
 
-        ChromaStoneStatePlayer chromaState = Player.GetModPlayer<ChromaStoneStatePlayer>();
-        if (chromaState.OverloadActive)
-            return;
-
-        float naturalDrain = chromaState.Guarding ? 0.02f : 0.05f;
-        ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - naturalDrain);
+        ChromaStoneRadiance = MathHelper.Clamp(ChromaStoneRadiance, 0f, ChromaStoneMaxRadiance);
     }
 
     private void UpdateFasttrackMomentum(OmnitrixPlayer omp) {

@@ -1,9 +1,10 @@
 using System;
+using System.IO;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.ChromaStone;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -11,220 +12,290 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ChromaStoneSupernovaProjectile : ModProjectile {
-    private const int LifetimeTicks = 38;
-    private const int ChargeTicks = 12;
-    private const float ChargeRadius = 56f;
-    private const float StartRadius = 22f;
-    private const float BaseMaxRadius = 250f;
+    private Vector2 syncedAimDirection = Vector2.UnitX;
+    private bool hasSyncedAimDirection;
+    private int aimSyncTimer;
 
-    private float RadianceRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
-    private bool CrystalGuard => Projectile.ai[1] >= 0.5f;
-    private bool IsErupting => Timer >= ChargeTicks;
+    private int FacetPower => Math.Clamp((int)Math.Round(Projectile.ai[0]), 0, 3);
+    private float StoredPowerRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
 
-    private float Timer {
+    private float BeamHitLength {
         get => Projectile.localAI[0];
         set => Projectile.localAI[0] = value;
     }
 
-    private float CurrentRadius {
+    private float BeamDrawLength {
         get => Projectile.localAI[1];
         set => Projectile.localAI[1] = value;
     }
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
-    public override bool ShouldUpdatePosition() => false;
 
     public override void SetDefaults() {
-        Projectile.width = 28;
-        Projectile.height = 28;
+        Projectile.width = 32;
+        Projectile.height = 32;
         Projectile.friendly = true;
         Projectile.hostile = false;
+        Projectile.penetrate = -1;
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
-        Projectile.penetrate = -1;
-        Projectile.timeLeft = LifetimeTicks;
         Projectile.hide = true;
+        Projectile.timeLeft = 2;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 15;
+        Projectile.localNPCHitCooldown = 8;
     }
 
-    public override bool? CanDamage() => IsErupting;
+    public override void SendExtraAI(BinaryWriter writer) {
+        writer.Write(syncedAimDirection.X);
+        writer.Write(syncedAimDirection.Y);
+        writer.Write(hasSyncedAimDirection);
+    }
+
+    public override void ReceiveExtraAI(BinaryReader reader) {
+        syncedAimDirection = new Vector2(reader.ReadSingle(), reader.ReadSingle());
+        hasSyncedAimDirection = reader.ReadBoolean();
+    }
 
     public override void AI() {
-        if (Timer == 0f)
-            SpawnChargeBurst();
+        Player owner = Main.player[Projectile.owner];
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        ChromaStoneStatePlayer state = owner.GetModPlayer<ChromaStoneStatePlayer>();
 
-        Timer++;
-        float radius;
-        if (!IsErupting) {
-            float chargeProgress = Utils.GetLerpValue(0f, ChargeTicks, Timer, true);
-            float easedCharge = 1f - MathF.Pow(1f - chargeProgress, 2.1f);
-            radius = MathHelper.Lerp(StartRadius, ChargeRadius, easedCharge);
-            SpawnChargingDust(radius);
-        }
-        else {
-            if (Timer == ChargeTicks) {
-                SpawnEruptionBurst();
-                if (Projectile.owner == Main.myPlayer)
-                    SpawnPrismVolley();
-            }
-
-            float eruptionProgress = Utils.GetLerpValue(ChargeTicks, LifetimeTicks, Timer, true);
-            float easedEruption = 1f - MathF.Pow(1f - eruptionProgress, 2.9f);
-            float maxRadius = BaseMaxRadius + RadianceRatio * 110f + (CrystalGuard ? 26f : 0f);
-            radius = MathHelper.Lerp(ChargeRadius, maxRadius, easedEruption);
-            SpawnEruptionDust(radius);
-
-            if (Projectile.owner == Main.myPlayer && (int)(Timer - ChargeTicks) > 0 &&
-                (int)(Timer - ChargeTicks) % 6 == 0) {
-                SpawnPrismVolley();
-            }
+        if (!ShouldStayAlive(owner, omp, state)) {
+            Projectile.Kill();
+            return;
         }
 
-        CurrentRadius = radius;
-        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(0.36f + Timer * 0.08f, 1.12f);
-        Lighting.AddLight(Projectile.Center, prismColor.ToVector3() * (IsErupting ? 0.7f : 0.48f));
+        Projectile.timeLeft = 2;
+        Projectile.localNPCHitCooldown = Math.Max(4, 8 - FacetPower);
+
+        Vector2 direction = GetAimDirection(owner);
+        Projectile.velocity = direction;
+        Projectile.rotation = direction.ToRotation();
+
+        Vector2 start = GetBeamStart(owner, direction);
+        Projectile.Center = start;
+        BeamHitLength = GetBeamLength(start, direction);
+        BeamDrawLength = Math.Max(22f, BeamHitLength - 10f);
+
+        owner.ChangeDir(direction.X >= 0f ? 1 : -1);
+        owner.heldProj = Projectile.whoAmI;
+        owner.itemTime = 2;
+        owner.itemAnimation = 2;
+        owner.itemRotation = (float)Math.Atan2(direction.Y * owner.direction, direction.X * owner.direction);
+        owner.noKnockback = true;
+        owner.velocity.X *= 0.9f;
+        if (owner.velocity.Y > 0.35f)
+            owner.velocity.Y = 0.35f;
+        else
+            owner.velocity.Y = Math.Max(owner.velocity.Y - 0.06f, -1.35f);
+
+        AbsorbHostileProjectiles(owner, state, start, direction);
+
+        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(StoredPowerRatio * 2.4f + 0.3f, 1.14f);
+        Lighting.AddLight(start + direction * Math.Min(BeamDrawLength * 0.42f, 240f), prismColor.ToVector3() * 0.84f);
+
+        if (!Main.dedServ && Main.rand.NextBool(1)) {
+            Vector2 dustPosition = start + direction * Main.rand.NextFloat(18f, Math.Max(24f, BeamDrawLength * 0.9f));
+            Dust dust = Dust.NewDustPerfect(dustPosition + Main.rand.NextVector2Circular(12f, 12f), DustID.WhiteTorch,
+                direction.RotatedByRandom(0.32f) * Main.rand.NextFloat(0.5f, 2.6f), 95, prismColor,
+                Main.rand.NextFloat(1f, 1.35f));
+            dust.noGravity = true;
+        }
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
-        if (!IsErupting)
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead)
             return false;
 
-        return targetHitbox.Distance(Projectile.Center) <= CurrentRadius;
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
+        Vector2 start = GetBeamStart(owner, direction);
+        float collisionPoint = 0f;
+
+        if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), start,
+                start + direction * BeamHitLength, GetMainBeamThickness(), ref collisionPoint)) {
+            return true;
+        }
+
+        int sideBeamCount = GetSideBeamCount();
+        for (int i = 0; i < sideBeamCount; i++) {
+            Vector2 refDirection = direction.RotatedBy(GetSideBeamAngles(sideBeamCount)[i]).SafeNormalize(direction);
+            Vector2 refStart = owner.Center + refDirection * 20f;
+            float refractionLength = BeamHitLength * 0.84f;
+            if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), refStart,
+                    refStart + refDirection * refractionLength, GetSideBeamThickness(), ref collisionPoint)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        modifiers.SourceDamage *= 1f + RadianceRatio * 0.45f + (CrystalGuard ? 0.1f : 0f);
-    }
-
-    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        Vector2 blastDirection = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitY);
-        float blastForce = MathHelper.Lerp(10f, 18f, RadianceRatio);
-        target.velocity = Vector2.Lerp(target.velocity, blastDirection * blastForce, target.boss ? 0.14f : 0.46f);
-        target.netUpdate = true;
+        modifiers.SourceDamage *= 1.22f + FacetPower * 0.16f + StoredPowerRatio * 0.1f;
     }
 
     public override bool PreDraw(ref Color lightColor) {
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
-        Vector2 center = Projectile.Center - Main.screenPosition;
-        Color outer = ChromaStonePrismHelper.GetSpectrumColor(Timer * 0.08f, 1.08f) * (IsErupting ? 0.62f : 0.44f);
-        Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.6f + Timer * 0.11f, 1.1f) * (IsErupting ? 0.78f : 0.55f);
-
-        if (!IsErupting) {
-            ChromaStonePrismHelper.DrawRing(pixel, center, CurrentRadius, 4f, outer, Timer * 0.12f, 22);
-            ChromaStonePrismHelper.DrawRing(pixel, center, CurrentRadius * 0.62f, 2.8f, inner, -Timer * 0.18f, 18);
-            ChromaStonePrismHelper.DrawRotatedRect(pixel, center, Timer * 0.14f, new Vector2(CurrentRadius * 0.82f, 4.8f),
-                outer * 0.9f);
-            ChromaStonePrismHelper.DrawRotatedRect(pixel, center, Timer * 0.14f + MathHelper.PiOver2,
-                new Vector2(CurrentRadius * 0.82f, 4.8f), outer * 0.9f);
-            Main.EntitySpriteDraw(pixel, center, null, new Color(245, 250, 255, 230), 0f, Vector2.One * 0.5f,
-                new Vector2(18f, 18f), SpriteEffects.None, 0);
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead)
             return false;
+
+        Texture2D pixel = TextureAssets.MagicPixel.Value;
+        Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
+        Vector2 start = GetBeamStart(owner, direction);
+        Vector2 end = start + direction * BeamDrawLength;
+        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.12f + StoredPowerRatio * 1.9f, 1.08f) * 0.58f;
+        Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.74f + StoredPowerRatio * 1.4f, 1.12f) * 0.94f;
+        Color core = new Color(246, 250, 255, 235);
+
+        DrawBeam(pixel, start, end, GetMainBeamThickness() * 1.12f, outer);
+        DrawBeam(pixel, start, end, GetMainBeamThickness() * 0.68f, inner);
+        DrawBeam(pixel, start, end, GetMainBeamThickness() * 0.28f, core);
+
+        int sideBeamCount = GetSideBeamCount();
+        float[] angles = GetSideBeamAngles(sideBeamCount);
+        for (int i = 0; i < sideBeamCount; i++) {
+            Vector2 refDirection = direction.RotatedBy(angles[i]).SafeNormalize(direction);
+            Vector2 refStart = owner.Center + refDirection * 20f;
+            Vector2 refEnd = refStart + refDirection * BeamDrawLength * 0.84f;
+            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 1.08f, outer * 0.88f);
+            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 0.62f, inner * 0.94f);
+            DrawBeam(pixel, refStart, refEnd, GetSideBeamThickness() * 0.24f, core * 0.84f);
         }
 
-        ChromaStonePrismHelper.DrawRing(pixel, center, CurrentRadius * 0.86f, 5.2f, outer, Timer * 0.08f, 26);
-        ChromaStonePrismHelper.DrawRing(pixel, center, CurrentRadius * 0.56f, 3.4f, inner, -Timer * 0.12f, 22);
-        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, Timer * 0.1f, new Vector2(CurrentRadius * 0.7f, 7.2f),
-            outer * 0.75f);
-        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, Timer * 0.1f + MathHelper.PiOver2,
-            new Vector2(CurrentRadius * 0.7f, 7.2f), outer * 0.75f);
-
-        for (int i = 0; i < 3; i++) {
-            float rotation = Timer * 0.05f + i * (MathHelper.Pi / 3f);
-            ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-                new Vector2(CurrentRadius * 0.46f, 3.8f), inner * 0.66f);
-        }
-
-        Main.EntitySpriteDraw(pixel, center, null, new Color(248, 252, 255, 235), 0f, Vector2.One * 0.5f,
-            new Vector2(24f, 24f), SpriteEffects.None, 0);
         return false;
     }
 
     public override void OnKill(int timeLeft) {
+        if (Projectile.owner == Main.myPlayer) {
+            Vector2 endPoint = Projectile.Center + Projectile.velocity.SafeNormalize(Vector2.UnitX) * BeamDrawLength;
+            int burstDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (0.42f + FacetPower * 0.08f)));
+            Projectile.NewProjectile(Projectile.GetSource_FromThis(), endPoint, Vector2.Zero,
+                ModContent.ProjectileType<ChromaStoneRadianceBurstProjectile>(), burstDamage, 4.4f, Projectile.owner,
+                MathHelper.Clamp(0.35f + FacetPower * 0.18f, 0f, 1f), 1f);
+        }
+
         if (Main.dedServ)
             return;
 
         for (int i = 0; i < 30; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.13f + RadianceRatio * 0.5f);
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(CurrentRadius * 0.1f, CurrentRadius * 0.1f),
-                DustID.WhiteTorch, Main.rand.NextVector2Circular(6f, 6f), 90, prismColor, Main.rand.NextFloat(1.05f, 1.6f));
-            dust.noGravity = true;
-        }
-    }
-
-    private void SpawnChargeBurst() {
-        if (Main.dedServ)
-            return;
-
-        SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.45f, Volume = 0.9f }, Projectile.Center);
-        for (int i = 0; i < 24; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.19f);
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(12f, 12f), DustID.WhiteTorch,
-                Main.rand.NextVector2Circular(3.2f, 3.2f), 95, prismColor, Main.rand.NextFloat(1f, 1.45f));
-            dust.noGravity = true;
-        }
-    }
-
-    private void SpawnEruptionBurst() {
-        if (Main.dedServ)
-            return;
-
-        SoundEngine.PlaySound(SoundID.Item74 with { Pitch = -0.32f, Volume = 0.92f }, Projectile.Center);
-        SoundEngine.PlaySound(SoundID.Item122 with { Pitch = -0.55f, Volume = 0.76f }, Projectile.Center);
-
-        for (int i = 0; i < 42; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.11f + 0.28f);
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.15f + StoredPowerRatio);
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(18f, 18f), DustID.WhiteTorch,
-                Main.rand.NextVector2Circular(7.4f, 7.4f), 90, prismColor, Main.rand.NextFloat(1.1f, 1.85f));
+                Main.rand.NextVector2Circular(5.5f, 5.5f), 90, prismColor, Main.rand.NextFloat(1.05f, 1.6f));
             dust.noGravity = true;
         }
     }
 
-    private void SpawnChargingDust(float radius) {
-        if (Main.dedServ)
+    private static bool ShouldStayAlive(Player owner, OmnitrixPlayer omp, ChromaStoneStatePlayer state) {
+        return owner.active &&
+               !owner.dead &&
+               omp.currentTransformationId == ChromaStoneStatePlayer.TransformationId &&
+               state.DischargeActive;
+    }
+
+    private static Vector2 GetBeamStart(Player owner, Vector2 direction) {
+        return owner.Center + direction * 26f;
+    }
+
+    private float GetBeamLength(Vector2 start, Vector2 direction) {
+        float[] samples = new float[3];
+        float thickness = GetMainBeamThickness();
+        float maxLength = 1050f + FacetPower * 110f;
+        Collision.LaserScan(start, direction, thickness, maxLength, samples);
+
+        float tileLength = 0f;
+        for (int i = 0; i < samples.Length; i++)
+            tileLength += samples[i];
+        tileLength /= samples.Length;
+
+        return MathHelper.Clamp(tileLength, 40f, maxLength);
+    }
+
+    private float GetMainBeamThickness() {
+        return 28f + FacetPower * 4f;
+    }
+
+    private float GetSideBeamThickness() {
+        return 16f + FacetPower * 2f;
+    }
+
+    private int GetSideBeamCount() {
+        return FacetPower;
+    }
+
+    private static float[] GetSideBeamAngles(int count) {
+        return count switch {
+            3 => new[] { -0.55f, 0f, 0.55f },
+            2 => new[] { -0.44f, 0.44f },
+            1 => new[] { 0f },
+            _ => Array.Empty<float>()
+        };
+    }
+
+    private void AbsorbHostileProjectiles(Player owner, ChromaStoneStatePlayer state, Vector2 beamStart, Vector2 direction) {
+        if (owner.whoAmI != Main.myPlayer)
             return;
 
-        int points = 10;
-        for (int i = 0; i < points; i++) {
-            float angle = Main.GlobalTimeWrappedHourly * 2.4f + MathHelper.TwoPi * i / points;
-            Vector2 direction = angle.ToRotationVector2();
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + direction * radius, DustID.WhiteTorch,
-                -direction * Main.rand.NextFloat(0.4f, 1.6f), 95, ChromaStonePrismHelper.GetSpectrumColor(i * 0.2f),
-                Main.rand.NextFloat(0.9f, 1.18f));
-            dust.noGravity = true;
+        float collisionPoint = 0f;
+        Rectangle ownerRect = owner.Hitbox;
+        Vector2 beamEnd = beamStart + direction * BeamHitLength;
+
+        for (int i = 0; i < Main.maxProjectiles; i++) {
+            Projectile hostile = Main.projectile[i];
+            if (!hostile.active || !hostile.hostile || hostile.damage <= 0 || hostile.friendly || !IsWeakProjectile(hostile))
+                continue;
+
+            bool hitOwner = hostile.Hitbox.Intersects(ownerRect);
+            bool hitBeam = Collision.CheckAABBvLineCollision(hostile.Hitbox.TopLeft(), hostile.Hitbox.Size(), beamStart, beamEnd,
+                GetMainBeamThickness(), ref collisionPoint);
+
+            if (!hitOwner && !hitBeam)
+                continue;
+
+            state.RegisterDischargeAbsorption(hostile.Center, direction, hostile.damage);
+            hostile.Kill();
         }
     }
 
-    private void SpawnEruptionDust(float radius) {
-        if (Main.dedServ)
+    private static bool IsWeakProjectile(Projectile projectile) {
+        return projectile.damage <= 70 &&
+               projectile.width <= 42 &&
+               projectile.height <= 42;
+    }
+
+    private static void DrawBeam(Texture2D pixel, Vector2 worldStart, Vector2 worldEnd, float width, Color color) {
+        ChromaStonePrismHelper.DrawBeam(pixel, worldStart - Main.screenPosition, worldEnd - Main.screenPosition, width, color);
+    }
+
+    private Vector2 GetAimDirection(Player owner) {
+        if (Main.netMode == NetmodeID.SinglePlayer || Projectile.owner == Main.myPlayer) {
+            Vector2 localDirection = Main.MouseWorld - owner.Center;
+            if (localDirection.LengthSquared() < 0.0001f)
+                localDirection = new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f);
+
+            localDirection.Normalize();
+            SyncAimDirection(localDirection);
+            return localDirection;
+        }
+
+        if (hasSyncedAimDirection && syncedAimDirection.LengthSquared() > 0.0001f)
+            return syncedAimDirection;
+
+        return Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
+    }
+
+    private void SyncAimDirection(Vector2 direction) {
+        bool changed = !hasSyncedAimDirection || Vector2.DistanceSquared(direction, syncedAimDirection) > 0.0004f;
+        aimSyncTimer++;
+        if (!changed && aimSyncTimer < 5)
             return;
 
-        int points = Math.Max(20, (int)Math.Round(radius / 8f));
-        float rotation = Main.GlobalTimeWrappedHourly * 2.1f;
-        for (int i = 0; i < points; i++) {
-            float angle = rotation + MathHelper.TwoPi * i / points;
-            Vector2 direction = angle.ToRotationVector2();
-            float shellOffset = MathHelper.Lerp(radius * 0.58f, radius, Main.rand.NextFloat());
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + direction * shellOffset, DustID.WhiteTorch,
-                direction * Main.rand.NextFloat(1.1f, 4f), 95,
-                ChromaStonePrismHelper.GetSpectrumColor(i * 0.14f + shellOffset * 0.01f),
-                Main.rand.NextFloat(1f, 1.38f));
-            dust.noGravity = true;
-        }
-    }
-
-    private void SpawnPrismVolley() {
-        int boltCount = (CrystalGuard ? 6 : 5) + (RadianceRatio >= 0.75f ? 1 : 0);
-        float baseAngle = Main.rand.NextFloat(MathHelper.TwoPi);
-        int boltDamage = Math.Max(1, (int)Math.Round(Projectile.damage * 0.38f));
-
-        for (int i = 0; i < boltCount; i++) {
-            float angle = baseAngle + MathHelper.TwoPi * i / boltCount;
-            Vector2 velocity = angle.ToRotationVector2() * Main.rand.NextFloat(12.5f, 16f);
-            Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center + velocity.SafeNormalize(Vector2.UnitX) * 10f,
-                velocity, ModContent.ProjectileType<ChromaStoneProjectile>(), boltDamage, Projectile.knockBack * 0.8f,
-                Projectile.owner, MathHelper.Clamp(RadianceRatio * 0.92f + 0.08f, 0f, 1f), CrystalGuard ? 1f : 0f);
-        }
+        syncedAimDirection = direction;
+        hasSyncedAimDirection = true;
+        aimSyncTimer = 0;
+        if (Main.netMode != NetmodeID.SinglePlayer)
+            Projectile.netUpdate = true;
     }
 }

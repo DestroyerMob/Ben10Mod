@@ -15,6 +15,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
     private Vector2 syncedAimDirection = Vector2.UnitX;
     private bool hasSyncedAimDirection;
     private int aimSyncTimer;
+    private int facetConsumeTimer;
 
     private float BeamHitLength {
         get => Projectile.localAI[0];
@@ -64,8 +65,11 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             return;
         }
 
+        if (owner.whoAmI == Main.myPlayer)
+            state.TryConsumeFacetForBeam(ref facetConsumeTimer);
+
         Projectile.timeLeft = 2;
-        Projectile.localNPCHitCooldown = state.OverloadActive ? 8 : 10;
+        Projectile.localNPCHitCooldown = Math.Max(6, 11 - state.VisibleFacetCount * 2);
 
         Vector2 direction = GetAimDirection(owner);
         Projectile.velocity = direction;
@@ -82,10 +86,11 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         owner.itemAnimation = 2;
         owner.itemRotation = (float)Math.Atan2(direction.Y * owner.direction, direction.X * owner.direction);
 
-        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(state.PrismChargeRatio * 2.4f + 0.2f, 1.08f);
+        float powerRatio = state.FacetPowerRatio;
+        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(powerRatio * 2.4f + 0.2f, 1.08f);
         Lighting.AddLight(start + direction * Math.Min(BeamDrawLength * 0.35f, 180f), prismColor.ToVector3() * 0.64f);
 
-        if (!Main.dedServ && Main.rand.NextBool(state.OverloadActive ? 1 : 2)) {
+        if (!Main.dedServ && Main.rand.NextBool(state.VisibleFacetCount > 0 ? 1 : 2)) {
             Vector2 dustPosition = start + direction * Main.rand.NextFloat(14f, Math.Max(18f, BeamDrawLength * 0.85f));
             Dust dust = Dust.NewDustPerfect(dustPosition + Main.rand.NextVector2Circular(10f, 10f), DustID.GemDiamond,
                 direction.RotatedByRandom(0.4f) * Main.rand.NextFloat(0.4f, 2f), 95, prismColor,
@@ -117,7 +122,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             Vector2 refStart = Vector2.Zero;
             Vector2 refDirection = Vector2.Zero;
             GetRefractionSegment(owner, state, direction, i, ref refStart, ref refDirection);
-            float refractionLength = BeamHitLength * (state.OverloadActive ? 0.92f : 0.78f);
+            float refractionLength = BeamHitLength * 0.78f;
             if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), refStart,
                     refStart + refDirection * refractionLength, GetRefractionThickness(state), ref collisionPoint)) {
                 return true;
@@ -129,7 +134,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
         ChromaStoneStatePlayer state = Main.player[Projectile.owner].GetModPlayer<ChromaStoneStatePlayer>();
-        modifiers.SourceDamage *= 1f + state.PrismChargeRatio * 0.16f + (state.OverloadActive ? 0.18f : 0f);
+        modifiers.SourceDamage *= 1f + state.VisibleFacetCount * 0.12f + state.FacetPowerRatio * 0.08f;
     }
 
     public override bool PreDraw(ref Color lightColor) {
@@ -143,8 +148,8 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         Vector2 start = GetBeamStart(owner, direction);
         Vector2 end = start + direction * BeamDrawLength;
         float thickness = GetMainBeamThickness(state);
-        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.2f + state.PrismChargeRatio * 1.9f, 1.05f) * 0.56f;
-        Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.78f + state.PrismChargeRatio * 1.4f, 1.1f) * 0.92f;
+        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.2f + state.FacetPowerRatio * 1.9f, 1.05f) * 0.56f;
+        Color inner = ChromaStonePrismHelper.GetSpectrumColor(0.78f + state.FacetPowerRatio * 1.4f, 1.1f) * 0.92f;
         Color core = new Color(246, 250, 255, 225);
 
         DrawBeam(pixel, start, end, thickness * 1.16f, outer);
@@ -156,7 +161,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             Vector2 refStart = Vector2.Zero;
             Vector2 refDirection = Vector2.Zero;
             GetRefractionSegment(owner, state, direction, i, ref refStart, ref refDirection);
-            float refractionLength = BeamDrawLength * (state.OverloadActive ? 0.92f : 0.78f);
+            float refractionLength = BeamDrawLength * 0.78f;
             Vector2 refEnd = refStart + refDirection * refractionLength;
             float refThickness = GetRefractionThickness(state);
             DrawBeam(pixel, refStart, refEnd, refThickness * 1.1f, outer * 0.85f);
@@ -180,7 +185,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
                !owner.noItems &&
                !owner.CCed &&
                !state.Guarding &&
-               !state.DashActive;
+               !state.DischargeActive;
     }
 
     private static Vector2 GetBeamStart(Player owner, Vector2 direction) {
@@ -190,7 +195,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
     private float GetBeamLength(Vector2 start, Vector2 direction, ChromaStoneStatePlayer state) {
         float[] samples = new float[3];
         float thickness = GetMainBeamThickness(state);
-        float maxLength = state.OverloadActive ? 920f : 760f;
+        float maxLength = 760f;
         Collision.LaserScan(start, direction, thickness, maxLength, samples);
 
         float tileLength = 0f;
@@ -202,11 +207,11 @@ public class ChromaStoneBeamProjectile : ModProjectile {
     }
 
     private static float GetMainBeamThickness(ChromaStoneStatePlayer state) {
-        return state.OverloadActive ? 24f : 18f;
+        return 18f + state.VisibleFacetCount * 3f;
     }
 
     private static float GetRefractionThickness(ChromaStoneStatePlayer state) {
-        return state.OverloadActive ? 16f : 11f;
+        return 11f + state.VisibleFacetCount * 1.5f;
     }
 
     private static int GetRefractionCount(ChromaStoneStatePlayer state) {
@@ -218,18 +223,15 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         Vector2 baseOffset = state.GetFacetWorldOffset(index);
         start = owner.Center + baseOffset * 0.85f;
 
-        float[] baseAngles = GetRefractionAngles(state, GetRefractionCount(state));
+        float[] baseAngles = GetRefractionAngles(GetRefractionCount(state));
         float angleOffset = baseAngles[index];
         refractionDirection = direction.RotatedBy(angleOffset).SafeNormalize(direction);
     }
 
-    private static float[] GetRefractionAngles(ChromaStoneStatePlayer state, int count) {
+    private static float[] GetRefractionAngles(int count) {
         return count switch {
-            3 when state.OverloadActive => new[] { -0.62f, 0f, 0.62f },
             3 => new[] { -0.4f, 0f, 0.4f },
-            2 when state.OverloadActive => new[] { -0.56f, 0.56f },
-            2 => new[] { -0.32f, 0.32f },
-            1 when state.OverloadActive => new[] { 0f },
+            2 => new[] { -0.3f, 0.3f },
             1 => new[] { 0f },
             _ => Array.Empty<float>()
         };

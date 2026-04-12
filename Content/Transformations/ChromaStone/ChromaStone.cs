@@ -7,15 +7,15 @@ namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStone : ModItem {
     public static string TransformationDescription =>
-        "A prismatic battlemage built around steady crystal fire, projectile counterplay, and a Prism Charge payoff window that supercharges the entire kit.";
+        "A durable counter-caster who absorbs hostile fire into Prism Facets, then spends Omnitrix Energy to unleash that stored power back at the enemy.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Prism Barrage is the main attack: a rapid stream of crystal bolts that pierce once, split into shards, and keep pressure on mid-range targets.",
-        "Spectrum Beam channels a focused prism ray, and active Facets refract it into extra angled beams for lined-up targets and safe boss damage.",
-        "Facet Dash is a short omnidirectional burst that carries you through danger and explodes your active Facets into splinters.",
-        "Refraction Guard braces in place, absorbs or softens hostile projectiles, converts that pressure into Prism Charge, and releases the stored energy forward.",
-        "Resonant Facets appear at 33%, 66%, and 100% Prism Charge, adding bonus shots, blocking weak projectiles, and empowering the beam.",
-        "Full Spectrum Overload spends full Prism Charge for eight seconds, restoring all Facets and supercharging Barrage, Beam, Dash, and Guard together."
+        "Crystal Volley is the reliable left-click stream: fast crystal bolts pierce once, split after impact, and every fourth shot upgrades into a heavier Prism Bolt.",
+        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that refracts through active Facets and burns one stored Facet at a time while it stays empowered.",
+        "Absorption Guard braces Chromastone behind a crystal shield, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and stores energy for a release pulse.",
+        "Prismatic Lance cashes out your stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting rainbow spear with a delayed echo hit at full power.",
+        "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, refract the beam, strengthen the lance, and can intercept one very weak projectile each.",
+        "Full Spectrum Discharge spends a large chunk of OE and all active Facets to channel a massive rainbow beam that absorbs weak projectiles and grows deadlier when it feeds on enemy fire."
     };
 
     public override void Load() {
