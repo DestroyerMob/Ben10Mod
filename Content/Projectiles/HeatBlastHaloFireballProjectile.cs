@@ -1,4 +1,5 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.HeatBlast;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -64,6 +65,7 @@ public class HeatBlastHaloFireballProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(Snowflake ? BuffID.Frostburn2 : BuffID.OnFire3, Snowflake ? 240 : 300);
+        HeatBlastTransformation.TrySpawnHaloSplash(Projectile, target, Snowflake);
         SpawnImpactDust(10);
     }
 

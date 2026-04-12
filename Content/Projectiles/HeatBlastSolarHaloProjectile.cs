@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
@@ -7,6 +8,7 @@ using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Ben10Mod.Content.Transformations.HeatBlast;
 
 namespace Ben10Mod.Content.Projectiles;
 
@@ -158,8 +160,10 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
     }
 
     private void TryFire(Player owner, OmnitrixPlayer omp, Vector2 aimDirection) {
+        HeatBlastStatePlayer state = owner.GetModPlayer<HeatBlastStatePlayer>();
+        bool queuedShot = state.TryConsumeHaloQueuedShot();
         FireTimer++;
-        if (FireTimer < GetFireInterval(omp))
+        if (!queuedShot && FireTimer < GetFireInterval(omp))
             return;
 
         FireTimer = 0f;
@@ -170,11 +174,16 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
             Projectile.netUpdate = true;
 
         Vector2 spawnPosition = Projectile.Center + GetOrbitOffset(orbIndex);
-        Vector2 shotDirection = (Main.MouseWorld - spawnPosition).SafeNormalize(aimDirection);
-        shotDirection = shotDirection.RotatedBy(Main.rand.NextFloat(-0.07f, 0.07f));
+        Vector2 targetPosition = Main.MouseWorld;
+        if (state.TryGetFocusedTarget(out NPC focusedTarget))
+            targetPosition = focusedTarget.Center;
+
+        Vector2 shotDirection = (targetPosition - spawnPosition).SafeNormalize(aimDirection);
+        shotDirection = shotDirection.RotatedBy(Main.rand.NextFloat(queuedShot ? -0.025f : -0.07f, queuedShot ? 0.025f : 0.07f));
+        float shotSpeed = FireballSpeed + (omp.IsTertiaryAbilityActive ? 1.25f : 0f) + (queuedShot ? 0.85f : 0f);
 
         int projectileIndex = Projectile.NewProjectile(Projectile.GetSource_FromAI(), spawnPosition,
-            shotDirection * FireballSpeed, ModContent.ProjectileType<HeatBlastHaloFireballProjectile>(),
+            shotDirection * shotSpeed, ModContent.ProjectileType<HeatBlastHaloFireballProjectile>(),
             Projectile.damage, Projectile.knockBack + 0.5f, owner.whoAmI, omp.snowflake ? 1f : 0f);
 
         if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
@@ -266,7 +275,11 @@ public class HeatBlastSolarHaloProjectile : ModProjectile {
             return DefaultFireInterval;
 
         int sustainInterval = transformation.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.SecondaryAbility, omp);
-        return sustainInterval > 0 ? sustainInterval : DefaultFireInterval;
+        int interval = sustainInterval > 0 ? sustainInterval : DefaultFireInterval;
+        if (omp.IsTertiaryAbilityActive)
+            interval = Math.Max(5, interval - 2);
+
+        return interval;
     }
 
     private Vector2 GetLocalAimDirection(Player owner) {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Content.Transformations;
@@ -14,9 +15,14 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.HeatBlast {
     public class HeatBlastTransformation : Transformation {
+        internal const int HeatBlastBurnDurationTicks = 10 * 60;
+        internal const int FlashpointMaxStacks = 5;
+        internal const int FlashpointRefreshTicks = 5 * 60;
+        internal const int FlashpointProgressThreshold = 3;
+
         private const float AuraRodDamageMultiplier = 0.1f;
         private const int AuraRodEnergyCost = 80;
-        private const float SolarHaloDamageMultiplier = 0.42f;
+        private const float SolarHaloDamageMultiplier = 0.46f;
         private const int SolarHaloEnergyCost = 30;
         private const int SolarHaloSustainCost = 1;
         private const int SolarHaloSustainInterval = 9;
@@ -24,6 +30,9 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         private const int SuperheatCooldown = 28 * 60;
         private const int SuperheatCost = 24;
         private const int SuperheatBaseDamage = 16;
+        private const int DirectFireArmorPenetration = 6;
+        private const int FlashpointFlarePopCooldown = 22;
+        private const float SuperheatDirectDamageMultiplier = 1.12f;
 
         private const int PotisPrimaryAttackSpeed = 11;
         private const float PotisPrimaryShootSpeed = 18f;
@@ -62,7 +71,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override bool IsStarterTransformation(OmnitrixPlayer omp) => true;
 
         public override string Description =>
-            "A fiery Pyronite from the blazing star Pyros. A living inferno of plasma wrapped in molten rock that can flood the battlefield with bombs, halos, and superheated fire.";
+            "A fiery Pyronite from the blazing star Pyros. Heatblast floods the arena with burn, builds Flashpoint on overheated targets, then cashes that setup out with bombs, halos, and a charged fireball.";
 
         public override string IconPath => "Ben10Mod/Content/Interface/HeatBlastSelect";
         public override int TransformationBuffId => ModContent.BuffType<HeatBlast_Buff>();
@@ -91,14 +100,15 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override int TertiaryAbilityCost => SuperheatCost;
 
         public override List<string> Abilities => new() {
-            "Flamethrower blast",
-            "Flame bombs",
+            "Direct fire against burning targets ignores armor and builds Flashpoint up to 5 stacks.",
+            "Flame Jet is the fast builder and starts popping small flare bursts at max Flashpoint.",
+            "Fire Bomb cashes Flashpoint out into bigger explosions and inferno patches.",
             "Flame-boosted jump",
             "Fire & lava immunity",
-            "Flame aura rod sentry",
-            "Solar halo of orbiting imp fireballs",
-            "Superheated flame aura that scorches everything around Heatblast",
-            "Growing fireball that hits harder the longer it builds"
+            "Flare Rod zones space, slowly builds Flashpoint, and can be detonated early on recast.",
+            "Solar Halo now prioritizes your last direct target and rapid-fires when your pressure loop heats up.",
+            "Superheat turns the whole kit into a kill window with stronger direct hits and faster Flashpoint buildup.",
+            "Fireball now scales real damage with charge and detonates Flashpoint on impact."
         };
 
         public override string PrimaryAttackName => "Flame Jet";
@@ -111,12 +121,12 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override int PrimaryAttackSpeed => 6;
         public override int PrimaryShootSpeed => 3;
         public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
-        public override float PrimaryAttackModifier => 0.3f;
+        public override float PrimaryAttackModifier => 0.36f;
 
         public override int SecondaryAttack => ModContent.ProjectileType<HeatBlastBomb>();
         public override int SecondaryAttackSpeed => 40;
         public override int SecondaryShootSpeed => 10;
-        public override float SecondaryAttackModifier => 1.5f;
+        public override float SecondaryAttackModifier => 1.65f;
         public override int SecondaryUseStyle => ItemUseStyleID.Swing;
 
         public override int UltimateAttack => ModContent.ProjectileType<HeatBlastUltimateProjectile>();
@@ -340,10 +350,108 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             if (target.life <= 0)
                 return;
 
-            if (omp.snowflake && !target.HasBuff(BuffID.Frostburn2))
-                target.AddBuff(BuffID.Frostburn2, 10 * 60);
-            else if (!omp.snowflake && !target.HasBuff(BuffID.OnFire3))
-                target.AddBuff(BuffID.OnFire3, 10 * 60);
+            ApplyHeatBlastBurn(target, omp.snowflake);
+        }
+
+        public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+            ref NPC.HitModifiers modifiers) {
+            if (HasPotisAltiare(player))
+                return;
+
+            if (projectile.type == ModContent.ProjectileType<HeatBlastExplosionProjectile>()) {
+                int flashpointStacks = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetHeatBlastFlashpointStacks(player.whoAmI);
+                if (flashpointStacks <= 0)
+                    return;
+
+                float mode = projectile.ai[1];
+                if (mode == HeatBlastExplosionProjectile.ModeBomb)
+                    modifiers.SourceDamage *= 1f + 0.16f * flashpointStacks + (omp.IsTertiaryAbilityActive ? 0.06f : 0f);
+                else if (mode == HeatBlastExplosionProjectile.ModeFireball)
+                    modifiers.SourceDamage *= 1f + 0.2f * flashpointStacks + projectile.localAI[0] * 0.65f;
+
+                return;
+            }
+
+            if (!IsDirectFireProjectile(projectile.type))
+                return;
+
+            if (!IsHeatBlastBurning(target, omp.snowflake))
+                return;
+
+            modifiers.ArmorPenetration += DirectFireArmorPenetration;
+            if (omp.IsTertiaryAbilityActive)
+                modifiers.SourceDamage *= SuperheatDirectDamageMultiplier;
+        }
+
+        public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+            NPC.HitInfo hit, int damageDone) {
+            if (HasPotisAltiare(player))
+                return;
+
+            if (projectile.type == ModContent.ProjectileType<HeatBlastExplosionProjectile>()) {
+                ResolveExplosionHit(projectile, target, damageDone);
+                return;
+            }
+
+            if (projectile.type == ModContent.ProjectileType<HeatBlastInfernoPatchProjectile>()) {
+                ResolveInfernoPatchHit(projectile, target);
+                return;
+            }
+
+            if (!IsDirectFireProjectile(projectile.type))
+                return;
+
+            ApplyHeatBlastBurn(target, omp.snowflake);
+
+            HeatBlastStatePlayer state = player.GetModPlayer<HeatBlastStatePlayer>();
+            bool flameJetHit = projectile.type == ProjectileID.Flames;
+            state.RegisterDirectHit(target, flameJetHit, omp.IsTertiaryAbilityActive);
+
+            if (!IsHeatBlastBurning(target, omp.snowflake))
+                return;
+
+            AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            int progress = flameJetHit
+                ? (omp.IsTertiaryAbilityActive ? 2 : 1)
+                : projectile.type == ModContent.ProjectileType<HeatBlastUltimateProjectile>()
+                    ? 2
+                    : 1;
+            identity.AddHeatBlastFlashpointProgress(player.whoAmI, progress, FlashpointRefreshTicks,
+                FlashpointProgressThreshold, FlashpointMaxStacks);
+
+            if (flameJetHit && identity.TryTriggerHeatBlastFlarePop(player.whoAmI, FlashpointFlarePopCooldown))
+                SpawnHeatBlastExplosion(projectile.GetSource_FromThis(), target.Center, 40f,
+                    Math.Max(1, (int)Math.Round(projectile.damage * 0.5f)), projectile.knockBack * 0.5f,
+                    player.whoAmI, HeatBlastExplosionProjectile.ModeFlarePop);
+        }
+
+        public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+            bool compact = false) {
+            if (HasPotisAltiare(omp?.Player))
+                return base.GetAttackResourceSummary(selection, omp, compact);
+
+            OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+            return resolvedSelection switch {
+                OmnitrixPlayer.AttackSelection.Primary => compact
+                    ? "Build Flashpoint"
+                    : "Rapid burn stream that primes Flashpoint",
+                OmnitrixPlayer.AttackSelection.Secondary => compact
+                    ? "Cash out Flashpoint"
+                    : "Heavy explosion that consumes Flashpoint for burst",
+                OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
+                    ? $"{PrimaryAbilityAttackEnergyCost} OE"
+                    : $"Burning ring with recast detonation • {PrimaryAbilityAttackEnergyCost} OE",
+                OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                    ? FormatEnergyRate(SolarHaloSustainCost, SolarHaloSustainInterval, compact)
+                    : $"Reactive halo fireballs • Drain {FormatEnergyRate(SolarHaloSustainCost, SolarHaloSustainInterval, compact)}",
+                OmnitrixPlayer.AttackSelection.TertiaryAbility => omp.IsTertiaryAbilityActive
+                    ? compact ? "Superheat up" : "Superheat active • direct hits hit harder and build faster"
+                    : compact ? $"{SuperheatCost} OE" : $"Kill window with faster Flashpoint and stronger direct hits • {SuperheatCost} OE",
+                OmnitrixPlayer.AttackSelection.Ultimate => compact
+                    ? "Charge + detonate"
+                    : "Charged finisher that scales damage and consumes Flashpoint",
+                _ => base.GetAttackResourceSummary(selection, omp, compact)
+            };
         }
 
         public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source,
@@ -403,8 +511,13 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 return false;
 
             if (primaryProfile.ProjectileType == ProjectileID.Flames) {
-                Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, primaryProfile.ProjectileType,
-                    GetScaledDamage(damage, primaryProfile), knockback, player.whoAmI);
+                int projectileIndex = Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed,
+                    primaryProfile.ProjectileType, GetScaledDamage(damage, primaryProfile), knockback, player.whoAmI);
+                if (omp.IsTertiaryAbilityActive && projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+                    Main.projectile[projectileIndex].scale *= 1.16f;
+                    Main.projectile[projectileIndex].netUpdate = true;
+                }
+
                 return false;
             }
 
@@ -507,10 +620,19 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
                 return false;
 
+            Vector2 spawnPosition = Main.MouseWorld;
+            int existingRod = FindNearestOwnedProjectile(player.whoAmI, profile.ProjectileType, spawnPosition, 88f);
+            if (existingRod >= 0) {
+                Projectile rod = Main.projectile[existingRod];
+                SpawnHeatBlastExplosion(source, rod.Center, 72f, Math.Max(1, (int)Math.Round(rod.damage * 1.8f)),
+                    1f, player.whoAmI, HeatBlastExplosionProjectile.ModeRodPulse);
+                rod.Kill();
+                return false;
+            }
+
             int rodType = profile.ProjectileType;
             CullOldestOwnedProjectile(player, rodType, Math.Max(1, player.maxTurrets));
 
-            Vector2 spawnPosition = Main.MouseWorld;
             int projectileIndex = Projectile.NewProjectile(source, spawnPosition, Vector2.Zero, rodType,
                 GetScaledDamage(damage, profile), 0f, player.whoAmI);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
@@ -674,6 +796,195 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             }
 
             return -1;
+        }
+
+        private static int FindNearestOwnedProjectile(int owner, int projectileType, Vector2 position, float maxDistance) {
+            int closestIndex = -1;
+            float closestDistance = maxDistance * maxDistance;
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != owner || projectile.type != projectileType)
+                    continue;
+
+                float distance = Vector2.DistanceSquared(projectile.Center, position);
+                if (distance > closestDistance)
+                    continue;
+
+                closestDistance = distance;
+                closestIndex = i;
+            }
+
+            return closestIndex;
+        }
+
+        private static bool IsDirectFireProjectile(int projectileType) {
+            return projectileType == ProjectileID.Flames ||
+                   projectileType == ModContent.ProjectileType<HeatBlastBomb>() ||
+                   projectileType == ModContent.ProjectileType<HeatBlastHaloFireballProjectile>() ||
+                   projectileType == ModContent.ProjectileType<HeatBlastUltimateProjectile>();
+        }
+
+        internal static bool IsHeatBlastBurning(NPC target, bool snowflake) {
+            if (target == null)
+                return false;
+
+            return snowflake
+                ? target.HasBuff(BuffID.Frostburn) || target.HasBuff(BuffID.Frostburn2) || target.HasBuff(BuffID.Chilled)
+                : target.HasBuff(BuffID.OnFire) || target.HasBuff(BuffID.OnFire3) || target.HasBuff(BuffID.Burning);
+        }
+
+        internal static void ApplyHeatBlastBurn(NPC target, bool snowflake) {
+            if (target == null || !target.active)
+                return;
+
+            target.AddBuff(snowflake ? BuffID.Frostburn2 : BuffID.OnFire3, HeatBlastBurnDurationTicks);
+        }
+
+        internal static void ResolveExplosionHit(Projectile projectile, NPC target, int damageDone) {
+            if (!TryGetHeatBlastOwner(projectile.owner, out Player owner, out OmnitrixPlayer omp) || HasPotisAltiare(owner))
+                return;
+
+            ApplyHeatBlastBurn(target, omp.snowflake);
+            AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            HeatBlastStatePlayer state = owner.GetModPlayer<HeatBlastStatePlayer>();
+            float mode = projectile.ai[1];
+            if (mode == HeatBlastExplosionProjectile.ModeBomb) {
+                int consumed = identity.ConsumeHeatBlastFlashpoint(owner.whoAmI);
+                if (consumed > 0) {
+                    state.RegisterDirectHit(target, false, omp.IsTertiaryAbilityActive, queuedShots: 2);
+                    if (consumed >= 3)
+                        SpawnHeatBlastExplosion(projectile.GetSource_FromThis(), target.Center, 34f,
+                            Math.Max(1, (int)Math.Round(damageDone * 0.35f)), projectile.knockBack * 0.45f, owner.whoAmI,
+                            HeatBlastExplosionProjectile.ModeFlarePop);
+
+                    if (consumed >= FlashpointMaxStacks)
+                        SpawnHeatBlastInfernoPatch(projectile.GetSource_FromThis(), target.Center, 56f,
+                            Math.Max(1, (int)Math.Round(projectile.damage * 0.28f)), projectile.knockBack * 0.2f,
+                            owner.whoAmI, 150);
+                }
+
+                return;
+            }
+
+            if (mode == HeatBlastExplosionProjectile.ModeFireball) {
+                int consumed = identity.ConsumeHeatBlastFlashpoint(owner.whoAmI);
+                if (consumed > 0) {
+                    state.RegisterDirectHit(target, false, omp.IsTertiaryAbilityActive, queuedShots: consumed >= 3 ? 2 : 1);
+                    float chargeRatio = MathHelper.Clamp(projectile.localAI[0], 0f, 1f);
+                    if (consumed >= 2)
+                        SpawnHeatBlastExplosion(projectile.GetSource_FromThis(), target.Center,
+                            MathHelper.Lerp(40f, 60f, chargeRatio),
+                            Math.Max(1, (int)Math.Round(damageDone * (0.28f + 0.08f * consumed + chargeRatio * 0.18f))),
+                            projectile.knockBack * 0.55f, owner.whoAmI, HeatBlastExplosionProjectile.ModeFlarePop);
+
+                    if (chargeRatio >= 0.92f || consumed >= 4)
+                        SpawnHeatBlastInfernoPatch(projectile.GetSource_FromThis(), target.Center,
+                            MathHelper.Lerp(64f, 96f, chargeRatio),
+                            Math.Max(1, (int)Math.Round(projectile.damage * (0.26f + chargeRatio * 0.14f))),
+                            projectile.knockBack * 0.25f, owner.whoAmI, chargeRatio >= 0.92f ? 210 : 165);
+                }
+
+                return;
+            }
+
+            if (mode == HeatBlastExplosionProjectile.ModeRodPulse)
+                identity.AddHeatBlastFlashpointProgress(owner.whoAmI, 1, FlashpointRefreshTicks, FlashpointProgressThreshold * 2,
+                    FlashpointMaxStacks);
+        }
+
+        internal static void ResolveInfernoPatchHit(Projectile projectile, NPC target) {
+            if (!TryGetHeatBlastOwner(projectile.owner, out _, out OmnitrixPlayer omp))
+                return;
+
+            ApplyHeatBlastBurn(target, omp.snowflake);
+        }
+
+        internal static void SpawnHeatBlastExplosion(IEntitySource source, Vector2 center, float radius, int damage,
+            float knockBack, int owner, float mode, float chargeRatio = 0f) {
+            int projectileIndex = Projectile.NewProjectile(source, center, Vector2.Zero,
+                ModContent.ProjectileType<HeatBlastExplosionProjectile>(), Math.Max(1, damage), knockBack, owner, radius, mode);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+                Projectile explosion = Main.projectile[projectileIndex];
+                explosion.localAI[0] = chargeRatio;
+                explosion.netUpdate = true;
+            }
+        }
+
+        internal static void SpawnHeatBlastInfernoPatch(IEntitySource source, Vector2 center, float radius, int damage,
+            float knockBack, int owner, int duration) {
+            int projectileIndex = Projectile.NewProjectile(source, center, Vector2.Zero,
+                ModContent.ProjectileType<HeatBlastInfernoPatchProjectile>(), Math.Max(1, damage), knockBack, owner, radius, duration);
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+                Main.projectile[projectileIndex].netUpdate = true;
+        }
+
+        internal static void OnBombDetonated(Projectile projectile) {
+            if (!TryGetHeatBlastOwner(projectile.owner, out Player owner, out OmnitrixPlayer omp) || HasPotisAltiare(owner))
+                return;
+
+            float radius = omp.IsTertiaryAbilityActive ? 88f : 72f;
+            int damage = Math.Max(1, (int)Math.Round(projectile.damage * (omp.IsTertiaryAbilityActive ? 1.12f : 1f)));
+            SpawnHeatBlastExplosion(projectile.GetSource_Death(), projectile.Center, radius, damage, projectile.knockBack,
+                projectile.owner, HeatBlastExplosionProjectile.ModeBomb);
+            TryPulseAuraRodsFromBombExplosion(owner, projectile.Center, radius, damage, projectile.knockBack * 0.65f);
+        }
+
+        internal static void OnUltimateFireballDetonated(Projectile projectile, float chargeRatio) {
+            if (!TryGetHeatBlastOwner(projectile.owner, out Player owner, out OmnitrixPlayer omp) || HasPotisAltiare(owner))
+                return;
+
+            float radius = MathHelper.Lerp(78f, 132f, chargeRatio);
+            SpawnHeatBlastExplosion(projectile.GetSource_Death(), projectile.Center, radius, projectile.damage, projectile.knockBack,
+                projectile.owner, HeatBlastExplosionProjectile.ModeFireball, chargeRatio);
+
+            if (chargeRatio >= 0.92f)
+                SpawnHeatBlastInfernoPatch(projectile.GetSource_Death(), projectile.Center, MathHelper.Lerp(86f, 128f, chargeRatio),
+                    Math.Max(1, (int)Math.Round(projectile.damage * 0.32f)), projectile.knockBack * 0.3f, projectile.owner, 240);
+        }
+
+        internal static void TrySpawnHaloSplash(Projectile projectile, NPC target, bool snowflake) {
+            if (snowflake || !TryGetHeatBlastOwner(projectile.owner, out Player owner, out _))
+                return;
+
+            AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            if (!identity.HasHeatBlastFlashpointFor(owner.whoAmI) && !IsHeatBlastBurning(target, snowflake))
+                return;
+
+            SpawnHeatBlastExplosion(projectile.GetSource_FromThis(), target.Center, 30f,
+                Math.Max(1, (int)Math.Round(projectile.damage * 0.38f)), projectile.knockBack * 0.3f, projectile.owner,
+                HeatBlastExplosionProjectile.ModeFlarePop);
+        }
+
+        private static void TryPulseAuraRodsFromBombExplosion(Player owner, Vector2 center, float radius, int damage, float knockback) {
+            float maxDistance = HeatBlastAuraRodProjectile.AuraRadius + HeatBlastAuraRodProjectile.AuraHalfThickness + radius;
+            float minDistance = Math.Max(0f, HeatBlastAuraRodProjectile.AuraRadius - HeatBlastAuraRodProjectile.AuraHalfThickness - radius);
+            for (int i = 0; i < Main.maxProjectiles; i++) {
+                Projectile projectile = Main.projectile[i];
+                if (!projectile.active || projectile.owner != owner.whoAmI ||
+                    projectile.type != ModContent.ProjectileType<HeatBlastAuraRodProjectile>())
+                    continue;
+
+                float distance = Vector2.Distance(projectile.Center, center);
+                if (distance < minDistance || distance > maxDistance)
+                    continue;
+
+                SpawnHeatBlastExplosion(projectile.GetSource_FromThis(), projectile.Center, 48f,
+                    Math.Max(1, (int)Math.Round(damage * 0.42f)), knockback, owner.whoAmI, HeatBlastExplosionProjectile.ModeRodPulse);
+            }
+        }
+
+        private static bool TryGetHeatBlastOwner(int ownerIndex, out Player owner, out OmnitrixPlayer omp) {
+            owner = null;
+            omp = null;
+            if (ownerIndex < 0 || ownerIndex >= Main.maxPlayers)
+                return false;
+
+            owner = Main.player[ownerIndex];
+            if (!owner.active)
+                return false;
+
+            omp = owner.GetModPlayer<OmnitrixPlayer>();
+            return omp.currentTransformationId == "Ben10Mod:HeatBlast";
         }
     }
 }

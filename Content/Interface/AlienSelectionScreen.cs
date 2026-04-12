@@ -907,6 +907,12 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(npcState.BigChillFrigidFractureTime / 240f, 0f, 1f), new Color(225, 246, 255)));
             }
 
+            if (npcState.HasHeatBlastFlashpointFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Flashpoint", $"{npcState.GetHeatBlastFlashpointStacks(player.whoAmI)}/5",
+                    MathHelper.Clamp(npcState.GetHeatBlastFlashpointStacks(player.whoAmI) / 5f, 0f, 1f),
+                    new Color(255, 182, 102)));
+            }
+
             if (npcState.IsWhampirePreyFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(npcState.WhampirePreyTime),
                     MathHelper.Clamp(npcState.WhampirePreyTime / 420f, 0f, 1f), new Color(255, 128, 144)));

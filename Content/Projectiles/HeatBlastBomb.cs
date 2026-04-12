@@ -1,9 +1,6 @@
-﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.HeatBlast;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -20,6 +17,10 @@ namespace Ben10Mod.Content.Projectiles {
 
             AIType = ProjectileID.Bullet;
             Projectile.friendly = true;
+            Projectile.penetrate = 1;
+            Projectile.timeLeft = 180;
+            Projectile.ignoreWater = true;
+            Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
@@ -27,21 +28,17 @@ namespace Ben10Mod.Content.Projectiles {
             bool   gotPlayer = Projectile.TryGetOwner(out player);
             var    omp       = gotPlayer ? player.GetModPlayer<OmnitrixPlayer>() : null;
             int    dust      = gotPlayer ? omp.snowflake ? DustID.IceTorch : DustID.Torch : DustID.Torch;
-            Random random    = new Random();
             int    dustNum   = Dust.NewDust(boxPosition, 1, 1, dust, 0, 0, 1, Color.White, 5);
             Main.dust[dustNum].noGravity = true;
         }
 
-        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone)
-        {
-            base.OnHitNPC(target, hit, damageDone);
-            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 50);
+        public override void OnKill(int timeLeft) {
+            HeatBlastTransformation.OnBombDetonated(Projectile);
         }
 
-        public override bool OnTileCollide(Vector2 oldVelocity)
-        {
-            Projectile.NewProjectile(Projectile.GetSource_Death(), Projectile.Center, Vector2.Zero, ModContent.ProjectileType<Explosion>(), Projectile.damage, 0, -1, 50);
-            return base.OnTileCollide(oldVelocity);
+        public override bool OnTileCollide(Vector2 oldVelocity) {
+            Projectile.velocity = oldVelocity * 0.1f;
+            return true;
         }
     }
 }

@@ -1,5 +1,7 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Transformations.HeatBlast;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -12,8 +14,8 @@ namespace Ben10Mod.Content.Projectiles;
 public class HeatBlastAuraRodProjectile : ModProjectile {
     public override string Texture => "Terraria/Images/Projectile_0";
 
-    private const float AuraRadius = 7f * 16f;
-    private const float AuraHalfThickness = 16f;
+    public const float AuraRadius = 7f * 16f;
+    public const float AuraHalfThickness = 16f;
     private const int DustPoints = 48;
     private const int BurnDuration = 10 * 60;
     private const int DamageInterval = 20;
@@ -97,6 +99,7 @@ public class HeatBlastAuraRodProjectile : ModProjectile {
             return;
 
         Player owner = Main.player[Projectile.owner];
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
         int auraDamage = Math.Max(1, Projectile.damage);
 
         foreach (NPC npc in Main.ActiveNPCs) {
@@ -109,8 +112,11 @@ public class HeatBlastAuraRodProjectile : ModProjectile {
             if (!IsTouchingAuraRing(npc))
                 continue;
 
-            npc.AddBuff(BuffID.OnFire3, BurnDuration);
+            HeatBlastTransformation.ApplyHeatBlastBurn(npc, omp.snowflake);
             npc.SimpleStrikeNPC(auraDamage, owner.direction, false, 0f, ModContent.GetInstance<HeroDamage>());
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            identity.AddHeatBlastFlashpointProgress(owner.whoAmI, 1, HeatBlastTransformation.FlashpointRefreshTicks,
+                HeatBlastTransformation.FlashpointProgressThreshold * 2, HeatBlastTransformation.FlashpointMaxStacks);
             Projectile.localNPCImmunity[npc.whoAmI] = DamageInterval;
         }
     }

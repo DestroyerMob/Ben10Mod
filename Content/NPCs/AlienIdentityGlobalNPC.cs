@@ -1,6 +1,7 @@
 using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
+using Ben10Mod.Content.Transformations.HeatBlast;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
@@ -55,6 +56,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int BigChillFrigidFractureOwner = -1;
     public int BigChillFrigidFractureTime;
 
+    public int HeatBlastOwner = -1;
+    public int HeatBlastFlashpointStacks;
+    public int HeatBlastFlashpointProgress;
+    public int HeatBlastFlashpointTime;
+    public int HeatBlastFlarePopCooldown;
+
     public int EyeGuyOwner = -1;
     public int EyeGuyFireMarkTime;
     public int EyeGuyFrostMarkTime;
@@ -93,6 +100,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool HasBigChillFrostbiteFor(int owner) => BigChillOwner == owner && BigChillFrostbiteTime > 0 && BigChillFrostbiteStacks > 0;
     public bool IsBigChillDeepFrozenFor(int owner) => BigChillOwner == owner && BigChillDeepFreezeTime > 0;
     public bool IsBigChillFrigidFracturedFor(int owner) => BigChillFrigidFractureOwner == owner && BigChillFrigidFractureTime > 0;
+    public bool HasHeatBlastFlashpointFor(int owner) => HeatBlastOwner == owner && HeatBlastFlashpointTime > 0 && HeatBlastFlashpointStacks > 0;
     public bool IsEyeGuyExposedFor(int owner) => EyeGuyOwner == owner && EyeGuyExposedTime > 0;
     public bool IsWhampirePreyFor(int owner) => WhampirePreyOwner == owner && WhampirePreyTime > 0;
     public bool IsSnareOhCursedFor(int owner) => SnareOhCurseOwner == owner && SnareOhCurseTime > 0 && SnareOhCurseStacks > 0;
@@ -105,6 +113,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
     public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
     public int GetAlienXJudgementStacks(int owner) => IsAlienXJudgedFor(owner) ? AlienXJudgementStacks : 0;
+    public int GetHeatBlastFlashpointStacks(int owner) => HasHeatBlastFlashpointFor(owner) ? HeatBlastFlashpointStacks : 0;
     public int GetBigChillFrostbiteStacks(int owner) {
         if (BigChillOwner != owner)
             return 0;
@@ -296,6 +305,48 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public void ApplyBigChillFrigidFracture(int owner, int time) {
         BigChillFrigidFractureOwner = owner;
         BigChillFrigidFractureTime = Utils.Clamp(time, 1, 420);
+    }
+
+    public int AddHeatBlastFlashpointProgress(int owner, int progress, int refreshTime, int threshold = 3, int maxStacks = 5) {
+        if (HeatBlastOwner != owner) {
+            ClearHeatBlastState();
+            HeatBlastOwner = owner;
+        }
+
+        HeatBlastFlashpointTime = Utils.Clamp(System.Math.Max(HeatBlastFlashpointTime, refreshTime), 1, 420);
+        if (HeatBlastFlashpointStacks >= maxStacks)
+            return 0;
+
+        HeatBlastFlashpointProgress += System.Math.Max(1, progress);
+        int gained = 0;
+        int clampedThreshold = System.Math.Max(1, threshold);
+        while (HeatBlastFlashpointProgress >= clampedThreshold && HeatBlastFlashpointStacks < maxStacks) {
+            HeatBlastFlashpointProgress -= clampedThreshold;
+            HeatBlastFlashpointStacks++;
+            gained++;
+        }
+
+        if (HeatBlastFlashpointStacks >= maxStacks)
+            HeatBlastFlashpointProgress = 0;
+
+        return gained;
+    }
+
+    public int ConsumeHeatBlastFlashpoint(int owner) {
+        if (HeatBlastOwner != owner || HeatBlastFlashpointStacks <= 0 || HeatBlastFlashpointTime <= 0)
+            return 0;
+
+        int consumed = HeatBlastFlashpointStacks;
+        ClearHeatBlastState();
+        return consumed;
+    }
+
+    public bool TryTriggerHeatBlastFlarePop(int owner, int cooldown) {
+        if (!HasHeatBlastFlashpointFor(owner) || HeatBlastFlashpointStacks < 5 || HeatBlastFlarePopCooldown > 0)
+            return false;
+
+        HeatBlastFlarePopCooldown = Utils.Clamp(cooldown, 1, 180);
+        return true;
     }
 
     public bool HasEyeGuyMark(int owner, EyeGuyElement element) {
@@ -567,6 +618,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         if (BigChillFrigidFractureTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(236, 248, 255), 0.16f);
 
+        if (HeatBlastFlashpointTime > 0) {
+            float flashpointRatio = HeatBlastFlashpointStacks / 5f;
+            Color flashpointColor = Color.Lerp(new Color(255, 138, 62), new Color(255, 242, 210), flashpointRatio);
+            drawColor = Color.Lerp(drawColor, flashpointColor, 0.12f + flashpointRatio * 0.22f);
+        }
+
         if (EyeGuyExposedTime > 0) {
             drawColor = Color.Lerp(drawColor, new Color(255, 228, 170), 0.36f);
         }
@@ -717,6 +774,20 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             BigChillFrigidFractureOwner = -1;
         }
 
+        if (HeatBlastFlashpointTime > 0) {
+            HeatBlastFlashpointTime--;
+            if (HeatBlastFlashpointTime <= 0)
+                ClearHeatBlastState();
+        }
+        else {
+            HeatBlastOwner = -1;
+            HeatBlastFlashpointStacks = 0;
+            HeatBlastFlashpointProgress = 0;
+        }
+
+        if (HeatBlastFlarePopCooldown > 0)
+            HeatBlastFlarePopCooldown--;
+
         if (EyeGuyExposedTime > 0) {
             EyeGuyExposedTime--;
             EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
@@ -794,5 +865,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         BigChillDeepFreezeTime = 0;
         BigChillDeepFreezePressure = 0;
         BigChillDeepFreezeArmorPenetration = 8;
+    }
+
+    private void ClearHeatBlastState() {
+        HeatBlastOwner = -1;
+        HeatBlastFlashpointStacks = 0;
+        HeatBlastFlashpointProgress = 0;
+        HeatBlastFlashpointTime = 0;
     }
 }

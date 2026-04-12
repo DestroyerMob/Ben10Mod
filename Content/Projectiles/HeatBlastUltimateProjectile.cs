@@ -6,6 +6,8 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.GameContent;
 using Ben10Mod.Content.Projectiles.UltimateAttacks;
+using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.HeatBlast;
 
 namespace Ben10Mod.Content.Projectiles
 {
@@ -17,6 +19,15 @@ namespace Ben10Mod.Content.Projectiles
         protected override float ChargeStep => 0.038f;
         protected override float LaunchSpeed => 5f;
         protected override int MaxLifetime => 15 * 60;
+
+        private float ChargeRatio => MathHelper.Clamp((Projectile.scale - InitialScale) / (MaxChargeScale - InitialScale), 0f, 1f);
+
+        protected override void ConfigureDefaults() {
+            Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
+            Projectile.penetrate = 1;
+            Projectile.usesLocalNPCImmunity = true;
+            Projectile.localNPCHitCooldown = -1;
+        }
 
         protected override void UpdateCharging(Player owner) {
             float radius = 58f * Projectile.scale;
@@ -32,8 +43,18 @@ namespace Ben10Mod.Content.Projectiles
             }
         }
 
+        protected override void OnLaunched(Player owner) {
+            float chargeRatio = ChargeRatio;
+            Projectile.tileCollide = true;
+            Projectile.damage = Math.Max(1, (int)Math.Round(Projectile.damage * (1.12f + chargeRatio * 1.78f)));
+            Projectile.knockBack += 1f + chargeRatio * 3.2f;
+            Projectile.velocity *= MathHelper.Lerp(0.95f, 1.28f, chargeRatio);
+            Projectile.localAI[0] = chargeRatio;
+        }
+
         protected override void UpdateReleased(Player owner) {
             float radius = 58f * Projectile.scale;
+            Projectile.rotation += 0.08f + Projectile.velocity.Length() * 0.014f;
             Lighting.AddLight(Projectile.Center, Color.Red.ToVector3());
             for (int i = 0; i < 28; i++) {
                 if (Main.rand.NextBool(2)) {
@@ -44,6 +65,18 @@ namespace Ben10Mod.Content.Projectiles
                     d.noGravity = true;
                 }
             }
+        }
+
+        public override bool OnTileCollide(Vector2 oldVelocity) {
+            Projectile.velocity = oldVelocity * 0.1f;
+            return true;
+        }
+
+        public override void OnKill(int timeLeft) {
+            if (IsCharging)
+                return;
+
+            HeatBlastTransformation.OnUltimateFireballDetonated(Projectile, ChargeRatio);
         }
 
         public override bool PreDraw(ref Color lightColor) {
