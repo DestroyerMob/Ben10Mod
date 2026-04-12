@@ -2888,7 +2888,6 @@ namespace Ben10Mod {
                    projectileType == ModContent.ProjectileType<RipJawsBiteProjectile>() ||
                    projectileType == ModContent.ProjectileType<JetrayDiveProjectile>() ||
                    projectileType == ModContent.ProjectileType<BigChillPhaseStrikeProjectile>() ||
-                   projectileType == ModContent.ProjectileType<CannonboltRollProjectile>() ||
                    projectileType == ModContent.ProjectileType<FourArmsRushProjectile>() ||
                    projectileType == ModContent.ProjectileType<GoopDelugeProjectile>();
         }

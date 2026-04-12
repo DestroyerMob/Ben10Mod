@@ -7,14 +7,15 @@ namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStone : ModItem {
     public static string TransformationDescription =>
-        "A living crystal conduit that builds Radiance through combat, braces under Crystal Guard, and converts stored energy into lances, bursts, and supernova detonations.";
+        "A prismatic battlemage built around steady crystal fire, projectile counterplay, and a Prism Charge payoff window that supercharges the entire kit.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Prism Bolt fires quick chromatic shots that intensify as Radiance rises.",
-        "Prism Lance punches through enemies and fractures into splinter fire on impact.",
-        "Crystal Guard hardens your frame, turns incoming damage into extra Radiance, and retaliates with refracted shards.",
-        "Radiance Burst detonates a targeted prism field that scales with stored Radiance.",
-        "Spectrum Overload plants a growing supernova that floods the area with crystal fire."
+        "Prism Barrage is the main attack: a rapid stream of crystal bolts that pierce once, split into shards, and keep pressure on mid-range targets.",
+        "Spectrum Beam channels a focused prism ray, and active Facets refract it into extra angled beams for lined-up targets and safe boss damage.",
+        "Facet Dash is a short omnidirectional burst that carries you through danger and explodes your active Facets into splinters.",
+        "Refraction Guard braces in place, absorbs or softens hostile projectiles, converts that pressure into Prism Charge, and releases the stored energy forward.",
+        "Resonant Facets appear at 33%, 66%, and 100% Prism Charge, adding bonus shots, blocking weak projectiles, and empowering the beam.",
+        "Full Spectrum Overload spends full Prism Charge for eight seconds, restoring all Facets and supercharging Barrage, Beam, Dash, and Guard together."
     };
 
     public override void Load() {

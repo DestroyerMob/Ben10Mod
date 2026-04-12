@@ -1,4 +1,5 @@
 using System;
+using Ben10Mod.Content.Transformations.ChromaStone;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
@@ -25,6 +26,8 @@ public class AlienIdentityPlayer : ModPlayer {
     public float WaterHazardPressure { get; private set; }
 
     public float ChromaStoneRadianceRatio => ChromaStoneRadiance / ChromaStoneMaxRadiance;
+    public float ChromaStonePrismCharge => ChromaStoneRadiance;
+    public float ChromaStonePrismChargeRatio => ChromaStoneRadianceRatio;
     public float FasttrackMomentumRatio => FasttrackMomentum / FasttrackMaxMomentum;
     public float AstrodactylAirSupremacyRatio => AstrodactylAirSupremacy / AstrodactylMaxAirSupremacy;
     public float FrankenstrikeStaticChargeRatio => FrankenstrikeStaticCharge / FrankenstrikeMaxStaticCharge;
@@ -45,6 +48,14 @@ public class AlienIdentityPlayer : ModPlayer {
 
     public void ConsumeChromaStoneRadiance(float amount) {
         ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - amount);
+    }
+
+    public void AddChromaStonePrismCharge(float amount) {
+        AddChromaStoneRadiance(amount);
+    }
+
+    public void ConsumeChromaStonePrismCharge(float amount) {
+        ConsumeChromaStoneRadiance(amount);
     }
 
     public void AddFasttrackMomentum(float amount) {
@@ -103,7 +114,11 @@ public class AlienIdentityPlayer : ModPlayer {
             return;
         }
 
-        float naturalDrain = omp.PrimaryAbilityEnabled ? 0.05f : 0.18f;
+        ChromaStoneStatePlayer chromaState = Player.GetModPlayer<ChromaStoneStatePlayer>();
+        if (chromaState.OverloadActive)
+            return;
+
+        float naturalDrain = chromaState.Guarding ? 0.02f : 0.05f;
         ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - naturalDrain);
     }
 

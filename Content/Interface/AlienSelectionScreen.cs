@@ -596,6 +596,9 @@ namespace Ben10Mod.Content.Interface {
             AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
             HeroPlumberArmorPlayer armorPlayer = player.GetModPlayer<HeroPlumberArmorPlayer>();
             var fourArmsPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.FourArms.FourArmsGroundSlamPlayer>();
+            var cannonboltPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer>();
+            var chromaStonePlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.ChromaStone.ChromaStoneStatePlayer>();
+            int cannonboltMaxBounces = global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.MaxBounceCount;
 
             if (omp.heroConvergenceEmblemEquipped || omp.HeroConvergenceHitCount > 0 || omp.HeroConvergenceCooldownTicks > 0) {
                 bool burstCoolingDown = omp.HeroConvergenceCooldownTicks > 0;
@@ -639,9 +642,55 @@ namespace Ben10Mod.Content.Interface {
                             MathHelper.Clamp(fourArmsPlayer.RageRatio, 0f, 1f), rageAccent));
                     }
                     break;
+                case global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.TransformationId:
+                    if (cannonboltPlayer.SiegeActive) {
+                        entries.Add(new HeroTrackerEntry("Siege",
+                            FormatTrackerSeconds(cannonboltPlayer.SiegeTicksRemaining),
+                            MathHelper.Clamp(cannonboltPlayer.SiegeProgress, 0f, 1f), new Color(255, 210, 132)));
+                    }
+                    else if (cannonboltPlayer.IsRolled || cannonboltPlayer.RollSpeedRatio > 0f) {
+                        string rollValue = cannonboltPlayer.IsRolled
+                            ? $"{cannonboltPlayer.RollStateLabel} {(int)Math.Round(cannonboltPlayer.RollSpeedRatio * 100f)}%"
+                            : $"{(int)Math.Round(cannonboltPlayer.RollSpeedRatio * 100f)}%";
+                        entries.Add(new HeroTrackerEntry("Roll", rollValue,
+                            MathHelper.Clamp(cannonboltPlayer.RollSpeedRatio, 0f, 1f), new Color(232, 196, 128)));
+                    }
+
+                    if (cannonboltPlayer.IsRolled || cannonboltPlayer.ImpactChargeRatio > 0f) {
+                        entries.Add(new HeroTrackerEntry("Impact",
+                            $"{cannonboltPlayer.BounceCount}/{cannonboltMaxBounces}",
+                            MathHelper.Clamp(cannonboltPlayer.ImpactChargeRatio, 0f, 1f), new Color(255, 182, 112)));
+                    }
+
+                    if (cannonboltPlayer.GyroShellActive) {
+                        entries.Add(new HeroTrackerEntry("Gyro",
+                            FormatTrackerSeconds(cannonboltPlayer.GyroTicksRemaining),
+                            MathHelper.Clamp(cannonboltPlayer.GyroProgress, 0f, 1f), new Color(255, 232, 164)));
+                    }
+                    break;
                 case AlienIdentityPlayer.ChromaStoneTransformationId:
-                    entries.Add(new HeroTrackerEntry("Radiance", $"{(int)Math.Round(identityPlayer.ChromaStoneRadianceRatio * 100f)}%",
-                        MathHelper.Clamp(identityPlayer.ChromaStoneRadianceRatio, 0f, 1f), new Color(166, 255, 222)));
+                    if (chromaStonePlayer.OverloadActive) {
+                        entries.Add(new HeroTrackerEntry("Overload",
+                            FormatTrackerSeconds(chromaStonePlayer.OverloadTicksRemaining),
+                            MathHelper.Clamp(chromaStonePlayer.OverloadProgress, 0f, 1f), new Color(255, 214, 132)));
+                    }
+
+                    string chargeValue = chromaStonePlayer.HasFullCharge
+                        ? "Ready"
+                        : $"{(int)Math.Round(identityPlayer.ChromaStonePrismChargeRatio * 100f)}%";
+                    Color chargeAccent = chromaStonePlayer.HasFullCharge
+                        ? new Color(198, 255, 222)
+                        : new Color(166, 255, 222);
+                    entries.Add(new HeroTrackerEntry("Prism", chargeValue,
+                        MathHelper.Clamp(identityPlayer.ChromaStonePrismChargeRatio, 0f, 1f), chargeAccent));
+                    entries.Add(new HeroTrackerEntry("Facets", $"{chromaStonePlayer.VisibleFacetCount}/3",
+                        MathHelper.Clamp(chromaStonePlayer.VisibleFacetCount / 3f, 0f, 1f), new Color(188, 224, 255)));
+
+                    if (chromaStonePlayer.Guarding) {
+                        float guardProgress = Math.Max(chromaStonePlayer.GuardHoldRatio, chromaStonePlayer.GuardStoredRatio);
+                        entries.Add(new HeroTrackerEntry("Guard", $"{(int)Math.Round(chromaStonePlayer.GuardStoredEnergy)}",
+                            MathHelper.Clamp(guardProgress, 0f, 1f), new Color(166, 235, 255)));
+                    }
                     break;
                 case AlienIdentityPlayer.FasttrackTransformationId:
                     entries.Add(new HeroTrackerEntry("Momentum", $"{(int)Math.Round(identityPlayer.FasttrackMomentumRatio * 100f)}%",
