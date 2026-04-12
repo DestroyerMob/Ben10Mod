@@ -6,21 +6,25 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Players;
 
 public class AlienIdentityPlayer : ModPlayer {
+    public const string ChromaStoneTransformationId = "Ben10Mod:ChromaStone";
     public const string FasttrackTransformationId = "Ben10Mod:Fasttrack";
     public const string AstrodactylTransformationId = "Ben10Mod:Astrodactyl";
     public const string FrankenstrikeTransformationId = "Ben10Mod:Frankenstrike";
     public const string WaterHazardTransformationId = "Ben10Mod:WaterHazard";
 
+    private const float ChromaStoneMaxRadiance = 100f;
     private const float FasttrackMaxMomentum = 100f;
     private const float AstrodactylMaxAirSupremacy = 100f;
     private const float FrankenstrikeMaxStaticCharge = 100f;
     private const float WaterHazardMaxPressure = 100f;
 
+    public float ChromaStoneRadiance { get; private set; }
     public float FasttrackMomentum { get; private set; }
     public float AstrodactylAirSupremacy { get; private set; }
     public float FrankenstrikeStaticCharge { get; private set; }
     public float WaterHazardPressure { get; private set; }
 
+    public float ChromaStoneRadianceRatio => ChromaStoneRadiance / ChromaStoneMaxRadiance;
     public float FasttrackMomentumRatio => FasttrackMomentum / FasttrackMaxMomentum;
     public float AstrodactylAirSupremacyRatio => AstrodactylAirSupremacy / AstrodactylMaxAirSupremacy;
     public float FrankenstrikeStaticChargeRatio => FrankenstrikeStaticCharge / FrankenstrikeMaxStaticCharge;
@@ -28,10 +32,19 @@ public class AlienIdentityPlayer : ModPlayer {
 
     public override void PostUpdate() {
         OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+        UpdateChromaStoneRadiance(omp);
         UpdateFasttrackMomentum(omp);
         UpdateAstrodactylAirSupremacy(omp);
         UpdateFrankenstrikeStaticCharge(omp);
         UpdateWaterHazardPressure(omp);
+    }
+
+    public void AddChromaStoneRadiance(float amount) {
+        ChromaStoneRadiance = MathHelper.Clamp(ChromaStoneRadiance + amount, 0f, ChromaStoneMaxRadiance);
+    }
+
+    public void ConsumeChromaStoneRadiance(float amount) {
+        ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - amount);
     }
 
     public void AddFasttrackMomentum(float amount) {
@@ -82,6 +95,16 @@ public class AlienIdentityPlayer : ModPlayer {
         return IsLandingSurface(leftTileX, tileY, feetY) ||
                IsLandingSurface(centerTileX, tileY, feetY) ||
                IsLandingSurface(rightTileX, tileY, feetY);
+    }
+
+    private void UpdateChromaStoneRadiance(OmnitrixPlayer omp) {
+        if (omp.currentTransformationId != ChromaStoneTransformationId) {
+            ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - 4.5f);
+            return;
+        }
+
+        float naturalDrain = omp.PrimaryAbilityEnabled ? 0.05f : 0.18f;
+        ChromaStoneRadiance = Math.Max(0f, ChromaStoneRadiance - naturalDrain);
     }
 
     private void UpdateFasttrackMomentum(OmnitrixPlayer omp) {

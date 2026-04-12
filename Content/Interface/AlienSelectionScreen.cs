@@ -621,6 +621,10 @@ namespace Ben10Mod.Content.Interface {
             }
 
             switch (omp.currentTransformationId) {
+                case AlienIdentityPlayer.ChromaStoneTransformationId:
+                    entries.Add(new HeroTrackerEntry("Radiance", $"{(int)Math.Round(identityPlayer.ChromaStoneRadianceRatio * 100f)}%",
+                        MathHelper.Clamp(identityPlayer.ChromaStoneRadianceRatio, 0f, 1f), new Color(166, 255, 222)));
+                    break;
                 case AlienIdentityPlayer.FasttrackTransformationId:
                     entries.Add(new HeroTrackerEntry("Momentum", $"{(int)Math.Round(identityPlayer.FasttrackMomentumRatio * 100f)}%",
                         MathHelper.Clamp(identityPlayer.FasttrackMomentumRatio, 0f, 1f), new Color(145, 255, 150)));
