@@ -902,6 +902,11 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(frostbiteRatio, 0f, 1f), new Color(145, 215, 255)));
             }
 
+            if (npcState.IsBigChillFrigidFracturedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(npcState.BigChillFrigidFractureTime),
+                    MathHelper.Clamp(npcState.BigChillFrigidFractureTime / 240f, 0f, 1f), new Color(225, 246, 255)));
+            }
+
             if (npcState.IsWhampirePreyFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(npcState.WhampirePreyTime),
                     MathHelper.Clamp(npcState.WhampirePreyTime / 420f, 0f, 1f), new Color(255, 128, 144)));

@@ -51,6 +51,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int BigChillFrostbiteTime;
     public int BigChillDeepFreezeTime;
     public int BigChillDeepFreezePressure;
+    public int BigChillDeepFreezeArmorPenetration = 8;
+    public int BigChillFrigidFractureOwner = -1;
+    public int BigChillFrigidFractureTime;
 
     public int EyeGuyOwner = -1;
     public int EyeGuyFireMarkTime;
@@ -89,6 +92,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
     public bool HasBigChillFrostbiteFor(int owner) => BigChillOwner == owner && BigChillFrostbiteTime > 0 && BigChillFrostbiteStacks > 0;
     public bool IsBigChillDeepFrozenFor(int owner) => BigChillOwner == owner && BigChillDeepFreezeTime > 0;
+    public bool IsBigChillFrigidFracturedFor(int owner) => BigChillFrigidFractureOwner == owner && BigChillFrigidFractureTime > 0;
     public bool IsEyeGuyExposedFor(int owner) => EyeGuyOwner == owner && EyeGuyExposedTime > 0;
     public bool IsWhampirePreyFor(int owner) => WhampirePreyOwner == owner && WhampirePreyTime > 0;
     public bool IsSnareOhCursedFor(int owner) => SnareOhCurseOwner == owner && SnareOhCurseTime > 0 && SnareOhCurseStacks > 0;
@@ -242,7 +246,8 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         JetrayLockTime = Utils.Clamp(time, 1, 420);
     }
 
-    public bool ApplyBigChillFrostbite(int owner, int stacks, int refreshTime, int deepFreezeTime) {
+    public bool ApplyBigChillFrostbite(int owner, int stacks, int refreshTime, int deepFreezeTime,
+        int armorPenetrationBonus = 8) {
         if (BigChillOwner != owner) {
             ClearBigChillState();
             BigChillOwner = owner;
@@ -259,6 +264,16 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         BigChillDeepFreezeTime = Utils.Clamp(deepFreezeTime, 1, 360);
         BigChillFrostbiteTime = BigChillDeepFreezeTime;
         BigChillDeepFreezePressure = 0;
+        BigChillDeepFreezeArmorPenetration = System.Math.Max(0, armorPenetrationBonus);
+        return true;
+    }
+
+    public bool RefreshBigChillDeepFreeze(int owner, int amount) {
+        if (!IsBigChillDeepFrozenFor(owner))
+            return false;
+
+        BigChillDeepFreezeTime = Utils.Clamp(BigChillDeepFreezeTime + System.Math.Max(1, amount), 1, 360);
+        BigChillFrostbiteTime = BigChillDeepFreezeTime;
         return true;
     }
 
@@ -276,6 +291,11 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         ClearBigChillState();
         return true;
+    }
+
+    public void ApplyBigChillFrigidFracture(int owner, int time) {
+        BigChillFrigidFractureOwner = owner;
+        BigChillFrigidFractureTime = Utils.Clamp(time, 1, 420);
     }
 
     public bool HasEyeGuyMark(int owner, EyeGuyElement element) {
@@ -471,13 +491,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     }
 
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers) {
-        if (BigChillDeepFreezeTime > 0)
-            modifiers.ArmorPenetration += 8;
+        if (BigChillDeepFreezeTime > 0 && player.whoAmI == BigChillOwner)
+            modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
     }
 
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers) {
-        if (BigChillDeepFreezeTime > 0)
-            modifiers.ArmorPenetration += 8;
+        if (BigChillDeepFreezeTime > 0 && projectile.owner == BigChillOwner)
+            modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
     }
 
     public override void UpdateLifeRegen(NPC npc, ref int damage) {
@@ -543,6 +563,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             float frostbiteRatio = BigChillFrostbiteStacks / (float)BigChillTransformation.FrostbiteThreshold;
             drawColor = Color.Lerp(drawColor, new Color(150, 220, 255), 0.12f + frostbiteRatio * 0.16f);
         }
+
+        if (BigChillFrigidFractureTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(236, 248, 255), 0.16f);
 
         if (EyeGuyExposedTime > 0) {
             drawColor = Color.Lerp(drawColor, new Color(255, 228, 170), 0.36f);
@@ -687,6 +710,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
                 ClearBigChillState();
         }
 
+        if (BigChillFrigidFractureTime > 0) {
+            BigChillFrigidFractureTime--;
+        }
+        else {
+            BigChillFrigidFractureOwner = -1;
+        }
+
         if (EyeGuyExposedTime > 0) {
             EyeGuyExposedTime--;
             EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
@@ -763,5 +793,6 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         BigChillFrostbiteTime = 0;
         BigChillDeepFreezeTime = 0;
         BigChillDeepFreezePressure = 0;
+        BigChillDeepFreezeArmorPenetration = 8;
     }
 }

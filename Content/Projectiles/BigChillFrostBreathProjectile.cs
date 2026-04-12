@@ -13,13 +13,17 @@ public class BigChillFrostBreathProjectile : ModProjectile {
     private const int LifetimeTicks = 14;
     private const float MinLength = 38f;
     private const float BaseMaxLength = 106f;
+    private const float UltimateFormBonusLength = 22f;
     private const float PhaseDriftBonusLength = 34f;
     private const float AbsoluteZeroBonusLength = 30f;
     private const float MinWidth = 13f;
     private const float BaseMaxWidth = 28f;
+    private const float UltimateFormBonusWidth = 6f;
 
     private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
     private bool PhaseDriftEmpowered => Projectile.ai[1] >= 0.5f;
+    private bool UltimateForm =>
+        Projectile.owner >= 0 && Projectile.owner < Main.maxPlayers && BigChillTransformation.IsUltimateBigChill(Main.player[Projectile.owner]);
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -49,12 +53,12 @@ public class BigChillFrostBreathProjectile : ModProjectile {
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Projectile.rotation = direction.ToRotation();
-        Projectile.scale = MathHelper.Lerp(0.88f, AbsoluteZero ? 1.26f : 1.08f, GetProgress());
+        Projectile.scale = MathHelper.Lerp(0.88f, AbsoluteZero ? 1.26f : UltimateForm ? 1.14f : 1.08f, GetProgress());
         Projectile.Center = GetBreathStart(owner, direction) + direction * GetBreathLength() * 0.52f;
-        Projectile.localNPCHitCooldown = AbsoluteZero ? 8 : 10;
+        Projectile.localNPCHitCooldown = AbsoluteZero ? 7 : UltimateForm ? 8 : 10;
 
         Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.24f, 0.48f, 0.74f) : new Vector3(0.16f, 0.34f, 0.58f));
+            AbsoluteZero ? new Vector3(0.24f, 0.48f, 0.74f) : UltimateForm ? new Vector3(0.2f, 0.42f, 0.68f) : new Vector3(0.16f, 0.34f, 0.58f));
         SpawnBreathDust(owner, direction);
     }
 
@@ -83,11 +87,22 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 center = start + direction * (length * 0.5f);
         float rotation = direction.ToRotation();
 
-        Main.EntitySpriteDraw(pixel, center, null, new Color(110, 200, 255, 172), rotation,
+        Color outer = AbsoluteZero
+            ? new Color(118, 214, 255, 178)
+            : UltimateForm
+                ? new Color(94, 210, 255, 170)
+                : new Color(110, 200, 255, 172);
+        Color middle = AbsoluteZero
+            ? new Color(218, 246, 255, 170)
+            : UltimateForm
+                ? new Color(190, 238, 255, 164)
+                : new Color(210, 245, 255, 158);
+
+        Main.EntitySpriteDraw(pixel, center, null, outer, rotation,
             Vector2.One * 0.5f, new Vector2(length, width), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center, null, new Color(210, 245, 255, 158), rotation,
+        Main.EntitySpriteDraw(pixel, center, null, middle, rotation,
             Vector2.One * 0.5f, new Vector2(length * 0.88f, width * 0.44f), SpriteEffects.None, 0);
-        if (PhaseDriftEmpowered) {
+        if (PhaseDriftEmpowered || UltimateForm) {
             Main.EntitySpriteDraw(pixel, center, null, new Color(255, 250, 255, 102), rotation,
                 Vector2.One * 0.5f, new Vector2(length * 0.78f, width * 0.18f), SpriteEffects.None, 0);
         }
@@ -100,13 +115,14 @@ public class BigChillFrostBreathProjectile : ModProjectile {
 
     private float GetBreathLength() {
         float maxLength = BaseMaxLength +
+                          (UltimateForm ? UltimateFormBonusLength : 0f) +
                           (PhaseDriftEmpowered ? PhaseDriftBonusLength : 0f) +
                           (AbsoluteZero ? AbsoluteZeroBonusLength : 0f);
         return MathHelper.Lerp(MinLength, maxLength, MathHelper.Clamp(GetProgress() * 1.25f, 0f, 1f));
     }
 
     private float GetBreathWidth() {
-        float maxWidth = BaseMaxWidth + (AbsoluteZero ? 12f : 0f);
+        float maxWidth = BaseMaxWidth + (UltimateForm ? UltimateFormBonusWidth : 0f) + (AbsoluteZero ? 12f : 0f);
         return MathHelper.Lerp(MinWidth, maxWidth, MathHelper.Clamp(GetProgress() * 1.2f, 0f, 1f)) * Projectile.scale;
     }
 
@@ -122,7 +138,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 normal = new(-direction.Y, direction.X);
         float length = GetBreathLength();
         float width = GetBreathWidth();
-        int dustCount = AbsoluteZero ? 3 : 2;
+        int dustCount = AbsoluteZero ? 3 : UltimateForm ? 3 : 2;
         for (int i = 0; i < dustCount; i++) {
             if (!Main.rand.NextBool(2))
                 continue;
@@ -132,7 +148,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
                                normal * Main.rand.NextFloat(-width * 0.32f, width * 0.32f);
             Dust dust = Dust.NewDustPerfect(position, i % 2 == 0 ? DustID.IceTorch : DustID.Frost,
                 direction * Main.rand.NextFloat(0.35f, 1.2f) + normal * Main.rand.NextFloat(-0.25f, 0.25f),
-                105, AbsoluteZero ? new Color(198, 242, 255) : new Color(172, 225, 255),
+                105, AbsoluteZero ? new Color(198, 242, 255) : UltimateForm ? new Color(168, 236, 255) : new Color(172, 225, 255),
                 Main.rand.NextFloat(0.92f, AbsoluteZero ? 1.24f : 1.1f));
             dust.noGravity = true;
         }

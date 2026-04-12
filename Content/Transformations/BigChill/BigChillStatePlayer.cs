@@ -22,6 +22,8 @@ public class BigChillStatePlayer : ModPlayer {
     private int nextSideLanceDirection = 1;
 
     public bool PhaseDriftEmpowered => bigChillActive && Player.GetModPlayer<OmnitrixPlayer>().IsPrimaryAbilityActive;
+    public bool UltimateBigChillActive =>
+        bigChillActive && IsUltimateBigChillTransformationId(Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId);
 
     public bool AbsoluteZeroActive {
         get {
@@ -60,6 +62,15 @@ public class BigChillStatePlayer : ModPlayer {
     public static bool IsBigChillTransformationId(string transformationId) {
         return string.Equals(transformationId, TransformationId, StringComparison.Ordinal) ||
                string.Equals(transformationId, UltimateTransformationId, StringComparison.Ordinal);
+    }
+
+    public static bool IsUltimateBigChillTransformationId(string transformationId) {
+        return string.Equals(transformationId, UltimateTransformationId, StringComparison.Ordinal);
+    }
+
+    public static bool IsUltimateBigChill(Player player) {
+        return player != null && player.active &&
+               IsUltimateBigChillTransformationId(player.GetModPlayer<OmnitrixPlayer>().currentTransformationId);
     }
 
     public void StartPhaseDrift() {

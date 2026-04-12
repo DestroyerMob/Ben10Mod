@@ -11,37 +11,98 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.BigChill;
 
 public class UltimateBigChillTransformation : BigChillTransformation {
+    private const int SpectralPhaseBaseCost = 18;
+    private const int SpectralPhaseOverdriveCost = 10;
+    private const int PermafrostWakeCost = 20;
+    private const int PolarCataclysmCost = 60;
+
     public override string FullID => "Ben10Mod:UltimateBigChill";
-    public override string TransformationName => "Ultimate Bigchill";
+    public override string TransformationName => "Ultimate Big Chill";
     public override int TransformationBuffId => ModContent.BuffType<UltimateBigChill_Buff>();
     public override Transformation ParentTransformation => ModContent.GetInstance<BigChillTransformation>();
     public override Transformation ChildTransformation => null;
 
     public override string Description =>
-        "An evolved Necrofriggian with denser frost output, harsher Deep Freeze payoffs, and even stronger aerial control than base Big Chill.";
+        "An evolved Necrofriggian air-superiority form that blankets the arena in coldfire, holds targets in Deep Freeze, and chains Shatters through the fight.";
 
     public override List<string> Abilities => new() {
-        "The same Frostbite, Deep Freeze, and Shatter loop, but with stronger baseline damage and tighter flight.",
-        "Ecto Breath and Cryo Lance both hit harder, so Shatter setups finish faster.",
-        "Phase Drift and Grave Mist keep the same controller loop while the evolved body stays harder to pin down.",
-        "Absolute Zero still amplifies the whole kit instead of replacing it."
+        "Direct hits add Frostbite and light coldfire; Deep Frozen targets lose more defense and spread Frostbite when shattered.",
+        "Coldfire Stream is the long stacking breath and refreshes Deep Freeze briefly while you stay on target.",
+        "Absolute Lance is the piercing cash-out shot that shatters, splinters, and leaves a short coldfire patch.",
+        "Spectral Phase dashes intangible, ends in a frost pulse, and supercharges your next lance window.",
+        "Permafrost Wake keeps building Frostbite and slowing the arena while you stay airborne.",
+        "Shatters refund OE, launch frost wisps, fracture bosses, and Polar Cataclysm keeps targets half-stacked for repeat freezes."
     };
 
-    public override string PrimaryAttackName => "Ecto Breath";
-    public override string SecondaryAttackName => "Cryo Lance";
-    public override float PrimaryAttackModifier => 0.42f;
-    public override float SecondaryAttackModifier => 1.24f;
-    public override int UltimateAbilityCost => 65;
+    public override string PrimaryAttackName => "Coldfire Stream";
+    public override string SecondaryAttackName => "Absolute Lance";
+    public override string PrimaryAbilityName => "Spectral Phase";
+    public override string SecondaryAbilityName => "Permafrost Wake";
+    public override string UltimateAbilityName => "Polar Cataclysm";
+
+    public override int PrimaryAttackSpeed => 6;
+    public override int SecondaryAttackSpeed => 18;
+    public override int SecondaryShootSpeed => 21;
+    public override float PrimaryAttackModifier => 0.44f;
+    public override float SecondaryAttackModifier => 1.36f;
+    public override int PrimaryAbilityCost => SpectralPhaseBaseCost;
+    public override int SecondaryAbilityCost => PermafrostWakeCost;
+    public override int UltimateAbilityCost => PolarCataclysmCost;
+
+    public override int GetPrimaryAbilityCost(OmnitrixPlayer omp) {
+        return omp.Player.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive
+            ? SpectralPhaseOverdriveCost
+            : SpectralPhaseBaseCost;
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        BigChillStatePlayer state = omp.Player.GetModPlayer<BigChillStatePlayer>();
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+
+        return resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => state.AbsoluteZeroActive
+                ? compact ? "Wide refreeze" : "Wider coldfire stream that rebuilds Deep Freeze extremely quickly"
+                : compact ? "Stack Frostbite" : "Long coldfire breath that stacks Frostbite and holds Deep Freeze open",
+            OmnitrixPlayer.AttackSelection.Secondary => state.PhaseDriftEmpowered
+                ? compact ? "Lance +" : "Faster empowered lance with stronger Shatter payoff"
+                : compact ? "Shatter lance" : "Piercing payoff spear that cashes Deep Freeze out into Shatter",
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => omp.IsPrimaryAbilityActive
+                ? compact
+                    ? $"Phase {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)}"
+                    : $"Spectral Phase active • {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)} left"
+                : compact
+                    ? $"{GetPrimaryAbilityCost(omp)} OE"
+                    : $"Dash intangible, pulse on exit, and empower your next lance • {GetPrimaryAbilityCost(omp)} OE",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                ? $"{GetSecondaryAbilityCost(omp)} OE"
+                : $"Drifting frost storm that keeps stacking and slowing the arena • {GetSecondaryAbilityCost(omp)} OE",
+            OmnitrixPlayer.AttackSelection.Ultimate => state.AbsoluteZeroActive
+                ? compact
+                    ? $"Polar {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)}"
+                    : $"Polar Cataclysm active • {OmnitrixPlayer.FormatCooldownTicks(state.AbsoluteZeroTicksRemaining)} left"
+                : compact
+                    ? $"{GetUltimateAbilityCost(omp)} OE"
+                    : $"Air-superiority overdrive with side lances, stronger wake, and repeat freeze-shatters • {GetUltimateAbilityCost(omp)} OE",
+            _ => base.GetAttackResourceSummary(selection, omp, compact)
+        };
+    }
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
         player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.endurance += 0.04f;
-        player.moveSpeed += 0.04f;
+        player.GetAttackSpeed<HeroDamage>() += 0.10f;
+        player.moveSpeed += 0.02f;
+        player.runAcceleration += 0.04f;
+        player.maxRunSpeed += 0.25f;
+        player.buffImmune[BuffID.OnFire] = true;
+        player.buffImmune[BuffID.OnFire3] = true;
+        player.buffImmune[BuffID.Burning] = true;
+        player.buffImmune[BuffID.CursedInferno] = true;
+        player.buffImmune[BuffID.ShadowFlame] = true;
+        player.buffImmune[BuffID.Daybreak] = true;
 
-        var abilitySlot = ModContent.GetInstance<AbilitySlot>();
-        abilitySlot.FunctionalItem = new Item(ModContent.ItemType<UltimateBigChillWings>());
+        ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<UltimateBigChillWings>());
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

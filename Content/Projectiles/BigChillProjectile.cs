@@ -12,6 +12,8 @@ namespace Ben10Mod.Content.Projectiles;
 public class BigChillProjectile : ModProjectile {
     private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
     private bool PhaseDriftEmpowered => Projectile.ai[1] >= 0.5f;
+    private bool UltimateForm =>
+        Projectile.owner >= 0 && Projectile.owner < Main.maxPlayers && BigChillTransformation.IsUltimateBigChill(Main.player[Projectile.owner]);
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -34,10 +36,10 @@ public class BigChillProjectile : ModProjectile {
     public override void AI() {
         Projectile.rotation = Projectile.velocity.ToRotation();
         Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : new Vector3(0.14f, 0.32f, 0.56f));
+            AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : UltimateForm ? new Vector3(0.18f, 0.4f, 0.64f) : new Vector3(0.14f, 0.32f, 0.56f));
 
-        if (Projectile.velocity.LengthSquared() < 576f)
-            Projectile.velocity *= AbsoluteZero ? 1.018f : 1.01f;
+        if (Projectile.velocity.LengthSquared() < (UltimateForm ? 676f : 576f))
+            Projectile.velocity *= AbsoluteZero ? 1.018f : UltimateForm ? 1.014f : 1.01f;
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f),
@@ -54,13 +56,14 @@ public class BigChillProjectile : ModProjectile {
         Vector2 center = Projectile.Center - Main.screenPosition;
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         float rotation = direction.ToRotation();
-        Color outer = AbsoluteZero ? new Color(118, 214, 255, 210) : new Color(102, 194, 255, 200);
+        float drawScale = (UltimateForm ? 1.12f : 1f) * (PhaseDriftEmpowered ? 1.08f : 1f);
+        Color outer = AbsoluteZero ? new Color(118, 214, 255, 210) : UltimateForm ? new Color(96, 208, 255, 206) : new Color(102, 194, 255, 200);
         Color inner = PhaseDriftEmpowered ? new Color(255, 250, 255, 230) : new Color(232, 246, 255, 222);
 
         Main.EntitySpriteDraw(pixel, center, null, outer, rotation, Vector2.One * 0.5f,
-            new Vector2(28f, 9f) * Projectile.scale, SpriteEffects.None, 0);
+            new Vector2(28f, 9f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center - direction * 2f, null, inner, rotation, Vector2.One * 0.5f,
-            new Vector2(16f, 4f) * Projectile.scale, SpriteEffects.None, 0);
+            new Vector2(16f, 4f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
         return false;
     }
 

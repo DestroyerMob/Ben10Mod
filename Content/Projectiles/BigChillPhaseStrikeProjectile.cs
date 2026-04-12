@@ -15,6 +15,8 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
 
     private int trailTimer;
     private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
+    private bool UltimateForm =>
+        Projectile.owner >= 0 && Projectile.owner < Main.maxPlayers && BigChillTransformation.IsUltimateBigChill(Main.player[Projectile.owner]);
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -45,7 +47,7 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
         owner.GetModPlayer<BigChillStatePlayer>().StartPhaseDrift();
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        Projectile.velocity = direction * (AbsoluteZero ? DashSpeed + 3f : DashSpeed);
+        Projectile.velocity = direction * (AbsoluteZero ? DashSpeed + 3f : UltimateForm ? DashSpeed + 1.5f : DashSpeed);
         owner.velocity = Projectile.velocity;
         owner.direction = direction.X >= 0f ? 1 : -1;
         owner.immune = true;
@@ -87,6 +89,9 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
 
         owner.noKnockback = false;
         owner.velocity *= 0.42f;
+
+        if (UltimateForm && owner.whoAmI == Main.myPlayer)
+            BigChillTransformation.TriggerSpectralPhasePulse(owner, AbsoluteZero);
 
         if (Main.dedServ)
             return;
