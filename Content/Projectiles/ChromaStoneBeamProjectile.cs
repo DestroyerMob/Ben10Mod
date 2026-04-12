@@ -5,7 +5,6 @@ using Ben10Mod.Content.Transformations.ChromaStone;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 
@@ -128,7 +127,6 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             return false;
 
         ChromaStoneStatePlayer state = owner.GetModPlayer<ChromaStoneStatePlayer>();
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction == 0 ? 1 : owner.direction, 0f));
         Vector2 start = GetBeamStart(owner, direction);
         float thickness = GetMainBeamThickness(state);
@@ -158,8 +156,6 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             0.30f,
             0.56f,
             1.18f);
-        DrawBeamNode(pixel, start, 16f + state.VisibleFacetCount * 2f, inner, core);
-        DrawBeamNode(pixel, start + direction * BeamDrawLength, 13f + state.VisibleFacetCount * 1.4f, outer, core);
 
         Main.spriteBatch.End();
         Main.spriteBatch.Begin(
@@ -173,13 +169,6 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         );
 
         return false;
-    }
-
-    private static void DrawBeamNode(Texture2D pixel, Vector2 worldCenter, float scale, Color outer, Color inner) {
-        Vector2 center = worldCenter - Main.screenPosition;
-        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, MathHelper.PiOver4, new Vector2(scale, scale), outer * 0.5f);
-        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, 0f, new Vector2(scale * 0.6f, scale * 0.6f), outer * 0.75f);
-        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, MathHelper.PiOver4, new Vector2(scale * 0.28f, scale * 0.28f), inner);
     }
 
     private static bool ShouldStayAlive(Player owner, OmnitrixPlayer omp, ChromaStoneStatePlayer state) {
