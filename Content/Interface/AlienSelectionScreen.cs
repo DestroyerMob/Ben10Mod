@@ -632,10 +632,10 @@ namespace Ben10Mod.Content.Interface {
                             MathHelper.Clamp(fourArmsPlayer.BerserkProgress, 0f, 1f), new Color(255, 158, 104)));
                     }
                     else {
-                        string rageValue = fourArmsPlayer.HasFullRage
+                        string rageValue = fourArmsPlayer.HasBerserkThreshold
                             ? "Ready"
                             : $"{(int)Math.Round(fourArmsPlayer.RageRatio * 100f)}%";
-                        Color rageAccent = fourArmsPlayer.HasFullRage
+                        Color rageAccent = fourArmsPlayer.HasBerserkThreshold
                             ? new Color(255, 215, 140)
                             : new Color(255, 142, 102);
                         entries.Add(new HeroTrackerEntry("Rage", rageValue,
@@ -669,20 +669,24 @@ namespace Ben10Mod.Content.Interface {
                     }
                     break;
                 case AlienIdentityPlayer.ChromaStoneTransformationId:
+                    string radianceValue = chromaStonePlayer.HasDischargeThreshold
+                        ? "Ready"
+                        : $"{(int)Math.Round(chromaStonePlayer.RadianceRatio * 100f)}%";
+                    Color radianceAccent = chromaStonePlayer.HasDischargeThreshold
+                        ? new Color(255, 216, 150)
+                        : new Color(190, 255, 230);
+                    entries.Add(new HeroTrackerEntry("Radiance", radianceValue,
+                        MathHelper.Clamp(chromaStonePlayer.RadianceRatio, 0f, 1f), radianceAccent));
+
                     if (chromaStonePlayer.DischargeActive) {
                         entries.Add(new HeroTrackerEntry("Discharge",
-                            FormatTrackerSeconds(chromaStonePlayer.DischargeTicksRemaining),
-                            MathHelper.Clamp(chromaStonePlayer.DischargeProgress, 0f, 1f), new Color(255, 214, 132)));
+                            "Channeling",
+                            MathHelper.Clamp(Math.Max(chromaStonePlayer.ActiveDischargeRadianceRatio,
+                                chromaStonePlayer.ActiveDischargeFacetPower / 3f), 0f, 1f), new Color(255, 214, 132)));
                     }
 
                     entries.Add(new HeroTrackerEntry("Facets", $"{chromaStonePlayer.VisibleFacetCount}/3",
                         MathHelper.Clamp(chromaStonePlayer.VisibleFacetCount / 3f, 0f, 1f), new Color(188, 224, 255)));
-
-                    if (chromaStonePlayer.VisibleFacetCount < 3 && identityPlayer.ChromaStonePrismChargeRatio > 0f) {
-                        entries.Add(new HeroTrackerEntry("Prime",
-                            $"{(int)Math.Round(identityPlayer.ChromaStonePrismChargeRatio * 100f)}%",
-                            MathHelper.Clamp(identityPlayer.ChromaStonePrismChargeRatio, 0f, 1f), new Color(166, 255, 222)));
-                    }
 
                     if (chromaStonePlayer.Guarding) {
                         float guardProgress = Math.Max(chromaStonePlayer.GuardHoldRatio, chromaStonePlayer.GuardStoredRatio);

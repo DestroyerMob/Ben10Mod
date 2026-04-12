@@ -14,9 +14,10 @@ namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStoneStatePlayer : ModPlayer {
     public const string TransformationId = AlienIdentityPlayer.ChromaStoneTransformationId;
+    public const float DischargeActivationThresholdRatio = 0.9f;
+    public const float FullSpectrumDischargeRadianceCost = 90f;
     public const int AbsorptionGuardCooldownTicks = 9 * 60;
     public const int PrismaticLanceCooldownTicks = 8 * 60;
-    public const int FullSpectrumDischargeDurationTicks = 8 * 60;
     public const int FullSpectrumDischargeCooldownTicks = 48 * 60;
     public const int GuardMaxHoldTicks = 90;
     public const int MaxFacets = 3;
@@ -24,62 +25,52 @@ public class ChromaStoneStatePlayer : ModPlayer {
     private const float FacetProgressThreshold = 100f;
     private const int PrismBoltInterval = 4;
     private const int BeamFacetConsumeIntervalTicks = 24;
-    private const int UltimateAbsorbExtensionCap = FullSpectrumDischargeDurationTicks + 120;
     private const int FallbackBaseDamage = 28;
 
     private int storedFacets;
     private int volleyShotCounter;
     private int guardGraceTime;
     private int dischargeFacetPower;
+    private float prismCharge;
+    private float dischargeRadiancePower;
     private float guardHoldRatio;
     private float guardStoredEnergy;
     private bool chromastoneActive;
 
-    public float PrismCharge => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStonePrismCharge;
-    public float PrismChargeRatio => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStonePrismChargeRatio;
+    public float PrismCharge => prismCharge;
+    public float PrismChargeRatio => MathHelper.Clamp(prismCharge / FacetProgressThreshold, 0f, 1f);
+    public float Radiance => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStoneRadiance;
+    public float RadianceRatio => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStoneRadianceRatio;
     public int StoredFacets => Math.Clamp(storedFacets, 0, MaxFacets);
     public float NextFacetProgressRatio => MathHelper.Clamp(PrismChargeRatio, 0f, 1f);
     public float FacetPowerRatio => MathHelper.Clamp((StoredFacets + NextFacetProgressRatio) / MaxFacets, 0f, 1f);
+    public float VisualRadianceRatio => DischargeActive
+        ? Math.Max(RadianceRatio, ActiveDischargeRadianceRatio)
+        : RadianceRatio;
     public bool Guarding => guardGraceTime > 0;
     public float GuardHoldRatio => MathHelper.Clamp(guardHoldRatio, 0f, 1f);
     public float GuardStoredEnergy => guardStoredEnergy;
     public float GuardStoredRatio => MathHelper.Clamp(guardStoredEnergy / 90f, 0f, 1f);
     public bool DischargeActive {
-        get {
-            OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
-            return chromastoneActive &&
-                   omp.IsUltimateAbilityActive &&
-                   string.Equals(omp.ultimateAbilityTransformationId, TransformationId, StringComparison.Ordinal);
-        }
+        get => chromastoneActive &&
+               FindOwnedProjectile(ModContent.ProjectileType<ChromaStoneSupernovaProjectile>()) != -1;
     }
 
     public bool OverloadActive => DischargeActive;
 
-    public int DischargeTicksRemaining {
-        get {
-            if (!DischargeActive)
-                return 0;
-
-            return Player.GetModPlayer<OmnitrixPlayer>().GetActiveAbilityRemainingTicks(OmnitrixPlayer.AttackSelection.Ultimate);
-        }
-    }
+    public int DischargeTicksRemaining => 0;
 
     public int OverloadTicksRemaining => DischargeTicksRemaining;
 
-    public float DischargeProgress {
-        get {
-            if (!DischargeActive)
-                return 0f;
-
-            return MathHelper.Clamp(DischargeTicksRemaining / (float)FullSpectrumDischargeDurationTicks, 0f, 1f);
-        }
-    }
+    public float DischargeProgress => DischargeActive ? 1f : 0f;
 
     public float OverloadProgress => DischargeProgress;
     public int VisibleFacetCount => DischargeActive ? 0 : StoredFacets;
     public int ActiveDischargeFacetPower => Math.Clamp(dischargeFacetPower, 0, MaxFacets);
+    public float ActiveDischargeRadianceRatio => MathHelper.Clamp(dischargeRadiancePower, 0f, 1f);
     public bool HasAnyFacets => StoredFacets > 0;
     public bool HasFullCharge => StoredFacets >= MaxFacets;
+    public bool HasDischargeThreshold => RadianceRatio >= DischargeActivationThresholdRatio;
 
     public override void ResetEffects() {
         chromastoneActive = Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == TransformationId;
@@ -94,15 +85,18 @@ public class ChromaStoneStatePlayer : ModPlayer {
         }
 
         if (!chromastoneActive) {
-            if (storedFacets > 0 || PrismCharge > 0f || dischargeFacetPower > 0)
+            if (storedFacets > 0 || prismCharge > 0f || dischargeFacetPower > 0 || dischargeRadiancePower > 0f)
                 ClearStoredFacets(clearPartialCharge: true);
             volleyShotCounter = 0;
             dischargeFacetPower = 0;
+            dischargeRadiancePower = 0f;
             return;
         }
 
-        if (!DischargeActive)
+        if (!DischargeActive) {
             dischargeFacetPower = 0;
+            dischargeRadiancePower = 0f;
+        }
 
         EnsureFacetProjectiles();
     }
@@ -150,6 +144,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
             float absorbedStrength = 8f + Math.Min(26f, hurtInfo.Damage * 0.42f);
             float refund = 2f + Math.Min(6f, hurtInfo.Damage * 0.08f);
             AddFacetProgress(absorbedStrength);
+            AddRadiance(6f + Math.Min(12f, hurtInfo.Damage * 0.32f));
             guardStoredEnergy = MathHelper.Clamp(guardStoredEnergy + absorbedStrength * 1.4f, 0f, 100f);
             Player.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(refund);
             return;
@@ -202,6 +197,36 @@ public class ChromaStoneStatePlayer : ModPlayer {
             SoundEngine.PlaySound(SoundID.Item27 with { Pitch = -0.32f, Volume = 0.6f }, Player.Center);
 
         return true;
+    }
+
+    public void AddRadiance(float amount) {
+        if (!chromastoneActive || amount <= 0f)
+            return;
+
+        Player.GetModPlayer<AlienIdentityPlayer>().AddChromaStoneRadiance(amount);
+    }
+
+    public void AddRadianceFromDamage(int damageTaken, float multiplier = 1f) {
+        if (!chromastoneActive || damageTaken <= 0)
+            return;
+
+        float gain = Math.Min(34f, 3f + damageTaken * 0.55f);
+        if (Guarding)
+            gain *= 1.16f;
+
+        AddRadiance(gain * Math.Max(0f, multiplier));
+    }
+
+    public float ConsumeRadiance(float amount) {
+        float resolvedAmount = Math.Max(0f, amount);
+        if (resolvedAmount <= 0f)
+            return 0f;
+
+        float consumed = Math.Min(Radiance, resolvedAmount);
+        if (consumed > 0f)
+            Player.GetModPlayer<AlienIdentityPlayer>().ConsumeChromaStoneRadiance(consumed);
+
+        return consumed;
     }
 
     public void RegisterGuardFrame(float holdRatio) {
@@ -286,41 +311,29 @@ public class ChromaStoneStatePlayer : ModPlayer {
         storedFacets = 0;
 
         if (clearPartialCharge)
-            Player.GetModPlayer<AlienIdentityPlayer>().SetChromaStonePrismCharge(0f);
+            prismCharge = 0f;
 
         return consumed;
     }
 
     public int ConsumeAllFacetsForDischarge() {
-        int consumed = ConsumeAllFacets(clearPartialCharge: false);
+        int consumed = StoredFacets;
+        ConsumeAllFacets(clearPartialCharge: true);
         dischargeFacetPower = consumed;
         return consumed;
     }
 
-    public void StartFullSpectrumDischarge(int consumedFacets) {
+    public void StartFullSpectrumDischarge(int consumedFacets, float radianceRatio) {
         dischargeFacetPower = Math.Clamp(consumedFacets, 0, MaxFacets);
-    }
-
-    public void ExtendDischargeDuration(int ticks) {
-        if (!DischargeActive || ticks <= 0)
-            return;
-
-        int ultimateBuffType = ModContent.BuffType<UltimateAbility>();
-        for (int i = 0; i < Player.buffType.Length; i++) {
-            if (Player.buffType[i] != ultimateBuffType)
-                continue;
-
-            Player.buffTime[i] = Math.Min(UltimateAbsorbExtensionCap, Player.buffTime[i] + ticks);
-            break;
-        }
+        dischargeRadiancePower = MathHelper.Clamp(radianceRatio, 0f, 1f);
     }
 
     public void RegisterDischargeAbsorption(Vector2 origin, Vector2 direction, int projectileDamage) {
         if (!DischargeActive)
             return;
 
-        ExtendDischargeDuration(4 + Math.Min(12, projectileDamage / 8));
         Player.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(1f + Math.Min(4f, projectileDamage * 0.03f));
+        AddRadiance(5f + Math.Min(10f, projectileDamage * 0.12f));
 
         if (Player.whoAmI != Main.myPlayer)
             return;
@@ -334,7 +347,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
             Vector2 velocity = direction.RotatedBy(angleOffset) * Main.rand.NextFloat(12f, 16f);
             Projectile.NewProjectile(Player.GetSource_FromThis(), origin, velocity,
                 ModContent.ProjectileType<ChromaStoneProjectile>(), burstDamage, 2.1f, Player.whoAmI,
-                ChromaStoneProjectile.ModeBurstShard, Math.Max(FacetPowerRatio, ActiveDischargeFacetPower / (float)MaxFacets));
+                ChromaStoneProjectile.ModeBurstShard, Math.Max(VisualRadianceRatio, ActiveDischargeRadianceRatio));
         }
     }
 
@@ -356,12 +369,11 @@ public class ChromaStoneStatePlayer : ModPlayer {
             return false;
 
         if (StoredFacets >= MaxFacets) {
-            Player.GetModPlayer<AlienIdentityPlayer>().SetChromaStonePrismCharge(0f);
+            prismCharge = 0f;
             return false;
         }
 
-        AlienIdentityPlayer identity = Player.GetModPlayer<AlienIdentityPlayer>();
-        float progress = identity.ChromaStonePrismCharge + amount;
+        float progress = prismCharge + amount;
         bool gainedFacet = false;
 
         while (progress >= FacetProgressThreshold && storedFacets < MaxFacets) {
@@ -373,7 +385,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
         if (storedFacets >= MaxFacets)
             progress = 0f;
 
-        identity.SetChromaStonePrismCharge(progress);
+        prismCharge = progress;
 
         if (gainedFacet && !Main.dedServ) {
             SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.18f, Volume = 0.56f }, Player.Center);
@@ -410,6 +422,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
         guardStoredEnergy = 0f;
         volleyShotCounter = 0;
         dischargeFacetPower = 0;
+        dischargeRadiancePower = 0f;
 
         if (clearStoredFacets)
             ClearStoredFacets(clearPartialCharge: true);
@@ -418,7 +431,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
     private void ClearStoredFacets(bool clearPartialCharge) {
         storedFacets = 0;
         if (clearPartialCharge)
-            Player.GetModPlayer<AlienIdentityPlayer>().SetChromaStonePrismCharge(0f);
+            prismCharge = 0f;
     }
 
     private bool TryAbsorbGuardProjectile(Projectile proj) {
@@ -428,6 +441,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
         float facetGain = 34f + Math.Min(38f, proj.damage * 0.6f);
         float refund = 3f + Math.Min(5f, proj.damage * 0.08f);
         AddFacetProgress(facetGain);
+        AddRadiance(16f + Math.Min(22f, proj.damage * 0.28f));
         guardStoredEnergy = MathHelper.Clamp(guardStoredEnergy + 16f + proj.damage * 0.3f, 0f, 100f);
         Player.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(refund);
 
@@ -449,6 +463,7 @@ public class ChromaStoneStatePlayer : ModPlayer {
             return false;
 
         storedFacets--;
+        AddRadiance(6f + Math.Min(6f, proj.damage * 0.12f));
         AbsorbProjectile(proj);
 
         if (!Main.dedServ) {

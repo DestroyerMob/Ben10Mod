@@ -37,7 +37,7 @@ public class FourArmsTransformation : Transformation {
         "Ground Slam triggers from the ability hotkey or a double tap down input.",
         "Haymaker is a charged super-armored punch for big single-target damage.",
         "Passive Rage builds from dealing or taking close-range punishment and feeds attack speed.",
-        "Ultimate Berserker mode spends full Rage for faster, larger combos and fissure slams."
+        "Ultimate Berserker mode activates once Rage reaches 90%, then cashes it out for faster, larger combos and fissure slams."
     };
 
     public override string PrimaryAttackName => "Titan Combo";
@@ -155,7 +155,7 @@ public class FourArmsTransformation : Transformation {
         }
 
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
-        if (!state.HasFullRage)
+        if (!state.HasBerserkThreshold)
             return true;
 
         state.ConsumeAllRage();
@@ -279,9 +279,9 @@ public class FourArmsTransformation : Transformation {
                 ? compact
                     ? $"Berserk {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)}"
                     : $"Berserk active • {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)} left"
-                : state.HasFullRage
-                    ? compact ? "Full Rage" : "Full Rage ready"
-                    : compact ? "Need full Rage" : $"Needs full Rage • {rageText}",
+                : state.HasBerserkThreshold
+                    ? compact ? "Rage Ready" : "90% Rage ready"
+                    : compact ? "Need 90% Rage" : $"Needs 90% Rage • {rageText}",
             _ => rageText
         };
     }

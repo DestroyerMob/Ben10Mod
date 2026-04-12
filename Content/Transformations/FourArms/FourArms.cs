@@ -15,7 +15,7 @@ public class FourArms : ModItem {
         "Primary ability: Ground Slam triggers from F or a double tap down, then crashes into the floor with a shockwave.",
         "Secondary ability: Haymaker is a hold-to-charge punch with super armor and heavy single-target damage.",
         "Passive: Rage builds from dealing or taking punishment and slightly boosts attack speed.",
-        "Ultimate ability: Berserker spends full Rage for faster combos, larger fists, and fissure slams."
+        "Ultimate ability: Berserker activates once Rage reaches 90% for faster combos, larger fists, and fissure slams."
     };
 
     public override void Load() {

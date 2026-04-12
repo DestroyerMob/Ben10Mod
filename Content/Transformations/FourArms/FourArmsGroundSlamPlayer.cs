@@ -11,6 +11,7 @@ namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsGroundSlamPlayer : ModPlayer {
     public const string TransformationId = "Ben10Mod:FourArms";
+    public const float BerserkActivationThresholdRatio = 0.9f;
 
     private const float MaxRage = 100f;
     private const float InFormRageDecay = 0.18f;
@@ -35,6 +36,7 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     public float Rage { get; private set; }
     public float RageRatio => MathHelper.Clamp(Rage / MaxRage, 0f, 1f);
     public bool HasFullRage => Rage >= MaxRage - 0.01f;
+    public bool HasBerserkThreshold => RageRatio >= BerserkActivationThresholdRatio;
     public bool HaymakerCharging => haymakerArmorTime > 0;
     public bool GroundSlamActive => groundSlamStateTime > 0;
     public float HaymakerChargeRatio => haymakerChargeRatio;

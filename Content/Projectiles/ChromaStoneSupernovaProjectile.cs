@@ -15,6 +15,7 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
     private Vector2 syncedAimDirection = Vector2.UnitX;
     private bool hasSyncedAimDirection;
     private int aimSyncTimer;
+    private int sustainTimer;
 
     private int FacetPower => Math.Clamp((int)Math.Round(Projectile.ai[0]), 0, 3);
     private float StoredPowerRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
@@ -62,7 +63,13 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
         ChromaStoneStatePlayer state = owner.GetModPlayer<ChromaStoneStatePlayer>();
 
-        if (!ShouldStayAlive(owner, omp, state)) {
+        if (!ShouldStayAlive(owner, omp)) {
+            Projectile.Kill();
+            return;
+        }
+
+        if (!TryConsumeSustainCost(owner, omp)) {
+            owner.channel = false;
             Projectile.Kill();
             return;
         }
@@ -85,6 +92,7 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         owner.itemAnimation = 2;
         owner.itemRotation = (float)Math.Atan2(direction.Y * owner.direction, direction.X * owner.direction);
         owner.noKnockback = true;
+        owner.armorEffectDrawShadow = true;
         owner.velocity.X *= 0.9f;
         if (owner.velocity.Y > 0.35f)
             owner.velocity.Y = 0.35f;
@@ -188,11 +196,14 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
         }
     }
 
-    private static bool ShouldStayAlive(Player owner, OmnitrixPlayer omp, ChromaStoneStatePlayer state) {
+    private static bool ShouldStayAlive(Player owner, OmnitrixPlayer omp) {
         return owner.active &&
                !owner.dead &&
                omp.currentTransformationId == ChromaStoneStatePlayer.TransformationId &&
-               state.DischargeActive;
+               omp.ultimateAttack &&
+               owner.channel &&
+               !owner.noItems &&
+               !owner.CCed;
     }
 
     private static Vector2 GetBeamStart(Player owner, Vector2 direction) {
@@ -257,6 +268,24 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
             state.RegisterDischargeAbsorption(hostile.Center, direction, hostile.damage);
             hostile.Kill();
         }
+    }
+
+    private bool TryConsumeSustainCost(Player owner, OmnitrixPlayer omp) {
+        var transformation = omp.CurrentTransformation;
+        if (transformation == null)
+            return true;
+
+        int sustainInterval = transformation.GetAttackSustainInterval(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        int sustainCost = transformation.GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        if (sustainInterval <= 0 || sustainCost <= 0 || owner.whoAmI != Main.myPlayer)
+            return true;
+
+        sustainTimer++;
+        if (sustainTimer < sustainInterval)
+            return true;
+
+        sustainTimer = 0;
+        return transformation.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
     }
 
     private static bool IsWeakProjectile(Projectile projectile) {

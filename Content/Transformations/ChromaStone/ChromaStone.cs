@@ -7,15 +7,16 @@ namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStone : ModItem {
     public static string TransformationDescription =>
-        "A durable counter-caster who absorbs hostile fire into Prism Facets, then spends Omnitrix Energy to unleash that stored power back at the enemy.";
+        "A durable counter-caster who absorbs punishment into Radiance, stores extra energy in Prism Facets, and spends Omnitrix Energy to blast it back harder.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Crystal Volley is the reliable left-click stream: fast crystal bolts pierce once, split after impact, and every fourth shot upgrades into a heavier Prism Bolt.",
-        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that refracts through active Facets and burns one stored Facet at a time while it stays empowered.",
-        "Absorption Guard braces Chromastone behind a crystal shield, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and stores energy for a release pulse.",
+        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that refracts through active Facets and scales up as your Radiance climbs.",
+        "Absorption Guard braces Chromastone behind a crystal shield, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and feeds both Facets and Radiance.",
         "Prismatic Lance cashes out your stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting rainbow spear with a delayed echo hit at full power.",
         "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, refract the beam, strengthen the lance, and can intercept one very weak projectile each.",
-        "Full Spectrum Discharge spends a large chunk of OE and all active Facets to channel a massive rainbow beam that absorbs weak projectiles and grows deadlier when it feeds on enemy fire."
+        "Radiance climbs when Chromastone takes hits, boosts all of his damage, and makes the prismatic disco aura on his body flare brighter and wilder at higher percentages.",
+        "Full Spectrum Discharge is a true ultimate attack: once Radiance reaches 90%, swap to the ultimate slot and fire a massive channeled beam that cashes in stored power instead of toggling a timed mode."
     };
 
     public override void Load() {

@@ -18,12 +18,16 @@ public class ChromaStoneTransformation : Transformation {
     private const float CrystalVolleyDamageMultiplier = 0.76f;
     private const float SpectrumBeamDamageMultiplier = 0.42f;
     private const float PrismaticLanceDamageMultiplier = 1.2f;
+    private const float FullSpectrumDischargeDamageMultiplier = 0.64f;
     private const float PrismBoltSideShardMultiplier = 0.38f;
     private const int SpectrumBeamActivationCost = 6;
     private const int SpectrumBeamSustainCost = 3;
     private const int SpectrumBeamSustainInterval = 12;
     private const int PrismaticLanceEnergyCost = 24;
-    private const int FullSpectrumDischargeEnergyCost = 72;
+    private const int FullSpectrumDischargeSelectionCost = 24;
+    private const int FullSpectrumDischargeActivationCost = 14;
+    private const int FullSpectrumDischargeSustainCost = 5;
+    private const int FullSpectrumDischargeSustainInterval = 12;
 
     public override string FullID => AlienIdentityPlayer.ChromaStoneTransformationId;
     public override string TransformationName => "Chromastone";
@@ -39,6 +43,7 @@ public class ChromaStoneTransformation : Transformation {
     public override string SecondaryAbilityAttackName => "Prismatic Lance";
     public override string TertiaryAbilityName => "Resonance Facets";
     public override string UltimateAbilityName => "Full Spectrum Discharge";
+    public override string UltimateAttackName => "Full Spectrum Discharge";
 
     public override int PrimaryAttack => ModContent.ProjectileType<ChromaStoneProjectile>();
     public override int PrimaryAttackSpeed => 8;
@@ -69,10 +74,17 @@ public class ChromaStoneTransformation : Transformation {
     public override int SecondaryAbilityCooldown => ChromaStoneStatePlayer.PrismaticLanceCooldownTicks;
     public override bool SecondaryAbilityAttackSingleUse => true;
 
-    public override bool HasUltimateAbility => true;
-    public override int UltimateAbilityDuration => ChromaStoneStatePlayer.FullSpectrumDischargeDurationTicks;
+    public override int UltimateAttack => ModContent.ProjectileType<ChromaStoneSupernovaProjectile>();
+    public override int UltimateAttackSpeed => 18;
+    public override int UltimateShootSpeed => 0;
+    public override int UltimateUseStyle => ItemUseStyleID.Shoot;
+    public override bool UltimateChannel => true;
+    public override float UltimateAttackModifier => FullSpectrumDischargeDamageMultiplier;
+    public override int UltimateEnergyCost => FullSpectrumDischargeActivationCost;
+    public override int UltimateAttackSustainEnergyCost => FullSpectrumDischargeSustainCost;
+    public override int UltimateAttackSustainInterval => FullSpectrumDischargeSustainInterval;
+    public override int UltimateAbilityCost => FullSpectrumDischargeSelectionCost;
     public override int UltimateAbilityCooldown => ChromaStoneStatePlayer.FullSpectrumDischargeCooldownTicks;
-    public override int UltimateAbilityCost => FullSpectrumDischargeEnergyCost;
 
     public override void OnDetransform(Player player, OmnitrixPlayer omp) {
         KillOwnedProjectiles(player,
@@ -91,15 +103,19 @@ public class ChromaStoneTransformation : Transformation {
 
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
         float facetPower = state.FacetPowerRatio;
-        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(facetPower * 2.2f + player.miscCounter / 110f,
-            state.DischargeActive ? 1.14f : 1f);
+        float radianceRatio = state.VisualRadianceRatio;
+        float cycleRate = MathHelper.Lerp(150f, 48f, radianceRatio);
+        Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(radianceRatio * 3.1f + player.miscCounter / cycleRate,
+            1.02f + radianceRatio * 0.34f + (state.DischargeActive ? 0.08f : 0f));
 
-        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetDamage<HeroDamage>() += 0.08f + radianceRatio * 0.24f;
         player.statDefense += 12;
         player.noFallDmg = true;
         player.runAcceleration *= 0.82f;
         player.maxRunSpeed *= 0.95f;
-        Lighting.AddLight(player.Center, prismColor.ToVector3() * (0.24f + facetPower * 0.2f));
+        Lighting.AddLight(player.Center, prismColor.ToVector3() * (0.24f + radianceRatio * 0.42f + facetPower * 0.08f));
+        if (radianceRatio >= 0.35f || state.DischargeActive)
+            player.armorEffectDrawShadow = true;
 
         if (state.Guarding) {
             player.statDefense += 8;
@@ -113,10 +129,11 @@ public class ChromaStoneTransformation : Transformation {
         if (!state.DischargeActive)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.14f;
+        player.GetDamage<HeroDamage>() += 0.12f;
         player.GetAttackSpeed<HeroDamage>() += 0.08f;
         player.statDefense += 4;
         player.endurance += 0.05f;
+        player.noKnockback = true;
         player.armorEffectDrawShadow = true;
     }
 
@@ -147,58 +164,32 @@ public class ChromaStoneTransformation : Transformation {
 
     public override bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) {
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
-        if (player.HasBuff<UltimateAbility>() ||
-            player.HasBuff<UltimateAbilityCooldown>() ||
-            omp.ultimateAttack ||
-            omp.HasLoadedAbilityAttack) {
+        if (omp.ultimateAttack)
+            return false;
+
+        if (!state.HasDischargeThreshold) {
+            omp.ShowTransformFailureFeedback("Need 90% Radiance for Full Spectrum Discharge.");
             return true;
         }
 
-        int energyCost = GetUltimateAbilityCost(omp);
-        if (omp.omnitrixEnergy < energyCost) {
-            omp.ShowTransformFailureFeedback($"Need {energyCost} OE for {UltimateAbilityName}.");
+        int readyCost = GetUltimateAbilityCost(omp);
+        if (omp.omnitrixEnergy < readyCost) {
+            omp.ShowTransformFailureFeedback($"Need {readyCost} OE to ready {UltimateAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= energyCost;
-        int consumedFacets = state.ConsumeAllFacetsForDischarge();
-        state.StartFullSpectrumDischarge(consumedFacets);
-        KillOwnedProjectiles(player,
-            SecondaryAttack,
-            ModContent.ProjectileType<ChromaStoneGuardProjectile>());
-
-        player.AddBuff(ModContent.BuffType<UltimateAbility>(), ChromaStoneStatePlayer.FullSpectrumDischargeDurationTicks);
-        omp.ultimateAbilityTransformationId = FullID;
-
-        if (player.whoAmI == Main.myPlayer &&
-            !HasActiveOwnedProjectile(player, ModContent.ProjectileType<ChromaStoneSupernovaProjectile>())) {
-            int dischargeDamage = state.ResolveHeroDamage(0.56f + consumedFacets * 0.09f);
-            Projectile.NewProjectile(player.GetSource_FromThis(), player.Center, Vector2.UnitX * player.direction,
-                ModContent.ProjectileType<ChromaStoneSupernovaProjectile>(), dischargeDamage, 4.6f, player.whoAmI,
-                consumedFacets, state.FacetPowerRatio);
-        }
-
-        if (!Main.dedServ) {
-            SoundEngine.PlaySound(SoundID.Item74 with { Pitch = -0.25f, Volume = 0.82f }, player.Center);
-            for (int i = 0; i < 30; i++) {
-                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(22f, 28f), DustID.WhiteTorch,
-                    Main.rand.NextVector2Circular(4.8f, 4.8f), 95,
-                    ChromaStonePrismHelper.GetSpectrumColor(i * 0.16f), Main.rand.NextFloat(1.05f, 1.55f));
-                dust.noGravity = true;
-            }
-        }
-
-        return true;
+        return false;
     }
 
     public override bool TryGetTransformationTint(Player player, OmnitrixPlayer omp, out Color tint,
         out float blendStrength, out bool forceFullBright) {
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
-        float facetPower = state.FacetPowerRatio;
-        tint = ChromaStonePrismHelper.GetSpectrumColor(facetPower * 2f + player.miscCounter / 110f,
-            state.DischargeActive ? 1.16f : 1.03f);
-        blendStrength = 0.08f + facetPower * 0.16f + (state.DischargeActive ? 0.08f : 0f);
-        forceFullBright = state.DischargeActive && facetPower >= 0.6f;
+        float radianceRatio = state.VisualRadianceRatio;
+        float cycleRate = MathHelper.Lerp(132f, 38f, radianceRatio);
+        tint = ChromaStonePrismHelper.GetSpectrumColor(radianceRatio * 3.2f + player.miscCounter / cycleRate,
+            1.04f + radianceRatio * 0.36f + (state.DischargeActive ? 0.1f : 0f));
+        blendStrength = 0.08f + radianceRatio * 0.26f + (state.Guarding ? 0.04f : 0f) + (state.DischargeActive ? 0.08f : 0f);
+        forceFullBright = state.DischargeActive || radianceRatio >= 0.82f;
         return blendStrength > 0f;
     }
 
@@ -211,15 +202,16 @@ public class ChromaStoneTransformation : Transformation {
             return;
 
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
-        float facetPower = state.FacetPowerRatio;
-        int spawnRate = state.DischargeActive ? 1 : state.VisibleFacetCount > 0 ? 3 : 5;
+        float radianceRatio = state.VisualRadianceRatio;
+        int spawnRate = state.DischargeActive ? 1 : radianceRatio >= 0.75f ? 1 : radianceRatio >= 0.38f ? 2 : state.VisibleFacetCount > 0 ? 3 : 5;
         if (!Main.rand.NextBool(spawnRate))
             return;
 
         Vector2 offset = Main.rand.NextVector2Circular(player.width * 0.55f, player.height * 0.65f);
         Dust dust = Dust.NewDustPerfect(player.Center + offset, DustID.WhiteTorch,
             Main.rand.NextVector2Circular(0.45f, 0.45f), 100,
-            ChromaStonePrismHelper.GetSpectrumColor(offset.Length() * 0.012f + facetPower), Main.rand.NextFloat(0.9f, 1.22f));
+            ChromaStonePrismHelper.GetSpectrumColor(offset.Length() * 0.012f + radianceRatio * 2.6f),
+            Main.rand.NextFloat(0.95f, 1.12f + radianceRatio * 0.34f));
         dust.noGravity = true;
     }
 
@@ -227,15 +219,51 @@ public class ChromaStoneTransformation : Transformation {
         modifiers.Knockback *= 0.85f;
     }
 
+    public override void OnHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) {
+        player.GetModPlayer<ChromaStoneStatePlayer>().AddRadianceFromDamage(info.Damage);
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
         Vector2 direction = ResolveAimDirection(player, velocity);
-        float powerRatio = state.FacetPowerRatio;
+        float radianceRatio = state.RadianceRatio;
+        float powerRatio = Math.Max(radianceRatio, state.FacetPowerRatio * 0.4f);
+
+        if (omp.ultimateAttack) {
+            if (HasActiveOwnedProjectile(player, UltimateAttack))
+                return false;
+
+            int consumedFacets = state.ConsumeAllFacetsForDischarge();
+            float dischargePowerRatio = radianceRatio;
+            state.ConsumeRadiance(ChromaStoneStatePlayer.FullSpectrumDischargeRadianceCost);
+            state.StartFullSpectrumDischarge(consumedFacets, dischargePowerRatio);
+            KillOwnedProjectiles(player,
+                SecondaryAttack,
+                ModContent.ProjectileType<ChromaStoneGuardProjectile>());
+
+            int dischargeDamage = ScaleDamage(damage,
+                UltimateAttackModifier * (1f + dischargePowerRatio * 0.32f + consumedFacets * 0.08f));
+            Projectile.NewProjectile(source, player.Center, direction, UltimateAttack, dischargeDamage, knockback + 2.2f,
+                player.whoAmI, consumedFacets, dischargePowerRatio);
+
+            if (!Main.dedServ) {
+                SoundEngine.PlaySound(SoundID.Item74 with { Pitch = -0.22f, Volume = 0.84f }, player.Center);
+                for (int i = 0; i < 30; i++) {
+                    Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(22f, 28f), DustID.WhiteTorch,
+                        Main.rand.NextVector2Circular(4.8f, 4.8f), 95,
+                        ChromaStonePrismHelper.GetSpectrumColor(i * 0.16f + dischargePowerRatio), Main.rand.NextFloat(1.05f, 1.55f));
+                    dust.noGravity = true;
+                }
+            }
+
+            return false;
+        }
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             int consumedFacets = state.ConsumeAllFacets(clearPartialCharge: false);
-            int lanceDamage = ScaleDamage(damage, SecondaryAbilityAttackModifier * (1f + consumedFacets * 0.16f));
+            int lanceDamage = ScaleDamage(damage,
+                SecondaryAbilityAttackModifier * (1f + consumedFacets * 0.16f + radianceRatio * 0.22f));
             Projectile.NewProjectile(source, player.MountedCenter + direction * 16f, direction * SecondaryAbilityAttackShootSpeed,
                 SecondaryAbilityAttack, lanceDamage, knockback + 2.2f, player.whoAmI, consumedFacets, powerRatio);
             return false;
@@ -245,7 +273,8 @@ public class ChromaStoneTransformation : Transformation {
             if (HasActiveOwnedProjectile(player, SecondaryAttack))
                 return false;
 
-            int beamDamage = ScaleDamage(damage, SecondaryAttackModifier * (1f + state.VisibleFacetCount * 0.05f));
+            int beamDamage = ScaleDamage(damage,
+                SecondaryAttackModifier * (1f + state.VisibleFacetCount * 0.05f + radianceRatio * 0.18f));
             Projectile.NewProjectile(source, player.Center, direction, SecondaryAttack, beamDamage, knockback + 0.4f,
                 player.whoAmI, powerRatio, 0f);
             return false;
@@ -295,6 +324,34 @@ public class ChromaStoneTransformation : Transformation {
 
         gain += Math.Min(6f, damageDone * 0.025f);
         state.AddPrimaryAttackCharge(gain);
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        ChromaStoneStatePlayer state = omp.Player.GetModPlayer<ChromaStoneStatePlayer>();
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        string radianceText = $"Radiance {(int)Math.Round(state.RadianceRatio * 100f)}%";
+
+        return resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"Facets {state.VisibleFacetCount}/3 • {radianceText}"
+                : $"Volley + shards • Facets {state.VisibleFacetCount}/3 • {radianceText}",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"{state.VisibleFacetCount}/3 Facets • {radianceText}"
+                : $"Beam refractions {state.VisibleFacetCount}/3 • {radianceText}",
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
+                ? $"Guard • {radianceText}"
+                : $"Absorb projectiles • {radianceText}",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                ? $"Spend Facets • {radianceText}"
+                : $"Consumes stored Facets • {radianceText}",
+            OmnitrixPlayer.AttackSelection.Ultimate => state.DischargeActive
+                ? compact ? "Discharge active" : "Full Spectrum Discharge active"
+                : state.HasDischargeThreshold
+                    ? compact ? "90% Radiance ready" : $"Ready • {radianceText}"
+                    : compact ? $"Need 90% • {radianceText}" : $"Needs 90% Radiance • {radianceText}",
+            _ => radianceText
+        };
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

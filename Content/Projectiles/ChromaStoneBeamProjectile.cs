@@ -122,7 +122,7 @@ public class ChromaStoneBeamProjectile : ModProjectile {
             Vector2 refStart = Vector2.Zero;
             Vector2 refDirection = Vector2.Zero;
             GetRefractionSegment(owner, state, direction, i, ref refStart, ref refDirection);
-            float refractionLength = BeamHitLength * 0.78f;
+            float refractionLength = BeamHitLength * 0.68f;
             if (Collision.CheckAABBvLineCollision(targetHitbox.TopLeft(), targetHitbox.Size(), refStart,
                     refStart + refDirection * refractionLength, GetRefractionThickness(state), ref collisionPoint)) {
                 return true;
@@ -155,18 +155,21 @@ public class ChromaStoneBeamProjectile : ModProjectile {
         DrawBeam(pixel, start, end, thickness * 1.16f, outer);
         DrawBeam(pixel, start, end, thickness * 0.68f, inner);
         DrawBeam(pixel, start, end, thickness * 0.3f, core);
+        DrawBeamNode(pixel, start, 16f + state.VisibleFacetCount * 2f, inner, core);
+        DrawBeamNode(pixel, end, 13f + state.VisibleFacetCount * 1.4f, outer, core);
 
         int refractionCount = GetRefractionCount(state);
         for (int i = 0; i < refractionCount; i++) {
             Vector2 refStart = Vector2.Zero;
             Vector2 refDirection = Vector2.Zero;
             GetRefractionSegment(owner, state, direction, i, ref refStart, ref refDirection);
-            float refractionLength = BeamDrawLength * 0.78f;
+            float refractionLength = BeamDrawLength * 0.68f;
             Vector2 refEnd = refStart + refDirection * refractionLength;
             float refThickness = GetRefractionThickness(state);
             DrawBeam(pixel, refStart, refEnd, refThickness * 1.1f, outer * 0.85f);
             DrawBeam(pixel, refStart, refEnd, refThickness * 0.66f, inner * 0.94f);
             DrawBeam(pixel, refStart, refEnd, refThickness * 0.28f, core * 0.88f);
+            DrawBeamNode(pixel, refStart, 10f + state.VisibleFacetCount, outer * 0.9f, core * 0.82f);
         }
 
         return false;
@@ -174,6 +177,13 @@ public class ChromaStoneBeamProjectile : ModProjectile {
 
     private static void DrawBeam(Texture2D pixel, Vector2 worldStart, Vector2 worldEnd, float width, Color color) {
         ChromaStonePrismHelper.DrawBeam(pixel, worldStart - Main.screenPosition, worldEnd - Main.screenPosition, width, color);
+    }
+
+    private static void DrawBeamNode(Texture2D pixel, Vector2 worldCenter, float scale, Color outer, Color inner) {
+        Vector2 center = worldCenter - Main.screenPosition;
+        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, MathHelper.PiOver4, new Vector2(scale, scale), outer * 0.5f);
+        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, 0f, new Vector2(scale * 0.6f, scale * 0.6f), outer * 0.75f);
+        ChromaStonePrismHelper.DrawRotatedRect(pixel, center, MathHelper.PiOver4, new Vector2(scale * 0.28f, scale * 0.28f), inner);
     }
 
     private static bool ShouldStayAlive(Player owner, OmnitrixPlayer omp, ChromaStoneStatePlayer state) {
@@ -207,11 +217,11 @@ public class ChromaStoneBeamProjectile : ModProjectile {
     }
 
     private static float GetMainBeamThickness(ChromaStoneStatePlayer state) {
-        return 18f + state.VisibleFacetCount * 3f;
+        return 16f + state.VisibleFacetCount * 2.5f;
     }
 
     private static float GetRefractionThickness(ChromaStoneStatePlayer state) {
-        return 11f + state.VisibleFacetCount * 1.5f;
+        return 9f + state.VisibleFacetCount * 1.2f;
     }
 
     private static int GetRefractionCount(ChromaStoneStatePlayer state) {
@@ -220,19 +230,27 @@ public class ChromaStoneBeamProjectile : ModProjectile {
 
     private static void GetRefractionSegment(Player owner, ChromaStoneStatePlayer state, Vector2 direction, int index,
         ref Vector2 start, ref Vector2 refractionDirection) {
-        Vector2 baseOffset = state.GetFacetWorldOffset(index);
-        start = owner.Center + baseOffset * 0.85f;
-
-        float[] baseAngles = GetRefractionAngles(GetRefractionCount(state));
+        int refractionCount = GetRefractionCount(state);
+        Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
+        float[] baseAngles = GetRefractionAngles(refractionCount);
         float angleOffset = baseAngles[index];
+        float lateral = refractionCount switch {
+            1 => -0.55f,
+            2 => index == 0 ? -1f : 1f,
+            _ => MathHelper.Lerp(-1f, 1f, index / 2f)
+        };
+        float along = 34f + index * 18f;
+        Vector2 facetOffset = state.GetFacetWorldOffset(Math.Min(index, ChromaStoneStatePlayer.MaxFacets - 1));
+        start = GetBeamStart(owner, direction) + direction * along + normal * lateral * (10f + refractionCount * 2f) +
+            facetOffset * 0.12f;
         refractionDirection = direction.RotatedBy(angleOffset).SafeNormalize(direction);
     }
 
     private static float[] GetRefractionAngles(int count) {
         return count switch {
-            3 => new[] { -0.4f, 0f, 0.4f },
-            2 => new[] { -0.3f, 0.3f },
-            1 => new[] { 0f },
+            3 => new[] { -0.34f, 0f, 0.34f },
+            2 => new[] { -0.26f, 0.26f },
+            1 => new[] { -0.2f },
             _ => Array.Empty<float>()
         };
     }
