@@ -328,6 +328,10 @@ public class ChromaStoneStatePlayer : ModPlayer {
         dischargeRadiancePower = MathHelper.Clamp(radianceRatio, 0f, 1f);
     }
 
+    public void SetActiveDischargePower(float radianceRatio) {
+        dischargeRadiancePower = MathHelper.Clamp(radianceRatio, 0f, 1f);
+    }
+
     public void RegisterDischargeAbsorption(Vector2 origin, Vector2 direction, int projectileDamage) {
         if (!DischargeActive)
             return;

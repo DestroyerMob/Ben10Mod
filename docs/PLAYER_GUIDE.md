@@ -283,6 +283,14 @@ These are a few highlights, not a full encyclopedia.
 - tertiary ability ignites a superheated flame aura around Heatblast
 - channeled growing fireball ultimate
 
+### Eye Guy
+
+- rapid piercing eye-laser primary
+- crossfire volley secondary that spreads multiple optic shots at once
+- primary ability sharpens the kit into a stronger multi-eye focus mode
+- loaded secondary ability attack fires an omni-directional burst for close-range crowd control
+- channeled optic beam ultimate for sustained priority-target burn
+
 ### XLR8
 
 - fast movement and acceleration

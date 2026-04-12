@@ -331,6 +331,7 @@ public class ChromaStoneTransformation : Transformation {
         ChromaStoneStatePlayer state = omp.Player.GetModPlayer<ChromaStoneStatePlayer>();
         OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
         string radianceText = $"Radiance {(int)Math.Round(state.RadianceRatio * 100f)}%";
+        int dischargePowerPercent = (int)Math.Round(state.ActiveDischargeRadianceRatio * 100f);
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
@@ -346,7 +347,8 @@ public class ChromaStoneTransformation : Transformation {
                 ? $"Spend Facets • {radianceText}"
                 : $"Consumes stored Facets • {radianceText}",
             OmnitrixPlayer.AttackSelection.Ultimate => state.DischargeActive
-                ? compact ? "Discharge active" : "Full Spectrum Discharge active"
+                ? compact ? $"Discharge {dischargePowerPercent}%"
+                    : $"Full Spectrum Discharge active • Reservoir {dischargePowerPercent}%"
                 : state.HasDischargeThreshold
                     ? compact ? "90% Radiance ready" : $"Ready • {radianceText}"
                     : compact ? $"Need 90% • {radianceText}" : $"Needs 90% Radiance • {radianceText}",

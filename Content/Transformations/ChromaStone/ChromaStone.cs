@@ -16,7 +16,7 @@ public class ChromaStone : ModItem {
         "Prismatic Lance cashes out your stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting rainbow spear with a delayed echo hit at full power.",
         "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, strengthen the beam and lance, and can intercept one very weak projectile each.",
         "Radiance climbs when Chromastone takes hits, boosts all of his damage, and makes the prismatic disco aura on his body flare brighter and wilder at higher percentages.",
-        "Full Spectrum Discharge is a true ultimate attack: once Radiance reaches 90%, swap to the ultimate slot and fire a massive channeled beam that cashes in stored power instead of toggling a timed mode."
+        "Full Spectrum Discharge is a true ultimate attack: once Radiance reaches 90%, swap to the ultimate slot and fire a massive channeled beam that drains Omnitrix Energy and burns down its stored discharge power while you sustain it."
     };
 
     public override void Load() {

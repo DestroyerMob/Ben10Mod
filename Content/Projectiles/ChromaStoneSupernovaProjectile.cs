@@ -11,6 +11,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ChromaStoneSupernovaProjectile : ModProjectile {
+    private const float StoredPowerDrainPerInterval = 0.025f;
+
     private Vector2 syncedAimDirection = Vector2.UnitX;
     private bool hasSyncedAimDirection;
     private int aimSyncTimer;
@@ -76,6 +78,8 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
             Projectile.Kill();
             return;
         }
+
+        state.SetActiveDischargePower(StoredPowerRatio);
 
         Projectile.timeLeft = 2;
         Projectile.localNPCHitCooldown = Math.Max(4, 8 - FacetPower);
@@ -273,7 +277,17 @@ public class ChromaStoneSupernovaProjectile : ModProjectile {
             return true;
 
         sustainTimer = 0;
-        return transformation.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.Ultimate, omp);
+        if (!transformation.TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection.Ultimate, omp))
+            return false;
+
+        float drainedPower = Math.Max(0f, StoredPowerRatio - StoredPowerDrainPerInterval);
+        if (Math.Abs(drainedPower - StoredPowerRatio) > 0.0001f) {
+            Projectile.ai[1] = drainedPower;
+            if (Main.netMode != NetmodeID.SinglePlayer)
+                Projectile.netUpdate = true;
+        }
+
+        return drainedPower > 0f;
     }
 
     private static bool IsWeakProjectile(Projectile projectile) {
