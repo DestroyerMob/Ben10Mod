@@ -1,31 +1,72 @@
 using System;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsGroundSlamPlayer : ModPlayer {
-    private const string TransformationId = "Ben10Mod:FourArms";
-    private const float FastFallAcceleration = 5f;
-    private const float FastFallMinimumSpeed = 9.5f;
-    private const float FastFallSpeedCap = 55f;
-    private const float MinimumImpactSpeed = 8f;
-    private const float ShockwaveDamageMultiplier = 0.8f;
-    private const float EmpoweredShockwaveDamageMultiplier = 1.2f;
-    private const float EmpoweredShockwaveScale = 1.28f;
-    private const int FallbackBaseDamage = 28;
+    public const string TransformationId = "Ben10Mod:FourArms";
+
+    private const float MaxRage = 100f;
+    private const float InFormRageDecay = 0.18f;
+    private const float OutOfFormRageDecay = 5f;
+    private const int ComboResetTicks = 34;
+    private const int SlamTapLockTicks = 8;
+    private const int GroundSlamCooldownTicks = 5 * 60;
+    private const float GroundSlamDamageMultiplier = 1.12f;
+    private const float BerserkGroundSlamDamageMultiplier = 1.34f;
+    private const float BaseGroundSlamKnockback = 7.5f;
+    private const int FallbackBaseDamage = 32;
+    private const int TransientStateGraceTicks = 3;
 
     private bool fourArmsActive;
-    private bool slamArmed;
-    private bool wasGrounded;
-    private float lastFallSpeed;
+    private int comboStep;
+    private int comboResetTimer;
+    private int slamTapLockTime;
+    private int haymakerArmorTime;
+    private int groundSlamStateTime;
+    private float haymakerChargeRatio;
 
-    public override void Initialize() {
-        wasGrounded = true;
+    public float Rage { get; private set; }
+    public float RageRatio => MathHelper.Clamp(Rage / MaxRage, 0f, 1f);
+    public bool HasFullRage => Rage >= MaxRage - 0.01f;
+    public bool HaymakerCharging => haymakerArmorTime > 0;
+    public bool GroundSlamActive => groundSlamStateTime > 0;
+    public float HaymakerChargeRatio => haymakerChargeRatio;
+    public bool FinisherReady => comboResetTimer > 0 && comboStep >= 2;
+    public int NextComboHit => FinisherReady ? 3 : comboResetTimer > 0 ? comboStep + 1 : 1;
+
+    public bool BerserkActive {
+        get {
+            OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+            return fourArmsActive &&
+                   omp.IsUltimateAbilityActive &&
+                   string.Equals(omp.ultimateAbilityTransformationId, TransformationId, StringComparison.Ordinal);
+        }
+    }
+
+    public int BerserkTicksRemaining {
+        get {
+            if (!BerserkActive)
+                return 0;
+
+            return Player.GetModPlayer<OmnitrixPlayer>().GetActiveAbilityRemainingTicks(OmnitrixPlayer.AttackSelection.Ultimate);
+        }
+    }
+
+    public float BerserkProgress {
+        get {
+            int remaining = BerserkTicksRemaining;
+            if (remaining <= 0)
+                return 0f;
+
+            return MathHelper.Clamp(remaining / (float)FourArmsTransformation.BerserkDurationTicks, 0f, 1f);
+        }
     }
 
     public override void ResetEffects() {
@@ -33,63 +74,134 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     }
 
     public override void PostUpdate() {
-        if (fourArmsActive) {
-            UpdateFourArmsMovement();
+        UpdateTransientStates();
+
+        if (!fourArmsActive) {
+            Rage = Math.Max(0f, Rage - OutOfFormRageDecay);
+            comboStep = 0;
+            comboResetTimer = 0;
             return;
         }
 
-        ResetSlamState();
-        wasGrounded = IsGrounded(Player);
+        if (comboResetTimer > 0) {
+            comboResetTimer--;
+        }
+        else {
+            comboStep = 0;
+        }
+
+        UpdateRageDecay();
+        TryStartDashTriggeredGroundSlam();
     }
 
-    private void UpdateFourArmsMovement() {
-        bool grounded = IsGrounded(Player);
-        bool falling = Player.velocity.Y > 0f;
+    public void AddRage(float amount) {
+        if (!fourArmsActive || BerserkActive || amount <= 0f)
+            return;
 
-        if (!grounded && falling)
-            lastFallSpeed = Math.Max(lastFallSpeed, Player.velocity.Y);
-
-        if (!grounded && Player.controlDown && falling) {
-            Player.velocity.Y = MathHelper.Clamp(Player.velocity.Y + FastFallAcceleration, FastFallMinimumSpeed, FastFallSpeedCap);
-            Player.maxFallSpeed = Math.Max(Player.maxFallSpeed, FastFallSpeedCap);
-            Player.fallStart = (int)(Player.position.Y / 16f);
-            slamArmed = true;
-        }
-        else if (!grounded && !Player.controlDown) {
-            slamArmed = false;
-        }
-
-        if (slamArmed && !wasGrounded && grounded && lastFallSpeed >= MinimumImpactSpeed) {
-            SpawnLandingShockwave();
-            slamArmed = false;
-            lastFallSpeed = 0f;
-        }
-        else if (grounded && !Player.controlDown) {
-            slamArmed = false;
-            lastFallSpeed = 0f;
-        }
-
-        wasGrounded = grounded;
+        Rage = MathHelper.Clamp(Rage + amount, 0f, MaxRage);
     }
 
-    private void ResetSlamState() {
-        slamArmed = false;
-        lastFallSpeed = 0f;
+    public float ConsumeAllRage() {
+        float consumed = Rage;
+        Rage = 0f;
+        return consumed;
     }
 
-    private void SpawnLandingShockwave() {
-        if (Player.whoAmI != Main.myPlayer)
+    public int ConsumeComboStep() {
+        if (comboResetTimer <= 0)
+            comboStep = 0;
+
+        int currentStep = comboStep;
+        comboResetTimer = ComboResetTicks;
+        comboStep = currentStep >= 2 ? 0 : currentStep + 1;
+        return currentStep;
+    }
+
+    public void RegisterHaymakerCharge(float chargeRatio) {
+        haymakerArmorTime = Math.Max(haymakerArmorTime, TransientStateGraceTicks);
+        haymakerChargeRatio = MathHelper.Clamp(chargeRatio, 0f, 1f);
+    }
+
+    public void RegisterGroundSlamState() {
+        groundSlamStateTime = Math.Max(groundSlamStateTime, TransientStateGraceTicks);
+    }
+
+    public bool TryStartGroundSlam() {
+        if (Player.whoAmI != Main.myPlayer || !CanStartGroundSlam())
+            return false;
+
+        OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+        bool grounded = AlienIdentityPlayer.IsGrounded(Player);
+        bool berserk = BerserkActive;
+        float damageMultiplier = berserk ? BerserkGroundSlamDamageMultiplier : GroundSlamDamageMultiplier;
+        int damage = ResolveHeroDamage(damageMultiplier);
+        float knockback = BaseGroundSlamKnockback + (berserk ? 1.5f : 0f);
+
+        Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Vector2.Zero,
+            ModContent.ProjectileType<FourArmsGroundSlamSequenceProjectile>(), damage, knockback, Player.whoAmI,
+            berserk ? 1f : 0f, grounded ? 1f : 0f);
+
+        slamTapLockTime = SlamTapLockTicks;
+        groundSlamStateTime = Math.Max(groundSlamStateTime, GroundSlamCooldownTicks / 15);
+        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GroundSlamCooldownTicks);
+        return true;
+    }
+
+    public bool CanStartGroundSlam() {
+        OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
+        return fourArmsActive &&
+               !Player.dead &&
+               !Player.CCed &&
+               !Player.noItems &&
+               !Player.mount.Active &&
+               !Player.HasBuff<PrimaryAbilityCooldown>() &&
+               !GroundSlamActive &&
+               !HaymakerCharging &&
+               !omp.HasLoadedAbilityAttack;
+    }
+
+    private void UpdateTransientStates() {
+        if (slamTapLockTime > 0)
+            slamTapLockTime--;
+
+        if (haymakerArmorTime > 0) {
+            haymakerArmorTime--;
+            if (haymakerArmorTime == 0)
+                haymakerChargeRatio = 0f;
+        }
+
+        if (groundSlamStateTime > 0)
+            groundSlamStateTime--;
+    }
+
+    private void UpdateRageDecay() {
+        if (BerserkActive) {
+            Rage = 0f;
+            return;
+        }
+
+        float decay = InFormRageDecay;
+        if (comboResetTimer > 0 || HaymakerCharging || GroundSlamActive)
+            decay *= 0.5f;
+
+        Rage = Math.Max(0f, Rage - decay);
+    }
+
+    private void TryStartDashTriggeredGroundSlam() {
+        if (Player.whoAmI != Main.myPlayer || slamTapLockTime > 0)
             return;
 
         OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
-        bool empowered = omp.IsPrimaryAbilityActive;
-        int baseDamage = ResolveBaseDamage();
-        float damageMultiplier = ShockwaveDamageMultiplier * (empowered ? EmpoweredShockwaveDamageMultiplier : 1f);
-        int damage = Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(baseDamage * damageMultiplier)));
-        Vector2 spawnPosition = Player.Bottom + new Vector2(0f, -10f);
-        Projectile.NewProjectile(Player.GetSource_FromThis(), spawnPosition, Vector2.Zero,
-            ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>(), damage, 6f, Player.whoAmI,
-            empowered ? EmpoweredShockwaveScale : 1f);
+        if (omp.DashDir != OmnitrixPlayer.DashDown)
+            return;
+
+        slamTapLockTime = SlamTapLockTicks;
+        TryStartGroundSlam();
+    }
+
+    private int ResolveHeroDamage(float multiplier) {
+        float baseDamage = ResolveBaseDamage() * multiplier;
+        return Math.Max(1, (int)Math.Round(Player.GetDamage<HeroDamage>().ApplyTo(baseDamage)));
     }
 
     private int ResolveBaseDamage() {
@@ -102,38 +214,5 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
 
     private bool IsFourArmsActive() {
         return Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == TransformationId;
-    }
-
-    private static bool IsGrounded(Player player) {
-        if (player.velocity.Y < 0f || !player.active || player.dead)
-            return false;
-
-        if (Collision.SolidCollision(player.position + new Vector2(0f, player.height - 2f), player.width, 8))
-            return true;
-
-        float feetY = player.position.Y + player.height;
-        int tileY = (int)Math.Floor((feetY + 2f) / 16f);
-        int leftTileX = (int)Math.Floor((player.position.X + 2f) / 16f);
-        int centerTileX = (int)Math.Floor(player.Center.X / 16f);
-        int rightTileX = (int)Math.Floor((player.position.X + player.width - 2f) / 16f);
-
-        return IsLandingSurface(leftTileX, tileY, feetY) ||
-               IsLandingSurface(centerTileX, tileY, feetY) ||
-               IsLandingSurface(rightTileX, tileY, feetY);
-    }
-
-    private static bool IsLandingSurface(int tileX, int tileY, float feetY) {
-        Tile tile = Framing.GetTileSafely(tileX, tileY);
-        if (!tile.HasTile)
-            return false;
-
-        if (WorldGen.SolidTileAllowBottomSlope(tileX, tileY))
-            return true;
-
-        if (!Main.tileSolidTop[tile.TileType])
-            return false;
-
-        float tileTop = tileY * 16f;
-        return feetY <= tileTop + 8f;
     }
 }

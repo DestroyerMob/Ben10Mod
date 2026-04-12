@@ -595,6 +595,7 @@ namespace Ben10Mod.Content.Interface {
             List<HeroTrackerEntry> entries = new();
             AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
             HeroPlumberArmorPlayer armorPlayer = player.GetModPlayer<HeroPlumberArmorPlayer>();
+            var fourArmsPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.FourArms.FourArmsGroundSlamPlayer>();
 
             if (omp.heroConvergenceEmblemEquipped || omp.HeroConvergenceHitCount > 0 || omp.HeroConvergenceCooldownTicks > 0) {
                 bool burstCoolingDown = omp.HeroConvergenceCooldownTicks > 0;
@@ -621,6 +622,23 @@ namespace Ben10Mod.Content.Interface {
             }
 
             switch (omp.currentTransformationId) {
+                case global::Ben10Mod.Content.Transformations.FourArms.FourArmsGroundSlamPlayer.TransformationId:
+                    if (fourArmsPlayer.BerserkActive) {
+                        entries.Add(new HeroTrackerEntry("Berserk",
+                            FormatTrackerSeconds(fourArmsPlayer.BerserkTicksRemaining),
+                            MathHelper.Clamp(fourArmsPlayer.BerserkProgress, 0f, 1f), new Color(255, 158, 104)));
+                    }
+                    else {
+                        string rageValue = fourArmsPlayer.HasFullRage
+                            ? "Ready"
+                            : $"{(int)Math.Round(fourArmsPlayer.RageRatio * 100f)}%";
+                        Color rageAccent = fourArmsPlayer.HasFullRage
+                            ? new Color(255, 215, 140)
+                            : new Color(255, 142, 102);
+                        entries.Add(new HeroTrackerEntry("Rage", rageValue,
+                            MathHelper.Clamp(fourArmsPlayer.RageRatio, 0f, 1f), rageAccent));
+                    }
+                    break;
                 case AlienIdentityPlayer.ChromaStoneTransformationId:
                     entries.Add(new HeroTrackerEntry("Radiance", $"{(int)Math.Round(identityPlayer.ChromaStoneRadianceRatio * 100f)}%",
                         MathHelper.Clamp(identityPlayer.ChromaStoneRadianceRatio, 0f, 1f), new Color(166, 255, 222)));
