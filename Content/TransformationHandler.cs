@@ -25,6 +25,10 @@ namespace Ben10Mod.Content
             omp.isTransformed           = true;
             if (!isRefresh)
             {
+                // Clear any loaded attack/ultimate selection from the previous form so the new form
+                // doesn't inherit a hidden blocked state for its own abilities.
+                omp.ClearLoadedAbilityAttack(addCooldownIfUsed: false);
+                omp.ResetAttackToBaseSelection();
                 omp.activeTransformationDurationMultiplier = Math.Max(0f, omp.transformationDurationMultiplier);
                 omp.activeCooldownDurationMultiplier = Math.Max(0f, omp.cooldownDurationMultiplier);
             }

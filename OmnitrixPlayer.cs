@@ -955,6 +955,7 @@ namespace Ben10Mod {
                 CycleTransformationSpeedBoostPercent();
 
             var trans = CurrentTransformation;
+            NormalizeAttackSelectionForCurrentTransformation(trans);
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
@@ -2619,6 +2620,25 @@ namespace Ben10Mod {
 
         public void ResetAttackToBaseSelection() {
             SetAttackSelection(baseAttackSelection);
+        }
+
+        private void NormalizeAttackSelectionForCurrentTransformation(Transformation trans) {
+            if (trans == null) {
+                loadedAbilityAttackUsed = false;
+                if (setAttack is not AttackSelection.Primary and not AttackSelection.Secondary)
+                    ResetAttackToBaseSelection();
+                return;
+            }
+
+            AttackSelection resolvedSelection = trans.ResolveAttackSelection(setAttack, this);
+            bool invalidUltimateSelection = setAttack == AttackSelection.Ultimate && resolvedSelection != AttackSelection.Ultimate;
+            bool invalidLoadedSelection = IsAbilityAttackSelection(setAttack) && !IsAbilityAttackSelection(resolvedSelection);
+
+            if (!invalidUltimateSelection && !invalidLoadedSelection)
+                return;
+
+            loadedAbilityAttackUsed = false;
+            ResetAttackToBaseSelection();
         }
 
         private void UpdateUltimateReadyCueState() {
