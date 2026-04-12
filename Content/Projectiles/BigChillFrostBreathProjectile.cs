@@ -11,11 +11,11 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class BigChillFrostBreathProjectile : ModProjectile {
     private const int LifetimeTicks = 14;
-    private const float MinLength = 38f;
-    private const float BaseMaxLength = 106f;
-    private const float UltimateFormBonusLength = 22f;
-    private const float PhaseDriftBonusLength = 34f;
-    private const float AbsoluteZeroBonusLength = 30f;
+    private const float MinLength = 52f;
+    private const float BaseMaxLength = 148f;
+    private const float UltimateFormBonusLength = 34f;
+    private const float PhaseDriftBonusLength = 40f;
+    private const float AbsoluteZeroBonusLength = 40f;
     private const float MinWidth = 13f;
     private const float BaseMaxWidth = 28f;
     private const float UltimateFormBonusWidth = 6f;
@@ -58,8 +58,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Projectile.Center = GetBreathStart(owner, direction) + direction * GetBreathLength() * 0.52f;
         Projectile.localNPCHitCooldown = AbsoluteZero ? 7 : UltimateForm ? 8 : 10;
 
-        Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.24f, 0.48f, 0.74f) : UltimateForm ? new Vector3(0.2f, 0.42f, 0.68f) : new Vector3(0.16f, 0.34f, 0.58f));
+        Lighting.AddLight(Projectile.Center, GetLightColor());
         SpawnBreathDust(owner, direction);
     }
 
@@ -88,23 +87,15 @@ public class BigChillFrostBreathProjectile : ModProjectile {
         Vector2 center = start + direction * (length * 0.5f);
         float rotation = direction.ToRotation();
 
-        Color outer = AbsoluteZero
-            ? new Color(118, 214, 255, 178)
-            : UltimateForm
-                ? new Color(94, 210, 255, 170)
-                : new Color(110, 200, 255, 172);
-        Color middle = AbsoluteZero
-            ? new Color(218, 246, 255, 170)
-            : UltimateForm
-                ? new Color(190, 238, 255, 164)
-                : new Color(210, 245, 255, 158);
+        Color outer = GetOuterColor();
+        Color middle = GetMiddleColor();
 
         Main.EntitySpriteDraw(pixel, center, null, outer, rotation,
             Vector2.One * 0.5f, new Vector2(length, width), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(pixel, center, null, middle, rotation,
             Vector2.One * 0.5f, new Vector2(length * 0.88f, width * 0.44f), SpriteEffects.None, 0);
         if (PhaseDriftEmpowered || UltimateForm) {
-            Main.EntitySpriteDraw(pixel, center, null, new Color(255, 250, 255, 102), rotation,
+            Main.EntitySpriteDraw(pixel, center, null, GetCoreColor(), rotation,
                 Vector2.One * 0.5f, new Vector2(length * 0.78f, width * 0.18f), SpriteEffects.None, 0);
         }
         return false;
@@ -148,12 +139,54 @@ public class BigChillFrostBreathProjectile : ModProjectile {
             float distance = Main.rand.NextFloat(0.12f, 0.98f) * length;
             Vector2 position = start + direction * distance +
                                normal * Main.rand.NextFloat(-width * 0.32f, width * 0.32f);
-            Dust dust = Dust.NewDustPerfect(position, i % 2 == 0 ? DustID.IceTorch : DustID.Frost,
+            Dust dust = Dust.NewDustPerfect(position, GetDustType(i),
                 direction * Main.rand.NextFloat(0.35f, 1.2f) + normal * Main.rand.NextFloat(-0.25f, 0.25f),
-                105, AbsoluteZero ? new Color(198, 242, 255) : UltimateForm ? new Color(168, 236, 255) : new Color(172, 225, 255),
+                105, GetDustColor(),
                 Main.rand.NextFloat(0.92f, AbsoluteZero ? 1.24f : 1.1f));
             dust.noGravity = true;
         }
+    }
+
+    private Vector3 GetLightColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Vector3(0.76f, 0.14f, 0.12f) : new Vector3(0.58f, 0.1f, 0.16f);
+
+        return AbsoluteZero ? new Vector3(0.24f, 0.48f, 0.74f) : new Vector3(0.16f, 0.34f, 0.58f);
+    }
+
+    private Color GetOuterColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 110, 98, 186) : new Color(226, 82, 110, 176);
+
+        return AbsoluteZero ? new Color(118, 214, 255, 178) : new Color(110, 200, 255, 172);
+    }
+
+    private Color GetMiddleColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 220, 214, 176) : new Color(255, 194, 208, 168);
+
+        return AbsoluteZero ? new Color(218, 246, 255, 170) : new Color(210, 245, 255, 158);
+    }
+
+    private Color GetCoreColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 245, 242, 112) : new Color(255, 242, 247, 108);
+
+        return new Color(255, 250, 255, 102);
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 188, 172) : new Color(255, 156, 182);
+
+        return AbsoluteZero ? new Color(198, 242, 255) : new Color(172, 225, 255);
+    }
+
+    private int GetDustType(int index) {
+        if (UltimateForm)
+            return index % 2 == 0 ? DustID.Torch : DustID.Flare;
+
+        return index % 2 == 0 ? DustID.IceTorch : DustID.Frost;
     }
 
     private static bool IsAirborne(Player owner) {

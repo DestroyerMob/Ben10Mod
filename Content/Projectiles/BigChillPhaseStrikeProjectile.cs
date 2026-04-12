@@ -68,8 +68,8 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(12f, 12f),
-                AbsoluteZero ? DustID.IceTorch : DustID.Frost,
-                -Projectile.velocity * 0.08f, 120, new Color(180, 240, 255), AbsoluteZero ? 1.18f : 1.08f);
+                GetDustType(),
+                -Projectile.velocity * 0.08f, 120, GetDustColor(), AbsoluteZero ? 1.18f : 1.08f);
             dust.noGravity = true;
         }
     }
@@ -98,9 +98,23 @@ public class BigChillPhaseStrikeProjectile : ModProjectile {
 
         for (int i = 0; i < 20; i++) {
             Dust dust = Dust.NewDustPerfect(owner.Center + Main.rand.NextVector2Circular(14f, 18f),
-                AbsoluteZero ? DustID.IceTorch : DustID.Frost,
-                Main.rand.NextVector2Circular(2.4f, 2.4f), 110, new Color(180, 240, 255), AbsoluteZero ? 1.2f : 1.1f);
+                GetDustType(),
+                Main.rand.NextVector2Circular(2.4f, 2.4f), 110, GetDustColor(), AbsoluteZero ? 1.2f : 1.1f);
             dust.noGravity = true;
         }
+    }
+
+    private int GetDustType() {
+        if (UltimateForm)
+            return Main.rand.NextBool() ? DustID.Torch : DustID.Flare;
+
+        return AbsoluteZero ? DustID.IceTorch : DustID.Frost;
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 188, 170) : new Color(255, 156, 182);
+
+        return new Color(180, 240, 255);
     }
 }

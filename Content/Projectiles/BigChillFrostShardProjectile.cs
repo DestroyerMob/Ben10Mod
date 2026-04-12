@@ -11,6 +11,8 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class BigChillFrostShardProjectile : ModProjectile {
     private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
+    private bool UltimateForm =>
+        Projectile.owner >= 0 && Projectile.owner < Main.maxPlayers && BigChillTransformation.IsUltimateBigChill(Main.player[Projectile.owner]);
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -33,14 +35,13 @@ public class BigChillFrostShardProjectile : ModProjectile {
     public override void AI() {
         HomeTowardTarget(AbsoluteZero ? 0.18f : 0.12f, AbsoluteZero ? 640f : 520f);
         Projectile.rotation = Projectile.velocity.ToRotation();
-        Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.72f) : new Vector3(0.14f, 0.32f, 0.56f));
+        Lighting.AddLight(Projectile.Center, GetLightColor());
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f),
-                Main.rand.NextBool() ? DustID.Frost : DustID.IceTorch,
+                GetDustType(),
                 -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.12f), 105,
-                AbsoluteZero ? new Color(205, 245, 255) : new Color(180, 225, 255),
+                GetDustColor(),
                 Main.rand.NextFloat(0.86f, AbsoluteZero ? 1.16f : 1.02f));
             dust.noGravity = true;
         }
@@ -52,9 +53,9 @@ public class BigChillFrostShardProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         float rotation = direction.ToRotation();
 
-        Main.EntitySpriteDraw(pixel, center, null, new Color(118, 205, 255, 200), rotation, Vector2.One * 0.5f,
+        Main.EntitySpriteDraw(pixel, center, null, GetOuterColor(), rotation, Vector2.One * 0.5f,
             new Vector2(18f, 8f) * Projectile.scale, SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(pixel, center - direction * 1.5f, null, new Color(235, 250, 255, 225), rotation,
+        Main.EntitySpriteDraw(pixel, center - direction * 1.5f, null, GetInnerColor(), rotation,
             Vector2.One * 0.5f, new Vector2(10f, 4f) * Projectile.scale, SpriteEffects.None, 0);
         return false;
     }
@@ -73,11 +74,46 @@ public class BigChillFrostShardProjectile : ModProjectile {
             return;
 
         for (int i = 0; i < 8; i++) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Frost : DustID.IceTorch,
-                Main.rand.NextVector2Circular(1.8f, 1.8f), 105, new Color(192, 240, 255),
+            Dust dust = Dust.NewDustPerfect(Projectile.Center, GetDustType(i),
+                Main.rand.NextVector2Circular(1.8f, 1.8f), 105, GetDustColor(),
                 Main.rand.NextFloat(0.88f, 1.12f));
             dust.noGravity = true;
         }
+    }
+
+    private Vector3 GetLightColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Vector3(0.72f, 0.14f, 0.12f) : new Vector3(0.54f, 0.1f, 0.16f);
+
+        return AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.72f) : new Vector3(0.14f, 0.32f, 0.56f);
+    }
+
+    private Color GetOuterColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 118, 98, 206) : new Color(228, 82, 110, 202);
+
+        return new Color(118, 205, 255, 200);
+    }
+
+    private Color GetInnerColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 238, 232, 228) : new Color(255, 234, 240, 226);
+
+        return new Color(235, 250, 255, 225);
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 186, 168) : new Color(255, 154, 180);
+
+        return AbsoluteZero ? new Color(205, 245, 255) : new Color(180, 225, 255);
+    }
+
+    private int GetDustType(int index = 0) {
+        if (UltimateForm)
+            return index % 2 == 0 ? DustID.Torch : DustID.Flare;
+
+        return index % 2 == 0 ? DustID.Frost : DustID.IceTorch;
     }
 
     private void HomeTowardTarget(float homingStrength, float maxDistance) {

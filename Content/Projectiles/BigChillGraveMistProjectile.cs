@@ -67,8 +67,7 @@ public class BigChillGraveMistProjectile : ModProjectile {
             Projectile.velocity = Projectile.velocity.RotatedBy(drift);
         }
 
-        Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.22f, 0.44f, 0.7f) : UltimateForm ? new Vector3(0.18f, 0.38f, 0.64f) : new Vector3(0.14f, 0.32f, 0.58f));
+        Lighting.AddLight(Projectile.Center, GetLightColor());
 
         SlowHostileProjectiles();
         SpawnMistDust();
@@ -92,12 +91,9 @@ public class BigChillGraveMistProjectile : ModProjectile {
         float fadeOut = Utils.GetLerpValue(0f, 0.25f, Projectile.timeLeft / (float)MaxLifetime, true);
         float opacity = fadeIn * fadeOut;
 
-        DrawRing(pixel, center, CurrentRadius * 0.82f, IsTrail ? 3.8f : 4.8f,
-            (AbsoluteZero ? new Color(126, 215, 255, 96) : UltimateForm ? new Color(96, 206, 255, 90) : new Color(112, 194, 255, 82)) * opacity, Projectile.rotation);
-        DrawRing(pixel, center, CurrentRadius * 0.54f, IsTrail ? 3.2f : 4f,
-            (AbsoluteZero ? new Color(186, 245, 255, 104) : UltimateForm ? new Color(166, 240, 255, 98) : new Color(172, 232, 255, 94)) * opacity, -Projectile.rotation * 1.2f);
-        DrawRing(pixel, center, CurrentRadius * 0.28f, IsTrail ? 2.4f : 3.2f,
-            (AbsoluteZero ? new Color(230, 250, 255, 110) : UltimateForm ? new Color(220, 246, 255, 106) : new Color(218, 244, 255, 102)) * opacity, Projectile.rotation * 1.6f);
+        DrawRing(pixel, center, CurrentRadius * 0.82f, IsTrail ? 3.8f : 4.8f, GetOuterRingColor() * opacity, Projectile.rotation);
+        DrawRing(pixel, center, CurrentRadius * 0.54f, IsTrail ? 3.2f : 4f, GetMiddleRingColor() * opacity, -Projectile.rotation * 1.2f);
+        DrawRing(pixel, center, CurrentRadius * 0.28f, IsTrail ? 2.4f : 3.2f, GetInnerRingColor() * opacity, Projectile.rotation * 1.6f);
         return false;
     }
 
@@ -127,12 +123,54 @@ public class BigChillGraveMistProjectile : ModProjectile {
 
             Vector2 offset = Main.rand.NextVector2Circular(CurrentRadius * 0.32f, CurrentRadius * 0.26f);
             Dust dust = Dust.NewDustPerfect(Projectile.Center + offset,
-                Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost,
+                GetDustType(),
                 new Vector2(Main.rand.NextFloat(-0.3f, 0.3f), Main.rand.NextFloat(-0.7f, -0.08f)),
-                105, AbsoluteZero ? new Color(190, 240, 255) : UltimateForm ? new Color(154, 232, 255) : new Color(168, 225, 255),
+                105, GetDustColor(),
                 Main.rand.NextFloat(IsTrail ? 0.82f : 0.92f, AbsoluteZero ? 1.22f : 1.08f));
             dust.noGravity = true;
         }
+    }
+
+    private Vector3 GetLightColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Vector3(0.68f, 0.14f, 0.12f) : new Vector3(0.5f, 0.1f, 0.16f);
+
+        return AbsoluteZero ? new Vector3(0.22f, 0.44f, 0.7f) : new Vector3(0.14f, 0.32f, 0.58f);
+    }
+
+    private Color GetOuterRingColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 118, 98, 104) : new Color(226, 82, 110, 94);
+
+        return AbsoluteZero ? new Color(126, 215, 255, 96) : new Color(112, 194, 255, 82);
+    }
+
+    private Color GetMiddleRingColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 206, 194, 112) : new Color(255, 184, 198, 102);
+
+        return AbsoluteZero ? new Color(186, 245, 255, 104) : new Color(172, 232, 255, 94);
+    }
+
+    private Color GetInnerRingColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 240, 232, 118) : new Color(255, 232, 238, 110);
+
+        return AbsoluteZero ? new Color(230, 250, 255, 110) : new Color(218, 244, 255, 102);
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 188, 170) : new Color(255, 154, 180);
+
+        return AbsoluteZero ? new Color(190, 240, 255) : new Color(168, 225, 255);
+    }
+
+    private int GetDustType() {
+        if (UltimateForm)
+            return Main.rand.NextBool() ? DustID.Torch : DustID.Flare;
+
+        return Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost;
     }
 
     private static void DrawRing(Texture2D pixel, Vector2 center, float radius, float thickness, Color color,

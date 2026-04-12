@@ -35,17 +35,16 @@ public class BigChillProjectile : ModProjectile {
 
     public override void AI() {
         Projectile.rotation = Projectile.velocity.ToRotation();
-        Lighting.AddLight(Projectile.Center,
-            AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : UltimateForm ? new Vector3(0.18f, 0.4f, 0.64f) : new Vector3(0.14f, 0.32f, 0.56f));
+        Lighting.AddLight(Projectile.Center, GetLightColor());
 
         if (Projectile.velocity.LengthSquared() < (UltimateForm ? 784f : 676f))
             Projectile.velocity *= AbsoluteZero ? 1.02f : UltimateForm ? 1.016f : 1.012f;
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f),
-                Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost,
+                GetDustType(),
                 -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.11f), 100,
-                AbsoluteZero ? new Color(200, 245, 255) : new Color(176, 230, 255),
+                GetDustColor(),
                 Main.rand.NextFloat(0.9f, AbsoluteZero ? 1.18f : 1.06f));
             dust.noGravity = true;
         }
@@ -57,12 +56,8 @@ public class BigChillProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         float rotation = direction.ToRotation();
         float drawScale = (UltimateForm ? 1.12f : 1f) * (PhaseDriftEmpowered ? 1.08f : 1f);
-        Color outer = AbsoluteZero
-            ? new Color(126, 216, 255, 218)
-            : UltimateForm
-                ? new Color(102, 208, 255, 212)
-                : new Color(88, 178, 228, 208);
-        Color inner = PhaseDriftEmpowered ? new Color(255, 250, 255, 232) : new Color(220, 242, 255, 224);
+        Color outer = GetOuterColor();
+        Color inner = GetInnerColor();
 
         Main.EntitySpriteDraw(pixel, center, null, outer, rotation, Vector2.One * 0.5f,
             new Vector2(18f, 6f) * Projectile.scale * drawScale, SpriteEffects.None, 0);
@@ -85,11 +80,50 @@ public class BigChillProjectile : ModProjectile {
             return;
 
         for (int i = 0; i < 8; i++) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Frost : DustID.IceTorch,
+            Dust dust = Dust.NewDustPerfect(Projectile.Center, GetDustType(i),
                 Main.rand.NextVector2Circular(2.2f, 2.2f), 105,
-                AbsoluteZero ? new Color(205, 245, 255) : new Color(188, 232, 255),
+                GetDustColor(),
                 Main.rand.NextFloat(0.9f, 1.15f));
             dust.noGravity = true;
         }
+    }
+
+    private Vector3 GetLightColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Vector3(0.74f, 0.14f, 0.12f) : new Vector3(0.56f, 0.1f, 0.16f);
+
+        return AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : new Vector3(0.14f, 0.32f, 0.56f);
+    }
+
+    private Color GetOuterColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 118, 98, 220) : new Color(228, 84, 112, 214);
+
+        return AbsoluteZero ? new Color(126, 216, 255, 218) : new Color(88, 178, 228, 208);
+    }
+
+    private Color GetInnerColor() {
+        if (UltimateForm)
+            return PhaseDriftEmpowered
+                ? new Color(255, 244, 246, 236)
+                : AbsoluteZero
+                    ? new Color(255, 226, 214, 228)
+                    : new Color(255, 208, 218, 226);
+
+        return PhaseDriftEmpowered ? new Color(255, 250, 255, 232) : new Color(220, 242, 255, 224);
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm)
+            return AbsoluteZero ? new Color(255, 190, 172) : new Color(255, 160, 184);
+
+        return AbsoluteZero ? new Color(200, 245, 255) : new Color(188, 232, 255);
+    }
+
+    private int GetDustType(int index = 0) {
+        if (UltimateForm)
+            return index % 2 == 0 ? DustID.Torch : DustID.Flare;
+
+        return index % 2 == 0 ? DustID.IceTorch : DustID.Frost;
     }
 }

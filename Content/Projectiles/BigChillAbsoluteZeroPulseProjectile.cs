@@ -19,6 +19,8 @@ public class BigChillAbsoluteZeroPulseProjectile : ModProjectile {
     private bool FinalPulse => Variant == 1;
     private bool PhasePulse => Variant == 2;
     private bool FrostSpread => Projectile.ai[1] >= 0.5f;
+    private bool UltimateForm =>
+        Projectile.owner >= 0 && Projectile.owner < Main.maxPlayers && BigChillTransformation.IsUltimateBigChill(Main.player[Projectile.owner]);
     private int LifetimeTicks => PhasePulse ? 12 : FinalPulse ? 18 : 14;
     private float MaxRadius => PhasePulse ? 82f : FinalPulse ? 168f : (FrostSpread ? 116f : 92f);
 
@@ -54,15 +56,14 @@ public class BigChillAbsoluteZeroPulseProjectile : ModProjectile {
     }
 
     public override void AI() {
-        Lighting.AddLight(Projectile.Center,
-            FinalPulse ? new Vector3(0.3f, 0.52f, 0.82f) : PhasePulse ? new Vector3(0.22f, 0.46f, 0.74f) : new Vector3(0.2f, 0.42f, 0.68f));
+        Lighting.AddLight(Projectile.Center, GetLightColor());
 
         if (Main.rand.NextBool(FinalPulse ? 1 : 2)) {
             Vector2 offset = Main.rand.NextVector2Circular(CurrentRadius * 0.3f, CurrentRadius * 0.3f);
             Dust dust = Dust.NewDustPerfect(Projectile.Center + offset,
-                Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost,
+                GetDustType(),
                 offset.SafeNormalize(Vector2.UnitY) * Main.rand.NextFloat(0.8f, 2.1f),
-                105, FinalPulse ? new Color(214, 245, 255) : PhasePulse ? new Color(202, 242, 255) : new Color(196, 236, 255),
+                105, GetDustColor(),
                 Main.rand.NextFloat(0.95f, FinalPulse ? 1.35f : 1.12f));
             dust.noGravity = true;
         }
@@ -86,13 +87,60 @@ public class BigChillAbsoluteZeroPulseProjectile : ModProjectile {
         float middleThickness = FinalPulse ? 4.6f : PhasePulse ? 3.4f : 3.8f;
         float innerThickness = FinalPulse ? 3.6f : PhasePulse ? 2.8f : 3f;
 
-        DrawRing(pixel, center, CurrentRadius * 0.86f, outerThickness,
-            new Color(150, 220, 255, FinalPulse ? 108 : PhasePulse ? 100 : 92) * opacity);
-        DrawRing(pixel, center, CurrentRadius * 0.58f, middleThickness,
-            new Color(208, 245, 255, FinalPulse ? 118 : PhasePulse ? 108 : 104) * opacity);
-        DrawRing(pixel, center, CurrentRadius * 0.26f, innerThickness,
-            new Color(245, 250, 255, FinalPulse ? 126 : PhasePulse ? 116 : 112) * opacity);
+        DrawRing(pixel, center, CurrentRadius * 0.86f, outerThickness, GetOuterColor() * opacity);
+        DrawRing(pixel, center, CurrentRadius * 0.58f, middleThickness, GetMiddleColor() * opacity);
+        DrawRing(pixel, center, CurrentRadius * 0.26f, innerThickness, GetInnerColor() * opacity);
         return false;
+    }
+
+    private Vector3 GetLightColor() {
+        if (UltimateForm) {
+            if (FinalPulse)
+                return new Vector3(0.76f, 0.18f, 0.12f);
+
+            return PhasePulse ? new Vector3(0.66f, 0.14f, 0.12f) : new Vector3(0.6f, 0.12f, 0.16f);
+        }
+
+        return FinalPulse ? new Vector3(0.3f, 0.52f, 0.82f) : PhasePulse ? new Vector3(0.22f, 0.46f, 0.74f) : new Vector3(0.2f, 0.42f, 0.68f);
+    }
+
+    private Color GetDustColor() {
+        if (UltimateForm) {
+            if (FinalPulse)
+                return new Color(255, 214, 196);
+
+            return PhasePulse ? new Color(255, 192, 176) : new Color(255, 172, 190);
+        }
+
+        return FinalPulse ? new Color(214, 245, 255) : PhasePulse ? new Color(202, 242, 255) : new Color(196, 236, 255);
+    }
+
+    private Color GetOuterColor() {
+        if (UltimateForm)
+            return new Color(FinalPulse ? 255 : 232, FinalPulse ? 120 : 88, FinalPulse ? 102 : 118, FinalPulse ? 112 : PhasePulse ? 104 : 96);
+
+        return new Color(150, 220, 255, FinalPulse ? 108 : PhasePulse ? 100 : 92);
+    }
+
+    private Color GetMiddleColor() {
+        if (UltimateForm)
+            return new Color(255, FinalPulse ? 218 : 196, FinalPulse ? 206 : 212, FinalPulse ? 122 : PhasePulse ? 112 : 108);
+
+        return new Color(208, 245, 255, FinalPulse ? 118 : PhasePulse ? 108 : 104);
+    }
+
+    private Color GetInnerColor() {
+        if (UltimateForm)
+            return new Color(255, FinalPulse ? 244 : 236, FinalPulse ? 238 : 242, FinalPulse ? 130 : PhasePulse ? 120 : 116);
+
+        return new Color(245, 250, 255, FinalPulse ? 126 : PhasePulse ? 116 : 112);
+    }
+
+    private int GetDustType() {
+        if (UltimateForm)
+            return Main.rand.NextBool() ? DustID.Torch : DustID.Flare;
+
+        return Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost;
     }
 
     private static void DrawRing(Texture2D pixel, Vector2 center, float radius, float thickness, Color color) {

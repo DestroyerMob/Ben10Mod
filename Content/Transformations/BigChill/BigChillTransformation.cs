@@ -440,11 +440,13 @@ public class BigChillTransformation : Transformation {
         if (Main.dedServ)
             return;
 
+        bool ultimateForm = BigChillStatePlayer.IsUltimateBigChill(player);
         SoundEngine.PlaySound(SoundID.Item30 with { Pitch = -0.36f, Volume = 0.68f }, player.Center);
         for (int i = 0; i < 24; i++) {
             Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(18f, 28f),
-                i % 2 == 0 ? DustID.IceTorch : DustID.Frost, Main.rand.NextVector2Circular(3.2f, 3.2f), 100,
-                new Color(205, 245, 255), Main.rand.NextFloat(1f, 1.35f));
+                ultimateForm ? (i % 2 == 0 ? DustID.Torch : DustID.Flare) : (i % 2 == 0 ? DustID.IceTorch : DustID.Frost),
+                Main.rand.NextVector2Circular(3.2f, 3.2f), 100,
+                ultimateForm ? new Color(255, 194, 178) : new Color(205, 245, 255), Main.rand.NextFloat(1f, 1.35f));
             dust.noGravity = true;
         }
     }
@@ -569,8 +571,12 @@ public class BigChillTransformation : Transformation {
         if (!Main.dedServ) {
             SoundEngine.PlaySound(SoundID.Item50 with { Pitch = -0.1f, Volume = 0.54f }, target.Center);
             for (int i = 0; i < 18; i++) {
-                Dust dust = Dust.NewDustPerfect(target.Center, i % 2 == 0 ? DustID.IceTorch : DustID.Frost,
-                    Main.rand.NextVector2Circular(4.2f, 4.2f), 100, new Color(205, 245, 255),
+                Dust dust = Dust.NewDustPerfect(target.Center,
+                    ultimateForm ? (i % 2 == 0 ? DustID.Torch : DustID.Flare) : (i % 2 == 0 ? DustID.IceTorch : DustID.Frost),
+                    Main.rand.NextVector2Circular(4.2f, 4.2f), 100,
+                    ultimateForm
+                        ? (absoluteZero ? new Color(255, 194, 176) : new Color(255, 164, 188))
+                        : new Color(205, 245, 255),
                     Main.rand.NextFloat(1f, absoluteZero ? 1.42f : 1.18f));
                 dust.noGravity = true;
             }
@@ -653,8 +659,13 @@ public class BigChillTransformation : Transformation {
         if (!Main.dedServ) {
             SoundEngine.PlaySound(SoundID.Item8 with { Pitch = -0.32f, Volume = 0.48f }, player.Center);
             for (int i = 0; i < 14; i++) {
-                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(14f, 18f), DustID.Frost,
-                    Main.rand.NextVector2Circular(2.8f, 2.8f), 110, new Color(180, 240, 255), 1.05f);
+                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(14f, 18f),
+                    ultimateForm ? (state.AbsoluteZeroActive ? DustID.Flare : DustID.Torch) : DustID.Frost,
+                    Main.rand.NextVector2Circular(2.8f, 2.8f), 110,
+                    ultimateForm
+                        ? (state.AbsoluteZeroActive ? new Color(255, 190, 170) : new Color(255, 156, 182))
+                        : new Color(180, 240, 255),
+                    1.05f);
                 dust.noGravity = true;
             }
         }
