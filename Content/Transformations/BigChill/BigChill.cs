@@ -11,15 +11,16 @@ namespace Ben10Mod.Content.Transformations.BigChill
 {
     public class BigChill : ModItem {
         public static string TransformationDescription =>
-            "A spectral ice flier that combines ghost-like movement with cold control. Big Chill can phase, attack from the air, and evolve into an ultimate form with even stronger crowd control.";
+            "A spectral aerial controller built around Frostbite stacks, phasing movement, and shattering Deep Frozen targets before they can recover.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Phasing movement to pass cleanly through danger.",
-            "Built-in wings while transformed.",
-            "Homing ice volleys for ranged pressure.",
-            "Frost breath for close-range freezing.",
-            "Ultimate form available through the Ultimatrix branch.",
-            "Phase Strike to cut through enemies and freeze whatever you pass through."
+            "Direct hits stack Frostbite until Deep Freeze opens a Shatter payoff.",
+            "Ecto Breath is the rapid airborne stacking tool.",
+            "Cryo Lance cashes Deep Freeze out into burst damage and splinters.",
+            "Phase Drift dashes intangible and briefly empowers your pressure loop.",
+            "Grave Mist freezes an area and slows hostile projectiles passing through it.",
+            "Absolute Zero amplifies the whole kit and ends with a freezing pulse.",
+            "Ultimate form available through the Ultimatrix branch."
         };
 
         public override void Load() {

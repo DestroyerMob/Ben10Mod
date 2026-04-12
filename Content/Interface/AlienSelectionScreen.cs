@@ -15,6 +15,7 @@ using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Transformations;
+using Ben10Mod.Content.Transformations.BigChill;
 
 namespace Ben10Mod.Content.Interface {
     public class FittedTransformationIcon : UIElement {
@@ -888,6 +889,19 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(npcState.JetrayLockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
             }
 
+            if (npcState.IsBigChillDeepFrozenFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Deep Freeze", FormatTrackerSeconds(npcState.BigChillDeepFreezeTime),
+                    MathHelper.Clamp(npcState.BigChillDeepFreezeTime / (float)BigChillTransformation.DeepFreezeDurationTicks, 0f, 1f),
+                    new Color(188, 236, 255)));
+            }
+            else if (npcState.HasBigChillFrostbiteFor(player.whoAmI)) {
+                float frostbiteRatio = npcState.GetBigChillFrostbiteStacks(player.whoAmI) /
+                                       (float)BigChillTransformation.FrostbiteThreshold;
+                entries.Add(new HeroTrackerEntry("Frostbite",
+                    $"{npcState.GetBigChillFrostbiteStacks(player.whoAmI)}/{BigChillTransformation.FrostbiteThreshold}",
+                    MathHelper.Clamp(frostbiteRatio, 0f, 1f), new Color(145, 215, 255)));
+            }
+
             if (npcState.IsWhampirePreyFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(npcState.WhampirePreyTime),
                     MathHelper.Clamp(npcState.WhampirePreyTime / 420f, 0f, 1f), new Color(255, 128, 144)));
@@ -973,6 +987,8 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
                 || npcState.IsJetrayLockedFor(owner)
+                || npcState.HasBigChillFrostbiteFor(owner)
+                || npcState.IsBigChillDeepFrozenFor(owner)
                 || npcState.IsWhampirePreyFor(owner)
                 || npcState.IsSnareOhCursedFor(owner)
                 || npcState.IsAlienXJudgedFor(owner)

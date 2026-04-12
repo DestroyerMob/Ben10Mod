@@ -18,20 +18,19 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     public override Transformation ChildTransformation => null;
 
     public override string Description =>
-        "An evolved Necrofriggian form with denser ice power, improved aerial control, and all of Big Chill's spectral mobility.";
+        "An evolved Necrofriggian with denser frost output, harsher Deep Freeze payoffs, and even stronger aerial control than base Big Chill.";
 
     public override List<string> Abilities => new() {
-        "Enhanced homing ice volley",
-        "Enhanced frost breath",
-        "Phase movement",
-        "Flight",
-        "Phase-through freeze strike"
+        "The same Frostbite, Deep Freeze, and Shatter loop, but with stronger baseline damage and tighter flight.",
+        "Ecto Breath and Cryo Lance both hit harder, so Shatter setups finish faster.",
+        "Phase Drift and Grave Mist keep the same controller loop while the evolved body stays harder to pin down.",
+        "Absolute Zero still amplifies the whole kit instead of replacing it."
     };
 
-    public override string PrimaryAttackName => "Ultimate Ice Volley";
-    public override string SecondaryAttackName => "Ultimate Frost Breath";
-    public override float PrimaryAttackModifier => 1.25f;
-    public override float SecondaryAttackModifier => 0.45f;
+    public override string PrimaryAttackName => "Ecto Breath";
+    public override string SecondaryAttackName => "Cryo Lance";
+    public override float PrimaryAttackModifier => 0.42f;
+    public override float SecondaryAttackModifier => 1.24f;
     public override int UltimateAbilityCost => 65;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
@@ -39,6 +38,7 @@ public class UltimateBigChillTransformation : BigChillTransformation {
         player.GetDamage<HeroDamage>() += 0.08f;
         player.GetAttackSpeed<HeroDamage>() += 0.08f;
         player.endurance += 0.04f;
+        player.moveSpeed += 0.04f;
 
         var abilitySlot = ModContent.GetInstance<AbilitySlot>();
         abilitySlot.FunctionalItem = new Item(ModContent.ItemType<UltimateBigChillWings>());

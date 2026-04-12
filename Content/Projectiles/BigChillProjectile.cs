@@ -1,100 +1,88 @@
+using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.BigChill;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.GameContent;
+using Terraria.ID;
 using Terraria.ModLoader;
-using Game = Terraria.Server.Game;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class BigChillProjectile : ModProjectile {
-    private const float MaxSearchDistance = 250f;
-    private const float LostTargetRange   = 400f;
-    private const float ChargeSpeed       = 22f;
-    private const float ChargeInertia     = 8f;
-    private const float ChargeOvershoot   = 110f;
-    
-    public override void SetStaticDefaults() {
-        Main.projFrames[Type] = 3;
-    }
+    private bool AbsoluteZero => Projectile.ai[0] >= 0.5f;
+    private bool PhaseDriftEmpowered => Projectile.ai[1] >= 0.5f;
+
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
-        Projectile.width       = 52;
-        Projectile.height      = 52;
-        Projectile.penetrate   = 15;
-        Projectile.tileCollide = false;
-        Projectile.friendly    = true;
+        Projectile.width = 18;
+        Projectile.height = 18;
+        Projectile.friendly = true;
+        Projectile.hostile = false;
+        Projectile.tileCollide = true;
+        Projectile.ignoreWater = true;
+        Projectile.penetrate = 4;
+        Projectile.timeLeft = 96;
+        Projectile.extraUpdates = 1;
+        Projectile.hide = true;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
+        Projectile.usesLocalNPCImmunity = true;
+        Projectile.localNPCHitCooldown = 10;
     }
 
     public override void AI() {
-        Player player = Main.player[Projectile.owner];
+        Projectile.rotation = Projectile.velocity.ToRotation();
+        Lighting.AddLight(Projectile.Center,
+            AbsoluteZero ? new Vector3(0.22f, 0.46f, 0.74f) : new Vector3(0.14f, 0.32f, 0.56f));
 
-        NPC target = FindTarget(player, MaxSearchDistance);
-        if (target != null)
-            DoChargeMovement(target);
-        Projectile.rotation += 0.15f;
-        if (Main.GameUpdateCount % 20 == 0) {
-            if (Projectile.frame == 2) {
-                Projectile.frame = 0;
-            }
-            else {
-                Projectile.frame++;
-            }
+        if (Projectile.velocity.LengthSquared() < 576f)
+            Projectile.velocity *= AbsoluteZero ? 1.018f : 1.01f;
+
+        if (Main.rand.NextBool(2)) {
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(4f, 4f),
+                Main.rand.NextBool() ? DustID.IceTorch : DustID.Frost,
+                -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.11f), 100,
+                AbsoluteZero ? new Color(200, 245, 255) : new Color(176, 230, 255),
+                Main.rand.NextFloat(0.9f, AbsoluteZero ? 1.18f : 1.06f));
+            dust.noGravity = true;
         }
     }
 
-    private NPC FindTarget(Player player, float maxDetectDistance) {
-        NPC   selectedTarget       = null;
-        float sqrMaxDetectDistance = maxDetectDistance * maxDetectDistance;
+    public override bool PreDraw(ref Color lightColor) {
+        Texture2D pixel = TextureAssets.MagicPixel.Value;
+        Vector2 center = Projectile.Center - Main.screenPosition;
+        Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
+        float rotation = direction.ToRotation();
+        Color outer = AbsoluteZero ? new Color(118, 214, 255, 210) : new Color(102, 194, 255, 200);
+        Color inner = PhaseDriftEmpowered ? new Color(255, 250, 255, 230) : new Color(232, 246, 255, 222);
 
-        if (player.HasMinionAttackTargetNPC) {
-            NPC npc = Main.npc[player.MinionAttackTargetNPC];
-            if (npc.CanBeChasedBy(this)) {
-                float sqrDistanceToTarget = Vector2.DistanceSquared(npc.Center, Projectile.Center);
-                if (sqrDistanceToTarget < sqrMaxDetectDistance) {
-                    return npc;
-                }
-            }
-        }
-
-        for (int k = 0; k < Main.maxNPCs; k++) {
-            NPC npc = Main.npc[k];
-            if (!npc.CanBeChasedBy(this))
-                continue;
-
-            float sqrDistanceToTarget = Vector2.DistanceSquared(npc.Center, Projectile.Center);
-            if (sqrDistanceToTarget < sqrMaxDetectDistance) {
-                sqrMaxDetectDistance = sqrDistanceToTarget;
-                selectedTarget       = npc;
-            }
-        }
-
-        return selectedTarget;
+        Main.EntitySpriteDraw(pixel, center, null, outer, rotation, Vector2.One * 0.5f,
+            new Vector2(28f, 9f) * Projectile.scale, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(pixel, center - direction * 2f, null, inner, rotation, Vector2.One * 0.5f,
+            new Vector2(16f, 4f) * Projectile.scale, SpriteEffects.None, 0);
+        return false;
     }
-    
-    private void DoChargeMovement(NPC target) {
-        if (!target.active || target.friendly || target.dontTakeDamage)
+
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        BigChillTransformation.ResolveCryoLanceHit(Projectile, target, damageDone);
+    }
+
+    public override bool OnTileCollide(Vector2 oldVelocity) {
+        Projectile.Kill();
+        return false;
+    }
+
+    public override void OnKill(int timeLeft) {
+        if (Main.dedServ)
             return;
 
-        float distanceToTarget = Vector2.Distance(Projectile.Center, target.Center);
-        if (distanceToTarget > LostTargetRange) {
-            Projectile.Kill();
-            return;
-        }
-
-        Vector2 chargeDirection = Projectile.Center.DirectionTo(target.Center);
-        if (chargeDirection == Vector2.Zero)
-            chargeDirection = Vector2.UnitX * Projectile.spriteDirection;
-
-        Vector2 chargeDestination     = target.Center + chargeDirection * ChargeOvershoot;
-        Vector2 toChargeDestination   = chargeDestination - Projectile.Center;
-        float   distanceToDestination = toChargeDestination.Length();
-
-        if (distanceToDestination > 8f) {
-            toChargeDestination.Normalize();
-            toChargeDestination *= ChargeSpeed;
-            Projectile.velocity =  (Projectile.velocity * (ChargeInertia - 1f) + toChargeDestination) / ChargeInertia;
-        }
-        else {
-            Projectile.Kill();
+        for (int i = 0; i < 8; i++) {
+            Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Frost : DustID.IceTorch,
+                Main.rand.NextVector2Circular(2.2f, 2.2f), 105,
+                AbsoluteZero ? new Color(205, 245, 255) : new Color(188, 232, 255),
+                Main.rand.NextFloat(0.9f, 1.15f));
+            dust.noGravity = true;
         }
     }
 }
