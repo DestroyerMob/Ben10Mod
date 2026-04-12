@@ -1216,6 +1216,8 @@ Projectiles: {
 	ChromaStoneFacetProjectile.DisplayName: Chroma Stone Facet Projectile
 	ChromaStoneGuardProjectile.DisplayName: Chroma Stone Guard Projectile
 	ChromaStoneLanceEchoProjectile.DisplayName: Chroma Stone Lance Echo Projectile
+	EchoEchoFeedbackBurstProjectile.DisplayName: Echo Echo Feedback Burst Projectile
+	EchoEchoResonancePopProjectile.DisplayName: Echo Echo Resonance Pop Projectile
 }
 
 Tiles: {
