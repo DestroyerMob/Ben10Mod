@@ -90,6 +90,18 @@ namespace Ben10Mod.Content.Items.Accessories
             return !IsBlacklisted() && base.CanEquipAccessory(player, slot, modded);
         }
 
+        public override bool AllowPrefix(int pre) {
+            return pre <= 0 ||
+                   PrefixLoader.GetPrefix(pre) is OmnitrixPrefix prefix && prefix.CanRoll(Item);
+        }
+
+        public override bool? PrefixChance(int pre, UnifiedRandom rand) {
+            if (pre > 0 && !AllowPrefix(pre))
+                return false;
+
+            return base.PrefixChance(pre, rand);
+        }
+
         public override int ChoosePrefix(UnifiedRandom rand) {
             List<int> rollablePrefixes = OmnitrixPrefix.GetRollablePrefixTypes(Item);
             if (rollablePrefixes.Count == 0)
@@ -106,6 +118,8 @@ namespace Ben10Mod.Content.Items.Accessories
         {
             if (IsBlacklisted())
                 return;
+
+            EnsureValidOmnitrixPrefix();
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             if (omp.osmosianEquipped)
@@ -147,6 +161,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public override void UpdateInventory(Player player)
         {
             base.UpdateInventory(player);
+            EnsureValidOmnitrixPrefix();
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
             if (wasEquipedLastFrame)
@@ -536,6 +551,14 @@ namespace Ben10Mod.Content.Items.Accessories
         private int GetEffectiveTransformationSwapCost(OmnitrixPlayer omp) {
             int prefixBonus = GetActiveOmnitrixPrefix()?.TransformationSwapCostBonus ?? 0;
             return Math.Max(0, TranformationSwapCost + prefixBonus);
+        }
+
+        private void EnsureValidOmnitrixPrefix() {
+            if (Item.prefix <= 0 || AllowPrefix(Item.prefix))
+                return;
+
+            Item.prefix = 0;
+            Item.Refresh(false);
         }
 
         private bool IsBlacklisted() {

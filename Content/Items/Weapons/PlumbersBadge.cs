@@ -12,6 +12,7 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.Audio;
+using Terraria.Utilities;
 
 namespace Ben10Mod.Content.Items.Weapons {
     public abstract class PlumbersBadge : ModItem {
@@ -36,6 +37,9 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         public virtual string BadgeRankName  => "Helper";
         public virtual int    BadgeRankValue => 0;
+
+        private int  lastNormalizedPrefix = int.MinValue;
+        private bool wasHeldLastFrame;
 
         private static bool HasActiveOwnedProjectile(Player player, int projType) {
             if (projType <= 0) return false;
@@ -126,6 +130,25 @@ namespace Ben10Mod.Content.Items.Weapons {
             return pre <= 0 || BadgePrefix.IsBadgePrefixType(pre);
         }
 
+        public override bool? PrefixChance(int pre, UnifiedRandom rand) {
+            if (pre > 0 && !AllowPrefix(pre))
+                return false;
+
+            return base.PrefixChance(pre, rand);
+        }
+
+        public override void ApplyPrefix(int pre) {
+            RefreshStoredPrefixStats();
+        }
+
+        public override void PreReforge() {
+            RefreshStoredPrefixStats();
+        }
+
+        public override void PostReforge() {
+            RefreshStoredPrefixStats();
+        }
+
         public override bool CanReforge() {
             return !IsBlacklisted();
         }
@@ -157,6 +180,7 @@ namespace Ben10Mod.Content.Items.Weapons {
             var omp = player.GetModPlayer<OmnitrixPlayer>();
             var state = player.GetModPlayer<BadgeUltimateState>();
             FinalizeUltimateIfEnded(player, omp);
+            wasHeldLastFrame = true;
 
             // Start from a neutral badge state before the active transformation applies its attack profile.
             Item.useTime          = Item.useAnimation = 25;
@@ -165,11 +189,8 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.channel          = false;
             Item.noMelee          = true;
             Item.noUseGraphic     = true;
-            Item.damage           = BaseDamage;
-            Item.knockBack        = 4f;
+            ResetPrefixSensitiveStats();
             Item.shoot            = ProjectileID.WoodenArrowFriendly;
-            Item.ArmorPenetration = 0;
-            Item.crit             = 0;
             Item.UseSound         = null;
 
             if (IsBlacklisted()) {
@@ -190,6 +211,19 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             ApplyBadgePrefixStats();
             Item.useTime = Item.useAnimation = (int)(Item.useTime / AttackSpeedMultiplier);
+        }
+
+        public override void UpdateInventory(Player player) {
+            base.UpdateInventory(player);
+
+            if (ReferenceEquals(player.HeldItem, Item))
+                return;
+
+            if (!wasHeldLastFrame && Item.prefix == lastNormalizedPrefix)
+                return;
+
+            wasHeldLastFrame = false;
+            RefreshStoredPrefixStats();
         }
 
         public override bool? UseItem(Player player) {
@@ -253,6 +287,23 @@ namespace Ben10Mod.Content.Items.Weapons {
 
         private bool IsBlacklisted() {
             return Ben10FeatureBlacklistRegistry.IsFeatureBlacklisted(Ben10FeatureType.PlumbersBadge, Mod);
+        }
+
+        private void RefreshStoredPrefixStats() {
+            if (Item.prefix > 0 && !AllowPrefix(Item.prefix))
+                Item.prefix = 0;
+
+            Item.Refresh(false);
+            ResetPrefixSensitiveStats();
+            ApplyBadgePrefixStats();
+            lastNormalizedPrefix = Item.prefix;
+        }
+
+        private void ResetPrefixSensitiveStats() {
+            Item.damage = BaseDamage;
+            Item.knockBack = 4f;
+            Item.ArmorPenetration = 0;
+            Item.crit = 0;
         }
 
         private void ApplyBadgePrefixStats() {

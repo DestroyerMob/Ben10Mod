@@ -92,6 +92,10 @@ namespace Ben10Mod.Content.Prefixes
             if (PrefixLoader.GetPrefix(prefixType) is OmnitrixPrefix prefix && prefix.CanRoll(item))
                 candidates.Add(prefixType);
         }
+
+        public static bool IsOmnitrixPrefixType(int prefixType) {
+            return PrefixLoader.GetPrefix(prefixType) is OmnitrixPrefix;
+        }
     }
 
     public sealed class Calibrated : OmnitrixPrefix
