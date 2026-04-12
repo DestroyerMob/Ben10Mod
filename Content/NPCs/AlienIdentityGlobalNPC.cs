@@ -1,4 +1,5 @@
 using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.Transformations.EyeGuy;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
@@ -42,6 +43,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int JetrayLockOwner = -1;
     public int JetrayLockTime;
 
+    public int EyeGuyOwner = -1;
+    public int EyeGuyFireMarkTime;
+    public int EyeGuyFrostMarkTime;
+    public int EyeGuyShockMarkTime;
+    public int EyeGuyExposedTime;
+
     public int WhampirePreyOwner = -1;
     public int WhampirePreyTime;
     public int WhampireHypnosisTime;
@@ -70,6 +77,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
     public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
+    public bool IsEyeGuyExposedFor(int owner) => EyeGuyOwner == owner && EyeGuyExposedTime > 0;
     public bool IsWhampirePreyFor(int owner) => WhampirePreyOwner == owner && WhampirePreyTime > 0;
     public bool IsSnareOhCursedFor(int owner) => SnareOhCurseOwner == owner && SnareOhCurseTime > 0 && SnareOhCurseStacks > 0;
     public bool IsAlienXJudgedFor(int owner) => AlienXJudgementOwner == owner && AlienXJudgementTime > 0 && AlienXJudgementStacks > 0;
@@ -211,6 +219,85 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         JetrayLockTime = Utils.Clamp(time, 1, 420);
     }
 
+    public bool HasEyeGuyMark(int owner, EyeGuyElement element) {
+        if (EyeGuyOwner != owner)
+            return false;
+
+        return element switch {
+            EyeGuyElement.Fire => EyeGuyFireMarkTime > 0,
+            EyeGuyElement.Frost => EyeGuyFrostMarkTime > 0,
+            _ => EyeGuyShockMarkTime > 0
+        };
+    }
+
+    public int GetEyeGuyMarkCount(int owner) {
+        if (EyeGuyOwner != owner)
+            return 0;
+
+        int count = 0;
+        if (EyeGuyFireMarkTime > 0)
+            count++;
+        if (EyeGuyFrostMarkTime > 0)
+            count++;
+        if (EyeGuyShockMarkTime > 0)
+            count++;
+        return count;
+    }
+
+    public EyeGuyElement GetPreferredEyeGuyMark(int owner, EyeGuyElement fallback) {
+        if (EyeGuyOwner != owner || EyeGuyExposedTime > 0)
+            return fallback;
+
+        if (EyeGuyFireMarkTime <= 0)
+            return EyeGuyElement.Fire;
+        if (EyeGuyFrostMarkTime <= 0)
+            return EyeGuyElement.Frost;
+        if (EyeGuyShockMarkTime <= 0)
+            return EyeGuyElement.Shock;
+
+        return fallback;
+    }
+
+    public bool ApplyEyeGuyMark(int owner, EyeGuyElement element, int time, int exposedTime) {
+        if (EyeGuyOwner != owner) {
+            ClearEyeGuyState();
+            EyeGuyOwner = owner;
+        }
+
+        if (EyeGuyExposedTime > 0)
+            return false;
+
+        int clampedTime = Utils.Clamp(time, 1, 420);
+        switch (element) {
+            case EyeGuyElement.Fire:
+                EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime, clampedTime);
+                break;
+            case EyeGuyElement.Frost:
+                EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime, clampedTime);
+                break;
+            default:
+                EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime, clampedTime);
+                break;
+        }
+
+        if (EyeGuyFireMarkTime <= 0 || EyeGuyFrostMarkTime <= 0 || EyeGuyShockMarkTime <= 0)
+            return false;
+
+        EyeGuyExposedTime = Utils.Clamp(exposedTime, 1, 600);
+        EyeGuyFireMarkTime = EyeGuyExposedTime;
+        EyeGuyFrostMarkTime = EyeGuyExposedTime;
+        EyeGuyShockMarkTime = EyeGuyExposedTime;
+        return true;
+    }
+
+    public bool ConsumeEyeGuyExposed(int owner) {
+        if (!IsEyeGuyExposedFor(owner))
+            return false;
+
+        ClearEyeGuyState();
+        return true;
+    }
+
     public void ApplyWhampirePrey(int owner, int time) {
         WhampirePreyOwner = owner;
         WhampirePreyTime = Utils.Clamp(time, 1, 420);
@@ -327,6 +414,17 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         }
     }
 
+    public override void OnKill(NPC npc) {
+        if (EyeGuyExposedTime <= 0 || EyeGuyOwner < 0 || EyeGuyOwner >= Main.maxPlayers)
+            return;
+
+        Player owner = Main.player[EyeGuyOwner];
+        if (!owner.active)
+            return;
+
+        owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(npc.boss ? 1.5f : 3f);
+    }
+
     public override void DrawEffects(NPC npc, ref Color drawColor) {
         if (npc.HasBuff(ModContent.BuffType<AlienXSupernovaBurn>()))
             drawColor = Color.Lerp(drawColor, new Color(255, 188, 118), 0.34f);
@@ -358,6 +456,35 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (JetrayLockTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(100, 255, 225), 0.24f);
+
+        if (EyeGuyExposedTime > 0) {
+            drawColor = Color.Lerp(drawColor, new Color(255, 228, 170), 0.36f);
+        }
+        else if (EyeGuyFireMarkTime > 0 || EyeGuyFrostMarkTime > 0 || EyeGuyShockMarkTime > 0) {
+            int red = 180;
+            int green = 180;
+            int blue = 180;
+            int markCount = 0;
+            if (EyeGuyFireMarkTime > 0) {
+                red += 75;
+                green += 10;
+                markCount++;
+            }
+            if (EyeGuyFrostMarkTime > 0) {
+                green += 55;
+                blue += 75;
+                markCount++;
+            }
+            if (EyeGuyShockMarkTime > 0) {
+                green += 20;
+                blue += 75;
+                markCount++;
+            }
+
+            Color markColor = new Color((byte)Utils.Clamp(red, 0, 255), (byte)Utils.Clamp(green, 0, 255),
+                (byte)Utils.Clamp(blue, 0, 255));
+            drawColor = Color.Lerp(drawColor, markColor, 0.12f + markCount * 0.06f);
+        }
 
         if (WhampirePreyTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(170, 45, 60), 0.3f);
@@ -454,6 +581,22 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             JetrayLockOwner = -1;
         }
 
+        if (EyeGuyExposedTime > 0) {
+            EyeGuyExposedTime--;
+            EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
+            EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime - 1, 0);
+            EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime - 1, 0);
+            if (EyeGuyExposedTime <= 0)
+                ClearEyeGuyState();
+        }
+        else if (EyeGuyOwner != -1) {
+            EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
+            EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime - 1, 0);
+            EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime - 1, 0);
+            if (EyeGuyFireMarkTime <= 0 && EyeGuyFrostMarkTime <= 0 && EyeGuyShockMarkTime <= 0)
+                ClearEyeGuyState();
+        }
+
         if (WhampirePreyTime > 0) {
             WhampirePreyTime--;
         }
@@ -498,5 +641,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         else if (PeskyDustOwner != -1 && PeskyDustDrowsy <= 0) {
             PeskyDustOwner = -1;
         }
+    }
+
+    private void ClearEyeGuyState() {
+        EyeGuyOwner = -1;
+        EyeGuyFireMarkTime = 0;
+        EyeGuyFrostMarkTime = 0;
+        EyeGuyShockMarkTime = 0;
+        EyeGuyExposedTime = 0;
     }
 }

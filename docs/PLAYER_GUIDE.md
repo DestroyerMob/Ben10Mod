@@ -285,11 +285,12 @@ These are a few highlights, not a full encyclopedia.
 
 ### Eye Guy
 
-- rapid piercing eye-laser primary
-- crossfire volley secondary that spreads multiple optic shots at once
-- primary ability sharpens the kit into a stronger multi-eye focus mode
-- loaded secondary ability attack fires an omni-directional burst for close-range crowd control
-- channeled optic beam ultimate for sustained priority-target burn
+- `Ocular Burst` rotates through fire, frost, and shock marks in sequence
+- landing all 3 marks triggers a `Compound Vision` pop and opens `Exposed`
+- `Chest Eye Beam` drains light OE and cashes out `Exposed` targets into `Spectrum Breaks`
+- `Omni-Gaze` is the radial panic button and tries to fill missing marks first
+- `Watcher Array` opens 4 hovering eyes that repeat lighter bursts and beams
+- `All Eyes Open` overloads the whole loop, auto-enables Watcher Array, and ends with one final Omni-Gaze pulse
 
 ### XLR8
 

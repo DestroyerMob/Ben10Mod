@@ -1,5 +1,6 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.EyeGuy;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -9,12 +10,18 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
-    public const int VariantPrimary = 0;
-    public const int VariantCrossfire = 1;
-    public const int VariantOmniBurst = 2;
+    public const int FlagWatcherEcho = 1 << 0;
+    public const int FlagOmniGaze = 1 << 1;
+    public const int FlagOverload = 1 << 2;
+    public const int FlagFinalPulse = 1 << 3;
+    public const int FlagDisableShockChain = 1 << 4;
 
-    private int Variant => Math.Clamp((int)Math.Round(Projectile.ai[0]), VariantPrimary, VariantOmniBurst);
-    private bool Focused => Projectile.ai[1] >= 0.5f;
+    private EyeGuyElement Element => (EyeGuyElement)Utils.Clamp((int)Math.Round(Projectile.ai[0]), 0, 2);
+    private int FlagMask => (int)Math.Round(Projectile.ai[1]);
+    private bool WatcherEcho => (FlagMask & FlagWatcherEcho) != 0;
+    private bool OmniGaze => (FlagMask & FlagOmniGaze) != 0;
+    private bool Overload => (FlagMask & FlagOverload) != 0;
+    private bool FinalPulse => (FlagMask & FlagFinalPulse) != 0;
 
     public override void SetDefaults() {
         Projectile.width = 12;
@@ -25,11 +32,11 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
         Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
         Projectile.extraUpdates = 2;
-        Projectile.timeLeft = 96;
-        Projectile.alpha = 18;
+        Projectile.timeLeft = 90;
+        Projectile.alpha = 12;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 8;
+        Projectile.localNPCHitCooldown = 9;
     }
 
     public override void AI() {
@@ -38,10 +45,12 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
             ApplyVariantDefaults();
         }
 
-        if (Variant == VariantOmniBurst)
-            Projectile.velocity *= 0.986f;
-        else if (Projectile.velocity.LengthSquared() < (Focused ? 1600f : 1369f))
-            Projectile.velocity *= Focused ? 1.015f : 1.01f;
+        if (OmniGaze || FinalPulse) {
+            Projectile.velocity *= FinalPulse ? 0.982f : 0.988f;
+        }
+        else if (Projectile.velocity.LengthSquared() < (Overload ? 1600f : 1369f)) {
+            Projectile.velocity *= Overload ? 1.016f : 1.011f;
+        }
 
         Projectile.rotation = Projectile.velocity.ToRotation();
         Lighting.AddLight(Projectile.Center, GetLightColor());
@@ -49,7 +58,7 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, GetDustType(),
                 -Projectile.velocity * Main.rand.NextFloat(0.05f, 0.12f), 100, GetDustColor(),
-                Main.rand.NextFloat(0.88f, 1.22f));
+                Main.rand.NextFloat(0.88f, Overload ? 1.28f : 1.12f));
             dust.noGravity = true;
         }
     }
@@ -59,19 +68,18 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
         Vector2 drawPosition = Projectile.Center - Main.screenPosition;
         Vector2 origin = texture.Size() * 0.5f;
         float rotation = Projectile.rotation + MathHelper.PiOver2;
-        Color outerColor = GetOuterColor() * Projectile.Opacity;
-        Color innerColor = GetInnerColor() * Projectile.Opacity;
+        float outerScale = Projectile.scale * (OmniGaze || FinalPulse ? 1.16f : 1.02f);
+        float innerScale = Projectile.scale * (WatcherEcho ? 0.6f : 0.68f);
 
-        Main.EntitySpriteDraw(texture, drawPosition, null, outerColor, rotation, origin,
-            Projectile.scale * (Variant == VariantOmniBurst ? 1.14f : 1.02f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(texture, drawPosition, null, innerColor, rotation, origin,
-            Projectile.scale * 0.68f, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(texture, drawPosition, null, GetOuterColor() * Projectile.Opacity, rotation, origin,
+            outerScale, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(texture, drawPosition, null, GetInnerColor() * Projectile.Opacity, rotation, origin,
+            innerScale, SpriteEffects.None, 0);
         return false;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        if (Focused || Variant != VariantPrimary)
-            target.AddBuff(BuffID.BrokenArmor, Focused ? 180 : 120);
+        EyeGuyTransformation.ResolveElementalHit(Projectile, target, damageDone, Element, FlagMask);
     }
 
     public override void OnKill(int timeLeft) {
@@ -81,7 +89,7 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
         for (int i = 0; i < 7; i++) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, GetDustType(),
                 Main.rand.NextVector2Circular(2.2f, 2.2f), 95, GetDustColor(),
-                Main.rand.NextFloat(0.92f, 1.26f));
+                Main.rand.NextFloat(0.9f, Overload ? 1.3f : 1.15f));
             dust.noGravity = true;
         }
     }
@@ -101,70 +109,85 @@ public class EyeGuyLaserbeam : ModProjectile, IMagistrataOutlineProvider {
     }
 
     private void ApplyVariantDefaults() {
-        switch (Variant) {
-            case VariantCrossfire:
-                Projectile.scale = Focused ? 1.18f : 1.08f;
-                Projectile.penetrate = Focused ? 3 : 2;
-                Projectile.timeLeft = Focused ? 92 : 84;
-                Projectile.extraUpdates = 2;
-                Projectile.localNPCHitCooldown = 9;
-                Projectile.alpha = 10;
-                break;
-            case VariantOmniBurst:
-                Projectile.scale = Focused ? 1.28f : 1.16f;
-                Projectile.penetrate = 1;
-                Projectile.timeLeft = Focused ? 32 : 28;
-                Projectile.extraUpdates = 1;
-                Projectile.localNPCHitCooldown = 13;
-                Projectile.tileCollide = false;
-                Projectile.alpha = 0;
-                break;
-            default:
-                Projectile.scale = Focused ? 1.08f : 1f;
-                Projectile.penetrate = Focused ? 4 : 3;
-                Projectile.timeLeft = Focused ? 104 : 96;
-                Projectile.extraUpdates = 2;
-                Projectile.localNPCHitCooldown = 8;
-                Projectile.alpha = 18;
-                break;
+        Projectile.scale = WatcherEcho ? 0.9f : 1f;
+        Projectile.penetrate = WatcherEcho ? 2 : 3;
+        Projectile.timeLeft = 90;
+        Projectile.extraUpdates = OmniGaze || FinalPulse ? 1 : 2;
+        Projectile.localNPCHitCooldown = OmniGaze || FinalPulse ? 14 : (WatcherEcho ? 11 : 9);
+        Projectile.tileCollide = !(OmniGaze || FinalPulse);
+
+        if (Overload)
+            Projectile.scale *= 1.08f;
+
+        if (OmniGaze) {
+            Projectile.scale *= 1.16f;
+            Projectile.penetrate = 2;
+            Projectile.timeLeft = 34;
+            Projectile.alpha = 0;
+        }
+
+        if (FinalPulse) {
+            Projectile.scale *= 1.24f;
+            Projectile.penetrate = 2;
+            Projectile.timeLeft = 30;
+            Projectile.alpha = 0;
+        }
+
+        if ((FlagMask & FlagDisableShockChain) != 0 && Element == EyeGuyElement.Shock) {
+            Projectile.penetrate = Math.Min(Projectile.penetrate, 1);
+            Projectile.timeLeft = Math.Min(Projectile.timeLeft, 44);
         }
     }
 
     private Vector3 GetLightColor() {
-        return Variant switch {
-            VariantCrossfire => Focused ? new Vector3(0.24f, 1.1f, 0.3f) : new Vector3(0.14f, 0.98f, 0.22f),
-            VariantOmniBurst => Focused ? new Vector3(0.32f, 1.15f, 0.36f) : new Vector3(0.2f, 0.92f, 0.24f),
-            _ => Focused ? new Vector3(0.16f, 1f, 0.22f) : new Vector3(0f, 0.95f, 0.25f)
-        };
+        Color color = GetOuterColor();
+        float scale = Overload ? 0.005f : 0.0038f;
+        return color.ToVector3() * scale;
     }
 
     private int GetDustType() {
-        return Variant == VariantOmniBurst
-            ? (Focused ? DustID.GreenTorch : DustID.GreenFairy)
-            : (Main.rand.NextBool() ? DustID.GreenFairy : DustID.GreenTorch);
+        return Element switch {
+            EyeGuyElement.Fire => DustID.GoldFlame,
+            EyeGuyElement.Frost => Main.rand.NextBool() ? DustID.GemDiamond : DustID.IceTorch,
+            _ => Main.rand.NextBool() ? DustID.Electric : DustID.BlueTorch
+        };
     }
 
     private Color GetDustColor() {
-        return Variant switch {
-            VariantCrossfire => Focused ? new Color(185, 255, 170) : new Color(130, 255, 150),
-            VariantOmniBurst => Focused ? new Color(205, 255, 180) : new Color(155, 255, 165),
-            _ => Focused ? new Color(165, 255, 160) : new Color(110, 245, 140)
+        return Element switch {
+            EyeGuyElement.Fire => Overload ? new Color(255, 190, 140) : new Color(255, 150, 100),
+            EyeGuyElement.Frost => Overload ? new Color(215, 255, 255) : new Color(155, 240, 255),
+            _ => Overload ? new Color(205, 225, 255) : new Color(145, 190, 255)
         };
     }
 
     private Color GetOuterColor() {
-        return Variant switch {
-            VariantCrossfire => Focused ? new Color(120, 255, 150, 220) : new Color(72, 240, 125, 220),
-            VariantOmniBurst => Focused ? new Color(160, 255, 175, 220) : new Color(95, 240, 145, 220),
-            _ => Focused ? new Color(100, 255, 145, 220) : new Color(60, 220, 110, 220)
+        Color baseColor = Element switch {
+            EyeGuyElement.Fire => new Color(255, 120, 80, 220),
+            EyeGuyElement.Frost => new Color(110, 225, 255, 220),
+            _ => new Color(120, 165, 255, 220)
         };
+
+        if (WatcherEcho)
+            baseColor = Color.Lerp(baseColor, Color.White, 0.14f);
+        if (Overload)
+            baseColor = Color.Lerp(baseColor, new Color(255, 240, 190, 220), 0.2f);
+        if (FinalPulse)
+            baseColor = Color.Lerp(baseColor, Color.White, 0.3f);
+
+        return baseColor;
     }
 
     private Color GetInnerColor() {
-        return Variant switch {
-            VariantCrossfire => Focused ? new Color(240, 255, 220, 220) : new Color(220, 255, 210, 215),
-            VariantOmniBurst => Focused ? new Color(245, 255, 225, 220) : new Color(232, 255, 220, 215),
-            _ => Focused ? new Color(235, 255, 220, 220) : new Color(210, 255, 215, 210)
+        Color highlight = Element switch {
+            EyeGuyElement.Fire => new Color(255, 245, 225, 220),
+            EyeGuyElement.Frost => new Color(240, 255, 255, 220),
+            _ => new Color(235, 245, 255, 220)
         };
+
+        if (Overload || OmniGaze || FinalPulse)
+            highlight = Color.Lerp(highlight, Color.White, 0.15f);
+
+        return highlight;
     }
 }
