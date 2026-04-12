@@ -25,7 +25,7 @@ public class ChromaStoneProjectile : ModProjectile {
     private bool IsShard => Mode == ModeVolleyShard || Mode == ModeBurstShard;
     private bool IsBurstShard => Mode == ModeBurstShard;
 
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => "Ben10Mod/Content/Projectiles/ChromaStoneProjectile";
 
     public override void SetStaticDefaults() {
         ProjectileID.Sets.TrailCacheLength[Type] = 12;
@@ -119,10 +119,13 @@ public class ChromaStoneProjectile : ModProjectile {
     }
 
     public override bool PreDraw(ref Color lightColor) {
+        Texture2D texture = TextureAssets.Projectile[Projectile.type].Value;
         Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
         float rotation = direction.ToRotation();
+        float spriteRotation = rotation + MathHelper.PiOver2;
+        Vector2 spriteOrigin = texture.Size() / 2f;
 
         for (int i = Projectile.oldPos.Length - 1; i >= 0; i--) {
             if (Projectile.oldPos[i] == Vector2.Zero)
@@ -143,6 +146,13 @@ public class ChromaStoneProjectile : ModProjectile {
         Color core = new Color(245, 250, 255, 230);
         float bodyLength = IsPrismBolt ? 36f : IsShard ? 20f : 28f;
         float bodyWidth = IsPrismBolt ? 12f : IsShard ? 6f : 8.8f;
+        float spriteScale = IsPrismBolt
+            ? 1.26f + PowerRatio * 0.14f
+            : IsBurstShard
+                ? 0.88f + PowerRatio * 0.06f
+                : IsShard
+                    ? 0.78f + PowerRatio * 0.06f
+                    : 1.08f + PowerRatio * 0.1f;
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
             new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer);
@@ -154,6 +164,13 @@ public class ChromaStoneProjectile : ModProjectile {
             new Vector2(bodyLength * 0.36f, Math.Max(2.2f, bodyWidth * 0.28f)) * Projectile.scale, middle * 0.7f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
             new Vector2(bodyLength * 0.38f, Math.Max(2f, bodyWidth * 0.2f)) * Projectile.scale, core);
+
+        Main.EntitySpriteDraw(texture, center, null, outer * 0.72f, spriteRotation, spriteOrigin,
+            Projectile.scale * spriteScale * 1.22f, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(texture, center, null, middle, spriteRotation, spriteOrigin,
+            Projectile.scale * spriteScale, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(texture, center, null, core, spriteRotation, spriteOrigin,
+            Projectile.scale * spriteScale * 0.82f, SpriteEffects.None, 0);
         return false;
     }
 
