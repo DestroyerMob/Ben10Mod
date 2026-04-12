@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Terraria;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
@@ -987,6 +988,11 @@ namespace Ben10Mod.Content.Interface {
     }
 
     public class AlienSelectionScreen : UIState {
+        private const int CompactDescriptionMaxCharacters = 180;
+        private const int CompactAbilityMaxCharacters = 84;
+        private const int CompactAbilityMaxCount = 5;
+        private const float RosterAbilityEntryWidth = 400f;
+        internal const float CodexEntryWidth = 526f;
         private          UIPanel                 mainPanel;
         private readonly List<FittedTransformationIcon> rosterSlots = new();
         private          UIGrid                  unlockedGrid;
@@ -1033,6 +1039,7 @@ namespace Ben10Mod.Content.Interface {
             }
             catch { }
 
+            description = CompactTransformationDescription(description);
             return string.IsNullOrWhiteSpace(description) ? "No description available." : description;
         }
 
@@ -1040,12 +1047,179 @@ namespace Ben10Mod.Content.Interface {
             GetSafeTransformationAbilities(Transformation trans, OmnitrixPlayer player) {
             try {
                 List<string> abilities = trans?.GetAbilities(player);
-                if (abilities != null && abilities.Count > 0)
-                    return abilities;
+                IReadOnlyList<string> compactAbilities = CompactTransformationAbilities(abilities);
+                if (compactAbilities.Count > 0)
+                    return compactAbilities;
             }
             catch { }
 
             return new[] { "No abilities listed." };
+        }
+
+        internal static UIElement CreateWrappedListEntry(string entryText, float width, float scale, bool framed) {
+            string cleanText = NormalizeUiText(entryText);
+            string displayText = string.IsNullOrWhiteSpace(cleanText) ? "Unknown entry" : cleanText;
+
+            if (!framed) {
+                UIElement container = new UIElement();
+                container.Width.Set(width, 0f);
+
+                UIText text = new UIText(displayText, scale);
+                text.Left.Set(0f, 0f);
+                text.Top.Set(0f, 0f);
+                text.Width.Set(width, 0f);
+                text.IsWrapped = true;
+                container.Append(text);
+                text.Recalculate();
+
+                float textHeight = text.MinHeight.Pixels > 0f ? text.MinHeight.Pixels : 20f;
+                container.Height.Set(Math.Max(20f, textHeight + 2f), 0f);
+                return container;
+            }
+
+            UIPanel row = new UIPanel();
+            row.Width.Set(width, 0f);
+            row.BackgroundColor = new Color(28, 38, 54, 220);
+            row.BorderColor = new Color(82, 104, 132, 220);
+
+            UIText wrappedText = new UIText(displayText, scale);
+            wrappedText.Left.Set(10f, 0f);
+            wrappedText.Top.Set(9f, 0f);
+            wrappedText.Width.Set(width - 20f, 0f);
+            wrappedText.IsWrapped = true;
+            row.Append(wrappedText);
+            wrappedText.Recalculate();
+
+            float wrappedHeight = wrappedText.MinHeight.Pixels > 0f ? wrappedText.MinHeight.Pixels : 20f;
+            row.Height.Set(Math.Max(44f, wrappedHeight + 18f), 0f);
+            return row;
+        }
+
+        internal static float MeasureEntryListHeight(IReadOnlyList<UIElement> entries, float listPadding,
+            float minimumHeight = 56f) {
+            if (entries == null || entries.Count == 0)
+                return minimumHeight;
+
+            float totalHeight = 0f;
+            for (int i = 0; i < entries.Count; i++) {
+                UIElement entry = entries[i];
+                totalHeight += entry?.Height.Pixels ?? 0f;
+            }
+
+            totalHeight += Math.Max(0, entries.Count - 1) * listPadding;
+            return Math.Max(minimumHeight, totalHeight);
+        }
+
+        private static string CompactTransformationDescription(string description) {
+            string normalized = NormalizeUiText(description);
+            if (string.IsNullOrWhiteSpace(normalized))
+                return string.Empty;
+
+            string firstSentence = ExtractPrimarySentence(normalized);
+            if (string.IsNullOrWhiteSpace(firstSentence))
+                firstSentence = normalized;
+
+            return CompactUiLine(firstSentence, CompactDescriptionMaxCharacters);
+        }
+
+        private static IReadOnlyList<string> CompactTransformationAbilities(IReadOnlyList<string> abilities) {
+            List<string> compactAbilities = new();
+            if (abilities == null)
+                return compactAbilities;
+
+            for (int i = 0; i < abilities.Count; i++) {
+                string ability = NormalizeUiText(abilities[i]);
+                if (string.IsNullOrWhiteSpace(ability) || ShouldHideUiAbilityLine(ability))
+                    continue;
+
+                if (ability.StartsWith("• ", StringComparison.Ordinal))
+                    ability = ability.Substring(2).Trim();
+
+                ability = CompactUiLine(ability, CompactAbilityMaxCharacters);
+                if (string.IsNullOrWhiteSpace(ability) || ContainsText(compactAbilities, ability))
+                    continue;
+
+                compactAbilities.Add(ability);
+                if (compactAbilities.Count >= CompactAbilityMaxCount)
+                    break;
+            }
+
+            return compactAbilities;
+        }
+
+        private static string ExtractPrimarySentence(string text) {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            for (int i = 0; i < text.Length; i++) {
+                char character = text[i];
+                if (character is not ('.' or '!' or '?'))
+                    continue;
+
+                string sentence = text.Substring(0, i + 1).Trim();
+                if (sentence.Length >= 48 || i >= text.Length - 1)
+                    return sentence;
+            }
+
+            int currentStateIndex = text.IndexOf(" Current ", StringComparison.OrdinalIgnoreCase);
+            if (currentStateIndex > 0)
+                return text.Substring(0, currentStateIndex).Trim();
+
+            return text;
+        }
+
+        private static string CompactUiLine(string text, int maxCharacters) {
+            string normalized = NormalizeUiText(text);
+            if (string.IsNullOrWhiteSpace(normalized) || normalized.Length <= maxCharacters)
+                return normalized;
+
+            int cutIndex = normalized.LastIndexOf(' ', Math.Min(maxCharacters, normalized.Length - 1));
+            if (cutIndex < maxCharacters / 2)
+                cutIndex = Math.Min(maxCharacters, normalized.Length);
+
+            return normalized.Substring(0, cutIndex).TrimEnd(' ', ',', ';', ':', '-') + "…";
+        }
+
+        private static string NormalizeUiText(string text) {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            StringBuilder builder = new(text.Length);
+            bool lastWasWhitespace = false;
+            for (int i = 0; i < text.Length; i++) {
+                char character = text[i];
+                if (char.IsWhiteSpace(character)) {
+                    if (lastWasWhitespace)
+                        continue;
+
+                    builder.Append(' ');
+                    lastWasWhitespace = true;
+                    continue;
+                }
+
+                builder.Append(character);
+                lastWasWhitespace = false;
+            }
+
+            return builder.ToString().Trim();
+        }
+
+        private static bool ShouldHideUiAbilityLine(string text) {
+            return text.StartsWith("Current sync:", StringComparison.OrdinalIgnoreCase) ||
+                   text.StartsWith("Source weapon:", StringComparison.OrdinalIgnoreCase) ||
+                   text.StartsWith("Remembered weapon:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool ContainsText(IReadOnlyList<string> values, string candidate) {
+            if (values == null || string.IsNullOrWhiteSpace(candidate))
+                return false;
+
+            for (int i = 0; i < values.Count; i++) {
+                if (string.Equals(values[i], candidate, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
 
         public override void OnInitialize() {
@@ -1168,7 +1342,7 @@ namespace Ben10Mod.Content.Interface {
             descriptionText.IsWrapped = true;
             infoPanel.Append(descriptionText);
 
-            abilitiesHeader = new UIText("Abilities:", 1.15f);
+            abilitiesHeader = new UIText("Kit Highlights:", 1.15f);
             abilitiesHeader.Left.Set(32f, 0f);
             abilitiesHeader.Top.Set(180f, 0f);
             infoPanel.Append(abilitiesHeader);
@@ -1178,6 +1352,7 @@ namespace Ben10Mod.Content.Interface {
             abilityList.Height.Set(300f, 0f);
             abilityList.Left.Set(32f, 0f);
             abilityList.Top.Set(210f, 0f);
+            abilityList.ListPadding = 8f;
             infoPanel.Append(abilityList);
 
             var closeBtn = new UITextPanel<string>("Close Roster");
@@ -1354,7 +1529,8 @@ namespace Ben10Mod.Content.Interface {
             abilityList.Clear();
             var abilities = GetSafeTransformationAbilities(trans, player);
             foreach (var ability in abilities)
-                abilityList.Add(new UIText("• " + (ability ?? "Unknown ability"), 0.95f));
+                abilityList.Add(CreateWrappedListEntry("• " + (ability ?? "Unknown ability"),
+                    RosterAbilityEntryWidth, 0.95f, framed: false));
         }
 
         private void UpdateInfoPanelFromTransformationId(string transformationId) {
@@ -1641,7 +1817,7 @@ namespace Ben10Mod.Content.Interface {
             abilitiesPanel.Height.Set(96f, 0f);
             detailSectionList.Add(abilitiesPanel);
 
-            abilitiesHeader = new UIText("Abilities", 1.1f);
+            abilitiesHeader = new UIText("Kit Highlights", 1.1f);
             abilitiesHeader.Left.Set(18f, 0f);
             abilitiesHeader.Top.Set(12f, 0f);
             abilitiesPanel.Append(abilitiesHeader);
@@ -1651,7 +1827,7 @@ namespace Ben10Mod.Content.Interface {
             abilityList.Height.Set(40f, 0f);
             abilityList.Left.Set(18f, 0f);
             abilityList.Top.Set(44f, 0f);
-            abilityList.ListPadding = 10f;
+            abilityList.ListPadding = 8f;
             abilitiesPanel.Append(abilityList);
 
             combatPanel = CreateCodexSectionPanel();
@@ -1668,7 +1844,7 @@ namespace Ben10Mod.Content.Interface {
             combatSlotList.Height.Set(40f, 0f);
             combatSlotList.Left.Set(18f, 0f);
             combatSlotList.Top.Set(44f, 0f);
-            combatSlotList.ListPadding = 10f;
+            combatSlotList.ListPadding = 8f;
             combatPanel.Append(combatSlotList);
 
             var closeBtn = new UITextPanel<string>("Close Codex");
@@ -1889,22 +2065,35 @@ namespace Ben10Mod.Content.Interface {
             unlockPanel.Height.Set(unlockPanelHeight, 0f);
 
             IReadOnlyList<string> abilities = AlienSelectionScreen.GetSafeTransformationAbilities(transformation, player);
-            float abilitiesPanelHeight = Math.Max(112f, 44f + Math.Max(56f, abilities.Count * 56f - 10f) + 18f);
-            abilitiesPanel.Height.Set(abilitiesPanelHeight, 0f);
-            abilityList.Height.Set(Math.Max(56f, abilitiesPanelHeight - 62f), 0f);
-
+            List<UIElement> abilityEntries = new();
             abilityList.Clear();
-            for (int i = 0; i < abilities.Count; i++)
-                abilityList.Add(CreateCodexAbilityEntry(abilities[i] ?? "Unknown ability"));
+            for (int i = 0; i < abilities.Count; i++) {
+                UIElement entry = AlienSelectionScreen.CreateWrappedListEntry("• " + (abilities[i] ?? "Unknown ability"),
+                    AlienSelectionScreen.CodexEntryWidth, 0.88f, framed: true);
+                abilityEntries.Add(entry);
+                abilityList.Add(entry);
+            }
+
+            float abilitiesContentHeight = AlienSelectionScreen.MeasureEntryListHeight(abilityEntries, abilityList.ListPadding);
+            float abilitiesPanelHeight = Math.Max(112f, 44f + abilitiesContentHeight + 18f);
+            abilitiesPanel.Height.Set(abilitiesPanelHeight, 0f);
+            abilityList.Height.Set(abilitiesContentHeight, 0f);
 
             IReadOnlyList<string> combatSlotSummaries = transformation.GetCombatSlotSummaries(player);
-            float combatPanelHeight = Math.Max(112f, 44f + Math.Max(56f, combatSlotSummaries.Count * 56f - 10f) + 18f);
-            combatPanel.Height.Set(combatPanelHeight, 0f);
-            combatSlotList.Height.Set(Math.Max(56f, combatPanelHeight - 62f), 0f);
-
+            List<UIElement> combatEntries = new();
             combatSlotList.Clear();
-            for (int i = 0; i < combatSlotSummaries.Count; i++)
-                combatSlotList.Add(CreateCodexAbilityEntry(combatSlotSummaries[i] ?? "Unknown combat slot"));
+            for (int i = 0; i < combatSlotSummaries.Count; i++) {
+                UIElement entry = AlienSelectionScreen.CreateWrappedListEntry(
+                    combatSlotSummaries[i] ?? "Unknown combat slot",
+                    AlienSelectionScreen.CodexEntryWidth, 0.88f, framed: true);
+                combatEntries.Add(entry);
+                combatSlotList.Add(entry);
+            }
+
+            float combatContentHeight = AlienSelectionScreen.MeasureEntryListHeight(combatEntries, combatSlotList.ListPadding);
+            float combatPanelHeight = Math.Max(112f, 44f + combatContentHeight + 18f);
+            combatPanel.Height.Set(combatPanelHeight, 0f);
+            combatSlotList.Height.Set(combatContentHeight, 0f);
 
             detailSectionList.Recalculate();
             detailSectionList.RecalculateChildren();
@@ -1939,22 +2128,6 @@ namespace Ben10Mod.Content.Interface {
             panel.BackgroundColor = new Color(20, 28, 40, 215);
             panel.BorderColor = new Color(70, 88, 116, 215);
             return panel;
-        }
-
-        private static UIPanel CreateCodexAbilityEntry(string abilityText) {
-            UIPanel row = new UIPanel();
-            row.Width.Set(0f, 1f);
-            row.Height.Set(58f, 0f);
-            row.BackgroundColor = new Color(28, 38, 54, 220);
-            row.BorderColor = new Color(82, 104, 132, 220);
-
-            UIText text = new UIText("• " + abilityText, 0.88f);
-            text.Left.Set(10f, 0f);
-            text.Top.Set(9f, 0f);
-            text.Width.Set(-20f, 1f);
-            text.IsWrapped = true;
-            row.Append(text);
-            return row;
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch) {
