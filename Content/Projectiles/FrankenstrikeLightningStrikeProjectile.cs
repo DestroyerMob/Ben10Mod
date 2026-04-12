@@ -1,5 +1,5 @@
 using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Transformations.Frankenstrike;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -11,8 +11,6 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
-    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
-    private bool Overcharged => ChargeRatio >= 0.55f;
     private bool Activated {
         get => Projectile.localAI[0] >= 0.5f;
         set => Projectile.localAI[0] = value ? 1f : 0f;
@@ -23,7 +21,9 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         set => Projectile.localAI[1] = value;
     }
 
-    private float CurrentRadius => MathHelper.Lerp(58f, 78f, ChargeRatio);
+    private float Delay => Projectile.ai[0];
+    private float RadiusScale => Projectile.ai[1] <= 0f ? 1f : Projectile.ai[1];
+    private float CurrentRadius => 62f * RadiusScale;
 
     public override string Texture => "Terraria/Images/Projectile_0";
 
@@ -37,7 +37,7 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         Projectile.tileCollide = false;
         Projectile.ignoreWater = true;
         Projectile.penetrate = -1;
-        Projectile.timeLeft = 40;
+        Projectile.timeLeft = 42;
         Projectile.hide = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.usesLocalNPCImmunity = true;
@@ -48,21 +48,21 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
 
     public override void AI() {
         if (!Activated) {
-            if (Projectile.ai[0] > 0f) {
-                Projectile.ai[0]--;
+            if (Projectile.timeLeft > 42 - (int)Delay) {
+                Lighting.AddLight(Projectile.Center, new Vector3(0.1f, 0.18f, 0.4f));
+                return;
             }
-            else {
-                Activated = true;
-                ActiveTime = Overcharged ? 7f : 6f;
-                SoundEngine.PlaySound(SoundID.Item122 with { Pitch = -0.38f, Volume = 0.82f }, Projectile.Center);
 
-                if (!Main.dedServ) {
-                    for (int i = 0; i < 24; i++) {
-                        Vector2 velocity = Main.rand.NextVector2Circular(4.6f, 4.6f);
-                        Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Electric : DustID.BlueTorch,
-                            velocity, 105, new Color(190, 235, 255), Main.rand.NextFloat(1f, 1.35f));
-                        dust.noGravity = true;
-                    }
+            Activated = true;
+            ActiveTime = 6f;
+            SoundEngine.PlaySound(SoundID.Item122 with { Pitch = -0.38f, Volume = 0.82f }, Projectile.Center);
+
+            if (!Main.dedServ) {
+                for (int i = 0; i < 24; i++) {
+                    Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.Electric : DustID.BlueTorch,
+                        Main.rand.NextVector2Circular(4.8f, 4.8f), 105, new Color(190, 235, 255),
+                        Main.rand.NextFloat(1f, 1.35f));
+                    dust.noGravity = true;
                 }
             }
         }
@@ -72,7 +72,7 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
                 Projectile.Kill();
         }
 
-        Lighting.AddLight(Projectile.Center, Activated ? new Vector3(0.35f, 0.58f, 1f) : new Vector3(0.12f, 0.2f, 0.48f));
+        Lighting.AddLight(Projectile.Center, Activated ? new Vector3(0.34f, 0.56f, 1f) : new Vector3(0.12f, 0.2f, 0.48f));
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
@@ -87,31 +87,24 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         Vector2 center = Projectile.Center - Main.screenPosition;
 
         if (!Activated) {
-            float radius = Overcharged ? 28f : 22f;
-            DrawRing(pixel, center, radius, 3f, new Color(165, 205, 255, 65), Projectile.ai[0] * 0.08f);
-            DrawRing(pixel, center, radius * 0.62f, 2.2f, new Color(235, 245, 255, 90), -Projectile.ai[0] * 0.1f);
+            DrawRing(pixel, center, 24f * RadiusScale, 2.8f, new Color(165, 205, 255, 70), Projectile.timeLeft * 0.05f);
             return false;
         }
 
-        DrawBeam(pixel, center + new Vector2(0f, -440f), center, Overcharged ? 12f : 9f, new Color(105, 155, 255, 145));
-        DrawBeam(pixel, center + new Vector2(0f, -440f), center, Overcharged ? 6f : 4f, new Color(235, 245, 255, 220));
-        DrawRing(pixel, center, CurrentRadius, 4f, new Color(105, 155, 255, 88), ActiveTime * 0.1f);
-        DrawRing(pixel, center, CurrentRadius * 0.64f, 3.2f, new Color(235, 245, 255, 138), -ActiveTime * 0.14f);
+        DrawBeam(pixel, center + new Vector2(0f, -450f), center, 10f * RadiusScale, new Color(115, 165, 255, 145));
+        DrawBeam(pixel, center + new Vector2(0f, -450f), center, 4.8f * RadiusScale, new Color(235, 245, 255, 225));
+        DrawRing(pixel, center, CurrentRadius, 4f, new Color(115, 165, 255, 95), ActiveTime * 0.1f);
+        DrawRing(pixel, center, CurrentRadius * 0.64f, 3f, new Color(235, 245, 255, 145), -ActiveTime * 0.14f);
         return false;
     }
 
-    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
-        modifiers.SourceDamage *= 1f + ChargeRatio * 0.18f + conductiveStacks * 0.1f;
-    }
-
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        identity.ApplyFrankenstrikeConductive(Projectile.owner, Overcharged ? 3 : 2, 260);
-        identity.ConsumeFrankenstrikeConductive(Projectile.owner, Overcharged ? 3 : 2);
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead)
+            return;
+
+        FrankenstrikeTransformation.ApplyConductiveHit(owner, target, 2, 240);
         target.velocity = Vector2.Lerp(target.velocity, new Vector2(target.velocity.X * 0.35f, -2.4f), 0.5f);
-        target.AddBuff(BuffID.Electrified, Overcharged ? 300 : 240);
         target.netUpdate = true;
     }
 
@@ -121,14 +114,13 @@ public class FrankenstrikeLightningStrikeProjectile : ModProjectile {
         if (length <= 0.5f)
             return;
 
-        float rotation = delta.ToRotation();
-        Main.EntitySpriteDraw(pixel, start, null, color, rotation, new Vector2(0f, 0.5f),
+        Main.EntitySpriteDraw(pixel, start, null, color, delta.ToRotation(), new Vector2(0f, 0.5f),
             new Vector2(length, width), SpriteEffects.None, 0);
     }
 
     private static void DrawRing(Texture2D pixel, Vector2 center, float radius, float thickness, Color color,
         float rotation) {
-        const int Segments = 20;
+        const int Segments = 22;
         for (int i = 0; i < Segments; i++) {
             float angle = rotation + MathHelper.TwoPi * i / Segments;
             Vector2 position = center + angle.ToRotationVector2() * radius;

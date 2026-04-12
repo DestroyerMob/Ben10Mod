@@ -1,9 +1,12 @@
 using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
+using Ben10Mod.Content.Transformations.Frankenstrike;
 using Ben10Mod.Content.Transformations.HeatBlast;
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.NPCs;
@@ -35,6 +38,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int FrankenstrikeConductiveOwner = -1;
     public int FrankenstrikeConductiveStacks;
     public int FrankenstrikeConductiveTime;
+    public int FrankenstrikeOverchargedOwner = -1;
+    public int FrankenstrikeOverchargedTime;
+    public int FrankenstrikeOverchargedArcTimer;
 
     public int LodestarPolarityOwner = -1;
     public int LodestarPolarityTime;
@@ -95,6 +101,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsEchoEchoFracturedFor(int owner) => EchoEchoFractureOwner == owner && EchoEchoFractureTime > 0;
     public bool IsUltimateEchoEchoFocusedFor(int owner) => UltimateEchoEchoFocusedOwner == owner && UltimateEchoEchoFocusedTime > 0;
     public bool IsFrankenstrikeConductiveFor(int owner) => FrankenstrikeConductiveOwner == owner && FrankenstrikeConductiveTime > 0 && FrankenstrikeConductiveStacks > 0;
+    public bool IsFrankenstrikeOverchargedFor(int owner) => FrankenstrikeOverchargedOwner == owner && FrankenstrikeOverchargedTime > 0;
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
     public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
@@ -110,7 +117,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
     public int GetBlitzwolferResonanceStacks(int owner) => IsBlitzwolferResonantFor(owner) ? BlitzwolferResonanceStacks : 0;
     public int GetEchoEchoResonanceStacks(int owner) => IsEchoEchoResonantFor(owner) ? EchoEchoResonanceStacks : 0;
-    public int GetFrankenstrikeConductiveStacks(int owner) => IsFrankenstrikeConductiveFor(owner) ? FrankenstrikeConductiveStacks : 0;
+    public int GetFrankenstrikeConductiveStacks(int owner) => FrankenstrikeConductiveOwner == owner ? FrankenstrikeConductiveStacks : 0;
     public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
     public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
     public int GetAlienXJudgementStacks(int owner) => IsAlienXJudgedFor(owner) ? AlienXJudgementStacks : 0;
@@ -230,12 +237,17 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
     public void ApplyFrankenstrikeConductive(int owner, int stacks, int time) {
         if (FrankenstrikeConductiveOwner != owner) {
+            ClearFrankenstrikeState();
             FrankenstrikeConductiveOwner = owner;
-            FrankenstrikeConductiveStacks = 0;
         }
 
-        FrankenstrikeConductiveStacks = Utils.Clamp(FrankenstrikeConductiveStacks + stacks, 0, 6);
+        FrankenstrikeConductiveStacks = Utils.Clamp(FrankenstrikeConductiveStacks + stacks, 0, FrankenstrikeStatePlayer.ConductiveMaxStacks);
         FrankenstrikeConductiveTime = Utils.Clamp(time, 1, 300);
+        if (FrankenstrikeOverchargedOwner == owner)
+            FrankenstrikeOverchargedTime = System.Math.Max(FrankenstrikeOverchargedTime, Utils.Clamp(time, 1, 300));
+
+        if (FrankenstrikeConductiveStacks >= FrankenstrikeStatePlayer.ConductiveMaxStacks)
+            PromoteFrankenstrikeOvercharged(owner, FrankenstrikeStatePlayer.OverchargedDurationTicks);
     }
 
     public int ConsumeFrankenstrikeConductive(int owner, int amount) {
@@ -248,9 +260,53 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         if (FrankenstrikeConductiveStacks <= 0) {
             FrankenstrikeConductiveOwner = -1;
             FrankenstrikeConductiveTime = 0;
+            FrankenstrikeOverchargedOwner = -1;
+            FrankenstrikeOverchargedTime = 0;
+            FrankenstrikeOverchargedArcTimer = 0;
         }
 
         return consumed;
+    }
+
+    public int ConsumeFrankenstrikeOvercharged(int owner, int residualConductiveStacks = 0) {
+        if (!IsFrankenstrikeOverchargedFor(owner))
+            return 0;
+
+        int consumed = FrankenstrikeConductiveStacks;
+        FrankenstrikeOverchargedOwner = -1;
+        FrankenstrikeOverchargedTime = 0;
+        FrankenstrikeOverchargedArcTimer = 0;
+
+        if (residualConductiveStacks > 0) {
+            FrankenstrikeConductiveOwner = owner;
+            FrankenstrikeConductiveStacks = Utils.Clamp(residualConductiveStacks, 0, FrankenstrikeStatePlayer.ConductiveMaxStacks - 1);
+            FrankenstrikeConductiveTime = 180;
+        }
+        else {
+            FrankenstrikeConductiveOwner = -1;
+            FrankenstrikeConductiveStacks = 0;
+            FrankenstrikeConductiveTime = 0;
+        }
+
+        return consumed;
+    }
+
+    private void PromoteFrankenstrikeOvercharged(int owner, int time) {
+        FrankenstrikeConductiveOwner = owner;
+        FrankenstrikeConductiveStacks = FrankenstrikeStatePlayer.ConductiveMaxStacks;
+        FrankenstrikeConductiveTime = Utils.Clamp(time, 1, 300);
+        FrankenstrikeOverchargedOwner = owner;
+        FrankenstrikeOverchargedTime = Utils.Clamp(time, 1, 300);
+        FrankenstrikeOverchargedArcTimer = 10;
+    }
+
+    private void ClearFrankenstrikeState() {
+        FrankenstrikeConductiveOwner = -1;
+        FrankenstrikeConductiveStacks = 0;
+        FrankenstrikeConductiveTime = 0;
+        FrankenstrikeOverchargedOwner = -1;
+        FrankenstrikeOverchargedTime = 0;
+        FrankenstrikeOverchargedArcTimer = 0;
     }
 
     public void ApplyLodestarPolarity(int owner, int time, int direction) {
@@ -542,6 +598,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public override void AI(NPC npc) {
         TickStatuses();
 
+        if (FrankenstrikeOverchargedTime > 0)
+            HandleFrankenstrikeOvercharged(npc);
+
         if (WhampireHypnosisTime > 0) {
             float dampening = npc.boss ? 0.92f : 0.55f;
             npc.velocity *= dampening;
@@ -578,11 +637,17 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers) {
         if (BigChillFrostbiteTime > 0 && player.whoAmI == BigChillOwner)
             modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
+
+        if (IsFrankenstrikeOverchargedFor(player.whoAmI))
+            modifiers.ArmorPenetration += 8;
     }
 
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers) {
         if (BigChillFrostbiteTime > 0 && projectile.owner == BigChillOwner)
             modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
+
+        if (IsFrankenstrikeOverchargedFor(projectile.owner))
+            modifiers.ArmorPenetration += 8;
     }
 
     public override void UpdateLifeRegen(NPC npc, ref int damage) {
@@ -604,6 +669,53 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             return;
 
         owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(npc.boss ? 1.5f : 3f);
+    }
+
+    private void HandleFrankenstrikeOvercharged(NPC npc) {
+        if (Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        if (FrankenstrikeOverchargedArcTimer > 0) {
+            FrankenstrikeOverchargedArcTimer--;
+            return;
+        }
+
+        if (FrankenstrikeOverchargedOwner < 0 || FrankenstrikeOverchargedOwner >= Main.maxPlayers)
+            return;
+
+        Player owner = Main.player[FrankenstrikeOverchargedOwner];
+        if (!owner.active || owner.dead)
+            return;
+
+        FrankenstrikeOverchargedArcTimer = npc.boss ? 34 : 24;
+        int remainingTargets = npc.boss ? 1 : 2;
+        int arcDamage = FrankenstrikeTransformation.ResolveHeroDamage(owner, npc.boss ? 0.18f : 0.24f);
+
+        foreach (NPC other in Main.ActiveNPCs) {
+            if (remainingTargets <= 0 || other.whoAmI == npc.whoAmI || !other.CanBeChasedBy())
+                continue;
+
+            if (other.Center.Distance(npc.Center) > 176f)
+                continue;
+
+            other.SimpleStrikeNPC(arcDamage, owner.direction, false, 0f, ModContent.GetInstance<HeroDamage>());
+            other.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyFrankenstrikeConductive(owner.whoAmI, 1 + (other.wet ? 1 : 0), 150);
+            other.AddBuff(BuffID.Electrified, 120);
+            other.netUpdate = true;
+            remainingTargets--;
+
+            if (Main.dedServ)
+                continue;
+
+            Vector2 arcDirection = (other.Center - npc.Center).SafeNormalize(Vector2.UnitX);
+            for (int i = 0; i < 8; i++) {
+                float progress = i / 7f;
+                Dust dust = Dust.NewDustPerfect(Vector2.Lerp(npc.Center, other.Center, progress), DustID.Electric,
+                    arcDirection.RotatedByRandom(0.42f) * Main.rand.NextFloat(0.15f, 0.85f), 105,
+                    new Color(185, 228, 255), Main.rand.NextFloat(0.88f, 1.1f));
+                dust.noGravity = true;
+            }
+        }
     }
 
     public override void DrawEffects(NPC npc, ref Color drawColor) {
@@ -631,6 +743,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (FrankenstrikeConductiveTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(120, 205, 255), 0.18f + FrankenstrikeConductiveStacks * 0.04f);
+
+        if (FrankenstrikeOverchargedTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(225, 242, 255), 0.24f);
 
         if (LodestarPolarityTime > 0)
             drawColor = Color.Lerp(drawColor, LodestarPolarityDirection >= 0 ? new Color(255, 120, 95) : new Color(125, 180, 255), 0.2f);
@@ -751,12 +866,17 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             UltimateEchoEchoFocusedOwner = -1;
         }
 
-        if (FrankenstrikeConductiveTime > 0) {
+        if (FrankenstrikeOverchargedTime > 0) {
+            FrankenstrikeOverchargedTime--;
+            FrankenstrikeConductiveTime = System.Math.Max(FrankenstrikeConductiveTime - 1, 0);
+            if (FrankenstrikeOverchargedTime <= 0)
+                ClearFrankenstrikeState();
+        }
+        else if (FrankenstrikeConductiveTime > 0) {
             FrankenstrikeConductiveTime--;
         }
         else {
-            FrankenstrikeConductiveOwner = -1;
-            FrankenstrikeConductiveStacks = 0;
+            ClearFrankenstrikeState();
         }
 
         if (LodestarPolarityTime > 0) {

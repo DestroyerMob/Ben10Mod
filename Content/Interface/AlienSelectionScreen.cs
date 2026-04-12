@@ -16,6 +16,7 @@ using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Transformations.BigChill;
+using Ben10Mod.Content.Transformations.Frankenstrike;
 
 namespace Ben10Mod.Content.Interface {
     public class FittedTransformationIcon : UIElement {
@@ -696,6 +697,7 @@ namespace Ben10Mod.Content.Interface {
             var cannonboltPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer>();
             var echoEchoPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.EchoEcho.EchoEchoStatePlayer>();
             var chromaStonePlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.ChromaStone.ChromaStoneStatePlayer>();
+            var frankenstrikePlayer = player.GetModPlayer<FrankenstrikeStatePlayer>();
             int cannonboltMaxBounces = global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.MaxBounceCount;
 
             if (omp.heroConvergenceEmblemEquipped || omp.HeroConvergenceHitCount > 0 || omp.HeroConvergenceCooldownTicks > 0) {
@@ -810,8 +812,18 @@ namespace Ben10Mod.Content.Interface {
                         MathHelper.Clamp(identityPlayer.AstrodactylAirSupremacyRatio, 0f, 1f), new Color(150, 255, 220)));
                     break;
                 case AlienIdentityPlayer.FrankenstrikeTransformationId:
-                    entries.Add(new HeroTrackerEntry("Static Charge", $"{(int)Math.Round(identityPlayer.FrankenstrikeStaticChargeRatio * 100f)}%",
-                        MathHelper.Clamp(identityPlayer.FrankenstrikeStaticChargeRatio, 0f, 1f), new Color(135, 175, 255)));
+                    entries.Add(new HeroTrackerEntry("Spires", $"{frankenstrikePlayer.ActiveSpireCount}/2",
+                        MathHelper.Clamp(frankenstrikePlayer.ActiveSpireCount / 2f, 0f, 1f), new Color(135, 175, 255)));
+                    if (frankenstrikePlayer.GalvanizedActive) {
+                        entries.Add(new HeroTrackerEntry("Galvanized", FormatTrackerSeconds(frankenstrikePlayer.GalvanizedTicksRemaining),
+                            MathHelper.Clamp(frankenstrikePlayer.GalvanizedTicksRemaining / (float)FrankenstrikeStatePlayer.GalvanizedDurationTicks, 0f, 1f),
+                            new Color(185, 228, 255)));
+                    }
+                    if (frankenstrikePlayer.StormheartActive) {
+                        entries.Add(new HeroTrackerEntry("Stormheart", FormatTrackerSeconds(frankenstrikePlayer.StormheartTicksRemaining),
+                            MathHelper.Clamp(frankenstrikePlayer.StormheartTicksRemaining / (float)FrankenstrikeStatePlayer.StormheartDurationTicks, 0f, 1f),
+                            new Color(210, 240, 255)));
+                    }
                     break;
                 case AlienIdentityPlayer.WaterHazardTransformationId:
                     entries.Add(new HeroTrackerEntry("Pressure", $"{(int)Math.Round(identityPlayer.WaterHazardPressureRatio * 100f)}%",
@@ -871,6 +883,12 @@ namespace Ben10Mod.Content.Interface {
             if (npcState.IsFrankenstrikeConductiveFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Conductive", $"{npcState.FrankenstrikeConductiveStacks}/6",
                     MathHelper.Clamp(npcState.FrankenstrikeConductiveStacks / 6f, 0f, 1f), new Color(135, 175, 255)));
+            }
+
+            if (npcState.IsFrankenstrikeOverchargedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Overcharged", FormatTrackerSeconds(npcState.FrankenstrikeOverchargedTime),
+                    MathHelper.Clamp(npcState.FrankenstrikeOverchargedTime / (float)FrankenstrikeStatePlayer.OverchargedDurationTicks, 0f, 1f),
+                    new Color(220, 242, 255)));
             }
 
             if (npcState.HasLodestarPolarityFor(player.whoAmI)) {
@@ -988,6 +1006,7 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.IsEchoEchoFracturedFor(owner)
                 || npcState.IsUltimateEchoEchoFocusedFor(owner)
                 || npcState.IsFrankenstrikeConductiveFor(owner)
+                || npcState.IsFrankenstrikeOverchargedFor(owner)
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
                 || npcState.IsJetrayLockedFor(owner)

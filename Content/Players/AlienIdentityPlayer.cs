@@ -16,13 +16,11 @@ public class AlienIdentityPlayer : ModPlayer {
     private const float ChromaStoneMaxRadiance = 100f;
     private const float FasttrackMaxMomentum = 100f;
     private const float AstrodactylMaxAirSupremacy = 100f;
-    private const float FrankenstrikeMaxStaticCharge = 100f;
     private const float WaterHazardMaxPressure = 100f;
 
     public float ChromaStoneRadiance { get; private set; }
     public float FasttrackMomentum { get; private set; }
     public float AstrodactylAirSupremacy { get; private set; }
-    public float FrankenstrikeStaticCharge { get; private set; }
     public float WaterHazardPressure { get; private set; }
 
     public float ChromaStoneRadianceRatio => ChromaStoneRadiance / ChromaStoneMaxRadiance;
@@ -30,7 +28,6 @@ public class AlienIdentityPlayer : ModPlayer {
     public float ChromaStonePrismChargeRatio => ChromaStoneRadianceRatio;
     public float FasttrackMomentumRatio => FasttrackMomentum / FasttrackMaxMomentum;
     public float AstrodactylAirSupremacyRatio => AstrodactylAirSupremacy / AstrodactylMaxAirSupremacy;
-    public float FrankenstrikeStaticChargeRatio => FrankenstrikeStaticCharge / FrankenstrikeMaxStaticCharge;
     public float WaterHazardPressureRatio => WaterHazardPressure / WaterHazardMaxPressure;
 
     public override void PostUpdate() {
@@ -38,7 +35,6 @@ public class AlienIdentityPlayer : ModPlayer {
         UpdateChromaStoneRadiance(omp);
         UpdateFasttrackMomentum(omp);
         UpdateAstrodactylAirSupremacy(omp);
-        UpdateFrankenstrikeStaticCharge(omp);
         UpdateWaterHazardPressure(omp);
     }
 
@@ -80,14 +76,6 @@ public class AlienIdentityPlayer : ModPlayer {
 
     public void ConsumeAstrodactylAirSupremacy(float amount) {
         AstrodactylAirSupremacy = Math.Max(0f, AstrodactylAirSupremacy - amount);
-    }
-
-    public void AddFrankenstrikeStaticCharge(float amount) {
-        FrankenstrikeStaticCharge = MathHelper.Clamp(FrankenstrikeStaticCharge + amount, 0f, FrankenstrikeMaxStaticCharge);
-    }
-
-    public void ConsumeFrankenstrikeStaticCharge(float amount) {
-        FrankenstrikeStaticCharge = Math.Max(0f, FrankenstrikeStaticCharge - amount);
     }
 
     public void AddWaterHazardPressure(float amount) {
@@ -171,22 +159,6 @@ public class AlienIdentityPlayer : ModPlayer {
             gain += 0.3f;
 
         AddAstrodactylAirSupremacy(gain);
-    }
-
-    private void UpdateFrankenstrikeStaticCharge(OmnitrixPlayer omp) {
-        if (omp.currentTransformationId != FrankenstrikeTransformationId) {
-            FrankenstrikeStaticCharge = Math.Max(0f, FrankenstrikeStaticCharge - 5f);
-            return;
-        }
-
-        if (omp.PrimaryAbilityEnabled) {
-            AddFrankenstrikeStaticCharge(0.7f);
-            if (Math.Abs(Player.velocity.X) > 3.5f || Player.velocity.Y < -0.5f)
-                AddFrankenstrikeStaticCharge(0.18f);
-            return;
-        }
-
-        FrankenstrikeStaticCharge = Math.Max(0f, FrankenstrikeStaticCharge - 0.28f);
     }
 
     private void UpdateWaterHazardPressure(OmnitrixPlayer omp) {

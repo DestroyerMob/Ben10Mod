@@ -1,6 +1,6 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Transformations.Frankenstrike;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -12,10 +12,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class FrankenstrikeThunderclapProjectile : ModProjectile {
-    private const int LifetimeTicks = 24;
-    private const float StartRadius = 28f;
-    private const float EndRadius = 108f;
-    private float ChargeRatio => MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
+    private const int LifetimeTicks = 22;
+    private const float StartRadius = 20f;
+
+    private float RadiusScale => Projectile.ai[0] <= 0f ? 1f : Projectile.ai[0];
+    private bool Empowered => Projectile.ai[1] >= 0.5f;
 
     private float CurrentRadius {
         get => Projectile.localAI[1];
@@ -42,22 +43,16 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
     }
 
     public override void AI() {
-        Player owner = Main.player[Projectile.owner];
-        if (!owner.active || owner.dead) {
-            Projectile.Kill();
-            return;
-        }
-
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
-            SoundEngine.PlaySound(SoundID.Item122 with { Pitch = -0.2f, Volume = 0.75f }, owner.Center);
+            SoundEngine.PlaySound(SoundID.Item122 with { Pitch = -0.22f, Volume = 0.68f }, Projectile.Center);
         }
 
-        Projectile.Center = owner.Center;
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
-        float easedProgress = 1f - MathF.Pow(1f - progress, 2f);
-        CurrentRadius = MathHelper.Lerp(StartRadius, EndRadius + 56f * ChargeRatio, easedProgress);
-        Lighting.AddLight(Projectile.Center, new Vector3(0.28f, 0.48f, 0.95f));
+        float easedProgress = 1f - (float)Math.Pow(1f - progress, 2f);
+        float endRadius = (Empowered ? 122f : 98f) * RadiusScale;
+        CurrentRadius = MathHelper.Lerp(StartRadius, endRadius, easedProgress);
+        Lighting.AddLight(Projectile.Center, Empowered ? new Vector3(0.34f, 0.56f, 1f) : new Vector3(0.24f, 0.44f, 0.86f));
 
         if (Main.rand.NextBool(2)) {
             float angle = Main.rand.NextFloat(MathHelper.TwoPi);
@@ -65,7 +60,8 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
             Dust dust = Dust.NewDustPerfect(Projectile.Center + direction * Main.rand.NextFloat(CurrentRadius * 0.3f, CurrentRadius),
                 Main.rand.NextBool(3) ? DustID.Electric : DustID.BlueTorch,
                 direction.RotatedBy(MathHelper.PiOver2) * Main.rand.NextFloat(-1.8f, 1.8f), 110,
-                new Color(170, 225, 255), Main.rand.NextFloat(0.95f, 1.25f));
+                Empowered ? new Color(185, 228, 255) : new Color(165, 215, 255),
+                Main.rand.NextFloat(0.95f, Empowered ? 1.28f : 1.16f));
             dust.noGravity = true;
         }
     }
@@ -76,28 +72,28 @@ public class FrankenstrikeThunderclapProjectile : ModProjectile {
 
     public override bool PreDraw(ref Color lightColor) {
         Texture2D pixel = TextureAssets.MagicPixel.Value;
-        float rotation = Projectile.localAI[0] * 0.04f;
-        float opacity = Utils.GetLerpValue(0f, 0.14f, 1f - Projectile.timeLeft / (float)LifetimeTicks, true) *
-            Utils.GetLerpValue(0f, 0.32f, Projectile.timeLeft / (float)LifetimeTicks, true);
+        float rotation = Projectile.timeLeft * 0.06f;
+        float opacity = Utils.GetLerpValue(0f, 0.16f, 1f - Projectile.timeLeft / (float)LifetimeTicks, true) *
+            Utils.GetLerpValue(0f, 0.3f, Projectile.timeLeft / (float)LifetimeTicks, true);
+        Vector2 center = Projectile.Center - Main.screenPosition;
 
-        DrawRing(pixel, Projectile.Center - Main.screenPosition, CurrentRadius, 4.2f, new Color(105, 150, 255, 75) * opacity, rotation);
-        DrawRing(pixel, Projectile.Center - Main.screenPosition, CurrentRadius * 0.68f, 3.3f, new Color(235, 245, 255, 125) * opacity, -rotation * 1.2f);
-        DrawRing(pixel, Projectile.Center - Main.screenPosition, CurrentRadius * 0.44f, 2.6f, new Color(255, 255, 255, 155) * opacity, rotation * 1.45f);
+        DrawRing(pixel, center, CurrentRadius, Empowered ? 4.8f : 4f,
+            (Empowered ? new Color(135, 188, 255, 88) : new Color(105, 160, 255, 76)) * opacity, rotation);
+        DrawRing(pixel, center, CurrentRadius * 0.68f, Empowered ? 3.6f : 3f,
+            new Color(235, 245, 255, 132) * opacity, -rotation * 1.2f);
+        DrawRing(pixel, center, CurrentRadius * 0.44f, Empowered ? 3f : 2.4f,
+            new Color(255, 255, 255, 160) * opacity, rotation * 1.4f);
         return false;
     }
 
-    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        int conductiveStacks = identity.GetFrankenstrikeConductiveStacks(Projectile.owner);
-        if (conductiveStacks > 0)
-            modifiers.SourceDamage *= 1f + conductiveStacks * 0.1f + ChargeRatio * 0.12f;
-    }
-
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        Vector2 push = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX) * 6.6f;
-        target.velocity = Vector2.Lerp(target.velocity, push + new Vector2(0f, -1.8f), 0.6f);
-        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyFrankenstrikeConductive(Projectile.owner, 2, 240);
-        target.AddBuff(BuffID.Electrified, 180);
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active || owner.dead)
+            return;
+
+        Vector2 push = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitX) * (Empowered ? 7.2f : 5.6f);
+        target.velocity = Vector2.Lerp(target.velocity, push + new Vector2(0f, -1.6f), 0.6f);
+        FrankenstrikeTransformation.ApplyConductiveHit(owner, target, Empowered ? 2 : 1, 180);
         target.netUpdate = true;
     }
 
