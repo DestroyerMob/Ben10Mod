@@ -10,7 +10,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class StinkFlyProjectile : ModProjectile {
-    private const float ChildDamageMultiplier = 0.28f;
+    private const float ChildDamageMultiplier = 0.32f;
     private static readonly float[] BurstAngles = { -0.54f, -0.18f, 0.18f, 0.54f };
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";

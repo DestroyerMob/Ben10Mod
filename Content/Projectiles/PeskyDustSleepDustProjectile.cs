@@ -30,10 +30,10 @@ public class PeskyDustSleepDustProjectile : ModProjectile {
     }
 
     public override void AI() {
-        NPC target = FindTarget(Drifting ? 260f : 210f);
+        NPC target = FindTarget(Drifting ? 300f : 240f);
         if (target != null) {
-            Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * (Drifting ? 14.5f : 12.5f);
-            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, Drifting ? 0.12f : 0.08f);
+            Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * (Drifting ? 15.5f : 13.5f);
+            Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, Drifting ? 0.14f : 0.1f);
         }
         else {
             Projectile.velocity *= 0.992f;

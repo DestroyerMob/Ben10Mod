@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
+using Microsoft.Xna.Framework;
 using System;
 using Ben10Mod.Content.Buffs.Summons;
 using Terraria;
@@ -41,7 +43,7 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.height = 52;
             Projectile.friendly = true;
             Projectile.minion = true;
-            Projectile.DamageType = DamageClass.Summon;
+            Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
             Projectile.minionSlots = 1f;
             Projectile.penetrate = -1;
             Projectile.tileCollide = false;
@@ -97,6 +99,7 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            target.AddBuff(ModContent.BuffType<BuzzShockTagBuff>(), 240);
             State = State_Recover;
             Timer = RecoverTime;
 

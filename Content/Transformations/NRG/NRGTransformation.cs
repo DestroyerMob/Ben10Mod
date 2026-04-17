@@ -11,17 +11,20 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.NRG;
 
 public class NRGTransformation : Transformation {
-    private const int ContainmentBurstEnergyCost = 50;
-    private const int ContainmentBurstCooldown = 18 * 60;
-    private const float ContainmentBurstDamageMultiplier = 1.9f;
-    private const int UnboundCoreDuration = 60 * 60;
-    private const int UnboundCoreCooldown = 90 * 60;
-    private const int UnboundCoreCost = 100;
-    private const int UnboundPrimaryAttackSpeed = 18;
-    private const float UnboundPrimaryShootSpeed = 22f;
-    private const int UnboundSecondaryAttackSpeed = 20;
-    private const float UnboundSecondaryShootSpeed = 11f;
-    private const float UnboundSecondaryDamageMultiplier = 0.9f;
+    private const int BaseSecondaryAttackSpeed = 24;
+    private const float BaseSecondaryShootSpeed = 10.5f;
+    private const float BaseSecondaryDamageMultiplier = 0.9f;
+    private const int ContainmentBurstEnergyCost = 30;
+    private const int ContainmentBurstCooldown = 12 * 60;
+    private const float ContainmentBurstDamageMultiplier = 2.25f;
+    private const int UnboundCoreDuration = 45 * 60;
+    private const int UnboundCoreCooldown = 70 * 60;
+    private const int UnboundCoreCost = 72;
+    private const int UnboundPrimaryAttackSpeed = 15;
+    private const float UnboundPrimaryShootSpeed = 24f;
+    private const int UnboundSecondaryAttackSpeed = 16;
+    private const float UnboundSecondaryShootSpeed = 12.5f;
+    private const float UnboundSecondaryDamageMultiplier = 1.08f;
 
     public override string FullID => "Ben10Mod:NRG";
     public override string TransformationName => "NRG";
@@ -29,13 +32,14 @@ public class NRGTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<NRG_Buff>();
 
     public override string Description =>
-        "A living reactor sealed in armor that batters foes with radioactive blasts and vented energy bursts.";
+        "A living reactor sealed in armor that burns targets with reactor fire, then detonates that heat into radiation blooms and unbound plasma pressure.";
 
     public override List<string> Abilities => new() {
-        "Reactor laser shot",
+        "Containment beam that sets targets ablaze",
+        "Radiant seeker that blooms off burning enemies",
         "Containment heat burst",
         "Unbound reactor form",
-        "Homing energy spheres"
+        "Radiation fallout pressure"
     };
 
     public override string PrimaryAttackName => "Containment Beam";
@@ -43,14 +47,14 @@ public class NRGTransformation : Transformation {
     public override string PrimaryAbilityAttackName => "Containment Burst";
     public override string UltimateAbilityName => "Unbound Core";
     public override int PrimaryAttack => ModContent.ProjectileType<NRGLaserProjectile>();
-    public override int PrimaryAttackSpeed => 28;
-    public override int PrimaryShootSpeed => 18;
+    public override int PrimaryAttackSpeed => 22;
+    public override int PrimaryShootSpeed => 20;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override int SecondaryAttack => ModContent.ProjectileType<NRGHomingEnergyBallProjectile>();
-    public override int SecondaryAttackSpeed => UnboundSecondaryAttackSpeed;
-    public override int SecondaryShootSpeed => (int)UnboundSecondaryShootSpeed;
+    public override int SecondaryAttackSpeed => BaseSecondaryAttackSpeed;
+    public override int SecondaryShootSpeed => (int)BaseSecondaryShootSpeed;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override float SecondaryAttackModifier => UnboundSecondaryDamageMultiplier;
+    public override float SecondaryAttackModifier => BaseSecondaryDamageMultiplier;
     public override bool HasPrimaryAbility => false;
     public override int PrimaryAbilityCooldown => ContainmentBurstCooldown;
     public override int PrimaryAbilityAttack => ModContent.ProjectileType<NRGBurstProjectile>();
@@ -67,14 +71,19 @@ public class NRGTransformation : Transformation {
     public override int GetMoveSetIndex(OmnitrixPlayer omp) => omp.IsUltimateAbilityActive ? 1 : 0;
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
-        player.GetDamage<HeroDamage>() += 0.14f;
-        player.statDefense += 16;
+        player.GetDamage<HeroDamage>() += 0.16f;
+        player.GetAttackSpeed<HeroDamage>() += 0.1f;
+        player.statDefense += 18;
         player.endurance += 0.08f;
         player.GetKnockback<HeroDamage>() += 0.4f;
+        player.GetArmorPenetration<HeroDamage>() += 8;
+        player.moveSpeed += 0.05f;
         player.fireWalk = true;
         player.lavaImmune = true;
         player.noKnockback = true;
         if (omp.IsUltimateAbilityActive) {
+            player.GetDamage<HeroDamage>() += 0.14f;
+            player.GetAttackSpeed<HeroDamage>() += 0.12f;
             player.moveSpeed += 0.16f;
             player.maxRunSpeed += 1.8f;
             player.accRunSpeed += 1.35f;
@@ -115,7 +124,7 @@ public class NRGTransformation : Transformation {
 
     protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAttackProfiles() {
         return CreateMoveSetProfiles(
-            CreateDisabledAttackProfile(SecondaryAttackDisplayName),
+            CreateSecondaryAttackProfile(),
             new TransformationAttackProfile {
                 DisplayName = SecondaryAttackDisplayName,
                 ProjectileType = SecondaryAttack,
@@ -159,6 +168,40 @@ public class NRGTransformation : Transformation {
         return false;
     }
 
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsNRGProjectile(projectile.type))
+            return;
+
+        if (!IsBurningTarget(target))
+            return;
+
+        modifiers.ArmorPenetration += projectile.type == PrimaryAbilityAttack || projectile.type == SecondaryAttack ? 12 : 6;
+        modifiers.FinalDamage *= projectile.type switch {
+            _ when projectile.type == PrimaryAbilityAttack => 1.25f,
+            _ when projectile.type == SecondaryAttack => 1.18f,
+            _ when projectile.type == ModContent.ProjectileType<NRGRadiationProjectile>() => 1.12f,
+            _ => 1.1f
+        };
+    }
+
+    public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        NPC.HitInfo hit, int damageDone) {
+        if (!IsNRGProjectile(projectile.type))
+            return;
+
+        bool wasBurning = IsBurningTarget(target);
+        if (projectile.type != ModContent.ProjectileType<NRGRadiationProjectile>())
+            target.AddBuff(BuffID.OnFire3, projectile.type == PrimaryAbilityAttack ? 300 : 240);
+
+        if (!wasBurning || projectile.type == ModContent.ProjectileType<NRGRadiationProjectile>())
+            return;
+
+        int bloomCount = projectile.type == PrimaryAbilityAttack ? 4 : projectile.type == SecondaryAttack ? 2 : 1;
+        float bloomRatio = projectile.type == PrimaryAbilityAttack ? 0.34f : projectile.type == SecondaryAttack ? 0.26f : 0.2f;
+        SpawnRadiationBloom(player, projectile, target, bloomCount, bloomRatio);
+    }
+
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         player.head = ArmorIDs.Head.MoltenHelmet;
         player.body = ArmorIDs.Body.MoltenBreastplate;
@@ -182,5 +225,29 @@ public class NRGTransformation : Transformation {
 
         player.fallStart = (int)(player.position.Y / 16f);
         player.maxFallSpeed = 9.5f;
+    }
+
+    private static bool IsBurningTarget(NPC target) {
+        return target.HasBuff(BuffID.OnFire) || target.HasBuff(BuffID.OnFire3) || target.HasBuff(BuffID.Burning);
+    }
+
+    private bool IsNRGProjectile(int projectileType) {
+        return projectileType == PrimaryAttack
+               || projectileType == SecondaryAttack
+               || projectileType == PrimaryAbilityAttack
+               || projectileType == ModContent.ProjectileType<NRGRadiationProjectile>();
+    }
+
+    private static void SpawnRadiationBloom(Player player, Projectile projectile, NPC target, int bloomCount, float damageRatio) {
+        if (player.whoAmI != Main.myPlayer)
+            return;
+
+        int bloomDamage = System.Math.Max(1, (int)System.Math.Round(projectile.damage * damageRatio));
+        for (int i = 0; i < bloomCount; i++) {
+            Vector2 velocity = Main.rand.NextVector2Unit() * Main.rand.NextFloat(4.5f, 8f);
+            Projectile.NewProjectile(projectile.GetSource_FromThis(), target.Center, velocity,
+                ModContent.ProjectileType<NRGRadiationProjectile>(), bloomDamage, projectile.knockBack * 0.7f,
+                player.whoAmI);
+        }
     }
 }

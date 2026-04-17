@@ -13,17 +13,18 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.PeskyDust;
 
 public class PeskyDustTransformation : Transformation {
+    public const int DreamThreshold = 80;
     private const int PixieDriftDuration = 10 * 60;
-    private const int PixieDriftCooldown = 24 * 60;
-    private const int PixieDriftCost = 18;
-    private const int DreamSnareEnergyCost = 24;
-    private const int DreamSnareCooldown = 15 * 60;
+    private const int PixieDriftCooldown = 20 * 60;
+    private const int PixieDriftCost = 16;
+    private const int DreamSnareEnergyCost = 20;
+    private const int DreamSnareCooldown = 12 * 60;
     private const int MaxActiveDreamSnares = 2;
     private const int DriftDreamSnareCap = 3;
-    private const float PrimaryDamageMultiplier = 0.76f;
-    private const float SecondaryDamageMultiplier = 0.88f;
-    private const float DreamSnareDamageMultiplier = 1.02f;
-    private const float UltimateDamageMultiplier = 1.14f;
+    private const float PrimaryDamageMultiplier = 0.9f;
+    private const float SecondaryDamageMultiplier = 1f;
+    private const float DreamSnareDamageMultiplier = 1.22f;
+    private const float UltimateDamageMultiplier = 1.36f;
 
     public override string FullID => "Ben10Mod:PeskyDust";
     public override string TransformationName => "Pesky Dust";
@@ -46,14 +47,14 @@ public class PeskyDustTransformation : Transformation {
     public override string UltimateAttackName => "Sandman Storm";
 
     public override int PrimaryAttack => ModContent.ProjectileType<PeskyDustSleepDustProjectile>();
-    public override int PrimaryAttackSpeed => 13;
-    public override int PrimaryShootSpeed => 15;
+    public override int PrimaryAttackSpeed => 11;
+    public override int PrimaryShootSpeed => 16;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
     public override float PrimaryAttackModifier => PrimaryDamageMultiplier;
 
     public override int SecondaryAttack => ModContent.ProjectileType<PeskyDustLullabyCloudProjectile>();
-    public override int SecondaryAttackSpeed => 22;
-    public override int SecondaryShootSpeed => 8;
+    public override int SecondaryAttackSpeed => 16;
+    public override int SecondaryShootSpeed => 9;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
     public override float SecondaryAttackModifier => SecondaryDamageMultiplier;
 
@@ -63,7 +64,7 @@ public class PeskyDustTransformation : Transformation {
     public override int PrimaryAbilityCost => PixieDriftCost;
 
     public override int SecondaryAbilityAttack => ModContent.ProjectileType<PeskyDustDreamSnareProjectile>();
-    public override int SecondaryAbilityAttackSpeed => 20;
+    public override int SecondaryAbilityAttackSpeed => 16;
     public override int SecondaryAbilityAttackShootSpeed => 0;
     public override int SecondaryAbilityAttackUseStyle => ItemUseStyleID.HoldUp;
     public override float SecondaryAbilityAttackModifier => DreamSnareDamageMultiplier;
@@ -72,12 +73,12 @@ public class PeskyDustTransformation : Transformation {
     public override bool SecondaryAbilityAttackSingleUse => true;
 
     public override int UltimateAttack => ModContent.ProjectileType<PeskyDustSandmanStormProjectile>();
-    public override int UltimateAttackSpeed => 28;
+    public override int UltimateAttackSpeed => 22;
     public override int UltimateShootSpeed => 0;
     public override int UltimateUseStyle => ItemUseStyleID.HoldUp;
     public override float UltimateAttackModifier => UltimateDamageMultiplier;
-    public override int UltimateEnergyCost => 55;
-    public override int UltimateAbilityCooldown => 56 * 60;
+    public override int UltimateEnergyCost => 48;
+    public override int UltimateAbilityCooldown => 50 * 60;
 
     public override void OnDetransform(Player player, OmnitrixPlayer omp) {
         KillOwnedProjectiles(player,
@@ -88,13 +89,14 @@ public class PeskyDustTransformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
-        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetDamage<HeroDamage>() += 0.13f;
+        player.GetAttackSpeed<HeroDamage>() += 0.1f;
         player.GetKnockback<HeroDamage>() += 0.3f;
         player.statDefense += 4;
-        player.moveSpeed += 0.16f;
-        player.runAcceleration += 0.08f;
-        player.maxRunSpeed += 0.9f;
-        player.jumpSpeedBoost += 1.8f;
+        player.moveSpeed += 0.18f;
+        player.runAcceleration += 0.1f;
+        player.maxRunSpeed += 1f;
+        player.jumpSpeedBoost += 2f;
         player.noFallDmg = true;
         player.ignoreWater = true;
         player.buffImmune[BuffID.Confused] = true;
@@ -102,12 +104,13 @@ public class PeskyDustTransformation : Transformation {
         if (!omp.PrimaryAbilityEnabled)
             return;
 
-        player.moveSpeed += 0.12f;
+        player.moveSpeed += 0.14f;
+        player.GetAttackSpeed<HeroDamage>() += 0.1f;
         player.runAcceleration += 0.08f;
-        player.maxRunSpeed += 0.8f;
+        player.maxRunSpeed += 0.9f;
         player.jumpSpeedBoost += 0.9f;
-        player.wingTimeMax += 48;
-        player.wingTime = Math.Max(player.wingTime, 16f);
+        player.wingTimeMax += 60;
+        player.wingTime = Math.Max(player.wingTime, 18f);
         player.armorEffectDrawShadow = true;
     }
 
@@ -203,9 +206,9 @@ public class PeskyDustTransformation : Transformation {
             return;
 
         modifiers.FinalDamage *= projectile.type switch {
-            _ when projectile.type == SecondaryAbilityAttack => 1.35f,
-            _ when projectile.type == UltimateAttack => 1.22f,
-            _ => 1.12f
+            _ when projectile.type == SecondaryAbilityAttack => 1.46f,
+            _ when projectile.type == UltimateAttack => 1.32f,
+            _ => 1.2f
         };
     }
 
@@ -218,22 +221,29 @@ public class PeskyDustTransformation : Transformation {
         bool drifting = omp.PrimaryAbilityEnabled;
         switch (projectile.type) {
             case var _ when projectile.type == PrimaryAttack:
-                state.AddPeskyDrowsy(player.whoAmI, drifting ? 54 : 40, 210, 100, drifting ? 240 : 180);
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 58 : 44, 210, DreamThreshold, drifting ? 250 : 190);
                 break;
             case var _ when projectile.type == SecondaryAttack:
-                state.AddPeskyDrowsy(player.whoAmI, drifting ? 40 : 28, 200, 100, drifting ? 240 : 180);
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 46 : 34, 200, DreamThreshold, drifting ? 250 : 190);
                 break;
             case var _ when projectile.type == SecondaryAbilityAttack:
                 if (state.IsDreamboundFor(player.whoAmI)) {
-                    state.ApplyDreambound(player.whoAmI, drifting ? 260 : 210, 28);
+                    state.ApplyDreambound(player.whoAmI, drifting ? 320 : 260, DreamThreshold / 2);
                     SpawnDreamBurst(projectile, target, drifting);
+                    RewardDreamTrigger(player, target, drifting ? 2.2f : 1.5f);
                 }
                 else {
-                    state.AddPeskyDrowsy(player.whoAmI, drifting ? 52 : 44, 220, 100, drifting ? 260 : 210);
+                    state.AddPeskyDrowsy(player.whoAmI, drifting ? 56 : 48, 220, DreamThreshold, drifting ? 280 : 220);
                 }
                 break;
             case var _ when projectile.type == UltimateAttack:
-                state.AddPeskyDrowsy(player.whoAmI, drifting ? 44 : 34, 240, 100, drifting ? 280 : 220);
+                if (state.IsDreamboundFor(player.whoAmI)) {
+                    state.ApplyDreambound(player.whoAmI, drifting ? 340 : 280, DreamThreshold / 2);
+                    SpawnDreamBurst(projectile, target, drifting);
+                    RewardDreamTrigger(player, target, drifting ? 1.6f : 1.1f);
+                }
+
+                state.AddPeskyDrowsy(player.whoAmI, drifting ? 50 : 40, 240, DreamThreshold, drifting ? 300 : 240);
                 break;
         }
     }
@@ -339,13 +349,20 @@ public class PeskyDustTransformation : Transformation {
         if (projectile.owner != Main.myPlayer)
             return;
 
-        int boltDamage = Math.Max(1, (int)Math.Round(projectile.damage * 0.42f));
-        for (int i = 0; i < 3; i++) {
-            float angle = -MathHelper.PiOver2 + MathHelper.Lerp(-0.65f, 0.65f, i / 2f);
+        int boltDamage = Math.Max(1, (int)Math.Round(projectile.damage * 0.52f));
+        for (int i = 0; i < 4; i++) {
+            float angle = -MathHelper.PiOver2 + MathHelper.Lerp(-0.8f, 0.8f, i / 3f);
             Vector2 velocity = angle.ToRotationVector2() * Main.rand.NextFloat(7f, 10f);
             Projectile.NewProjectile(projectile.GetSource_FromThis(), target.Center, velocity, PrimaryAttack, boltDamage,
                 projectile.knockBack * 0.4f, projectile.owner, drifting ? 1f : 0f);
         }
+    }
+
+    private static void RewardDreamTrigger(Player player, NPC target, float energyRefund) {
+        if (player.whoAmI != Main.myPlayer)
+            return;
+
+        player.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(target.boss ? energyRefund * 0.6f : energyRefund);
     }
 
     private bool IsPeskyDustProjectile(int projectileType) {

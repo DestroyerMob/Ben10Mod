@@ -1,4 +1,5 @@
 ﻿using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.friendly = true;
             Projectile.penetrate = -1;
             
-            Projectile.DamageType = DamageClass.Ranged;
+            Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
 
         }
 

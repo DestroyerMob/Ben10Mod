@@ -4,6 +4,7 @@ using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
 using Ben10Mod.Content.Transformations.Frankenstrike;
 using Ben10Mod.Content.Transformations.HeatBlast;
+using Ben10Mod.Content.Transformations.Humungousaur;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -41,6 +42,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int FrankenstrikeOverchargedOwner = -1;
     public int FrankenstrikeOverchargedTime;
     public int FrankenstrikeOverchargedArcTimer;
+
+    public int HumungousaurBreachOwner = -1;
+    public int HumungousaurBreachStacks;
+    public int HumungousaurBreachTime;
+    public int HumungousaurShatteredOwner = -1;
+    public int HumungousaurShatteredTime;
 
     public int LodestarPolarityOwner = -1;
     public int LodestarPolarityTime;
@@ -102,6 +109,8 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsUltimateEchoEchoFocusedFor(int owner) => UltimateEchoEchoFocusedOwner == owner && UltimateEchoEchoFocusedTime > 0;
     public bool IsFrankenstrikeConductiveFor(int owner) => FrankenstrikeConductiveOwner == owner && FrankenstrikeConductiveTime > 0 && FrankenstrikeConductiveStacks > 0;
     public bool IsFrankenstrikeOverchargedFor(int owner) => FrankenstrikeOverchargedOwner == owner && FrankenstrikeOverchargedTime > 0;
+    public bool IsHumungousaurBreachedFor(int owner) => HumungousaurBreachOwner == owner && HumungousaurBreachTime > 0 && HumungousaurBreachStacks > 0;
+    public bool IsHumungousaurShatteredFor(int owner) => HumungousaurShatteredOwner == owner && HumungousaurShatteredTime > 0;
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
     public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
@@ -118,6 +127,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int GetBlitzwolferResonanceStacks(int owner) => IsBlitzwolferResonantFor(owner) ? BlitzwolferResonanceStacks : 0;
     public int GetEchoEchoResonanceStacks(int owner) => IsEchoEchoResonantFor(owner) ? EchoEchoResonanceStacks : 0;
     public int GetFrankenstrikeConductiveStacks(int owner) => FrankenstrikeConductiveOwner == owner ? FrankenstrikeConductiveStacks : 0;
+    public int GetHumungousaurBreachStacks(int owner) => IsHumungousaurBreachedFor(owner) ? HumungousaurBreachStacks : 0;
     public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
     public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
     public int GetAlienXJudgementStacks(int owner) => IsAlienXJudgedFor(owner) ? AlienXJudgementStacks : 0;
@@ -307,6 +317,51 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         FrankenstrikeOverchargedOwner = -1;
         FrankenstrikeOverchargedTime = 0;
         FrankenstrikeOverchargedArcTimer = 0;
+    }
+
+    public void ApplyHumungousaurBreach(int owner, int stacks, int time, int shatteredTime) {
+        if (HumungousaurBreachOwner != owner && HumungousaurShatteredOwner != owner)
+            ClearHumungousaurState();
+
+        HumungousaurBreachOwner = owner;
+        HumungousaurBreachStacks = Utils.Clamp(HumungousaurBreachStacks + stacks, 0, UltimateHumungousaurStatePlayer.BreachMaxStacks);
+        HumungousaurBreachTime = Utils.Clamp(System.Math.Max(HumungousaurBreachTime, time), 1, 420);
+
+        if (HumungousaurShatteredOwner == owner && HumungousaurShatteredTime > 0)
+            HumungousaurShatteredTime = Utils.Clamp(System.Math.Max(HumungousaurShatteredTime, time), 1, 420);
+
+        if (HumungousaurBreachStacks >= UltimateHumungousaurStatePlayer.BreachMaxStacks)
+            PromoteHumungousaurShattered(owner, shatteredTime);
+    }
+
+    public int ConsumeHumungousaurShattered(int owner, int residualStacks = 0) {
+        if (!IsHumungousaurShatteredFor(owner))
+            return 0;
+
+        int consumed = HumungousaurBreachStacks;
+        HumungousaurShatteredOwner = -1;
+        HumungousaurShatteredTime = 0;
+
+        if (residualStacks > 0) {
+            HumungousaurBreachOwner = owner;
+            HumungousaurBreachStacks = Utils.Clamp(residualStacks, 0, UltimateHumungousaurStatePlayer.BreachMaxStacks - 1);
+            HumungousaurBreachTime = 180;
+        }
+        else {
+            HumungousaurBreachOwner = -1;
+            HumungousaurBreachStacks = 0;
+            HumungousaurBreachTime = 0;
+        }
+
+        return consumed;
+    }
+
+    private void PromoteHumungousaurShattered(int owner, int time) {
+        HumungousaurBreachOwner = owner;
+        HumungousaurBreachStacks = UltimateHumungousaurStatePlayer.BreachMaxStacks;
+        HumungousaurBreachTime = Utils.Clamp(time, 1, 420);
+        HumungousaurShatteredOwner = owner;
+        HumungousaurShatteredTime = Utils.Clamp(time, 1, 420);
     }
 
     public void ApplyLodestarPolarity(int owner, int time, int direction) {
@@ -626,6 +681,17 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             npc.velocity *= dampening;
         }
 
+        if (HumungousaurShatteredTime > 0) {
+            float dampening = npc.boss ? 0.95f : 0.78f;
+            npc.velocity *= dampening;
+            if (!npc.boss)
+                npc.velocity = Vector2.Clamp(npc.velocity, new Vector2(-3.2f, -3.2f), new Vector2(3.2f, 3.2f));
+        }
+        else if (HumungousaurBreachTime > 0) {
+            float dampening = npc.boss ? 0.985f : 0.92f;
+            npc.velocity *= dampening;
+        }
+
         if (PeskyDustDreamTime > 0) {
             float driftDampening = npc.boss ? 0.96f : 0.78f;
             npc.velocity *= driftDampening;
@@ -746,6 +812,15 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (FrankenstrikeOverchargedTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(225, 242, 255), 0.24f);
+
+        if (HumungousaurBreachTime > 0) {
+            float breachRatio = HumungousaurBreachStacks / (float)UltimateHumungousaurStatePlayer.BreachMaxStacks;
+            Color breachColor = Color.Lerp(new Color(208, 112, 72), new Color(255, 208, 148), breachRatio);
+            drawColor = Color.Lerp(drawColor, breachColor, 0.14f + breachRatio * 0.18f);
+        }
+
+        if (HumungousaurShatteredTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(255, 232, 188), 0.24f);
 
         if (LodestarPolarityTime > 0)
             drawColor = Color.Lerp(drawColor, LodestarPolarityDirection >= 0 ? new Color(255, 120, 95) : new Color(125, 180, 255), 0.2f);
@@ -877,6 +952,21 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         }
         else {
             ClearFrankenstrikeState();
+        }
+
+        if (HumungousaurShatteredTime > 0) {
+            HumungousaurShatteredTime--;
+            HumungousaurBreachTime = System.Math.Max(HumungousaurBreachTime - 1, 0);
+            if (HumungousaurShatteredTime <= 0)
+                ClearHumungousaurState();
+        }
+        else if (HumungousaurBreachTime > 0) {
+            HumungousaurBreachTime--;
+            if (HumungousaurBreachTime <= 0 || HumungousaurBreachStacks <= 0)
+                ClearHumungousaurState();
+        }
+        else {
+            ClearHumungousaurState();
         }
 
         if (LodestarPolarityTime > 0) {
@@ -1021,5 +1111,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         HeatBlastFlashpointStacks = 0;
         HeatBlastFlashpointProgress = 0;
         HeatBlastFlashpointTime = 0;
+    }
+
+    private void ClearHumungousaurState() {
+        HumungousaurBreachOwner = -1;
+        HumungousaurBreachStacks = 0;
+        HumungousaurBreachTime = 0;
+        HumungousaurShatteredOwner = -1;
+        HumungousaurShatteredTime = 0;
     }
 }

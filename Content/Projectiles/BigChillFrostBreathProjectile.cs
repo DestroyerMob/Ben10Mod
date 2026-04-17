@@ -11,11 +11,11 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class BigChillFrostBreathProjectile : ModProjectile {
     private const int LifetimeTicks = 14;
-    private const float MinLength = 52f;
-    private const float BaseMaxLength = 148f;
-    private const float UltimateFormBonusLength = 34f;
-    private const float PhaseDriftBonusLength = 40f;
-    private const float AbsoluteZeroBonusLength = 40f;
+    private const float MinLength = 84f;
+    private const float BaseMaxLength = 236f;
+    private const float UltimateFormBonusLength = 58f;
+    private const float PhaseDriftBonusLength = 56f;
+    private const float AbsoluteZeroBonusLength = 64f;
     private const float MinWidth = 13f;
     private const float BaseMaxWidth = 28f;
     private const float UltimateFormBonusWidth = 6f;
@@ -110,7 +110,7 @@ public class BigChillFrostBreathProjectile : ModProjectile {
                           (UltimateForm ? UltimateFormBonusLength : 0f) +
                           (PhaseDriftEmpowered ? PhaseDriftBonusLength : 0f) +
                           (AbsoluteZero ? AbsoluteZeroBonusLength : 0f);
-        return MathHelper.Lerp(MinLength, maxLength, MathHelper.Clamp(GetProgress() * 1.25f, 0f, 1f));
+        return MathHelper.Lerp(MinLength, maxLength, MathHelper.Clamp(GetProgress() * 1.85f, 0f, 1f));
     }
 
     private float GetBreathWidth(Player owner) {

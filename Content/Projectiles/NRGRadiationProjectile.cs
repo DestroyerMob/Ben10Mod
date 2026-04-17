@@ -1,3 +1,4 @@
+using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -12,7 +13,7 @@ public class NRGRadiationProjectile : ModProjectile {
         Projectile.width = 22;
         Projectile.height = 22;
         Projectile.friendly = true;
-        Projectile.DamageType = DamageClass.Generic;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.penetrate = 2;
         Projectile.timeLeft = 90;
         Projectile.tileCollide = false;

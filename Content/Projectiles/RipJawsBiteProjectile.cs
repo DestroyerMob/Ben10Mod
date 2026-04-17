@@ -2,12 +2,13 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Ben10Mod.Content.DamageClasses;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class RipJawsBiteProjectile : ModProjectile {
-    private const float LandDashSpeed = 18f;
-    private const float WaterDashSpeed = 24f;
+    private const float LandDashSpeed = 20f;
+    private const float WaterDashSpeed = 26f;
     private const float DashDecay = 0.95f;
     private const float ForwardOffset = 30f;
     private const float DownwardPull = 0.2f;
@@ -26,8 +27,8 @@ public class RipJawsBiteProjectile : ModProjectile {
         Projectile.hide = true;
         Projectile.ownerHitCheck = true;
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 12;
-        Projectile.DamageType = DamageClass.MeleeNoSpeed;
+        Projectile.localNPCHitCooldown = 10;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
     }
 
     public override void AI() {

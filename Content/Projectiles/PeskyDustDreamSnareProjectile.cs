@@ -1,6 +1,7 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Transformations.PeskyDust;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -113,8 +114,8 @@ public class PeskyDustDreamSnareProjectile : ModProjectile {
             float pullStrength = MathHelper.Lerp(0.6f, Drifting ? 3.4f : 2.6f, 1f - distance / CurrentRadius);
             Vector2 desiredVelocity = (Projectile.Center - npc.Center).SafeNormalize(Vector2.Zero) * pullStrength;
             npc.velocity = Vector2.Lerp(npc.velocity, desiredVelocity, npc.boss ? 0.04f : 0.12f);
-            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().AddPeskyDrowsy(Projectile.owner, Drifting ? 3 : 2, 90, 100,
-                Drifting ? 240 : 180);
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().AddPeskyDrowsy(Projectile.owner, Drifting ? 4 : 3, 90,
+                PeskyDustTransformation.DreamThreshold, Drifting ? 260 : 200);
             npc.netUpdate = true;
         }
     }

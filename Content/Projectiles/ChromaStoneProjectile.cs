@@ -120,7 +120,6 @@ public class ChromaStoneProjectile : ModProjectile {
 
     public override bool PreDraw(ref Color lightColor) {
         Texture2D texture = TextureAssets.Projectile[Projectile.type].Value;
-        Texture2D pixel = TextureAssets.MagicPixel.Value;
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
         float rotation = direction.ToRotation();
@@ -129,10 +128,14 @@ public class ChromaStoneProjectile : ModProjectile {
         float spriteScale = IsPrismBolt
             ? 1.48f + PowerRatio * 0.2f
             : IsBurstShard
-                ? 1f + PowerRatio * 0.08f
+                ? 1.18f + PowerRatio * 0.12f
                 : IsShard
-                    ? 0.9f + PowerRatio * 0.08f
-                    : 1.32f + PowerRatio * 0.16f;
+                    ? 1.08f + PowerRatio * 0.1f
+                    : 2.12f + PowerRatio * 0.24f;
+        Vector2 center = Projectile.Center - Main.screenPosition;
+        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.14f + PowerRatio * 1.4f, IsPrismBolt ? 1.12f : 1.04f) * 0.62f;
+        Color middle = ChromaStonePrismHelper.GetSpectrumColor(0.62f + PowerRatio * 1.1f, 1.08f) * 0.9f;
+        Color core = new Color(245, 250, 255, 230);
 
         for (int i = Projectile.oldPos.Length - 1; i >= 0; i--) {
             if (Projectile.oldPos[i] == Vector2.Zero)
@@ -141,16 +144,25 @@ public class ChromaStoneProjectile : ModProjectile {
             float progress = i / (float)Projectile.oldPos.Length;
             Vector2 trailCenter = Projectile.oldPos[i] + Projectile.Size * 0.5f - Main.screenPosition;
             Color trailColor = ChromaStonePrismHelper.GetSpectrumColor(progress * 2f + i * 0.08f) *
-                ((1f - progress) * (IsPrismBolt ? 0.56f : 0.38f));
-            float trailScale = spriteScale * MathHelper.Lerp(IsPrismBolt ? 1.05f : 0.9f, 0.36f, progress);
+                ((1f - progress) * (IsPrismBolt ? 0.56f : 0.52f));
+            float trailScale = spriteScale * MathHelper.Lerp(IsPrismBolt ? 1.05f : 1.18f, 0.42f, progress);
             Main.EntitySpriteDraw(texture, trailCenter, null, trailColor, spriteRotation, spriteOrigin,
                 Projectile.scale * trailScale, SpriteEffects.None, 0);
         }
 
-        Vector2 center = Projectile.Center - Main.screenPosition;
-        Color outer = ChromaStonePrismHelper.GetSpectrumColor(0.14f + PowerRatio * 1.4f, IsPrismBolt ? 1.12f : 1.04f) * 0.62f;
-        Color middle = ChromaStonePrismHelper.GetSpectrumColor(0.62f + PowerRatio * 1.1f, 1.08f) * 0.9f;
-        Color core = new Color(245, 250, 255, 230);
+        if (!IsPrismBolt) {
+            Main.EntitySpriteDraw(texture, center, null, outer * 0.34f, spriteRotation, spriteOrigin,
+                Projectile.scale * spriteScale * 1.85f, SpriteEffects.None, 0);
+            Main.EntitySpriteDraw(texture, center, null, middle * 0.68f, spriteRotation, spriteOrigin,
+                Projectile.scale * spriteScale * 1.34f, SpriteEffects.None, 0);
+            Main.EntitySpriteDraw(texture, center, null, Color.White, spriteRotation, spriteOrigin,
+                Projectile.scale * spriteScale, SpriteEffects.None, 0);
+            Main.EntitySpriteDraw(texture, center, null, core, spriteRotation, spriteOrigin,
+                Projectile.scale * spriteScale * 0.82f, SpriteEffects.None, 0);
+            return false;
+        }
+
+        Texture2D pixel = TextureAssets.MagicPixel.Value;
         float bodyLength = IsPrismBolt ? 28f : IsShard ? 16f : 22f;
         float bodyWidth = IsPrismBolt ? 9.2f : IsShard ? 5f : 7f;
 

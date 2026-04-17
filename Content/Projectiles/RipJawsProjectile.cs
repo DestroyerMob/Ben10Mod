@@ -1,10 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Ben10Mod.Content.DamageClasses;
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
@@ -21,10 +16,10 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.aiStyle     = ProjAIStyleID.Arrow;
             Projectile.friendly    = true;
             Projectile.hostile     = false;
-            Projectile.timeLeft    = 25;
+            Projectile.timeLeft    = 30;
             Projectile.tileCollide = false;
             AIType                 = ProjectileID.Bullet;
-            Projectile.DamageType  = DamageClass.MeleeNoSpeed;
+            Projectile.DamageType  = ModContent.GetInstance<HeroDamage>();
             Projectile.penetrate   = -1;
         }
 

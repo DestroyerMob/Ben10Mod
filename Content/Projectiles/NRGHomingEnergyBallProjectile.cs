@@ -8,9 +8,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class NRGHomingEnergyBallProjectile : ModProjectile {
-    private const float MaxSearchDistance = 520f;
-    private const float HomingSpeed = 14f;
-    private const float HomingInertia = 16f;
+    private const float MaxSearchDistance = 620f;
+    private const float HomingSpeed = 16f;
+    private const float HomingInertia = 12f;
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 

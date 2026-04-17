@@ -8,8 +8,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ArmodrilloQuakeProjectile : ModProjectile {
-    private const float MaxVisibleRange = 25f * 16f;
-    private const float ShockwaveSpeed = 15f;
+    private const float MaxVisibleRange = 28f * 16f;
+    private const float ShockwaveSpeed = 16.5f;
     private const float WaveLength = 56f;
     private const float StartWaveHeight = 18f;
     private const float EndWaveHeight = 68f;
@@ -29,7 +29,7 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
         Projectile.ignoreWater = true;
         Projectile.hide = true;
         Projectile.usesLocalNPCImmunity = true;
-        Projectile.localNPCHitCooldown = 10;
+        Projectile.localNPCHitCooldown = 9;
     }
 
     public override void AI() {

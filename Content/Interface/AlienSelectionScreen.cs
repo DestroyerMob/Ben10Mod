@@ -17,6 +17,7 @@ using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.Frankenstrike;
+using Ben10Mod.Content.Transformations.Humungousaur;
 
 namespace Ben10Mod.Content.Interface {
     public class FittedTransformationIcon : UIElement {
@@ -698,6 +699,7 @@ namespace Ben10Mod.Content.Interface {
             var echoEchoPlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.EchoEcho.EchoEchoStatePlayer>();
             var chromaStonePlayer = player.GetModPlayer<global::Ben10Mod.Content.Transformations.ChromaStone.ChromaStoneStatePlayer>();
             var frankenstrikePlayer = player.GetModPlayer<FrankenstrikeStatePlayer>();
+            var humungousaurPlayer = player.GetModPlayer<UltimateHumungousaurStatePlayer>();
             int cannonboltMaxBounces = global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.MaxBounceCount;
 
             if (omp.heroConvergenceEmblemEquipped || omp.HeroConvergenceHitCount > 0 || omp.HeroConvergenceCooldownTicks > 0) {
@@ -740,6 +742,24 @@ namespace Ben10Mod.Content.Interface {
                             : new Color(255, 142, 102);
                         entries.Add(new HeroTrackerEntry("Rage", rageValue,
                             MathHelper.Clamp(fourArmsPlayer.RageRatio, 0f, 1f), rageAccent));
+                    }
+                    break;
+                case UltimateHumungousaurStatePlayer.TransformationId:
+                    if (humungousaurPlayer.ComboStep > 0) {
+                        entries.Add(new HeroTrackerEntry("Combo", $"{humungousaurPlayer.ComboStep}/2",
+                            MathHelper.Clamp(humungousaurPlayer.ComboStep / 2f, 0f, 1f), new Color(255, 170, 118)));
+                    }
+
+                    if (humungousaurPlayer.TitanChargeActive) {
+                        entries.Add(new HeroTrackerEntry("Charge", FormatTrackerSeconds(humungousaurPlayer.TitanChargeTicksRemaining),
+                            MathHelper.Clamp(humungousaurPlayer.TitanChargeTicksRemaining / (float)UltimateHumungousaurStatePlayer.TitanChargeDurationTicks, 0f, 1f),
+                            new Color(255, 205, 148)));
+                    }
+
+                    if (humungousaurPlayer.CataclysmActive) {
+                        entries.Add(new HeroTrackerEntry("Cataclysm", FormatTrackerSeconds(humungousaurPlayer.CataclysmTicksRemaining),
+                            MathHelper.Clamp(humungousaurPlayer.CataclysmTicksRemaining / (float)UltimateHumungousaurStatePlayer.CataclysmDurationTicks, 0f, 1f),
+                            new Color(255, 162, 118)));
                     }
                     break;
                 case global::Ben10Mod.Content.Transformations.Cannonbolt.CannonboltStatePlayer.TransformationId:
@@ -891,6 +911,18 @@ namespace Ben10Mod.Content.Interface {
                     new Color(220, 242, 255)));
             }
 
+            if (npcState.IsHumungousaurBreachedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Breach",
+                    $"{npcState.GetHumungousaurBreachStacks(player.whoAmI)}/{UltimateHumungousaurStatePlayer.BreachMaxStacks}",
+                    MathHelper.Clamp(npcState.GetHumungousaurBreachStacks(player.whoAmI) / (float)UltimateHumungousaurStatePlayer.BreachMaxStacks, 0f, 1f),
+                    new Color(255, 170, 118)));
+            }
+
+            if (npcState.IsHumungousaurShatteredFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Shattered", FormatTrackerSeconds(npcState.HumungousaurShatteredTime),
+                    MathHelper.Clamp(npcState.HumungousaurShatteredTime / 240f, 0f, 1f), new Color(255, 226, 182)));
+            }
+
             if (npcState.HasLodestarPolarityFor(player.whoAmI)) {
                 string polarity = npcState.LodestarPolarityDirection >= 0 ? "Pull" : "Push";
                 entries.Add(new HeroTrackerEntry("Polarity", polarity,
@@ -1007,6 +1039,8 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.IsUltimateEchoEchoFocusedFor(owner)
                 || npcState.IsFrankenstrikeConductiveFor(owner)
                 || npcState.IsFrankenstrikeOverchargedFor(owner)
+                || npcState.IsHumungousaurBreachedFor(owner)
+                || npcState.IsHumungousaurShatteredFor(owner)
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
                 || npcState.IsJetrayLockedFor(owner)

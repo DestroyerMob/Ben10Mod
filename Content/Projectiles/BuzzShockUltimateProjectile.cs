@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,7 +28,7 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.friendly = true;
             Projectile.penetrate = 10;
             
-            Projectile.DamageType = DamageClass.Ranged;
+            Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
 
         }
 
@@ -36,6 +38,7 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            target.AddBuff(ModContent.BuffType<BuzzShockTagBuff>(), 240);
             FindTarget();
             for (int i = 0; i < 5; i++) {
                 int    dustNum = Dust.NewDust(target.position, target.width, target.height, DustID.UltraBrightTorch);
@@ -51,13 +54,13 @@ namespace Ben10Mod.Content.Projectiles {
 
             if (target != -1) {
                 NPC     npc             = Main.npc[target];
-                Vector2 desiredVelocity = Projectile.DirectionTo(npc.Center) * 24f;
-                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.2f);
+                Vector2 desiredVelocity = Projectile.DirectionTo(npc.Center) * 26f;
+                Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, 0.22f);
             }
         }
 
         private void FindTarget() {
-            float smallestDistance = 250f;
+            float smallestDistance = 300f;
             target = -1;
 
             foreach (NPC npc in Main.npc) {

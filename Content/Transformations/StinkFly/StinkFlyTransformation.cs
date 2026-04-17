@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories.Wings;
@@ -14,8 +15,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.StinkFly;
 
 public class StinkFlyTransformation : Transformation {
-    private const int CorrosiveBarrageEnergyCost = 25;
-    private const int CorrosiveBarrageCooldown = 26 * 60;
+    private const int ToxicSlipstreamDuration = 9 * 60;
+    private const int ToxicSlipstreamCooldown = 18 * 60;
+    private const int ToxicSlipstreamCost = 14;
+    private const int CorrosiveBarrageEnergyCost = 22;
+    private const int CorrosiveBarrageCooldown = 24 * 60;
 
     public override string FullID => "Ben10Mod:StinkFly";
     public override string TransformationName => "Stinkfly";
@@ -29,43 +33,59 @@ public class StinkFlyTransformation : Transformation {
         "Sticky slime glob that gums enemies up",
         "Corrosive spit that poisons and punches through targets",
         "Passive flight",
+        "Toxic Slipstream that echoes attacks with extra venom",
         "Corrosive Barrage that bursts into toxic droplets"
     };
 
     public override string PrimaryAttackName => "Slime Shot";
     public override string SecondaryAttackName => "Poison Spit";
+    public override string PrimaryAbilityName => "Toxic Slipstream";
     public override string UltimateAttackName => "Corrosive Barrage";
 
     public override int PrimaryAttack => ModContent.ProjectileType<StinkFlySlowProjectile>();
-    public override int PrimaryAttackSpeed => 18;
-    public override int PrimaryShootSpeed => 17;
+    public override int PrimaryAttackSpeed => 15;
+    public override int PrimaryShootSpeed => 18;
     public override int PrimaryUseStyle => ItemUseStyleID.Shoot;
-    public override float PrimaryAttackModifier => 0.9f;
+    public override float PrimaryAttackModifier => 1f;
 
     public override int SecondaryAttack => ModContent.ProjectileType<StinkFlyPoisonProjectile>();
-    public override int SecondaryAttackSpeed => 24;
-    public override int SecondaryShootSpeed => 20;
+    public override int SecondaryAttackSpeed => 18;
+    public override int SecondaryShootSpeed => 21;
     public override int SecondaryUseStyle => ItemUseStyleID.Shoot;
-    public override float SecondaryAttackModifier => 1.05f;
+    public override float SecondaryAttackModifier => 1.18f;
+
+    public override bool HasPrimaryAbility => true;
+    public override int PrimaryAbilityDuration => ToxicSlipstreamDuration;
+    public override int PrimaryAbilityCooldown => ToxicSlipstreamCooldown;
+    public override int PrimaryAbilityCost => ToxicSlipstreamCost;
 
     public override int UltimateAttack => ModContent.ProjectileType<StinkFlyProjectile>();
-    public override int UltimateAttackSpeed => 32;
-    public override int UltimateShootSpeed => 14;
+    public override int UltimateAttackSpeed => 24;
+    public override int UltimateShootSpeed => 15;
     public override int UltimateUseStyle => ItemUseStyleID.Shoot;
-    public override float UltimateAttackModifier => 1.8f;
+    public override float UltimateAttackModifier => 2.15f;
     public override int UltimateEnergyCost => CorrosiveBarrageEnergyCost;
     public override int UltimateAbilityCooldown => CorrosiveBarrageCooldown;
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
-        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetDamage<HeroDamage>() += 0.1f;
         player.GetCritChance<HeroDamage>() += 6f;
-        player.GetAttackSpeed<HeroDamage>() += 0.08f;
-        player.moveSpeed += 0.12f;
-        player.maxRunSpeed += 1.2f;
-        player.accRunSpeed += 1f;
+        player.GetAttackSpeed<HeroDamage>() += 0.1f;
+        player.moveSpeed += 0.14f;
+        player.maxRunSpeed += 1.35f;
+        player.accRunSpeed += 1.1f;
         player.noFallDmg = true;
-        player.wingTimeMax += 45;
+        player.wingTimeMax += 60;
+
+        if (omp.PrimaryAbilityEnabled) {
+            player.GetDamage<HeroDamage>() += 0.1f;
+            player.GetAttackSpeed<HeroDamage>() += 0.12f;
+            player.moveSpeed += 0.1f;
+            player.wingTimeMax += 42;
+            player.armorEffectDrawShadow = true;
+        }
+
         Lighting.AddLight(player.Center, new Vector3(0.08f, 0.16f, 0.05f));
         ModContent.GetInstance<AbilitySlot>().FunctionalItem = new Item(ModContent.ItemType<StinkFlyWings>());
     }
@@ -86,13 +106,51 @@ public class StinkFlyTransformation : Transformation {
             int finalDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAttackModifier));
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed,
                 ModContent.ProjectileType<StinkFlyPoisonProjectile>(), finalDamage, knockback + 0.5f, player.whoAmI);
+
+            if (omp.PrimaryAbilityEnabled) {
+                int echoDamage = Math.Max(1, (int)Math.Round(finalDamage * 0.6f));
+                Vector2 echoVelocity = direction.RotatedBy(player.direction * -0.14f) * (PrimaryShootSpeed + 1f);
+                Projectile.NewProjectile(source, spawnPosition - direction.RotatedBy(MathHelper.PiOver2) * 8f, echoVelocity,
+                    ModContent.ProjectileType<StinkFlySlowProjectile>(), echoDamage, knockback, player.whoAmI);
+            }
+
             return false;
         }
 
         int slimeDamage = Math.Max(1, (int)Math.Round(damage * PrimaryAttackModifier));
         Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed,
             ModContent.ProjectileType<StinkFlySlowProjectile>(), slimeDamage, knockback, player.whoAmI);
+
+        if (omp.PrimaryAbilityEnabled) {
+            int echoDamage = Math.Max(1, (int)Math.Round(slimeDamage * 0.62f));
+            Vector2 echoVelocity = direction.RotatedBy(player.direction * 0.12f) * (SecondaryShootSpeed + 1f);
+            Projectile.NewProjectile(source, spawnPosition + direction.RotatedBy(MathHelper.PiOver2) * 8f, echoVelocity,
+                ModContent.ProjectileType<StinkFlyPoisonProjectile>(), echoDamage, knockback + 0.2f, player.whoAmI);
+        }
+
         return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (projectile.type != PrimaryAttack && projectile.type != SecondaryAttack && projectile.type != UltimateAttack)
+            return;
+
+        int afflictedStates = 0;
+        if (target.HasBuff(ModContent.BuffType<EnemySlow>()))
+            afflictedStates++;
+        if (target.HasBuff(BuffID.Poisoned))
+            afflictedStates++;
+
+        if (afflictedStates <= 0)
+            return;
+
+        modifiers.FinalDamage *= projectile.type == UltimateAttack
+            ? 1f + afflictedStates * 0.13f
+            : 1f + afflictedStates * 0.09f;
+
+        if (afflictedStates >= 2 && projectile.type != PrimaryAttack)
+            modifiers.ArmorPenetration += 10;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
