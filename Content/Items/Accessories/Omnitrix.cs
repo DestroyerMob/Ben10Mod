@@ -477,6 +477,16 @@ namespace Ben10Mod.Content.Items.Accessories
             if (hideVisuals || omp.isTransformed)
                 return;
 
+            Item heldItem = player.HeldItem;
+            bool usingVisibleHeldItem = heldItem != null &&
+                                        !heldItem.IsAir &&
+                                        !heldItem.noUseGraphic &&
+                                        player.itemAnimation > 0;
+            bool usingHeldProjectile = player.heldProj >= 0;
+
+            if (usingVisibleHeldItem || usingHeldProjectile)
+                return;
+
             string textureKey = GetHandsOnTextureKey(player, omp);
             if (string.IsNullOrEmpty(textureKey))
                 return;
