@@ -685,6 +685,11 @@ Items: {
 		DisplayName: Plumber Senior Deputy Blaster
 		Tooltip: ""
 	}
+
+	CompletedOmnitrix: {
+		DisplayName: Completed Omnitrix
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -1218,6 +1223,17 @@ Projectiles: {
 	ChromaStoneLanceEchoProjectile.DisplayName: Chroma Stone Lance Echo Projectile
 	EchoEchoFeedbackBurstProjectile.DisplayName: Echo Echo Feedback Burst Projectile
 	EchoEchoResonancePopProjectile.DisplayName: Echo Echo Resonance Pop Projectile
+	BigChillAbsoluteZeroPulseProjectile.DisplayName: Big Chill Absolute Zero Pulse Projectile
+	BigChillFrostShardProjectile.DisplayName: Big Chill Frost Shard Projectile
+	BigChillGraveMistProjectile.DisplayName: Big Chill Grave Mist Projectile
+	EyeGuyChestBeamProjectile.DisplayName: Eye Guy Chest Beam Projectile
+	EyeGuySpectrumBurstProjectile.DisplayName: Eye Guy Spectrum Burst Projectile
+	FrankenstrikeCapacitorSpireProjectile.DisplayName: Frankenstrike Capacitor Spire Projectile
+	FrankenstrikeGalvanicFistProjectile.DisplayName: Frankenstrike Galvanic Fist Projectile
+	HeatBlastExplosionProjectile.DisplayName: Heat Blast Explosion Projectile
+	HeatBlastInfernoPatchProjectile.DisplayName: Heat Blast Inferno Patch Projectile
+	UltimateEchoEchoPulseProjectile.DisplayName: Ultimate Echo Echo Pulse Projectile
+	UltimateEchoEchoSonicBlastProjectile.DisplayName: Ultimate Echo Echo Sonic Blast Projectile
 }
 
 Tiles: {

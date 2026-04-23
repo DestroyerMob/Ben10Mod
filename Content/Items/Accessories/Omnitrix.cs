@@ -25,6 +25,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual int  EnergyPerDamageDivisor     => OmnitrixEnergyRegen == 0 ? 25 : 0;
         public virtual int  MinimumEnergyGainPerHit    => 1;
         public virtual bool UseEnergyForTransformation => false;
+        public virtual bool BuiltInTransformationFailsafe => false;
         public virtual int  TranformationSwapCost      => 50;
         public virtual int  TimeoutDuration            => 120;
         public virtual int  TransformationDuration     => 300;
@@ -332,18 +333,18 @@ namespace Ben10Mod.Content.Items.Accessories
                     return true;
                 }
 
-                if (!omp.masterControl && !UseEnergyForTransformation) {
+                if (!omp.HasMasterControlAccess && !UseEnergyForTransformation) {
                     omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to switch forms.");
                     return false;
                 }
 
                 int swapCost = GetEffectiveTransformationSwapCost(omp);
-                if (!omp.masterControl && UseEnergyForTransformation && omp.omnitrixEnergy < swapCost) {
+                if (!omp.HasMasterControlAccess && UseEnergyForTransformation && omp.omnitrixEnergy < swapCost) {
                     omp.ShowTransformFailureFeedback($"Need {swapCost} OE to swap forms.");
                     return false;
                 }
 
-                if (!omp.masterControl && UseEnergyForTransformation)
+                if (!omp.HasMasterControlAccess && UseEnergyForTransformation)
                     omp.omnitrixEnergy -= swapCost;
 
                 int nextDuration = UseEnergyForTransformation
@@ -364,7 +365,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 return true;
             }
 
-            if (!UseEnergyForTransformation && !omp.masterControl) {
+            if (!UseEnergyForTransformation && !omp.HasMasterControlAccess) {
                 omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
                 return false;
             }

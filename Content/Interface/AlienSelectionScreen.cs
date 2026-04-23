@@ -726,6 +726,13 @@ namespace Ben10Mod.Content.Interface {
                 entries.Add(new HeroTrackerEntry("Omni-Core", chargeValue, chargeProgress, reactorAccent));
             }
 
+            if (omp.CompletedOmnitrixSyncActive) {
+                entries.Add(new HeroTrackerEntry("Omni Sync",
+                    FormatTrackerSeconds(omp.CompletedOmnitrixSyncTicksRemaining),
+                    MathHelper.Clamp(omp.CompletedOmnitrixSyncTicksRemaining / (float)OmnitrixPlayer.CompletedOmnitrixSyncDurationTicks, 0f, 1f),
+                    new Color(132, 255, 210)));
+            }
+
             switch (omp.currentTransformationId) {
                 case global::Ben10Mod.Content.Transformations.FourArms.FourArmsGroundSlamPlayer.TransformationId:
                     if (fourArmsPlayer.BerserkActive) {

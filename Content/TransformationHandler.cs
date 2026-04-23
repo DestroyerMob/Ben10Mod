@@ -19,6 +19,7 @@ namespace Ben10Mod.Content
                 return;
 
             var omp = player.GetModPlayer<OmnitrixPlayer>();
+            string previousTransformationId = omp.currentTransformationId;
             bool isRefresh = omp.isTransformed && omp.currentTransformationId == transformationId;
 
             omp.currentTransformationId = transformationId;
@@ -45,8 +46,10 @@ namespace Ben10Mod.Content
             if (playSound)
                 SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), player.position);
 
-            if (!isRefresh)
+            if (!isRefresh) {
                 transformation.OnTransform(player, omp);
+                omp.TriggerCompletedOmnitrixSync(previousTransformationId, transformationId);
+            }
         }
 
         public static void Detransform(Player player, int cooldownSeconds = 120, 

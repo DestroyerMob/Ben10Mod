@@ -169,9 +169,11 @@ namespace Ben10Mod {
         public bool advancedCircuitMatrix = false;
         public bool advancedCircuitMatrixEquippedWhileTransformed = false;
         public bool transformationFailsafeEquipped = false;
+        public bool completedOmnitrixEquipped = false;
         public bool chronoAcceleratorEquipped = false;
         public bool heroConvergenceEmblemEquipped = false;
         public bool omniCoreReactorEquipped = false;
+        private int completedOmnitrixSyncTime = 0;
         private int chronoAcceleratorProcCooldown = 0;
         private int heroConvergenceProcCooldown = 0;
         private int heroConvergenceHitCount = 0;
@@ -233,6 +235,8 @@ namespace Ben10Mod {
         private const float OmniCoreReactorMinHitCharge = 1f;
         private const float OmniCoreReactorMaxHitCharge = 5f;
         private const int OmniCoreReactorPulseCooldownMax = 24;
+        public const int CompletedOmnitrixSyncDurationTicks = 5 * 60;
+        private const float CompletedOmnitrixSyncRestoreAmount = 20f;
         private static readonly string[] UpgradeRequiredTransformationIds = {
             "Ben10Mod:Humungousaur",
             "Ben10Mod:EyeGuy",
@@ -247,6 +251,7 @@ namespace Ben10Mod {
         public bool IsSecondaryAbilityActive => SecondaryAbilityEnabled || Player.HasBuff<SecondaryAbility>();
         public bool IsTertiaryAbilityActive => TertiaryAbilityEnabled || Player.HasBuff<TertiaryAbility>();
         public bool IsUltimateAbilityActive => UltimateAbilityEnabled || Player.HasBuff<UltimateAbility>();
+        public bool HasMasterControlAccess => masterControl || completedOmnitrixEquipped;
         public bool altAttack => setAttack == AttackSelection.Secondary;
         public bool ultimateAttack => setAttack == AttackSelection.Ultimate;
         public bool IsPrimaryAbilityAttackLoaded => setAttack == AttackSelection.PrimaryAbility;
@@ -254,6 +259,8 @@ namespace Ben10Mod {
         public bool IsTertiaryAbilityAttackLoaded => setAttack == AttackSelection.TertiaryAbility;
         public bool HasLoadedAbilityAttack => IsAbilityAttackSelection(setAttack);
         public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
+        public bool CompletedOmnitrixSyncActive => completedOmnitrixEquipped && completedOmnitrixSyncTime > 0;
+        public int CompletedOmnitrixSyncTicksRemaining => completedOmnitrixSyncTime;
         public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
         public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
         public float TransformationSpeedBoostScale => transformationSpeedBoostPercent / (float)TransformationSpeedBoostPercentMax;
@@ -323,6 +330,26 @@ namespace Ben10Mod {
 
             for (int i = 0; i < Player.armor.Length; i++) {
                 if (Player.armor[i]?.ModItem is Omnitrix)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool HasTransformationFailsafeEquipped() {
+            if (transformationFailsafeEquipped)
+                return true;
+
+            Omnitrix activeOmnitrix = GetActiveOmnitrix();
+            if (activeOmnitrix?.BuiltInTransformationFailsafe == true)
+                return true;
+
+            for (int i = 0; i < Player.armor.Length; i++) {
+                ModItem modItem = Player.armor[i]?.ModItem;
+                if (modItem is ReversionFailsafe)
+                    return true;
+
+                if (modItem is Omnitrix omnitrix && omnitrix.BuiltInTransformationFailsafe)
                     return true;
             }
 
@@ -637,6 +664,7 @@ namespace Ben10Mod {
             advancedCircuitMatrix = false;
             snowflake = false;
             transformationFailsafeEquipped = false;
+            completedOmnitrixEquipped = false;
             chronoAcceleratorEquipped = false;
             heroConvergenceEmblemEquipped = false;
             omniCoreReactorEquipped = false;
@@ -822,6 +850,14 @@ namespace Ben10Mod {
                 Player.jumpSpeedBoost += transformedJumpSpeedBonus;
             }
 
+            if (CompletedOmnitrixSyncActive && IsTransformed) {
+                Player.GetDamage<HeroDamage>() += 0.08f;
+                Player.GetAttackSpeed<HeroDamage>() += 0.06f;
+                Player.GetArmorPenetration<HeroDamage>() += 8;
+                Player.moveSpeed += 0.08f;
+                Player.maxRunSpeed += 0.5f;
+            }
+
             if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
                 Player.GetDamage(DamageClass.Generic) += absorptionProfile.GenericDamageBonus * absorptionStrengthMultiplier;
                 Player.statDefense += (int)Math.Round(absorptionProfile.DefenseBonus * absorptionStrengthMultiplier);
@@ -850,7 +886,7 @@ namespace Ben10Mod {
                     var customSlot = ModContent.GetInstance<OmnitrixSlot>();
                     if (customSlot != null) {
                         var activeOmnitrix = GetActiveOmnitrix();
-                        if (masterControl) {
+                        if (HasMasterControlAccess) {
                             TransformationHandler.Detransform(Player, 0, true, false);
                         }
                         else {
@@ -960,6 +996,11 @@ namespace Ben10Mod {
                 trans.PostUpdate(Player, this);
 
             UpdateAccessoryProcStates();
+
+            if (!completedOmnitrixEquipped || !IsTransformed)
+                completedOmnitrixSyncTime = 0;
+            else if (completedOmnitrixSyncTime > 0)
+                completedOmnitrixSyncTime--;
 
             if (attackSelectionPulseTime > 0)
                 attackSelectionPulseTime--;
@@ -2730,7 +2771,7 @@ namespace Ben10Mod {
 
         public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust,
             ref PlayerDeathReason damageSource) {
-            if (!transformationFailsafeEquipped || !IsTransformed)
+            if (!HasTransformationFailsafeEquipped() || !IsTransformed)
                 return base.PreKill(damage, hitDirection, pvp, ref playSound, ref genDust, ref damageSource);
 
             TriggerTransformationFailsafe();
@@ -4592,6 +4633,23 @@ namespace Ben10Mod {
 
             if (Main.netMode != NetmodeID.SinglePlayer)
                 NetMessage.SendData(MessageID.PlayerLifeMana, -1, -1, null, Player.whoAmI);
+        }
+
+        public void TriggerCompletedOmnitrixSync(string previousTransformationId, string nextTransformationId) {
+            if (!completedOmnitrixEquipped ||
+                string.IsNullOrWhiteSpace(previousTransformationId) ||
+                string.IsNullOrWhiteSpace(nextTransformationId) ||
+                string.Equals(previousTransformationId, nextTransformationId, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            completedOmnitrixSyncTime = CompletedOmnitrixSyncDurationTicks;
+            RestoreOmnitrixEnergy(CompletedOmnitrixSyncRestoreAmount);
+
+            if (Player.whoAmI != Main.myPlayer)
+                return;
+
+            CombatText.NewText(Player.getRect(), new Color(132, 255, 210), "Omni Sync", dramatic: true);
+            SoundEngine.PlaySound(SoundID.Item29 with { Pitch = 0.22f, Volume = 0.52f }, Player.Center);
         }
     }
 }
