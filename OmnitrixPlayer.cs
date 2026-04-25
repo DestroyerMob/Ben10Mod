@@ -22,6 +22,7 @@ using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Common.CustomVisuals;
 using Ben10Mod.Content.Projectiles;
+using Ben10Mod.Content.Transformations.XLR8;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
 using Terraria.GameContent.Events;
@@ -173,12 +174,14 @@ namespace Ben10Mod {
         public bool chronoAcceleratorEquipped = false;
         public bool heroConvergenceEmblemEquipped = false;
         public bool omniCoreReactorEquipped = false;
+        public bool xlr8DashAccessoryEquipped = false;
         private int completedOmnitrixSyncTime = 0;
         private int chronoAcceleratorProcCooldown = 0;
         private int heroConvergenceProcCooldown = 0;
         private int heroConvergenceHitCount = 0;
         private float omniCoreReactorCharge = 0f;
         private int omniCoreReactorPulseCooldown = 0;
+        private int xlr8DashAccessoryVisualTime = 0;
 
         private readonly HashSet<int> participatedEvents = new();
         private readonly HashSet<int> activeEvents = new();
@@ -668,6 +671,7 @@ namespace Ben10Mod {
             chronoAcceleratorEquipped = false;
             heroConvergenceEmblemEquipped = false;
             omniCoreReactorEquipped = false;
+            xlr8DashAccessoryEquipped = false;
             if (currentTransformationId != "Ben10Mod:Goop") {
                 GoopVisualScale = Vector2.One;
                 goopWasGrounded = false;
@@ -946,6 +950,9 @@ namespace Ben10Mod {
 
             if (airborneLungeConsumed && activeLungeTime <= 0 && IsTouchingLungeResetSurface())
                 airborneLungeConsumed = false;
+
+            if (xlr8DashAccessoryVisualTime > 0)
+                xlr8DashAccessoryVisualTime--;
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -2886,6 +2893,9 @@ namespace Ben10Mod {
 
             CurrentTransformation?.FrameEffects(Player, this);
             ApplySelectedTransformationCostumeVisuals(Player, CurrentTransformation);
+
+            if (ShouldShowXlr8DashAccessoryVisuals())
+                ApplyXlr8DashAccessoryVisuals(customSlot.HideVisuals);
         }
 
         public override void PreUpdateMovement() {
@@ -2905,7 +2915,8 @@ namespace Ben10Mod {
         private void DashMovement() {
             if (CanUseDash() && DashDir != -1 && DashDelay == 0) {
                 var trans = CurrentTransformation;
-                if (trans?.FullID == "Ben10Mod:XLR8") {
+                bool usingTransformationDash = trans?.FullID == "Ben10Mod:XLR8";
+                if (usingTransformationDash || xlr8DashAccessoryEquipped) {
                     Vector2 newVelocity = Player.velocity;
 
                     switch (DashDir) {
@@ -2921,6 +2932,9 @@ namespace Ben10Mod {
                     DashDelay = DashCooldown;
                     DashTimer = DashDuration;
                     Player.velocity = newVelocity;
+
+                    if (!usingTransformationDash && xlr8DashAccessoryEquipped)
+                        xlr8DashAccessoryVisualTime = Math.Max(xlr8DashAccessoryVisualTime, DashDuration);
                 }
             }
 
@@ -2929,12 +2943,39 @@ namespace Ben10Mod {
                 Player.eocDash = DashTimer;
                 Player.armorEffectDrawShadowEOCShield = true;
                 Player.GiveImmuneTimeForCollisionAttack(40);
+                if (xlr8DashAccessoryEquipped && CurrentTransformation?.FullID != "Ben10Mod:XLR8")
+                    xlr8DashAccessoryVisualTime = Math.Max(xlr8DashAccessoryVisualTime, DashTimer);
                 DashTimer--;
             }
         }
 
         private bool CanUseDash() {
             return Player.dashType == 0 && !Player.setSolar && !Player.mount.Active;
+        }
+
+        private bool ShouldShowXlr8DashAccessoryVisuals() {
+            return xlr8DashAccessoryVisualTime > 0 && CurrentTransformation?.FullID != "Ben10Mod:XLR8";
+        }
+
+        private void ApplyXlr8DashAccessoryVisuals(bool hideVisuals) {
+            if (!hideVisuals) {
+                Player.wings = -1;
+                Player.shoe = -1;
+                Player.handoff = -1;
+                Player.handon = -1;
+                Player.back = -1;
+                Player.waist = -1;
+                Player.shield = -1;
+            }
+
+            var costume = ModContent.GetInstance<XLR8>();
+            Player.armorEffectDrawShadow = true;
+            Player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+            Player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+            Player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+
+            Transformation xlr8Transformation = TransformationLoader.Get("Ben10Mod:XLR8");
+            ApplySelectedTransformationCostumeVisuals(Player, xlr8Transformation);
         }
 
         private bool IsTouchingLungeResetSurface() {
