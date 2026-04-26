@@ -176,6 +176,7 @@ namespace Ben10Mod {
         public bool omniCoreReactorEquipped = false;
         public bool xlr8DashAccessoryEquipped = false;
         private int completedOmnitrixSyncTime = 0;
+        private int completedOmnitrixRevivalCooldown = 0;
         private int chronoAcceleratorProcCooldown = 0;
         private int heroConvergenceProcCooldown = 0;
         private int heroConvergenceHitCount = 0;
@@ -240,6 +241,10 @@ namespace Ben10Mod {
         private const int OmniCoreReactorPulseCooldownMax = 24;
         public const int CompletedOmnitrixSyncDurationTicks = 5 * 60;
         private const float CompletedOmnitrixSyncRestoreAmount = 20f;
+        private const int CompletedOmnitrixRevivalCooldownTicks = 60 * 60;
+        private const float CompletedOmnitrixRevivalEnergyRestoreAmount = 10f;
+        private const float CompletedOmnitrixRevivalLifeRatio = 0.2f;
+        private const int CompletedOmnitrixRevivalMinimumLife = 80;
         private static readonly string[] UpgradeRequiredTransformationIds = {
             "Ben10Mod:Humungousaur",
             "Ben10Mod:EyeGuy",
@@ -254,7 +259,7 @@ namespace Ben10Mod {
         public bool IsSecondaryAbilityActive => SecondaryAbilityEnabled || Player.HasBuff<SecondaryAbility>();
         public bool IsTertiaryAbilityActive => TertiaryAbilityEnabled || Player.HasBuff<TertiaryAbility>();
         public bool IsUltimateAbilityActive => UltimateAbilityEnabled || Player.HasBuff<UltimateAbility>();
-        public bool HasMasterControlAccess => masterControl || completedOmnitrixEquipped;
+        public bool HasMasterControlAccess => masterControl;
         public bool altAttack => setAttack == AttackSelection.Secondary;
         public bool ultimateAttack => setAttack == AttackSelection.Ultimate;
         public bool IsPrimaryAbilityAttackLoaded => setAttack == AttackSelection.PrimaryAbility;
@@ -449,6 +454,7 @@ namespace Ben10Mod {
             tag["masterControl"] = masterControl;
             tag["currentTransformationId"] = currentTransformationId;
             tag["omnitrixEnergy"] = omnitrixEnergy;
+            tag["completedOmnitrixRevivalCooldown"] = completedOmnitrixRevivalCooldown;
             tag["absorbedMaterialItemType"] = absorbedMaterialItemType;
             tag["absorbedMaterialTime"] = absorbedMaterialTime;
             tag["transformationSpeedBoostPercent"] = (int)transformationSpeedBoostPercent;
@@ -504,6 +510,10 @@ namespace Ben10Mod {
         public override void LoadData(TagCompound tag) {
             tag.TryGet("masterControl", out masterControl);
             omnitrixEnergy = tag.TryGet("omnitrixEnergy", out omnitrixEnergy) ? omnitrixEnergy : 0f;
+            completedOmnitrixRevivalCooldown = tag.TryGet("completedOmnitrixRevivalCooldown",
+                out int savedCompletedOmnitrixRevivalCooldown)
+                ? Math.Max(0, savedCompletedOmnitrixRevivalCooldown)
+                : 0;
             absorbedMaterialItemType = tag.TryGet("absorbedMaterialItemType", out absorbedMaterialItemType) ? absorbedMaterialItemType : 0;
             absorbedMaterialTime = tag.TryGet("absorbedMaterialTime", out absorbedMaterialTime) ? absorbedMaterialTime : 0;
             transformationSpeedBoostPercent = tag.TryGet("transformationSpeedBoostPercent", out int savedTransformationSpeedBoostPercent)
@@ -950,6 +960,9 @@ namespace Ben10Mod {
 
             if (airborneLungeConsumed && activeLungeTime <= 0 && IsTouchingLungeResetSurface())
                 airborneLungeConsumed = false;
+
+            if (completedOmnitrixRevivalCooldown > 0)
+                completedOmnitrixRevivalCooldown--;
 
             int previousXlr8DashAccessoryVisualTime = xlr8DashAccessoryVisualTime;
             if (xlr8DashAccessoryVisualTime > 0)
@@ -2782,6 +2795,12 @@ namespace Ben10Mod {
 
         public override bool PreKill(double damage, int hitDirection, bool pvp, ref bool playSound, ref bool genDust,
             ref PlayerDeathReason damageSource) {
+            if (TryTriggerCompletedOmnitrixRevival()) {
+                playSound = false;
+                genDust = false;
+                return false;
+            }
+
             if (!HasTransformationFailsafeEquipped() || !IsTransformed)
                 return base.PreKill(damage, hitDirection, pvp, ref playSound, ref genDust, ref damageSource);
 
@@ -4675,6 +4694,93 @@ namespace Ben10Mod {
                    npc.type == NPCID.GoblinSorcerer ||
                    npc.type == NPCID.GoblinArcher ||
                    npc.type == NPCID.GoblinSummoner;
+        }
+
+        private bool TryTriggerCompletedOmnitrixRevival() {
+            if (!completedOmnitrixEquipped || completedOmnitrixRevivalCooldown > 0)
+                return false;
+
+            if (GetActiveOmnitrix() is not CompletedOmnitrix completedOmnitrix)
+                return false;
+
+            string transformationId = ResolveCompletedOmnitrixRevivalTransformation(completedOmnitrix);
+            if (string.IsNullOrEmpty(transformationId))
+                return false;
+
+            bool showEffects = Player.whoAmI == Main.myPlayer;
+            if (IsTransformed && !string.Equals(currentTransformationId, transformationId, StringComparison.OrdinalIgnoreCase))
+                TransformationHandler.Detransform(Player, 0, showParticles: false, addCooldown: false, playSound: false);
+
+            TransformationHandler.Transform(Player, transformationId, completedOmnitrix.GetTransformationDuration(this),
+                showParticles: showEffects, playSound: showEffects);
+
+            int restoredLife = Math.Max(CompletedOmnitrixRevivalMinimumLife,
+                (int)Math.Ceiling(Player.statLifeMax2 * CompletedOmnitrixRevivalLifeRatio));
+            Player.statLife = Math.Min(Player.statLifeMax2, Math.Max(Player.statLife, restoredLife));
+            Player.dead = false;
+            Player.immuneNoBlink = true;
+            Player.immuneTime = Math.Max(Player.immuneTime, 180);
+            RestoreOmnitrixEnergy(CompletedOmnitrixRevivalEnergyRestoreAmount);
+            completedOmnitrixRevivalCooldown = CompletedOmnitrixRevivalCooldownTicks;
+
+            if (showEffects)
+                CombatText.NewText(Player.getRect(), new Color(96, 255, 160), "Emergency Transform!", dramatic: true);
+
+            if (Main.netMode != NetmodeID.SinglePlayer)
+                NetMessage.SendData(MessageID.PlayerLifeMana, -1, -1, null, Player.whoAmI);
+
+            return true;
+        }
+
+        private string ResolveCompletedOmnitrixRevivalTransformation(Omnitrix activeOmnitrix) {
+            if (TryResolveCompletedOmnitrixRevivalTransformation(
+                    activeOmnitrix.transformationSlots,
+                    activeOmnitrix.transformationNum,
+                    out string selectedTransformationId))
+                return selectedTransformationId;
+
+            List<string> candidates = new();
+            foreach (string unlockedTransformationId in unlockedTransformations) {
+                if (TryResolveCompletedOmnitrixRevivalTransformation(unlockedTransformationId,
+                        out string candidateTransformationId) &&
+                    !candidates.Contains(candidateTransformationId))
+                    candidates.Add(candidateTransformationId);
+            }
+
+            if (candidates.Count <= 0)
+                return string.Empty;
+
+            if (candidates.Count > 1 && !string.IsNullOrEmpty(currentTransformationId)) {
+                List<string> inactiveCandidates = candidates
+                    .Where(candidate => !string.Equals(candidate, currentTransformationId, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (inactiveCandidates.Count > 0)
+                    candidates = inactiveCandidates;
+            }
+
+            return candidates[Main.rand.Next(candidates.Count)];
+        }
+
+        private bool TryResolveCompletedOmnitrixRevivalTransformation(string[] slots, int slotIndex,
+            out string transformationId) {
+            transformationId = string.Empty;
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+                return false;
+
+            return TryResolveCompletedOmnitrixRevivalTransformation(slots[slotIndex], out transformationId);
+        }
+
+        private bool TryResolveCompletedOmnitrixRevivalTransformation(string candidateId, out string transformationId) {
+            transformationId = string.Empty;
+            Transformation transformation = TransformationLoader.Resolve(candidateId);
+            if (transformation == null ||
+                transformation.ParentTransformation != null ||
+                transformation.IsAccessoryTransformation(this) ||
+                !unlockedTransformations.Contains(transformation.FullID))
+                return false;
+
+            transformationId = transformation.FullID;
+            return true;
         }
 
         private void TriggerTransformationFailsafe() {

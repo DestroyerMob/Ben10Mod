@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Debuffs;
-using Ben10Mod.Content.Items.Placeables;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -73,9 +72,9 @@ namespace Ben10Mod.Content.Items.Consumable
 
         public override void AddRecipes() {
             CreateRecipe(2)
-                .AddIngredient(ModContent.ItemType<CongealedCodonOre>(), 4)
-                .AddIngredient(ItemID.FallenStar)
-                .AddIngredient(ItemID.Lens)
+                .AddIngredient(ItemID.Bottle, 2)
+                .AddIngredient(ItemID.Gel, 2)
+                .AddIngredient(ItemID.Mushroom)
                 .AddTile(TileID.Bottles)
                 .Register();
         }
@@ -89,10 +88,9 @@ namespace Ben10Mod.Content.Items.Consumable
         protected override int ItemValue => Item.buyPrice(silver: 6);
 
         public override void AddRecipes() {
-            CreateRecipe(2)
-                .AddIngredient(ModContent.ItemType<CongealedCodonOre>(), 8)
-                .AddIngredient(ItemID.MeteoriteBar, 2)
-                .AddIngredient(ItemID.FallenStar, 2)
+            CreateRecipe()
+                .AddIngredient(ModContent.ItemType<LesserEnergyCell>(), 2)
+                .AddIngredient(ItemID.GlowingMushroom)
                 .AddTile(TileID.Bottles)
                 .Register();
         }
@@ -106,12 +104,11 @@ namespace Ben10Mod.Content.Items.Consumable
         protected override int ItemValue => Item.buyPrice(silver: 18);
 
         public override void AddRecipes() {
-            CreateRecipe(2)
-                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 3)
-                .AddIngredient(ItemID.CrystalShard, 2)
-                .AddIngredient(ItemID.SoulofLight)
-                .AddIngredient(ItemID.SoulofNight)
-                .AddTile(TileID.MythrilAnvil)
+            CreateRecipe(3)
+                .AddIngredient(ItemID.BottledWater, 3)
+                .AddIngredient(ItemID.PixieDust, 3)
+                .AddIngredient(ItemID.CrystalShard)
+                .AddTile(TileID.Bottles)
                 .Register();
         }
     }
@@ -124,10 +121,13 @@ namespace Ben10Mod.Content.Items.Consumable
         protected override int ItemValue => Item.buyPrice(gold: 1);
 
         public override void AddRecipes() {
-            CreateRecipe(2)
-                .AddIngredient(ModContent.ItemType<CongealedCodonBar>(), 6)
-                .AddIngredient(ItemID.LunarBar, 2)
-                .AddTile(TileID.LunarCraftingStation)
+            CreateRecipe(4)
+                .AddIngredient(ModContent.ItemType<GreaterEnergyCell>(), 4)
+                .AddIngredient(ItemID.FragmentSolar)
+                .AddIngredient(ItemID.FragmentVortex)
+                .AddIngredient(ItemID.FragmentNebula)
+                .AddIngredient(ItemID.FragmentStardust)
+                .AddTile(TileID.Bottles)
                 .Register();
         }
     }
