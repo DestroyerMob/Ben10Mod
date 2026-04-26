@@ -951,8 +951,12 @@ namespace Ben10Mod {
             if (airborneLungeConsumed && activeLungeTime <= 0 && IsTouchingLungeResetSurface())
                 airborneLungeConsumed = false;
 
+            int previousXlr8DashAccessoryVisualTime = xlr8DashAccessoryVisualTime;
             if (xlr8DashAccessoryVisualTime > 0)
                 xlr8DashAccessoryVisualTime--;
+
+            if (previousXlr8DashAccessoryVisualTime > 0 && xlr8DashAccessoryVisualTime == 0)
+                PlayXlr8DashAccessoryEndEffects();
 
             if (!isTransformed) {
                 abilitySlot.FunctionalItem = new Item(ModContent.ItemType<BlankAccessory>());
@@ -2933,8 +2937,10 @@ namespace Ben10Mod {
                     DashTimer = DashDuration;
                     Player.velocity = newVelocity;
 
-                    if (!usingTransformationDash && xlr8DashAccessoryEquipped)
+                    if (!usingTransformationDash && xlr8DashAccessoryEquipped) {
                         xlr8DashAccessoryVisualTime = Math.Max(xlr8DashAccessoryVisualTime, DashDuration);
+                        PlayXlr8DashAccessoryStartEffects();
+                    }
                 }
             }
 
@@ -2955,6 +2961,26 @@ namespace Ben10Mod {
 
         private bool ShouldShowXlr8DashAccessoryVisuals() {
             return xlr8DashAccessoryVisualTime > 0 && CurrentTransformation?.FullID != "Ben10Mod:XLR8";
+        }
+
+        private void PlayXlr8DashAccessoryStartEffects() {
+            Transformation xlr8Transformation = TransformationLoader.Get("Ben10Mod:XLR8");
+            if (xlr8Transformation == null)
+                return;
+
+            xlr8Transformation.SpawnTransformParticles(Player, this);
+            SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), Player.position);
+        }
+
+        private void PlayXlr8DashAccessoryEndEffects() {
+            Transformation currentTransformation = CurrentTransformation;
+            if (currentTransformation != null) {
+                currentTransformation.SpawnTransformParticles(Player, this);
+                SoundEngine.PlaySound(new SoundStyle("Ben10Mod/Content/Sounds/OmnitrixTransformation"), Player.position);
+                return;
+            }
+
+            TransformationHandler.PlayDetransformEffects(Player, showParticles: true, playSound: true);
         }
 
         private void ApplyXlr8DashAccessoryVisuals(bool hideVisuals) {

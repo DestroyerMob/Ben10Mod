@@ -5,7 +5,7 @@ using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Items.Accessories;
 
-public class XLR8DashAccessory : ModItem {
+public class Kineceleran : ModItem {
     public override string Texture => $"Terraria/Images/Item_{ItemID.EoCShield}";
 
     public override void SetStaticDefaults() {
@@ -19,8 +19,8 @@ public class XLR8DashAccessory : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "XLR8Dash", "Double tap left or right to perform an XLR8-style dash"));
-        tooltips.Add(new TooltipLine(Mod, "XLR8DashVisual", "Dashing briefly shifts you into XLR8 before snapping back"));
+        tooltips.Add(new TooltipLine(Mod, "KineceleranDash", "Double tap left or right to perform an XLR8-style dash"));
+        tooltips.Add(new TooltipLine(Mod, "KineceleranVisual", "Dashing briefly shifts you into XLR8 before snapping back"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
