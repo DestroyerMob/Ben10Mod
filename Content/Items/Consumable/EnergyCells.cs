@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Debuffs;
 using Terraria;
@@ -9,12 +8,13 @@ namespace Ben10Mod.Content.Items.Consumable
 {
     public abstract class EnergyCellBase : ModItem
     {
-        private const float OverChargedTicksPerEnergy = 6f;
+        private const int HealingPotionCooldownTicks = 60 * 60;
 
         protected abstract int RestoreAmount { get; }
         protected abstract int TextureItemId { get; }
         protected abstract int Rarity { get; }
         protected abstract int ItemValue { get; }
+        protected virtual int CooldownDuration => HealingPotionCooldownTicks;
 
         public override string Texture => $"Terraria/Images/Item_{TextureItemId}";
 
@@ -54,12 +54,8 @@ namespace Ben10Mod.Content.Items.Consumable
             if (restoredAmount <= 0f)
                 return false;
 
-            player.AddBuff(ModContent.BuffType<OverCharged>(), GetOverChargedDuration(restoredAmount));
+            player.AddBuff(ModContent.BuffType<OverCharged>(), CooldownDuration);
             return true;
-        }
-
-        private static int GetOverChargedDuration(float restoredAmount) {
-            return Math.Max(60, (int)Math.Ceiling(restoredAmount * OverChargedTicksPerEnergy));
         }
     }
 
