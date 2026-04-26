@@ -48,14 +48,14 @@ public class HeroVanillaArmorPlayer : ModPlayer {
 
     private void ApplyHeroHitEffects(NPC target, int damageDone) {
         if (orichalcumSet && orichalcumPetalCooldown <= 0 && Player.whoAmI == Main.myPlayer) {
-            SpawnOrichalcumPetals(target, Math.Max(1, damageDone / 4));
-            orichalcumPetalCooldown = 24;
+            SpawnOrichalcumPetals(target, Math.Max(1, damageDone / 5));
+            orichalcumPetalCooldown = 30;
         }
 
         if (spectreSet) {
             if (spectreEchoCooldown <= 0) {
-                TriggerSpectreEcho(target, Math.Max(1, damageDone / 3));
-                spectreEchoCooldown = 45;
+                TriggerSpectreEcho(target, Math.Max(1, damageDone / 4));
+                spectreEchoCooldown = 60;
             }
         }
     }
@@ -147,12 +147,12 @@ public class CobaltHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.LightRed;
     protected override int ArmorDefense => 4;
     protected override Color ArmorTint => new(92, 152, 238);
-    protected override string EquipBonusText => "+8% hero damage and +4 hero crit";
-    protected override string SetBonusText => "+15% hero attack speed";
+    protected override string EquipBonusText => "+7% hero damage and +3 hero crit";
+    protected override string SetBonusText => "+10% hero attack speed";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 4f;
+        player.GetDamage<HeroDamage>() += 0.07f;
+        player.GetCritChance<HeroDamage>() += 3f;
     }
 
     protected override bool MatchesBody(Item body) =>
@@ -162,7 +162,7 @@ public class CobaltHeroHelmet : VanillaHeroHelmet {
         MatchesAny(legs.type, ItemID.CobaltLeggings, ItemID.AncientCobaltLeggings);
 
     protected override void ApplySetBonus(Player player, OmnitrixPlayer omp, HeroVanillaArmorPlayer hvap) {
-        player.GetAttackSpeed<HeroDamage>() += 0.15f;
+        player.GetAttackSpeed<HeroDamage>() += 0.10f;
     }
 
     public override void AddRecipes() {
@@ -179,12 +179,12 @@ public class PalladiumHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.LightRed;
     protected override int ArmorDefense => 5;
     protected override Color ArmorTint => new(232, 170, 110);
-    protected override string EquipBonusText => "+8% hero damage and +6 hero crit";
+    protected override string EquipBonusText => "+7% hero damage and +4 hero crit";
     protected override string SetBonusText => "Greatly increases life regeneration after striking an enemy";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.07f;
+        player.GetCritChance<HeroDamage>() += 4f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.PalladiumBreastplate;
@@ -208,19 +208,19 @@ public class MythrilHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.LightRed;
     protected override int ArmorDefense => 7;
     protected override Color ArmorTint => new(86, 212, 220);
-    protected override string EquipBonusText => "+10% hero damage and +6 hero crit";
-    protected override string SetBonusText => "+10 hero crit";
+    protected override string EquipBonusText => "+8% hero damage and +5 hero crit";
+    protected override string SetBonusText => "+8 hero crit";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.10f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetCritChance<HeroDamage>() += 5f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.MythrilChainmail;
     protected override bool MatchesLegs(Item legs) => legs.type == ItemID.MythrilGreaves;
 
     protected override void ApplySetBonus(Player player, OmnitrixPlayer omp, HeroVanillaArmorPlayer hvap) {
-        player.GetCritChance<HeroDamage>() += 10f;
+        player.GetCritChance<HeroDamage>() += 8f;
     }
 
     public override void AddRecipes() {
@@ -237,12 +237,12 @@ public class OrichalcumHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.LightRed;
     protected override int ArmorDefense => 7;
     protected override Color ArmorTint => new(241, 122, 182);
-    protected override string EquipBonusText => "+8% hero damage and +10 hero crit";
+    protected override string EquipBonusText => "+7% hero damage and +8 hero crit";
     protected override string SetBonusText => "Flower petals will fall on your target for extra damage";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.08f;
-        player.GetCritChance<HeroDamage>() += 10f;
+        player.GetDamage<HeroDamage>() += 0.07f;
+        player.GetCritChance<HeroDamage>() += 8f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.OrichalcumBreastplate;
@@ -266,20 +266,20 @@ public class AdamantiteHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 10;
     protected override Color ArmorTint => new(228, 101, 92);
-    protected override string EquipBonusText => "+12% hero damage and +5 hero crit";
-    protected override string SetBonusText => "+20% hero attack speed and movement speed";
+    protected override string EquipBonusText => "+10% hero damage and +4 hero crit";
+    protected override string SetBonusText => "+12% hero attack speed and +10% movement speed";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 5f;
+        player.GetDamage<HeroDamage>() += 0.10f;
+        player.GetCritChance<HeroDamage>() += 4f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.AdamantiteBreastplate;
     protected override bool MatchesLegs(Item legs) => legs.type == ItemID.AdamantiteLeggings;
 
     protected override void ApplySetBonus(Player player, OmnitrixPlayer omp, HeroVanillaArmorPlayer hvap) {
-        player.GetAttackSpeed<HeroDamage>() += 0.20f;
-        player.moveSpeed += 0.20f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
+        player.moveSpeed += 0.10f;
     }
 
     public override void AddRecipes() {
@@ -296,12 +296,12 @@ public class TitaniumHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 10;
     protected override Color ArmorTint => new(181, 197, 221);
-    protected override string EquipBonusText => "+10% hero damage and +6 hero crit";
+    protected override string EquipBonusText => "+9% hero damage and +5 hero crit";
     protected override string SetBonusText => "Attacking generates a defensive barrier of titanium shards";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.10f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.09f;
+        player.GetCritChance<HeroDamage>() += 5f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.TitaniumBreastplate;
@@ -325,12 +325,12 @@ public class HallowedHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Pink;
     protected override int ArmorDefense => 13;
     protected override Color ArmorTint => new(251, 240, 172);
-    protected override string EquipBonusText => "+12% hero damage and +8 hero crit";
+    protected override string EquipBonusText => "+10% hero damage and +6 hero crit";
     protected override string SetBonusText => "Become immune after striking an enemy";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 8f;
+        player.GetDamage<HeroDamage>() += 0.10f;
+        player.GetCritChance<HeroDamage>() += 6f;
     }
 
     protected override bool MatchesBody(Item body) =>
@@ -357,13 +357,13 @@ public class ChlorophyteHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Lime;
     protected override int ArmorDefense => 15;
     protected override Color ArmorTint => new(116, 205, 102);
-    protected override string EquipBonusText => "+12% hero damage and +8 hero armor penetration";
+    protected override string EquipBonusText => "+10% hero damage and +6 hero armor penetration";
     protected override string SetBonusText =>
-        "Summons a powerful leaf crystal to shoot at nearby enemies\nReduces damage taken by 5%";
+        "Summons a powerful leaf crystal to shoot at nearby enemies\nReduces damage taken by 4%";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetArmorPenetration<HeroDamage>() += 8;
+        player.GetDamage<HeroDamage>() += 0.10f;
+        player.GetArmorPenetration<HeroDamage>() += 6;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.ChlorophytePlateMail;
@@ -371,7 +371,7 @@ public class ChlorophyteHeroHelmet : VanillaHeroHelmet {
 
     protected override void ApplySetBonus(Player player, OmnitrixPlayer omp, HeroVanillaArmorPlayer hvap) {
         player.AddBuff(BuffID.LeafCrystal, 2);
-        player.endurance += 0.05f;
+        player.endurance += 0.04f;
     }
 
     public override void AddRecipes() {
@@ -388,13 +388,13 @@ public class ShroomiteHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 15;
     protected override Color ArmorTint => new(108, 122, 229);
-    protected override string EquipBonusText => "+12% hero damage and +10 hero crit";
+    protected override string EquipBonusText => "+11% hero damage and +8 hero crit";
     protected override string SetBonusText =>
         "Not moving puts you in stealth,\nincreasing hero damage and reducing chance for enemies to target you";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetCritChance<HeroDamage>() += 10f;
+        player.GetDamage<HeroDamage>() += 0.11f;
+        player.GetCritChance<HeroDamage>() += 8f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.ShroomiteBreastplate;
@@ -407,8 +407,8 @@ public class ShroomiteHeroHelmet : VanillaHeroHelmet {
         if (!stationary)
             return;
 
-        player.GetDamage<HeroDamage>() += 0.15f;
-        player.GetCritChance<HeroDamage>() += 5f;
+        player.GetDamage<HeroDamage>() += 0.12f;
+        player.GetCritChance<HeroDamage>() += 4f;
     }
 
     public override void AddRecipes() {
@@ -425,13 +425,13 @@ public class SpectreHeroHelmet : VanillaHeroHelmet {
     protected override int ArmorRarity => ItemRarityID.Yellow;
     protected override int ArmorDefense => 11;
     protected override Color ArmorTint => new(150, 236, 255);
-    protected override string EquipBonusText => "+10% hero damage and +6 hero crit";
+    protected override string EquipBonusText => "+8% hero damage and +5 hero crit";
     protected override string SetBonusText =>
         "Hero damage done will hurt extra nearby enemies";
 
     public override void UpdateEquip(Player player) {
-        player.GetDamage<HeroDamage>() += 0.10f;
-        player.GetCritChance<HeroDamage>() += 6f;
+        player.GetDamage<HeroDamage>() += 0.08f;
+        player.GetCritChance<HeroDamage>() += 5f;
     }
 
     protected override bool MatchesBody(Item body) => body.type == ItemID.SpectreRobe;

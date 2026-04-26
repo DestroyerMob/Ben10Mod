@@ -91,6 +91,16 @@ namespace Ben10Mod.Content.Items.Accessories
             return !IsBlacklisted() && base.CanEquipAccessory(player, slot, modded);
         }
 
+        private bool ShouldApplyAsActiveOmnitrix(OmnitrixPlayer omp) {
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+            if (omnitrixSlot?.FunctionalItem?.ModItem is Omnitrix slotOmnitrix &&
+                !ReferenceEquals(slotOmnitrix, this) &&
+                !slotOmnitrix.IsBlacklisted())
+                return false;
+
+            return omp.equippedOmnitrix == null || ReferenceEquals(omp.equippedOmnitrix, this);
+        }
+
         public override bool AllowPrefix(int pre) {
             return pre <= 0 ||
                    PrefixLoader.GetPrefix(pre) is OmnitrixPrefix prefix && prefix.CanRoll(Item);
@@ -126,8 +136,12 @@ namespace Ben10Mod.Content.Items.Accessories
             if (omp.osmosianEquipped)
                 return;
 
+            if (!ShouldApplyAsActiveOmnitrix(omp))
+                return;
+
             omp.omnitrixEquipped  = true;
             omp.equippedOmnitrix  = this;
+            omp.equippedOmnitrixItem = Item;
 
             omp.omnitrixEnergyMax += GetEffectiveOmnitrixEnergyMax(omp);
 

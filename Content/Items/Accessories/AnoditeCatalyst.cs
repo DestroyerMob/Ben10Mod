@@ -29,6 +29,7 @@ public class AnoditeCatalyst : ModItem, IHeroAlterationAccessory {
 
     public override void UpdateAccessory(Player player, bool hideVisual) {
         _wasEquippedLastFrame = true;
+        player.GetModPlayer<OmnitrixPlayer>().anoditeCatalystEquipped = true;
 
         if (player.whoAmI != Main.myPlayer || !KeybindSystem.TransformationKeybind.JustPressed)
             return;

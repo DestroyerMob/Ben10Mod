@@ -131,7 +131,9 @@ namespace Ben10Mod {
 			ExecuteEchoEchoShift,
 			ExecuteUltimateEchoEchoRelay,
 			RequestGhostFreakPossession,
-			SyncGhostFreakPossessionState
+			SyncGhostFreakPossessionState,
+			RequestCompletedOmnitrixRevival,
+			SyncCompletedOmnitrixRevival
 		}
 
 		public override void HandlePacket(BinaryReader reader, int whoAmI) {
@@ -193,8 +195,13 @@ namespace Ben10Mod {
 					if (transformation == null)
 						return;
 
-					player.GetModPlayer<OmnitrixPlayer>()
-						.UnlockTransformation(transformation.FullID, sync: true, showEffects: false);
+					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+					if (!omp.CanAcceptClientUnlockRequest(transformation)) {
+						omp.SyncTransformationState(toWho: whoAmI);
+						return;
+					}
+
+					omp.UnlockTransformation(transformation.FullID, sync: true, showEffects: false);
 					break;
 				}
 				case MessageType.RequestRemoveTransformation: {
@@ -264,17 +271,19 @@ namespace Ben10Mod {
 						return;
 
 					int      slotCount = reader.ReadByte();
-					string[] slots     = new string[slotCount];
-					for (int i = 0; i < slotCount; i++)
-						slots[i] = reader.ReadString();
+					string[] slots     = new string[Math.Min(slotCount, OmnitrixPlayer.TransformationSlotCount)];
+					for (int i = 0; i < slotCount; i++) {
+						string slot = reader.ReadString();
+						if (i < slots.Length)
+							slots[i] = slot;
+					}
 
-					int      unlockedCount = reader.ReadUInt16();
-					string[] unlocked      = new string[unlockedCount];
+					int unlockedCount = reader.ReadUInt16();
 					for (int i = 0; i < unlockedCount; i++)
-						unlocked[i] = reader.ReadString();
+						reader.ReadString();
 
 					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-					omp.ApplyTransformationStateSync(slots, unlocked);
+					omp.ApplyClientTransformationSlotSync(slots);
 					omp.SyncTransformationState(toWho: whoAmI);
 					break;
 				}
@@ -563,6 +572,48 @@ namespace Ben10Mod {
 
 					player.GetModPlayer<OmnitrixPlayer>()
 						.ApplyPossessionStateSync(active, targetIndex, returnPosition, timer);
+					break;
+				}
+				case MessageType.RequestCompletedOmnitrixRevival: {
+					if (Main.netMode != NetmodeID.Server)
+						return;
+
+					if (whoAmI < 0 || whoAmI >= Main.maxPlayers)
+						return;
+
+					string requestedTransformationId = reader.ReadString();
+					Player player = Main.player[whoAmI];
+					if (!player.active)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>()
+						.HandleCompletedOmnitrixRevivalRequest(requestedTransformationId);
+					break;
+				}
+				case MessageType.SyncCompletedOmnitrixRevival: {
+					if (Main.netMode != NetmodeID.MultiplayerClient)
+						return;
+
+					int    playerIndex      = reader.ReadByte();
+					string transformationId = reader.ReadString();
+					int    durationSeconds  = reader.ReadInt32();
+					int    cooldownTicks    = reader.ReadInt32();
+					int    statLife         = reader.ReadInt32();
+					float  omnitrixEnergy   = reader.ReadSingle();
+
+					if (playerIndex < 0 || playerIndex >= Main.maxPlayers)
+						return;
+
+					Player player = Main.player[playerIndex];
+					if (!player.active)
+						return;
+
+					player.GetModPlayer<OmnitrixPlayer>().ApplyCompletedOmnitrixRevivalSync(
+						transformationId,
+						durationSeconds,
+						cooldownTicks,
+						statLife,
+						omnitrixEnergy);
 					break;
 				}
 			}

@@ -17,6 +17,7 @@ using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Accessories;
+using Ben10Mod.Content.Items.Consumable;
 using Terraria.Audio;
 using Ben10Mod.Content.Items.Accessories.Wings;
 using Ben10Mod.Content.Items.Weapons;
@@ -65,6 +66,7 @@ namespace Ben10Mod {
         public bool wasTransformed = false;
         public bool onCooldown = false;
         public bool osmosianEquipped = false;
+        public bool anoditeCatalystEquipped = false;
         public float absorptionDurationMultiplier = 1f;
         public float absorptionStrengthMultiplier = 1f;
         public float absorptionCostMultiplier = 1f;
@@ -159,6 +161,7 @@ namespace Ben10Mod {
         public int pendingEvolutionStepDownTime = 0;
         public string pendingEvolutionStepDownTransformationId = "";
         public Omnitrix equippedOmnitrix = null;
+        public Item equippedOmnitrixItem = null;
 
         public bool inPossessionMode = false;
         public Vector2 prePossessionPosition = Vector2.Zero;
@@ -280,14 +283,10 @@ namespace Ben10Mod {
         public float OmniCoreReactorChargeThresholdValue => OmniCoreReactorChargeThreshold;
 
         public Item GetActiveOmnitrixItem() {
-            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
-            if (omnitrixSlot?.FunctionalItem?.ModItem is Omnitrix)
-                return omnitrixSlot.FunctionalItem;
-
-            for (int i = 0; i < Player.armor.Length; i++) {
-                if (Player.armor[i]?.ModItem is Omnitrix)
-                    return Player.armor[i];
-            }
+            if (equippedOmnitrixItem != null &&
+                !equippedOmnitrixItem.IsAir &&
+                equippedOmnitrixItem.ModItem is Omnitrix)
+                return equippedOmnitrixItem;
 
             return null;
         }
@@ -310,9 +309,9 @@ namespace Ben10Mod {
             activeOmnitrixItem.SetDefaults(resultType);
         }
 
-	        public bool CanRestoreOmnitrixEnergy(float amount = 1f) {
-	            return amount > 0f && omnitrixEnergyMax > 0f && omnitrixEnergy < omnitrixEnergyMax;
-	        }
+        public bool CanRestoreOmnitrixEnergy(float amount = 1f) {
+            return amount > 0f && omnitrixEnergyMax > 0f && omnitrixEnergy < omnitrixEnergyMax;
+        }
 
         public float RestoreOmnitrixEnergy(float amount) {
             if (!CanRestoreOmnitrixEnergy(amount))
@@ -324,24 +323,11 @@ namespace Ben10Mod {
         }
 
         public bool HasEquippedOsmosianHarness() {
-            for (int i = 0; i < Player.armor.Length; i++) {
-                if (Player.armor[i]?.ModItem is OsmosianHarness)
-                    return true;
-            }
-
-            return false;
+            return osmosianEquipped;
         }
 
         public bool HasAnyEquippedOmnitrix() {
-            if (GetActiveOmnitrix() != null)
-                return true;
-
-            for (int i = 0; i < Player.armor.Length; i++) {
-                if (Player.armor[i]?.ModItem is Omnitrix)
-                    return true;
-            }
-
-            return false;
+            return omnitrixEquipped && GetActiveOmnitrix() != null;
         }
 
         public bool HasTransformationFailsafeEquipped() {
@@ -349,32 +335,11 @@ namespace Ben10Mod {
                 return true;
 
             Omnitrix activeOmnitrix = GetActiveOmnitrix();
-            if (activeOmnitrix?.BuiltInTransformationFailsafe == true)
-                return true;
-
-            for (int i = 0; i < Player.armor.Length; i++) {
-                ModItem modItem = Player.armor[i]?.ModItem;
-                if (modItem is ReversionFailsafe)
-                    return true;
-
-                if (modItem is Omnitrix omnitrix && omnitrix.BuiltInTransformationFailsafe)
-                    return true;
-            }
-
-            return false;
+            return activeOmnitrix?.BuiltInTransformationFailsafe == true;
         }
 
         public bool HasEquippedAnoditeCatalyst() {
-            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
-            if (omnitrixSlot?.FunctionalItem?.ModItem is AnoditeCatalyst)
-                return true;
-
-            for (int i = 0; i < Player.armor.Length; i++) {
-                if (Player.armor[i]?.ModItem is AnoditeCatalyst)
-                    return true;
-            }
-
-            return false;
+            return anoditeCatalystEquipped;
         }
 
         public override void Initialize() {
@@ -713,6 +678,7 @@ namespace Ben10Mod {
             isTransformed = false;
             onCooldown = false;
             osmosianEquipped = false;
+            anoditeCatalystEquipped = false;
             absorptionDurationMultiplier = 1f;
             absorptionStrengthMultiplier = 1f;
             absorptionCostMultiplier = 1f;
@@ -727,6 +693,7 @@ namespace Ben10Mod {
             absorptionFlatDefenseBonus = 0;
             omnitrixEquipped = false;
             equippedOmnitrix = null;
+            equippedOmnitrixItem = null;
 
             omnitrixUpdating = false;
 
@@ -1728,6 +1695,64 @@ namespace Ben10Mod {
 
         public bool IsTransformationUnlocked(Transformation transformation) {
             return transformation != null && unlockedTransformations.Contains(transformation.FullID);
+        }
+
+        internal bool CanAcceptClientUnlockRequest(Transformation transformation) {
+            if (transformation == null)
+                return false;
+
+            if (IsTransformationUnlocked(transformation))
+                return true;
+
+            if (transformation.ParentTransformation != null || transformation.IsAccessoryTransformation(this))
+                return false;
+
+            if (transformation.IsStarterTransformation(this))
+                return true;
+
+            return IsHeldTransformationUnlockItem(transformation);
+        }
+
+        private bool IsHeldTransformationUnlockItem(Transformation transformation) {
+            Item heldItem = Player?.HeldItem;
+            if (heldItem == null || heldItem.IsAir || heldItem.ModItem == null || heldItem.ModItem.Mod != Mod)
+                return false;
+
+            if (heldItem.type == ModContent.ItemType<CelestialsapienDnaSample>())
+                return NPC.downedMoonlord &&
+                       string.Equals(transformation.FullID, "Ben10Mod:AlienX", StringComparison.OrdinalIgnoreCase);
+
+            if (!heldItem.consumable)
+                return false;
+
+            string heldName = NormalizeUnlockItemToken(heldItem.ModItem.Name);
+            return heldName == NormalizeUnlockItemToken(transformation.TransformationName) ||
+                   heldName == NormalizeUnlockItemToken(GetTransformationIdName(transformation.FullID));
+        }
+
+        private static string GetTransformationIdName(string transformationId) {
+            if (string.IsNullOrWhiteSpace(transformationId))
+                return string.Empty;
+
+            int separatorIndex = transformationId.IndexOf(':');
+            return separatorIndex >= 0 && separatorIndex < transformationId.Length - 1
+                ? transformationId[(separatorIndex + 1)..]
+                : transformationId;
+        }
+
+        private static string NormalizeUnlockItemToken(string value) {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            Span<char> buffer = stackalloc char[value.Length];
+            int length = 0;
+            for (int i = 0; i < value.Length; i++) {
+                char c = value[i];
+                if (char.IsLetterOrDigit(c))
+                    buffer[length++] = char.ToUpperInvariant(c);
+            }
+
+            return new string(buffer[..length]);
         }
 
         public IReadOnlyList<string> GetTransformationsForCodexDisplay() {
@@ -2752,7 +2777,9 @@ namespace Ben10Mod {
         }
 
         public override bool CanUseItem(Item item) {
-            if (Player.whoAmI != Main.myPlayer) return false;
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI != Main.myPlayer)
+                return true;
+
             var trans = CurrentTransformation;
             return trans?.CanUseItem(Player, this, item) ?? true;
         }
@@ -2762,13 +2789,17 @@ namespace Ben10Mod {
         }
 
         public override bool CanBeHitByNPC(NPC npc, ref int cooldownSlot) {
-            if (Player.whoAmI != Main.myPlayer) return false;
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI != Main.myPlayer)
+                return true;
+
             var trans = CurrentTransformation;
             return trans?.CanBeHitByNPC(Player, this, npc, ref cooldownSlot) ?? true;
         }
 
         public override bool CanBeHitByProjectile(Projectile proj) {
-            if (Player.whoAmI != Main.myPlayer) return false;
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI != Main.myPlayer)
+                return true;
+
             var trans = CurrentTransformation;
             return trans?.CanBeHitByProjectile(Player, this, proj) ?? true;
         }
@@ -3131,6 +3162,12 @@ namespace Ben10Mod {
                 unlockedTransformations.AddRange(unlocked);
 
             transformationSlots = slots ?? Array.Empty<string>();
+            NormalizeStoredTransformationData();
+        }
+
+        public void ApplyClientTransformationSlotSync(string[] slots) {
+            NormalizeStoredTransformationData();
+            transformationSlots = NormalizeTransformationSlots(slots, unlockedTransformations);
             NormalizeStoredTransformationData();
         }
 
@@ -4697,39 +4734,129 @@ namespace Ben10Mod {
         }
 
         private bool TryTriggerCompletedOmnitrixRevival() {
+            return TryTriggerCompletedOmnitrixRevival(string.Empty, requireLethalState: false);
+        }
+
+        internal void HandleCompletedOmnitrixRevivalRequest(string requestedTransformationId) {
+            if (Main.netMode != NetmodeID.Server)
+                return;
+
+            if (!Player.dead && Player.statLife > 0)
+                return;
+
+            TryTriggerCompletedOmnitrixRevival(requestedTransformationId, requireLethalState: true);
+        }
+
+        private bool TryTriggerCompletedOmnitrixRevival(string requestedTransformationId, bool requireLethalState) {
+            if (requireLethalState && !Player.dead && Player.statLife > 0)
+                return false;
+
             if (!completedOmnitrixEquipped || completedOmnitrixRevivalCooldown > 0)
                 return false;
 
             if (GetActiveOmnitrix() is not CompletedOmnitrix completedOmnitrix)
                 return false;
 
-            string transformationId = ResolveCompletedOmnitrixRevivalTransformation(completedOmnitrix);
+            string transformationId;
+            if (!string.IsNullOrWhiteSpace(requestedTransformationId)) {
+                if (!TryResolveCompletedOmnitrixRevivalTransformation(requestedTransformationId, out transformationId))
+                    return false;
+            }
+            else {
+                transformationId = ResolveCompletedOmnitrixRevivalTransformation(completedOmnitrix);
+            }
+
             if (string.IsNullOrEmpty(transformationId))
                 return false;
 
             bool showEffects = Player.whoAmI == Main.myPlayer;
+            int durationSeconds = completedOmnitrix.GetTransformationDuration(this);
+            int restoredLife = Math.Max(CompletedOmnitrixRevivalMinimumLife,
+                (int)Math.Ceiling(Player.statLifeMax2 * CompletedOmnitrixRevivalLifeRatio));
+            int targetLife = Math.Min(Player.statLifeMax2, Math.Max(Player.statLife, restoredLife));
+            float targetEnergy = omnitrixEnergyMax > 0f
+                ? Math.Min(omnitrixEnergyMax, omnitrixEnergy + CompletedOmnitrixRevivalEnergyRestoreAmount)
+                : omnitrixEnergy + CompletedOmnitrixRevivalEnergyRestoreAmount;
+
+            ApplyCompletedOmnitrixRevivalState(
+                transformationId,
+                durationSeconds,
+                targetLife,
+                targetEnergy,
+                CompletedOmnitrixRevivalCooldownTicks,
+                showEffects);
+
+            if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer)
+                RequestCompletedOmnitrixRevivalSync(transformationId);
+            else if (Main.netMode == NetmodeID.Server)
+                SyncCompletedOmnitrixRevival(transformationId, durationSeconds);
+
+            return true;
+        }
+
+        internal void ApplyCompletedOmnitrixRevivalSync(string transformationId, int durationSeconds, int cooldownTicks,
+            int statLife, float syncedOmnitrixEnergy) {
+            Transformation transformation = TransformationLoader.Resolve(transformationId);
+            if (transformation == null ||
+                transformation.ParentTransformation != null ||
+                transformation.IsAccessoryTransformation(this))
+                return;
+
+            ApplyCompletedOmnitrixRevivalState(
+                transformation.FullID,
+                Math.Max(1, durationSeconds),
+                statLife,
+                syncedOmnitrixEnergy,
+                cooldownTicks,
+                showEffects: Player.whoAmI == Main.myPlayer);
+        }
+
+        private void ApplyCompletedOmnitrixRevivalState(string transformationId, int durationSeconds, int statLife,
+            float syncedOmnitrixEnergy, int cooldownTicks, bool showEffects) {
             if (IsTransformed && !string.Equals(currentTransformationId, transformationId, StringComparison.OrdinalIgnoreCase))
                 TransformationHandler.Detransform(Player, 0, showParticles: false, addCooldown: false, playSound: false);
 
-            TransformationHandler.Transform(Player, transformationId, completedOmnitrix.GetTransformationDuration(this),
+            TransformationHandler.Transform(Player, transformationId, Math.Max(1, durationSeconds),
                 showParticles: showEffects, playSound: showEffects);
 
-            int restoredLife = Math.Max(CompletedOmnitrixRevivalMinimumLife,
-                (int)Math.Ceiling(Player.statLifeMax2 * CompletedOmnitrixRevivalLifeRatio));
-            Player.statLife = Math.Min(Player.statLifeMax2, Math.Max(Player.statLife, restoredLife));
+            Player.statLife = Math.Min(Player.statLifeMax2, Math.Max(1, statLife));
             Player.dead = false;
             Player.immuneNoBlink = true;
             Player.immuneTime = Math.Max(Player.immuneTime, 180);
-            RestoreOmnitrixEnergy(CompletedOmnitrixRevivalEnergyRestoreAmount);
-            completedOmnitrixRevivalCooldown = CompletedOmnitrixRevivalCooldownTicks;
+            omnitrixEnergy = omnitrixEnergyMax > 0f
+                ? Math.Min(omnitrixEnergyMax, Math.Max(0f, syncedOmnitrixEnergy))
+                : Math.Max(0f, syncedOmnitrixEnergy);
+            completedOmnitrixRevivalCooldown = Math.Max(0, cooldownTicks);
 
             if (showEffects)
                 CombatText.NewText(Player.getRect(), new Color(96, 255, 160), "Emergency Transform!", dramatic: true);
+        }
 
-            if (Main.netMode != NetmodeID.SinglePlayer)
-                NetMessage.SendData(MessageID.PlayerLifeMana, -1, -1, null, Player.whoAmI);
+        private void RequestCompletedOmnitrixRevivalSync(string transformationId) {
+            if (Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI != Main.myPlayer)
+                return;
 
-            return true;
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.RequestCompletedOmnitrixRevival);
+            packet.Write(transformationId ?? string.Empty);
+            packet.Send();
+        }
+
+        private void SyncCompletedOmnitrixRevival(string transformationId, int durationSeconds) {
+            if (Main.netMode != NetmodeID.Server)
+                return;
+
+            NetMessage.SendData(MessageID.PlayerLifeMana, -1, -1, null, Player.whoAmI);
+
+            ModPacket packet = Mod.GetPacket();
+            packet.Write((byte)Ben10Mod.MessageType.SyncCompletedOmnitrixRevival);
+            packet.Write((byte)Player.whoAmI);
+            packet.Write(transformationId ?? string.Empty);
+            packet.Write(durationSeconds);
+            packet.Write(completedOmnitrixRevivalCooldown);
+            packet.Write(Player.statLife);
+            packet.Write(omnitrixEnergy);
+            packet.Send();
         }
 
         private string ResolveCompletedOmnitrixRevivalTransformation(Omnitrix activeOmnitrix) {
