@@ -17,7 +17,7 @@ public class PlumberHellfireBadge : PlumbersBadge {
 
     public override string Texture => "Ben10Mod/Content/Items/Weapons/PlumberCadetBadge";
 
-    public override int BaseDamage => 48;
+    public override int BaseDamage => 66;
     public override string BadgeRankName => "Hellfire";
     public override int BadgeRankValue => 4;
 

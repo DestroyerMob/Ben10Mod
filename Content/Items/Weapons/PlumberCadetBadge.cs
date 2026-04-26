@@ -3,7 +3,7 @@ using Terraria.ID;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public class PlumberCadetBadge : PlumbersBadge {
-    public override int    BaseDamage     => 12;
+    public override int    BaseDamage     => 16;
     public override string BadgeRankName  => "Cadet";
     public override int    BadgeRankValue => 1;
 

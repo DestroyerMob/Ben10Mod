@@ -4,7 +4,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Items.Weapons;
 
 public class PlumberFieldProctorBadge : PlumbersBadge {
-    public override int    BaseDamage     => 92;
+    public override int    BaseDamage     => 126;
     public override string BadgeRankName  => "FieldProctor";
     public override int    BadgeRankValue => 7;
 
@@ -12,7 +12,7 @@ public class PlumberFieldProctorBadge : PlumbersBadge {
         CreateRecipe()
             .AddIngredient(ModContent.ItemType<PlumberProctorBadge>())
             .AddIngredient(ItemID.ShroomiteBar, 25)
-            .AddTile(TileID.MythrilAnvil)
+            .AddTile(TileID.Autohammer)
             .Register();
     }
 }
