@@ -7,14 +7,14 @@ namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArms : ModItem {
     public static string TransformationDescription =>
-        "A Tetramand melee bruiser built around gauntlet-range punches, shockwave claps, and slams. Four Arms snowballs through Rage, then cashes it out in Berserker mode.";
+        "A Tetramand melee bruiser built around gauntlet-range punches, shockwave claps, slams, and brutally strong melee weapon swings. Four Arms snowballs through Rage, then cashes it out in Berserker mode.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Main attack: Titan Combo chains fast fists and ends in a wide cleaving third hit.",
         "Alt attack: Shock Clap is a short-range crowd-control shockwave that hits through enemies.",
         "Primary ability: Ground Slam triggers from F or a double tap down, then crashes into the floor with a shockwave.",
         "Secondary ability: Haymaker is a hold-to-charge punch with super armor and heavy single-target damage.",
-        "Passive: Rage builds from dealing or taking punishment and slightly boosts attack speed.",
+        "Passive: Rage builds from dealing or taking punishment, boosts attack speed, and lets Four Arms swing melee weapons much harder.",
         "Ultimate ability: Berserker activates once Rage reaches 90% for faster combos, larger fists, and fissure slams."
     };
 

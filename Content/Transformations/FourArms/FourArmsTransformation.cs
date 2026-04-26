@@ -22,6 +22,17 @@ public class FourArmsTransformation : Transformation {
     private const float FinisherDamageMultiplier = 1.28f;
     private const float SecondaryDamageMultiplier = 1.16f;
     private const float HaymakerDamageMultiplier = 1.7f;
+    private const float BaseMeleeDamageBonus = 0.18f;
+    private const float BaseMeleeAttackSpeedBonus = 0.1f;
+    private const float RageMeleeAttackSpeedBonus = 0.08f;
+    private const float BaseMeleeKnockbackBonus = 1.1f;
+    private const int BaseMeleeArmorPenBonus = 10;
+    private const int BaseMeleeCritBonus = 8;
+    private const float BerserkMeleeDamageBonus = 0.14f;
+    private const float BerserkMeleeAttackSpeedBonus = 0.16f;
+    private const float BerserkMeleeKnockbackBonus = 0.55f;
+    private const int BerserkMeleeArmorPenBonus = 6;
+    private const int BerserkMeleeCritBonus = 6;
 
     public override string FullID => "Ben10Mod:FourArms";
     public override string TransformationName => "Fourarms";
@@ -29,14 +40,14 @@ public class FourArmsTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<FourArms_Buff>();
 
     public override string Description =>
-        "A Tetramand brawler built around fists, slams, and crowd-control shockwaves. Four Arms wins by staying in melee, building Rage, and cashing that meter out in Berserker mode.";
+        "A Tetramand bruiser built around fists, slams, and crowd-control shockwaves. Four Arms also puts real weight behind melee weapons, building Rage in close quarters before cashing it out in Berserker mode.";
 
     public override List<string> Abilities => new() {
         "Titan Combo chains fast punches, then widens into a cleaving third hit.",
         "Shock Clap sends a short-range shockwave through crowds.",
         "Ground Slam triggers from the ability hotkey or a double tap down input.",
         "Haymaker is a charged super-armored punch for big single-target damage.",
-        "Passive Rage builds from dealing or taking close-range punishment and feeds attack speed.",
+        "Passive Rage builds from dealing or taking close-range punishment, feeds attack speed, and boosts melee weapon pressure.",
         "Ultimate Berserker mode activates once Rage reaches 90%, then cashes it out for faster, larger combos and fissure slams."
     };
 
@@ -102,6 +113,14 @@ public class FourArmsTransformation : Transformation {
         player.jumpSpeedBoost += 1.2f;
         player.runAcceleration *= 0.74f;
         player.maxRunSpeed *= 0.92f;
+        player.pickSpeed *= 0.88f;
+        player.tileSpeed *= 0.9f;
+        player.wallSpeed *= 0.9f;
+        player.GetDamage(DamageClass.Melee) += BaseMeleeDamageBonus;
+        player.GetAttackSpeed(DamageClass.Melee) += BaseMeleeAttackSpeedBonus + rageRatio * RageMeleeAttackSpeedBonus;
+        player.GetKnockback(DamageClass.Melee) += BaseMeleeKnockbackBonus;
+        player.GetArmorPenetration(DamageClass.Melee) += BaseMeleeArmorPenBonus;
+        player.GetCritChance(DamageClass.Melee) += BaseMeleeCritBonus;
 
         if (state.HaymakerCharging) {
             player.endurance += 0.12f;
@@ -120,6 +139,11 @@ public class FourArmsTransformation : Transformation {
         player.statDefense += 6;
         player.endurance += 0.06f;
         player.armorEffectDrawShadow = true;
+        player.GetDamage(DamageClass.Melee) += BerserkMeleeDamageBonus;
+        player.GetAttackSpeed(DamageClass.Melee) += BerserkMeleeAttackSpeedBonus;
+        player.GetKnockback(DamageClass.Melee) += BerserkMeleeKnockbackBonus;
+        player.GetArmorPenetration(DamageClass.Melee) += BerserkMeleeArmorPenBonus;
+        player.GetCritChance(DamageClass.Melee) += BerserkMeleeCritBonus;
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
