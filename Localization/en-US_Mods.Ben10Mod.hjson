@@ -690,6 +690,21 @@ Items: {
 		DisplayName: Completed Omnitrix
 		Tooltip: ""
 	}
+
+	Swampfire: {
+		Tooltip: ""
+		DisplayName: Swampfire
+	}
+
+	XLR8DashAccessory: {
+		Tooltip: ""
+		DisplayName: X L R8 Dash Accessory
+	}
+
+	Kineceleran: {
+		DisplayName: Kineceleran
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
