@@ -28,7 +28,8 @@ namespace Ben10Mod.Content.Interface
             Main.hoverItemName = context switch { 
                 AccessorySlotType.FunctionalSlot => "DNA Alteration",
                 AccessorySlotType.VanitySlot => "Vanity DNA Alteration",
-                AccessorySlotType.DyeSlot => "Dye"
+                AccessorySlotType.DyeSlot => "Dye",
+                _ => "DNA Alteration"
             };
             
             base.OnMouseHover(context);

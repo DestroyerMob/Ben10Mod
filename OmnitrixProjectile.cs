@@ -332,7 +332,7 @@ public class OmnitrixProjectile : GlobalProjectile {
         if (!string.IsNullOrEmpty(projectile.ModProjectile?.Texture))
             return projectile.ModProjectile.Texture;
 
-        if (projectile.type >= 0)
+        if (projectile.type >= ProjectileID.None)
             return $"Terraria/Images/Projectile_{projectile.type}";
 
         return string.Empty;

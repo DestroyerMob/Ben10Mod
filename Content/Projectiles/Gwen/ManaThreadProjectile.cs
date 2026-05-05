@@ -8,7 +8,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class ManaThreadProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
         Projectile.width = 16;
@@ -26,10 +26,12 @@ public class ManaThreadProjectile : ModProjectile {
         Projectile.rotation += 0.35f;
         Lighting.AddLight(Projectile.Center, new Vector3(1.2f, 0.4f, 0.85f));
 
-        for (int i = 0; i < 2; i++) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
-                -Projectile.velocity * Main.rand.NextFloat(0.1f, 0.22f), 70, new Color(255, 120, 200), 1.45f);
-            dust.noGravity = true;
+        if (!Main.dedServ) {
+            for (int i = 0; i < 2; i++) {
+                Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
+                    -Projectile.velocity * Main.rand.NextFloat(0.1f, 0.22f), 70, new Color(255, 120, 200), 1.45f);
+                dust.noGravity = true;
+            }
         }
 
         NPC target = FindClosestNPC(360f);

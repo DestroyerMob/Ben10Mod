@@ -8,7 +8,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class AnoditeOrbProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
         Projectile.width = 38;
@@ -35,6 +35,8 @@ public class AnoditeOrbProjectile : ModProjectile {
         }
 
         Lighting.AddLight(Projectile.Center, new Vector3(1.2f, 0.45f, 0.9f) * 0.9f);
+        if (Main.dedServ)
+            return;
 
         for (int i = 0; i < 2; i++) {
             Vector2 offset = Main.rand.NextVector2CircularEdge(18f, 18f);
@@ -68,6 +70,9 @@ public class AnoditeOrbProjectile : ModProjectile {
     }
 
     private void EmitBurst(int count) {
+        if (Main.dedServ)
+            return;
+
         for (int i = 0; i < count; i++) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, i % 2 == 0 ? DustID.PinkTorch : DustID.GemRuby,
                 Main.rand.NextVector2Circular(3f, 3f), 100, new Color(255, 140, 220), Main.rand.NextFloat(1f, 1.4f));

@@ -14,7 +14,7 @@ namespace Ben10Mod.Content.Items.Accessories {
         public override bool UseEnergyForTransformation => true;
         public override int OmnitrixEnergyRegen => 6;
         public override int OmnitrixEnergyDrain => 4;
-        public override int TranformationSwapCost => 35;
+        public override int TransformationSwapCost => 35;
         public override string HandsOnTextureKey => "RecalibratedOmnitrix";
         public override string CooldownHandsOnTextureKey => "RecalibratedOmnitrixAlt";
 

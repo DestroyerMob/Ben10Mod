@@ -26,7 +26,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual int  MinimumEnergyGainPerHit    => 1;
         public virtual bool UseEnergyForTransformation => false;
         public virtual bool BuiltInTransformationFailsafe => false;
-        public virtual int  TranformationSwapCost      => 50;
+        public virtual int  TransformationSwapCost     => 50;
         public virtual int  TimeoutDuration            => 120;
         public virtual int  TransformationDuration     => 300;
         public virtual bool EvolutionFeature           => false;
@@ -42,7 +42,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public int         transformationNum   = 0;
         public string[]    transformationSlots = new string[5];
 
-        public bool wasEquipedLastFrame = false;
+        public bool wasEquippedLastFrame = false;
         public bool showingUI           = false;
 
         public Player player = null;
@@ -155,7 +155,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 return;
 
             this.player = player;
-            wasEquipedLastFrame = true;
+            wasEquippedLastFrame = true;
 
             HandleAlienSelection(omp);
             HandleTransformationKey(omp);
@@ -179,9 +179,9 @@ namespace Ben10Mod.Content.Items.Accessories
             EnsureValidOmnitrixPrefix();
             var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-            if (wasEquipedLastFrame)
+            if (wasEquippedLastFrame)
             {
-                wasEquipedLastFrame = false;
+                wasEquippedLastFrame = false;
                 ModContent.GetInstance<UISystem>().HideMyUI();
 
                 if (player.GetModPlayer<OmnitrixPlayer>().isTransformed)
@@ -575,7 +575,7 @@ namespace Ben10Mod.Content.Items.Accessories
 
         private int GetEffectiveTransformationSwapCost(OmnitrixPlayer omp) {
             int prefixBonus = GetActiveOmnitrixPrefix()?.TransformationSwapCostBonus ?? 0;
-            return Math.Max(0, TranformationSwapCost + prefixBonus);
+            return Math.Max(0, TransformationSwapCost + prefixBonus);
         }
 
         private void EnsureValidOmnitrixPrefix() {

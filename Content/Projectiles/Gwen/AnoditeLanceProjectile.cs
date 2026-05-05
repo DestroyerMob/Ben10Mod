@@ -8,7 +8,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class AnoditeLanceProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
         Projectile.width = 24;
@@ -27,6 +27,9 @@ public class AnoditeLanceProjectile : ModProjectile {
     public override void AI() {
         Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
         Lighting.AddLight(Projectile.Center, new Vector3(1.25f, 0.45f, 0.9f) * 0.95f);
+
+        if (Main.dedServ)
+            return;
 
         for (int i = 0; i < 6; i++) {
             Vector2 spiralOffset = Projectile.velocity.SafeNormalize(Vector2.UnitY)
@@ -47,6 +50,9 @@ public class AnoditeLanceProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(BuffID.Confused, 45);
+        if (Main.dedServ)
+            return;
+
         for (int i = 0; i < 10; i++) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.GemRuby,
                 Main.rand.NextVector2Circular(2.8f, 2.8f), 100, new Color(255, 110, 190), 1.35f);
@@ -55,6 +61,9 @@ public class AnoditeLanceProjectile : ModProjectile {
     }
 
     public override void OnKill(int timeLeft) {
+        if (Main.dedServ)
+            return;
+
         for (int i = 0; i < 10; i++) {
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.GemRuby,
                 Main.rand.NextVector2Circular(2.8f, 2.8f), 100, new Color(255, 110, 190), 1.35f);

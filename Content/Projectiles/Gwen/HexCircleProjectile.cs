@@ -9,7 +9,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class HexCircleProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
         Projectile.width = 96;
@@ -32,6 +32,8 @@ public class HexCircleProjectile : ModProjectile {
         float pulse = 0.92f + (float)System.Math.Sin(Main.GlobalTimeWrappedHourly * 2.5f) * 0.03f;
         Projectile.scale = pulse;
         Lighting.AddLight(Projectile.Center, new Vector3(1f, 0.25f, 0.6f) * 0.65f);
+        if (Main.dedServ)
+            return;
 
         for (int i = 0; i < 2; i++) {
             Vector2 offset = Main.rand.NextVector2CircularEdge(38f, 38f) * Projectile.scale;

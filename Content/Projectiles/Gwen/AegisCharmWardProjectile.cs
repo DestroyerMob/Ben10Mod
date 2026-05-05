@@ -8,7 +8,7 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class AegisCharmWardProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     public override void SetDefaults() {
         Projectile.width = 24;
@@ -35,10 +35,12 @@ public class AegisCharmWardProjectile : ModProjectile {
             Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
             Lighting.AddLight(Projectile.Center, new Vector3(1.2f, 0.48f, 0.95f) * 0.8f);
 
-            for (int i = 0; i < 2; i++) {
-                Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
-                    -Projectile.velocity * Main.rand.NextFloat(0.08f, 0.15f), 90, new Color(255, 170, 230), 1.05f);
-                dust.noGravity = true;
+            if (!Main.dedServ) {
+                for (int i = 0; i < 2; i++) {
+                    Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
+                        -Projectile.velocity * Main.rand.NextFloat(0.08f, 0.15f), 90, new Color(255, 170, 230), 1.05f);
+                    dust.noGravity = true;
+                }
             }
 
             return;
@@ -69,10 +71,12 @@ public class AegisCharmWardProjectile : ModProjectile {
         Projectile.rotation += 0.2f;
 
         Lighting.AddLight(Projectile.Center, new Vector3(1.15f, 0.45f, 0.9f) * 0.7f);
-        for (int i = 0; i < 2; i++) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
-                Main.rand.NextVector2Circular(1.4f, 1.4f), 100, new Color(255, 155, 225), 1.1f);
-            dust.noGravity = true;
+        if (!Main.dedServ) {
+            for (int i = 0; i < 2; i++) {
+                Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.PinkTorch,
+                    Main.rand.NextVector2Circular(1.4f, 1.4f), 100, new Color(255, 155, 225), 1.1f);
+                dust.noGravity = true;
+            }
         }
 
         Projectile.ai[1]++;
@@ -118,6 +122,9 @@ public class AegisCharmWardProjectile : ModProjectile {
     }
 
     private void SpawnShootFlash() {
+        if (Main.dedServ)
+            return;
+
         const int dustCount = 16;
         for (int i = 0; i < dustCount; i++) {
             float angle = MathHelper.TwoPi * i / dustCount;

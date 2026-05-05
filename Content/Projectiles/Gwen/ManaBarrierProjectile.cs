@@ -8,7 +8,7 @@ using System.IO;
 namespace Ben10Mod.Content.Projectiles.Gwen;
 
 public class ManaBarrierProjectile : ModProjectile {
-    public override string Texture => "Terraria/Images/Projectile_0";
+    public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
     private Vector2 _syncedAimDirection = Vector2.UnitX;
     private bool _hasSyncedAimDirection;
@@ -79,6 +79,9 @@ public class ManaBarrierProjectile : ModProjectile {
     }
 
     private void SpawnBarrierDust() {
+        if (Main.dedServ)
+            return;
+
         float start = Projectile.rotation - 0.85f;
         float step = 1.7f / 11f;
         float radius = 46f;
@@ -122,10 +125,12 @@ public class ManaBarrierProjectile : ModProjectile {
             if (!other.Hitbox.Intersects(barrierHitbox))
                 continue;
 
-            for (int d = 0; d < 8; d++) {
-                Dust dust = Dust.NewDustPerfect(other.Center, d % 2 == 0 ? DustID.PinkTorch : DustID.GemRuby,
-                    Main.rand.NextVector2Circular(2.2f, 2.2f), 100, new Color(255, 210, 245), 1.1f);
-                dust.noGravity = true;
+            if (!Main.dedServ) {
+                for (int d = 0; d < 8; d++) {
+                    Dust dust = Dust.NewDustPerfect(other.Center, d % 2 == 0 ? DustID.PinkTorch : DustID.GemRuby,
+                        Main.rand.NextVector2Circular(2.2f, 2.2f), 100, new Color(255, 210, 245), 1.1f);
+                    dust.noGravity = true;
+                }
             }
 
             other.Kill();
