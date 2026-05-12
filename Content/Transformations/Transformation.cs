@@ -449,6 +449,63 @@ namespace Ben10Mod.Content.Transformations {
             return ShootAttackProfile(player, source, profile, position, velocity, damage, knockback);
         }
 
+        public virtual bool TryShootAvatar(Projectile avatar, Player owner, OmnitrixPlayer omp, NPC target,
+            int damage, float knockback, out int cooldownTicks) {
+            cooldownTicks = 36;
+
+            TransformationAttackProfile profile = GetAvatarAttackProfile(avatar, owner, omp, target);
+            if (profile == null || target == null || !target.active)
+                return false;
+
+            Vector2 direction = avatar.Center.DirectionTo(target.Center);
+            if (direction == Vector2.Zero)
+                direction = new Vector2(owner.direction == 0 ? 1f : owner.direction, 0f);
+
+            Vector2 spawnPosition = avatar.Center + direction * Math.Max(avatar.width * 0.35f, 12f);
+            int finalDamage = Math.Max(1, (int)Math.Round(damage * profile.DamageMultiplier));
+            int projectileIndex = Projectile.NewProjectile(avatar.GetSource_FromThis(), spawnPosition,
+                direction * profile.ShootSpeed, profile.ProjectileType, finalDamage, knockback, owner.whoAmI);
+
+            if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
+                Projectile shot = Main.projectile[projectileIndex];
+                shot.DamageType = avatar.DamageType;
+                shot.originalDamage = finalDamage;
+                shot.netUpdate = true;
+            }
+
+            avatar.localAI[1]++;
+            cooldownTicks = GetAvatarAttackCooldown(profile);
+            return true;
+        }
+
+        protected virtual TransformationAttackProfile GetAvatarAttackProfile(Projectile avatar, Player owner,
+            OmnitrixPlayer omp, NPC target) {
+            TransformationAttackProfile primary = GetRawAttackProfile(OmnitrixPlayer.AttackSelection.Primary, omp);
+            TransformationAttackProfile secondary = GetRawAttackProfile(OmnitrixPlayer.AttackSelection.Secondary, omp);
+            bool canUseSecondary = CanUseAvatarAttackProfile(secondary) &&
+                                   secondary.UseStyle == ItemUseStyleID.Shoot;
+
+            if ((int)avatar.localAI[1] % 4 == 3 && canUseSecondary)
+                return secondary;
+
+            if (CanUseAvatarAttackProfile(primary))
+                return primary;
+
+            return canUseSecondary ? secondary : null;
+        }
+
+        protected virtual bool CanUseAvatarAttackProfile(TransformationAttackProfile profile) {
+            return profile != null &&
+                   profile.ProjectileType > 0 &&
+                   profile.ShootSpeed > 0f &&
+                   !profile.Channel;
+        }
+
+        protected virtual int GetAvatarAttackCooldown(TransformationAttackProfile profile) {
+            int useTime = profile?.UseTime > 0 ? profile.UseTime : 30;
+            return Math.Clamp(useTime + 14, 24, 96);
+        }
+
         public virtual bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
             TransformationAttackProfile profile = GetSelectedAttackProfile(omp);
             return profile == null || profile.ProjectileType <= 0 || omp.CanUseLungeAttack(profile.ProjectileType);

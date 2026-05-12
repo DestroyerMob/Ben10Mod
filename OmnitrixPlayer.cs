@@ -298,6 +298,38 @@ namespace Ben10Mod {
             return GetActiveOmnitrixItem()?.ModItem as Omnitrix;
         }
 
+        public override IEnumerable<Item> AddMaterialsForCrafting(out ItemConsumedCallback itemConsumedCallback) {
+            itemConsumedCallback = null;
+
+            Item activeOmnitrixItem = GetActiveOmnitrixItem();
+            if (!CanUseActiveOmnitrixAsRecalibratedCraftingMaterial(activeOmnitrixItem))
+                return null;
+
+            itemConsumedCallback = (_, index) => {
+                if (index != 0)
+                    return;
+
+                if (!string.IsNullOrEmpty(currentTransformationId))
+                    TransformationHandler.Detransform(Player, 0, showParticles: true, addCooldown: false);
+
+                activeOmnitrixItem.TurnToAir();
+                if (ReferenceEquals(equippedOmnitrixItem, activeOmnitrixItem)) {
+                    equippedOmnitrixItem = null;
+                    equippedOmnitrix = null;
+                    omnitrixEquipped = false;
+                }
+            };
+
+            return new[] { activeOmnitrixItem };
+        }
+
+        private bool CanUseActiveOmnitrixAsRecalibratedCraftingMaterial(Item activeOmnitrixItem) {
+            return string.Equals(currentTransformationId, "Ben10Mod:GrayMatter", StringComparison.Ordinal) &&
+                   activeOmnitrixItem != null &&
+                   !activeOmnitrixItem.IsAir &&
+                   activeOmnitrixItem.type == ModContent.ItemType<RecalibratedOmnitrix>();
+        }
+
         internal void ApplyOmnitrixEvolutionSync(int resultType) {
             if (Player.whoAmI != Main.myPlayer || resultType <= 0)
                 return;

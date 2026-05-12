@@ -138,11 +138,43 @@ namespace Ben10Mod {
                 if (!candidate.active || candidate.whoAmI == npc.whoAmI)
                     continue;
 
-                if (GetEncounterContributionKey(candidate) == encounterKey)
-                    return false;
+                if (GetEncounterContributionKey(candidate) != encounterKey)
+                    continue;
+
+                if (IsDyingSharedLifePart(encounterKey, npc, candidate))
+                    continue;
+
+                return false;
             }
 
             return true;
+        }
+
+        private static bool IsDyingSharedLifePart(string encounterKey, NPC dyingNpc, NPC candidate) {
+            // Destroyer segments can still be active while the shared-life head is dying.
+            if (encounterKey != "Destroyer")
+                return false;
+
+            int dyingRootIndex = GetSharedLifeRootIndex(dyingNpc);
+            int candidateRootIndex = GetSharedLifeRootIndex(candidate);
+            if (dyingRootIndex < 0 || dyingRootIndex != candidateRootIndex)
+                return false;
+
+            if (dyingRootIndex == dyingNpc.whoAmI)
+                return true;
+
+            if (dyingRootIndex >= Main.npc.Length)
+                return false;
+
+            NPC root = Main.npc[dyingRootIndex];
+            return !root.active || root.life <= 0;
+        }
+
+        private static int GetSharedLifeRootIndex(NPC npc) {
+            if (npc.realLife >= 0 && npc.realLife < Main.npc.Length)
+                return npc.realLife;
+
+            return npc.whoAmI;
         }
 
         private static void CaptureEncounterParticipants(NPC npc) {

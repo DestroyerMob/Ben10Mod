@@ -626,6 +626,11 @@ Items: {
 		Tooltip: ""
 	}
 
+	OmniSyncedAvatarSummoner: {
+		DisplayName: Omni-Sync Relay
+		Tooltip: ""
+	}
+
 	PlumberBlasters: {
 		DisplayName: Plumber Blasters
 		Tooltip: ""
@@ -837,6 +842,11 @@ Buffs: {
 	BuzzShockMinionBuff: {
 		DisplayName: Buzz Shock Minion Buff
 		Description: A Buzzshock minion fights at your side
+	}
+
+	OmniSyncedAvatarBuff: {
+		DisplayName: Omni-Synced Avatar
+		Description: An Omnitrix-synced avatar is mirroring your current transformation
 	}
 
 	UltimateAbilityCooldown: {
@@ -1084,6 +1094,7 @@ Projectiles: {
 	AlbedoSonicBlastProjectile.DisplayName: Albedo Sonic Blast Projectile
 	AlbedoShockwaveProjectile.DisplayName: Albedo Shockwave Projectile
 	AlbedoRocketProjectile.DisplayName: Albedo Rocket Projectile
+	AlbedoWarningProjectile.DisplayName: Albedo Warning Projectile
 	ManaThreadProjectile.DisplayName: Mana Thread Projectile
 	HexCircleProjectile.DisplayName: Hex Circle Projectile
 	AnoditeLanceProjectile.DisplayName: Anodite Lance Projectile
@@ -1224,6 +1235,7 @@ Projectiles: {
 	GrayMatterNeuronProjectile.DisplayName: Gray Matter Neuron Projectile
 	ConquestDroneBoltProjectile.DisplayName: Conquest Drone Bolt Projectile
 	ConquestDroneProjectile.DisplayName: Conquest Drone Projectile
+	OmniSyncedAvatarProjectile.DisplayName: Omni-Synced Avatar Projectile
 	ChromaStoneSupernovaProjectile.DisplayName: Chroma Stone Supernova Projectile
 	ChromaStoneRadianceBurstProjectile.DisplayName: Chroma Stone Radiance Burst Projectile
 	ChromaStoneLanceProjectile.DisplayName: Chroma Stone Lance Projectile
