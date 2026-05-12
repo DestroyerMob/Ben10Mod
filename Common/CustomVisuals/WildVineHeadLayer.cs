@@ -13,7 +13,6 @@ internal static class WildVineHeadDrawHelper {
     private const int SourceFrameHeight = 56;
     private const int PaddedFramePadding = 8;
     private const int PaddedFrameHeight = SourceFrameHeight + PaddedFramePadding * 2;
-    private const int TopEdgeRecoveryPixels = 4;
 
     private static Texture2D paddedHeadTexture;
     private static Texture2D paddedSourceTexture;
@@ -83,27 +82,12 @@ internal static class WildVineHeadDrawHelper {
                 for (int x = 0; x < width; x++)
                     paddedPixels[paddedRow + x] = sourcePixels[sourceRow + x];
             }
-
-            RecoverCroppedTopEdge(paddedPixels, width, paddedFrameY);
         }
 
         paddedHeadTexture = new Texture2D(Main.graphics.GraphicsDevice, width, paddedHeight);
         paddedHeadTexture.SetData(paddedPixels);
         paddedSourceTexture = sourceTexture;
         return paddedHeadTexture;
-    }
-
-    private static void RecoverCroppedTopEdge(Color[] pixels, int width, int sourceTopY) {
-        int frameTopY = sourceTopY - PaddedFramePadding;
-        for (int x = 0; x < width; x++) {
-            Color edgePixel = pixels[sourceTopY * width + x];
-            if (edgePixel.A == 0)
-                continue;
-
-            int recoverTopY = System.Math.Max(frameTopY, sourceTopY - TopEdgeRecoveryPixels);
-            for (int y = sourceTopY - 1; y >= recoverTopY; y--)
-                pixels[y * width + x] = edgePixel;
-        }
     }
 
     private static DrawData CreatePaddedHeadDraw(PlayerDrawSet drawInfo, DrawData sourceDraw, Texture2D drawTexture) {
