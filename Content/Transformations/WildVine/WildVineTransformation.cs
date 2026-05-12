@@ -137,9 +137,16 @@ public class WildVineTransformation : Transformation {
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<WildVine>();
-        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.head = -1;
         player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
+    }
+
+    public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {
+        drawInfo.colorHead.A = 0;
+        drawInfo.colorHair.A = 0;
+        drawInfo.colorEyeWhites.A = 0;
+        drawInfo.colorEyes.A = 0;
     }
 
     private static void FireVerdantBloom(Player player, EntitySource_ItemUse_WithAmmo source, int damage, float knockback,
