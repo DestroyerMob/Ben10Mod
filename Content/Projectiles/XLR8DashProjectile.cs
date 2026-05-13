@@ -19,6 +19,7 @@ public class XLR8DashProjectile : RathPounceProjectile {
     protected override int PrimaryImpactDustType => DustID.BlueCrystalShard;
     protected override int SecondaryImpactDustType => DustID.BlueCrystalShard;
     protected override Color ImpactDustColor => new(145, 225, 255);
+    protected override bool UsesRathPounceImpact => false;
 
     public override void SetDefaults() {
         base.SetDefaults();

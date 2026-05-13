@@ -19,8 +19,8 @@ public class Kineceleran : ModItem {
     }
 
     public override void ModifyTooltips(List<TooltipLine> tooltips) {
-        tooltips.Add(new TooltipLine(Mod, "KineceleranDash", "Double tap left or right to perform an XLR8-style dash"));
-        tooltips.Add(new TooltipLine(Mod, "KineceleranVisual", "Dashing briefly shifts you into XLR8 before snapping back"));
+        tooltips.Add(new TooltipLine(Mod, "KineceleranDash", "Double tap left or right to perform a longer XLR8-style dash"));
+        tooltips.Add(new TooltipLine(Mod, "KineceleranVisual", "Dashing shifts you into XLR8 before snapping back"));
     }
 
     public override void UpdateAccessory(Player player, bool hideVisual) {

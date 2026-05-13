@@ -122,6 +122,13 @@ public class FourArmsTransformation : Transformation {
         player.GetArmorPenetration(DamageClass.Melee) += BaseMeleeArmorPenBonus;
         player.GetCritChance(DamageClass.Melee) += BaseMeleeCritBonus;
 
+        if (state.BrawlerGuardActive) {
+            float guardStrength = state.BrawlerGuardStrength;
+            player.statDefense += 6 + (int)Math.Round(guardStrength * 48f);
+            player.endurance += 0.04f + guardStrength * 0.18f;
+            player.noKnockback = true;
+        }
+
         if (state.HaymakerCharging) {
             player.endurance += 0.12f;
             player.noKnockback = true;
@@ -203,6 +210,11 @@ public class FourArmsTransformation : Transformation {
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
         modifiers.Knockback *= 0.28f;
 
+        if (state.BrawlerGuardActive) {
+            modifiers.FinalDamage *= 1f - state.BrawlerGuardStrength;
+            modifiers.Knockback *= 0.45f;
+        }
+
         if (state.HaymakerCharging) {
             modifiers.FinalDamage *= 0.82f;
             modifiers.Knockback *= 0f;
@@ -229,6 +241,7 @@ public class FourArmsTransformation : Transformation {
                 return false;
 
             int haymakerDamage = ScaleDamage(damage, SecondaryAbilityAttackModifier * (berserk ? 1.15f : 1f));
+            state.RegisterBrawlerGuard(18, berserk ? 0.16f : 0.12f);
             Projectile.NewProjectile(source, player.Center, direction, SecondaryAbilityAttack, haymakerDamage,
                 knockback + 2.4f, player.whoAmI, berserk ? 1f : 0f);
             return false;
@@ -236,6 +249,7 @@ public class FourArmsTransformation : Transformation {
 
         if (omp.altAttack) {
             int clapDamage = ScaleDamage(damage, SecondaryAttackModifier * (berserk ? 1.08f : 1f));
+            state.RegisterBrawlerGuard(18, berserk ? 0.13f : 0.1f);
             Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack, clapDamage,
                 knockback + 2f, player.whoAmI);
             return false;
@@ -248,6 +262,7 @@ public class FourArmsTransformation : Transformation {
         if (finisher) {
             float[] spread = { -0.18f, 0f, 0.18f };
             int finisherDamage = ScaleDamage(damage, FinisherDamageMultiplier * (berserk ? 1.12f : 1f));
+            state.RegisterBrawlerGuard(24, berserk ? 0.18f : 0.14f);
             for (int i = 0; i < spread.Length; i++) {
                 Vector2 punchDirection = direction.RotatedBy(spread[i]).SafeNormalize(direction);
                 Vector2 finisherSpawn = player.MountedCenter + punchDirection * 20f;
@@ -259,6 +274,7 @@ public class FourArmsTransformation : Transformation {
         }
 
         int punchDamage = ScaleDamage(damage, PrimaryAttackModifier * (berserk ? 1.08f : 1f));
+        state.RegisterBrawlerGuard(15, 0.09f + state.RageRatio * 0.04f + (berserk ? 0.03f : 0f));
         Projectile.NewProjectile(source, spawnPosition, direction * Math.Max(PrimaryShootSpeed, 10), PrimaryAttack,
             punchDamage, knockback + comboStep * 0.35f, player.whoAmI, punchScale, comboStep);
         return false;
@@ -279,6 +295,10 @@ public class FourArmsTransformation : Transformation {
         };
         gain += Math.Min(8f, damageDone * 0.022f);
         state.AddRage(gain);
+
+        bool heavyHit = projectile.type == PrimaryAttack && projectile.ai[1] >= 2f ||
+                        projectile.type == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>();
+        state.RegisterBrawlerImpact(target, heavyHit);
     }
 
     public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,

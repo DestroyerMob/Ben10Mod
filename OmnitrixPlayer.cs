@@ -120,6 +120,9 @@ namespace Ben10Mod {
         public int DashTimer = 0;
         public const int DashCooldown = 15;
         public const int DashDuration = 15;
+        private const float Xlr8DashAccessoryVelocity = 22f;
+        private const int Xlr8DashAccessoryDuration = 24;
+        private const int Xlr8DashAccessoryVisualDuration = 36;
 
         public const int TransformationSlotCount = 5;
         public const int PalettePresetSlotCount = 3;
@@ -3002,25 +3005,28 @@ namespace Ben10Mod {
             if (CanUseDash() && DashDir != -1 && DashDelay == 0) {
                 var trans = CurrentTransformation;
                 bool usingTransformationDash = trans?.FullID == "Ben10Mod:XLR8";
+                bool usingAccessoryDash = !usingTransformationDash && xlr8DashAccessoryEquipped;
                 if (usingTransformationDash || xlr8DashAccessoryEquipped) {
                     Vector2 newVelocity = Player.velocity;
+                    float dashVelocity = usingAccessoryDash ? Xlr8DashAccessoryVelocity : DashVelocity;
+                    int dashDuration = usingAccessoryDash ? Xlr8DashAccessoryDuration : DashDuration;
 
                     switch (DashDir) {
-                        case DashLeft when Player.velocity.X > -DashVelocity:
-                        case DashRight when Player.velocity.X < DashVelocity:
+                        case DashLeft when Player.velocity.X > -dashVelocity:
+                        case DashRight when Player.velocity.X < dashVelocity:
                             float dashDirection = DashDir == DashRight ? 1 : -1;
-                            newVelocity.X = dashDirection * DashVelocity;
+                            newVelocity.X = dashDirection * dashVelocity;
                             break;
                         default:
                             return;
                     }
 
-                    DashDelay = DashCooldown;
-                    DashTimer = DashDuration;
+                    DashDelay = usingAccessoryDash ? Math.Max(DashCooldown, dashDuration) : DashCooldown;
+                    DashTimer = dashDuration;
                     Player.velocity = newVelocity;
 
-                    if (!usingTransformationDash && xlr8DashAccessoryEquipped) {
-                        xlr8DashAccessoryVisualTime = Math.Max(xlr8DashAccessoryVisualTime, DashDuration);
+                    if (usingAccessoryDash) {
+                        xlr8DashAccessoryVisualTime = Math.Max(xlr8DashAccessoryVisualTime, Xlr8DashAccessoryVisualDuration);
                         PlayXlr8DashAccessoryStartEffects();
                     }
                 }

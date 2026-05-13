@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -21,10 +23,10 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     private const float MeteorStompDamageMultiplier = 1.38f;
     private const float FinisherDamageMultiplier = 1.34f;
     private const float CataclysmFinisherDamageMultiplier = 1.5f;
-    private const int BreachDurationTicks = 5 * 60;
+    internal const int BreachDurationTicks = 5 * 60;
     private const int ShatteredDurationTicks = 4 * 60;
 
-    public override string FullID => "Ben10Mod:UltimateHumungousaur";
+    public override string FullID => UltimateTransformationId;
     public override string TransformationName => "Ultimate Humungousaur";
     public override int TransformationBuffId => ModContent.BuffType<UltimateHumungousaur_Buff>();
     public override Transformation ParentTransformation => ModContent.GetInstance<HumungousaurTransformation>();
@@ -37,9 +39,9 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     public override List<string> Abilities => new() {
         "Siege Combo builds Breach with heavy rocket-assisted punches",
         "Bunker Rockets cashes out broken targets with explosive follow-up shockwaves",
-        "Titan Charge turns the form into a faster armored bruiser for a short window",
-        "Meteor Stomp erupts shockwaves around you and punishes grouped enemies",
-        "Cataclysm Drive overloads the full kit and ends in a massive shutdown pulse"
+        "Titan Charge armors through enemies as a forward siege rush",
+        "Meteor Stomp launches into a real slam before cracking the ground open",
+        "Cataclysm Drive overloads every attack pattern and ends in a massive shutdown pulse"
     };
 
     public override string PrimaryAttackName => "Siege Combo";
@@ -78,6 +80,12 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     public override int UltimateAbilityCost => 60;
     public override int UltimateAbilityDuration => UltimateHumungousaurStatePlayer.CataclysmDurationTicks;
     public override int UltimateAbilityCooldown => UltimateHumungousaurStatePlayer.CataclysmCooldownTicks;
+
+    public override void OnDetransform(Player player, OmnitrixPlayer omp) {
+        KillOwnedProjectiles(player,
+            ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>(),
+            ModContent.ProjectileType<UltimateHumungousaurMeteorStompProjectile>());
+    }
 
     public override void ResetEffects(Player player, OmnitrixPlayer omp) {
         UltimateHumungousaurStatePlayer state = player.GetModPlayer<UltimateHumungousaurStatePlayer>();
@@ -122,13 +130,67 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         return omp.IsPrimaryAbilityActive ? "Ultimate Humungousaur (Titan Charge)" : base.GetDisplayName(omp);
     }
 
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        return base.CanStartCurrentAttack(player, omp) &&
+               !HasActiveOwnedProjectile(player, ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>()) &&
+               !HasActiveOwnedProjectile(player, ModContent.ProjectileType<UltimateHumungousaurMeteorStompProjectile>());
+    }
+
+    public override bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) {
+        if (player.HasBuff<PrimaryAbility>() ||
+            player.HasBuff<PrimaryAbilityCooldown>() ||
+            player.dead ||
+            player.CCed ||
+            omp.HasLoadedAbilityAttack ||
+            HasActiveOwnedProjectile(player, ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>())) {
+            return true;
+        }
+
+        int chargeCost = GetPrimaryAbilityCost(omp);
+        if (omp.omnitrixEnergy < chargeCost) {
+            omp.ShowTransformFailureFeedback($"Need {chargeCost} OE for {PrimaryAbilityName}.");
+            return true;
+        }
+
+        UltimateHumungousaurStatePlayer state = player.GetModPlayer<UltimateHumungousaurStatePlayer>();
+        Vector2 aimDirection = ResolveAimDirection(player, new Vector2(player.direction == 0 ? 1f : player.direction, 0f));
+        Vector2 chargeDirection = ResolveHorizontalDirection(player, aimDirection);
+        int chargeDamage = ResolveHeroDamage(player, state.CataclysmActive ? 1.24f : 1.05f);
+
+        omp.omnitrixEnergy -= chargeCost;
+        omp.primaryAbilityTransformationId = FullID;
+        player.AddBuff(ModContent.BuffType<PrimaryAbility>(), GetPrimaryAbilityDuration(omp));
+        player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GetPrimaryAbilityCooldown(omp));
+        player.GetModPlayer<HumungousaurCombatPlayer>().RegisterAttackGuard(42, state.CataclysmActive ? 0.27f : 0.21f);
+
+        Projectile.NewProjectile(player.GetSource_FromThis(), player.Center + chargeDirection * 24f,
+            chargeDirection * (state.CataclysmActive ? 24f : 21f),
+            ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>(), chargeDamage, 7.5f,
+            player.whoAmI, state.CataclysmActive ? 1f : 0f, 1f);
+
+        if (!Main.dedServ) {
+            SoundEngine.PlaySound(SoundID.Roar with { Pitch = -0.08f, Volume = 0.7f }, player.Center);
+            for (int i = 0; i < 22; i++) {
+                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(22f, 26f),
+                    i % 3 == 0 ? DustID.Torch : DustID.Smoke,
+                    -chargeDirection * Main.rand.NextFloat(1.2f, 4.8f) + Main.rand.NextVector2Circular(1.8f, 1.8f),
+                    110, new Color(255, 174, 112), Main.rand.NextFloat(1.05f, 1.55f));
+                dust.noGravity = true;
+            }
+        }
+
+        return true;
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         UltimateHumungousaurStatePlayer state = player.GetModPlayer<UltimateHumungousaurStatePlayer>();
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 forwardSpawn = player.MountedCenter + direction * 22f;
+        HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
+            combat.RegisterAttackGuard(26, state.CataclysmActive ? 0.22f : 0.17f);
             TriggerMeteorStomp(player, source, damage, knockback, state.CataclysmActive);
             return false;
         }
@@ -147,6 +209,8 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
             ? state.CataclysmActive ? CataclysmFinisherDamageMultiplier : FinisherDamageMultiplier
             : comboStep == 1 ? 1.08f : 1f;
         int punchDamage = ScaleDamage(damage, damageMultiplier);
+        combat.RegisterAttackGuard(finisher ? 24 : 16,
+            (finisher ? 0.16f : 0.12f) + (state.TitanChargeActive ? 0.03f : 0f) + (state.CataclysmActive ? 0.05f : 0f));
         int projectileIndex = Projectile.NewProjectile(source, player.Center + direction * (4f * punchScale),
             direction * PrimaryShootSpeed, PrimaryAttack, punchDamage, knockback + (finisher ? 1.2f : 0.4f),
             player.whoAmI, punchScale, finisher ? 1f : 0f);
@@ -179,6 +243,8 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
 
     public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
         NPC.HitInfo hit, int damageDone) {
+        base.OnHitNPCWithProjectile(player, omp, projectile, target, hit, damageDone);
+
         if (!IsUltimateHumungousaurProjectile(projectile.type))
             return;
 
@@ -202,6 +268,13 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
                 TryConsumeShattered(player, target, projectile.GetSource_FromThis(),
                     ScaleDamage(projectile.damage, projectile.ai[1] >= 2f ? 1f : 0.7f), projectile.knockBack + 0.9f,
                     state.CataclysmActive);
+                break;
+            case var _ when projectile.type == ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>():
+                bool cataclysmCharge = projectile.ai[0] >= 0.5f;
+                ApplyBreachHit(player, target, cataclysmCharge ? 3 : 2, BreachDurationTicks);
+                TryConsumeShattered(player, target, projectile.GetSource_FromThis(),
+                    ScaleDamage(projectile.damage, cataclysmCharge ? 1.05f : 0.82f), projectile.knockBack + 1.2f,
+                    cataclysmCharge || state.CataclysmActive);
                 break;
         }
     }
@@ -249,22 +322,32 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     }
 
     private static void TriggerMeteorStomp(Player player, IEntitySource source, int damage, float knockback, bool cataclysm) {
-        float scale = cataclysm ? 1.4f : 1.16f;
-        int stompDamage = ScaleDamage(damage, cataclysm ? 1.16f : 1f);
-        SpawnShockwaveBurst(player, source, player.Bottom + new Vector2(0f, -8f), stompDamage, knockback + 1.4f, scale, 2,
-            variant: cataclysm ? 2f : 1f);
-        player.velocity.Y = Math.Min(player.velocity.Y, cataclysm ? -5.2f : -3.6f);
-        player.fallStart = (int)(player.position.Y / 16f);
+        if (HasActiveOwnedProjectile(player, ModContent.ProjectileType<UltimateHumungousaurMeteorStompProjectile>()))
+            return;
+
+        int stompDamage = ScaleDamage(damage, MeteorStompDamageMultiplier * (cataclysm ? 1.12f : 1f));
+        Projectile.NewProjectile(source, player.Center, Vector2.Zero,
+            ModContent.ProjectileType<UltimateHumungousaurMeteorStompProjectile>(), stompDamage, knockback + 1.8f,
+            player.whoAmI, cataclysm ? 1f : 0f, AlienIdentityPlayer.IsGrounded(player) ? 1f : 0f);
+    }
+
+    internal static void SpawnMeteorStompImpact(Player player, IEntitySource source, int damage, float knockback,
+        bool cataclysm) {
+        float scale = cataclysm ? 1.56f : 1.22f;
+        int wavePairs = cataclysm ? 3 : 2;
+        SpawnShockwaveBurst(player, source, player.Bottom + new Vector2(0f, -8f), damage, knockback, scale, wavePairs,
+            variant: cataclysm ? 3f : 2f);
 
         if (Main.dedServ)
             return;
 
-        SoundEngine.PlaySound(SoundID.Item14 with { Pitch = -0.08f, Volume = 0.65f }, player.Center);
-        for (int i = 0; i < 20; i++) {
-            Dust dust = Dust.NewDustPerfect(player.Bottom + Main.rand.NextVector2Circular(32f, 10f),
+        SoundEngine.PlaySound(SoundID.Item14 with { Pitch = cataclysm ? -0.16f : -0.08f, Volume = 0.78f }, player.Center);
+        int dustCount = cataclysm ? 34 : 24;
+        for (int i = 0; i < dustCount; i++) {
+            Dust dust = Dust.NewDustPerfect(player.Bottom + Main.rand.NextVector2Circular(cataclysm ? 46f : 34f, 12f),
                 i % 4 == 0 ? DustID.Smoke : DustID.Torch,
-                new Vector2(Main.rand.NextFloat(-3.5f, 3.5f), Main.rand.NextFloat(-2.6f, -0.1f)),
-                115, new Color(255, 160, 105), Main.rand.NextFloat(1.05f, 1.42f));
+                new Vector2(Main.rand.NextFloat(-5.4f, 5.4f), Main.rand.NextFloat(-3.6f, -0.1f)),
+                115, new Color(255, 164, 104), Main.rand.NextFloat(1.08f, cataclysm ? 1.72f : 1.46f));
             dust.noGravity = true;
         }
     }
@@ -288,7 +371,7 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         }
     }
 
-    private static void SpawnShockwaveBurst(Player player, IEntitySource source, Vector2 origin, int damage, float knockback,
+    internal static void SpawnShockwaveBurst(Player player, IEntitySource source, Vector2 origin, int damage, float knockback,
         float scale, int wavePairs, float variant = 0f) {
         if (player.whoAmI != Main.myPlayer)
             return;
@@ -352,7 +435,8 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     private static bool IsUltimateHumungousaurProjectile(int projectileType) {
         return projectileType == ModContent.ProjectileType<HumungousaurPunchProjectile>()
                || projectileType == ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>()
-               || projectileType == ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>();
+               || projectileType == ModContent.ProjectileType<UltimateHumungousaurRocketPlayerProjectile>()
+               || projectileType == ModContent.ProjectileType<UltimateHumungousaurTitanChargeProjectile>();
     }
 
     private static int ScaleDamage(int damage, float multiplier) {
@@ -369,5 +453,37 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         }
 
         return direction;
+    }
+
+    private static Vector2 ResolveHorizontalDirection(Player player, Vector2 aimDirection) {
+        float xDirection = Math.Abs(aimDirection.X) > 0.08f
+            ? Math.Sign(aimDirection.X)
+            : player.direction == 0 ? 1f : player.direction;
+
+        player.direction = xDirection > 0f ? 1 : -1;
+        return new Vector2(xDirection, 0f);
+    }
+
+    private static bool HasActiveOwnedProjectile(Player player, int projectileType) {
+        foreach (Projectile projectile in Main.ActiveProjectiles) {
+            if (projectile.owner == player.whoAmI && projectile.type == projectileType)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static void KillOwnedProjectiles(Player player, params int[] projectileTypes) {
+        foreach (Projectile projectile in Main.ActiveProjectiles) {
+            if (projectile.owner != player.whoAmI)
+                continue;
+
+            foreach (int projectileType in projectileTypes) {
+                if (projectile.type == projectileType) {
+                    projectile.Kill();
+                    break;
+                }
+            }
+        }
     }
 }

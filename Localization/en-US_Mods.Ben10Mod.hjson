@@ -707,7 +707,7 @@ Items: {
 	}
 
 	Kineceleran: {
-		DisplayName: Kineceleran
+		DisplayName: Kineceleran Dash
 		Tooltip: ""
 	}
 }
@@ -1104,6 +1104,9 @@ Projectiles: {
 	AnoditeOrbProjectile.DisplayName: Anodite Orb Projectile
 	ManaBarrierProjectile.DisplayName: Mana Barrier Projectile
 	UltimateHumungousaurRocketPlayerProjectile.DisplayName: Ultimate Humungousaur Rocket Player Projectile
+	UltimateHumungousaurTitanChargeProjectile.DisplayName: Titan Charge
+	UltimateHumungousaurMeteorStompProjectile.DisplayName: Meteor Stomp
+	HumungousaurCrushingChargeProjectile.DisplayName: Crushing Charge
 	UltimateEchoEchoSpeakerProjectile.DisplayName: Detached Speaker
 	HumungousaurShockwavePlayerProjectile.DisplayName: Humungousaur Shockwave Player Projectile
 	HumungousaurPunchProjectile.DisplayName: Humungousaur Punch Projectile
@@ -1111,8 +1114,8 @@ Projectiles: {
 	EchoEchoCloneProjectile.DisplayName: Echo Echo Duplicate
 	SwampfireSeedProjectile.DisplayName: Swampfire Seed Projectile
 	SwampfireBoltProjectile.DisplayName: Swampfire Bolt Projectile
-	RathPounceProjectile.DisplayName: Rath Pounce Projectile
-	RathClawProjectile.DisplayName: Rath Claw Projectile
+	RathPounceProjectile.DisplayName: Pounce
+	RathClawProjectile.DisplayName: Savage Claw
 	SwampfireVineProjectile.DisplayName: Swampfire Vine Projectile
 	ArmodrilloDrillProjectile.DisplayName: Armodrillo Drill Projectile
 	ArmodrilloQuakeProjectile.DisplayName: Armodrillo Quake Projectile

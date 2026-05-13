@@ -287,6 +287,8 @@ public class ChromaStoneTransformation : Transformation {
         float shotSpeed = prismBolt ? PrimaryShootSpeed + 1.8f : PrimaryShootSpeed;
         Projectile.NewProjectile(source, player.MountedCenter + direction * 16f, direction * shotSpeed, PrimaryAttack,
             volleyDamage, knockback + (prismBolt ? 1.1f : 0.4f), player.whoAmI, volleyMode, powerRatio);
+        if (prismBolt)
+            EmitPrismBoltFirePulse(player, direction, powerRatio);
 
         if (prismBolt && state.VisibleFacetCount > 0) {
             int shardDamage = ScaleDamage(damage, PrismBoltSideShardMultiplier);
@@ -303,6 +305,31 @@ public class ChromaStoneTransformation : Transformation {
         }
 
         return false;
+    }
+
+    private static void EmitPrismBoltFirePulse(Player player, Vector2 direction, float powerRatio) {
+        if (Main.dedServ)
+            return;
+
+        Vector2 pulseCenter = player.MountedCenter + direction.SafeNormalize(new Vector2(player.direction, 0f)) * 12f;
+        SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.08f, Volume = 0.5f }, pulseCenter);
+
+        for (int i = 0; i < 18; i++) {
+            float angle = MathHelper.TwoPi * i / 18f;
+            Vector2 ringDirection = angle.ToRotationVector2();
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.18f + powerRatio * 1.8f, 1.08f);
+            Dust dust = Dust.NewDustPerfect(pulseCenter + ringDirection * 18f, DustID.WhiteTorch,
+                ringDirection * Main.rand.NextFloat(0.8f, 2.4f), 90, prismColor, Main.rand.NextFloat(0.92f, 1.22f));
+            dust.noGravity = true;
+        }
+
+        for (int i = 0; i < 8; i++) {
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.27f + powerRatio, 1.12f);
+            Dust dust = Dust.NewDustPerfect(pulseCenter + Main.rand.NextVector2Circular(8f, 8f), DustID.GemDiamond,
+                direction.RotatedByRandom(0.3f) * Main.rand.NextFloat(2.4f, 5f), 80, prismColor,
+                Main.rand.NextFloat(0.9f, 1.15f));
+            dust.noGravity = true;
+        }
     }
 
     public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,

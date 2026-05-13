@@ -10,15 +10,6 @@
   <component name="ChangeListManager">
     <list default="true" id="d8412713-52ba-482c-ab78-ff25d00b512a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Ben10Mod.dir/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/NPCs/Bosses/AlbedoBoss.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/NPCs/Bosses/AlbedoBoss.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/AlbedoRocketProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/AlbedoRocketProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/AlbedoShockwaveProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/AlbedoShockwaveProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/AlbedoSonicBlastProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/AlbedoSonicBlastProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Projectiles/AlbedoSpeakerProjectile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Projectiles/AlbedoSpeakerProjectile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Content/Transformations/Transformation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" beforeDir="false" afterPath="$PROJECT_DIR$/Localization/en-US_Mods.Ben10Mod.hjson" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OmnitrixPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/OmnitrixPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bossTrackerNPC.cs" beforeDir="false" afterPath="$PROJECT_DIR$/bossTrackerNPC.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -156,7 +147,7 @@
       <workItem from="1775953340509" duration="56000" />
       <workItem from="1775957578887" duration="4296000" />
       <workItem from="1776972838712" duration="6046000" />
-      <workItem from="1778480826455" duration="4704000" />
+      <workItem from="1778480826455" duration="5923000" />
     </task>
     <task id="LOCAL-00001" summary="Added fourarms">
       <option name="closed" value="true" />

@@ -1,12 +1,17 @@
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.Humungousaur;
 using Microsoft.Xna.Framework;
 using Terraria;
+using Terraria.Audio;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class UltimateHumungousaurRocketPlayerProjectile : ModProjectile {
+    private bool Charged => Projectile.ai[0] >= 1f;
+    private bool Cataclysm => Projectile.ai[0] >= 2f;
+
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.RocketI}";
 
     public override void SetDefaults() {
@@ -24,13 +29,13 @@ public class UltimateHumungousaurRocketPlayerProjectile : ModProjectile {
     }
 
     public override void AI() {
-        Projectile.scale = Projectile.ai[0] >= 2f ? 1.22f : Projectile.ai[0] >= 1f ? 1.12f : 1f;
+        Projectile.scale = Cataclysm ? 1.22f : Charged ? 1.12f : 1f;
         Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
-        Lighting.AddLight(Projectile.Center, Projectile.ai[0] >= 2f ? 1.15f : 0.95f, 0.25f, 0.15f);
+        Lighting.AddLight(Projectile.Center, Cataclysm ? 1.15f : 0.95f, 0.25f, 0.15f);
 
         if (Main.rand.NextBool(2)) {
             Dust dust = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height,
-                Projectile.ai[0] >= 2f ? DustID.Torch : DustID.Smoke, 0f, 0f, 105, new Color(255, 175, 115),
+                Cataclysm ? DustID.Torch : DustID.Smoke, 0f, 0f, 105, new Color(255, 175, 115),
                 Main.rand.NextFloat(0.95f, 1.25f));
             dust.velocity *= 0.35f;
             dust.noGravity = true;
@@ -38,18 +43,55 @@ public class UltimateHumungousaurRocketPlayerProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        for (int i = 0; i < 10; i++) {
-            Dust dust = Dust.NewDustPerfect(target.Center, i % 3 == 0 ? DustID.Torch : DustID.Smoke,
-                Main.rand.NextVector2Circular(2.4f, 2.4f), 110, new Color(255, 170, 115), Main.rand.NextFloat(1f, 1.3f));
-            dust.noGravity = true;
-        }
+        Explode(target.Center, target.whoAmI);
     }
 
     public override void OnKill(int timeLeft) {
-        for (int i = 0; i < 18; i++) {
-            Dust dust = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height,
-                DustID.Firework_Red, Scale: 1.3f);
-            dust.velocity *= 1.8f;
+        Explode(Projectile.Center);
+    }
+
+    private void Explode(Vector2 center, int ignoredTarget = -1) {
+        if (Projectile.localAI[0] > 0f)
+            return;
+
+        Projectile.localAI[0] = 1f;
+        float radius = Cataclysm ? 132f : Charged ? 112f : 96f;
+        int splashDamage = System.Math.Max(1, (int)System.Math.Round(Projectile.damage * (Cataclysm ? 0.68f : Charged ? 0.56f : 0.46f)));
+
+        Player owner = Main.player[Projectile.owner];
+        if (Main.netMode != NetmodeID.MultiplayerClient && owner.active && !owner.dead) {
+            foreach (NPC npc in Main.ActiveNPCs) {
+                if (npc.whoAmI == ignoredTarget || !npc.CanBeChasedBy(Projectile))
+                    continue;
+
+                float distance = npc.Center.Distance(center);
+                if (distance > radius)
+                    continue;
+
+                float falloff = MathHelper.Lerp(1f, 0.58f, distance / radius);
+                int areaDamage = System.Math.Max(1, (int)System.Math.Round(splashDamage * falloff));
+                int hitDirection = npc.Center.X >= owner.Center.X ? 1 : -1;
+                npc.SimpleStrikeNPC(areaDamage, hitDirection, false, Projectile.knockBack * 0.45f,
+                    ModContent.GetInstance<HeroDamage>());
+                UltimateHumungousaurTransformation.ApplyBreachHit(owner, npc, Cataclysm ? 2 : 1,
+                    UltimateHumungousaurTransformation.BreachDurationTicks);
+                UltimateHumungousaurTransformation.TryConsumeShattered(owner, npc, Projectile.GetSource_FromThis(),
+                    System.Math.Max(1, (int)System.Math.Round(Projectile.damage * (Cataclysm ? 0.84f : 0.62f))),
+                    Projectile.knockBack + 0.7f, Cataclysm);
+            }
+        }
+
+        if (Main.dedServ)
+            return;
+
+        SoundEngine.PlaySound(SoundID.Item14 with { Pitch = Cataclysm ? 0.02f : 0.08f, Volume = Cataclysm ? 0.62f : 0.5f },
+            center);
+        int dustCount = Cataclysm ? 34 : Charged ? 26 : 20;
+        for (int i = 0; i < dustCount; i++) {
+            Dust dust = Dust.NewDustPerfect(center + Main.rand.NextVector2Circular(radius * 0.18f, radius * 0.18f),
+                i % 3 == 0 ? DustID.Firework_Red : i % 3 == 1 ? DustID.Torch : DustID.Smoke,
+                Main.rand.NextVector2Circular(Cataclysm ? 5.4f : 4.2f, Cataclysm ? 5.4f : 4.2f), 105,
+                new Color(255, 172, 112), Main.rand.NextFloat(1f, Cataclysm ? 1.72f : 1.4f));
             dust.noGravity = true;
         }
     }
