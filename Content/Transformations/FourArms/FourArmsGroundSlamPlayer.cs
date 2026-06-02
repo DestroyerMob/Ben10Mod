@@ -1,6 +1,7 @@
 using System;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
@@ -132,7 +133,8 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
 
     public void RegisterGroundSlamState() {
         groundSlamStateTime = Math.Max(groundSlamStateTime, TransientStateGraceTicks);
-        RegisterBrawlerGuard(TransientStateGraceTicks + 5, BerserkActive ? 0.2f : 0.16f);
+        bool potis = HasPotisAltiare(Player);
+        RegisterBrawlerGuard(TransientStateGraceTicks + 5, BerserkActive ? potis ? 0.25f : 0.2f : potis ? 0.2f : 0.16f);
     }
 
     public void RegisterBrawlerGuard(int duration, float strength) {
@@ -140,7 +142,9 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
             return;
 
         brawlerGuardTime = Math.Max(brawlerGuardTime, duration);
-        brawlerGuardStrength = MathHelper.Clamp(Math.Max(brawlerGuardStrength, strength), 0f, BerserkActive ? 0.26f : 0.22f);
+        bool potis = HasPotisAltiare(Player);
+        float maxStrength = BerserkActive ? potis ? 0.34f : 0.26f : potis ? 0.29f : 0.22f;
+        brawlerGuardStrength = MathHelper.Clamp(Math.Max(brawlerGuardStrength, strength), 0f, maxStrength);
     }
 
     public void RegisterBrawlerImpact(NPC target, bool heavyHit) {
@@ -164,17 +168,20 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         OmnitrixPlayer omp = Player.GetModPlayer<OmnitrixPlayer>();
         bool grounded = AlienIdentityPlayer.IsGrounded(Player);
         bool berserk = BerserkActive;
-        float damageMultiplier = berserk ? BerserkGroundSlamDamageMultiplier : GroundSlamDamageMultiplier;
+        bool potis = HasPotisAltiare(Player);
+        float damageMultiplier = (berserk ? BerserkGroundSlamDamageMultiplier : GroundSlamDamageMultiplier) *
+                                 (potis ? 1.12f : 1f);
         int damage = ResolveHeroDamage(damageMultiplier);
-        float knockback = BaseGroundSlamKnockback + (berserk ? 1.5f : 0f);
+        float knockback = BaseGroundSlamKnockback + (berserk ? 1.5f : 0f) + (potis ? 0.9f : 0f);
 
         Projectile.NewProjectile(Player.GetSource_FromThis(), Player.Center, Vector2.Zero,
             ModContent.ProjectileType<FourArmsGroundSlamSequenceProjectile>(), damage, knockback, Player.whoAmI,
-            berserk ? 1f : 0f, grounded ? 1f : 0f);
+            berserk ? 1f : 0f, grounded ? 1f : 0f, potis ? 1f : 0f);
 
         slamTapLockTime = SlamTapLockTicks;
-        groundSlamStateTime = Math.Max(groundSlamStateTime, GroundSlamCooldownTicks / 15);
-        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GroundSlamCooldownTicks);
+        int cooldownTicks = potis ? FourArmsTransformation.PotisGroundSlamCooldownTicks : GroundSlamCooldownTicks;
+        groundSlamStateTime = Math.Max(groundSlamStateTime, cooldownTicks / 15);
+        Player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), cooldownTicks);
         return true;
     }
 
@@ -254,5 +261,9 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
 
     private bool IsFourArmsActive() {
         return Player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == TransformationId;
+    }
+
+    private static bool HasPotisAltiare(Player player) {
+        return player?.GetModPlayer<PotisAltiarePlayer>()?.potisAltiareEquipped == true;
     }
 }

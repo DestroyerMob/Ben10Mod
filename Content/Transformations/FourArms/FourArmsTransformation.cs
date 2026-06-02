@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -14,14 +15,28 @@ namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArmsTransformation : Transformation {
     public const int BerserkDurationTicks = 10 * 60;
+    public const int PotisGroundSlamCooldownTicks = 4 * 60;
 
     private const int GroundSlamCooldownTicks = 5 * 60;
     private const int HaymakerCooldownTicks = 8 * 60;
+    private const int PotisHaymakerCooldownTicks = 7 * 60;
     private const int BerserkCooldownTicks = 38 * 60;
+    private const int PotisBerserkCooldownTicks = 34 * 60;
     private const float PrimaryDamageMultiplier = 1.04f;
     private const float FinisherDamageMultiplier = 1.28f;
     private const float SecondaryDamageMultiplier = 1.16f;
     private const float HaymakerDamageMultiplier = 1.7f;
+    private const float PotisPrimaryDamageMultiplier = 0.98f;
+    private const float PotisFinisherDamageMultiplier = 1.2f;
+    private const float PotisSecondaryDamageMultiplier = 1.08f;
+    private const float PotisHaymakerDamageMultiplier = 1.56f;
+    private const float PotisFinisherFissureDamageMultiplier = 0.42f;
+    private const int PotisPrimaryAttackSpeed = 10;
+    private const int PotisPrimaryShootSpeed = 13;
+    private const int PotisSecondaryAttackSpeed = 19;
+    private const int PotisSecondaryShootSpeed = 17;
+    private const int PotisSecondaryEnergyCost = 3;
+    private const int PotisHaymakerAttackSpeed = 16;
     private const float BaseMeleeDamageBonus = 0.18f;
     private const float BaseMeleeAttackSpeedBonus = 0.1f;
     private const float RageMeleeAttackSpeedBonus = 0.08f;
@@ -91,6 +106,106 @@ public class FourArmsTransformation : Transformation {
     public override int UltimateAbilityCooldown => BerserkCooldownTicks;
     public override int UltimateAbilityCost => 0;
 
+    public override int GetMoveSetIndex(OmnitrixPlayer omp) => HasPotisAltiare(omp?.Player) ? 1 : 0;
+
+    public override string GetDescription(OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return Description;
+
+        return $"{Description} Potis Altiare turns Four Arms into a siege brawler, adding faultline follow-ups, wider shock claps, stronger slam armor, and boss-safe quake pressure.";
+    }
+
+    public override List<string> GetAbilities(OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return base.GetAbilities(omp);
+
+        return new List<string> {
+            "Quake Combo uses faster Potis-infused punches and launches a faultline on the cleaving hit.",
+            "Faultline Clap reaches farther, hits wider, and cracks the ground on impact.",
+            "Meteor Slam has a shorter cooldown, stronger guard, and always sends fissures across the floor.",
+            "Colossus Haymaker charges faster and releases a seismic follow-through.",
+            "Potis armor improves defense and lets Four Arms stay close to bosses longer.",
+            "Titan Overdrive keeps the Berserker payoff, with stronger Potis pressure while active."
+        };
+    }
+
+    public override string GetAbilitySelectionDisplayName(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return base.GetAbilitySelectionDisplayName(selection, omp);
+
+        return selection switch {
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => "Meteor Slam",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => "Colossus Haymaker",
+            OmnitrixPlayer.AttackSelection.Ultimate => "Titan Overdrive",
+            _ => base.GetAbilitySelectionDisplayName(selection, omp)
+        };
+    }
+
+    public override int GetPrimaryAbilityCooldown(OmnitrixPlayer omp) {
+        int cooldown = HasPotisAltiare(omp?.Player) ? PotisGroundSlamCooldownTicks : GroundSlamCooldownTicks;
+        return ApplyAbilityCooldownMultiplier(cooldown, omp.primaryAbilityCooldownMultiplier);
+    }
+
+    public override int GetSecondaryAbilityCooldown(OmnitrixPlayer omp) {
+        int cooldown = HasPotisAltiare(omp?.Player) ? PotisHaymakerCooldownTicks : HaymakerCooldownTicks;
+        return ApplyAbilityCooldownMultiplier(cooldown, omp.secondaryAbilityCooldownMultiplier);
+    }
+
+    public override int GetUltimateAbilityCooldown(OmnitrixPlayer omp) {
+        int cooldown = HasPotisAltiare(omp?.Player) ? PotisBerserkCooldownTicks : BerserkCooldownTicks;
+        return ApplyAbilityCooldownMultiplier(cooldown, omp.ultimateAbilityCooldownMultiplier);
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetPrimaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreatePrimaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Quake Combo",
+                ProjectileType = PrimaryAttack,
+                DamageMultiplier = PotisPrimaryDamageMultiplier,
+                UseTime = PotisPrimaryAttackSpeed,
+                ShootSpeed = PotisPrimaryShootSpeed,
+                UseStyle = PrimaryUseStyle,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = PrimaryArmorPenetration + 4
+            });
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreateSecondaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Faultline Clap",
+                ProjectileType = SecondaryAttack,
+                DamageMultiplier = PotisSecondaryDamageMultiplier,
+                UseTime = PotisSecondaryAttackSpeed,
+                ShootSpeed = PotisSecondaryShootSpeed,
+                UseStyle = SecondaryUseStyle,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = SecondaryArmorPenetration + 6,
+                EnergyCost = PotisSecondaryEnergyCost
+            });
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAbilityAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreateSecondaryAbilityAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Colossus Haymaker",
+                ProjectileType = SecondaryAbilityAttack,
+                DamageMultiplier = PotisHaymakerDamageMultiplier,
+                UseTime = PotisHaymakerAttackSpeed,
+                ShootSpeed = 0f,
+                UseStyle = SecondaryAbilityAttackUseStyle,
+                Channel = true,
+                NoMelee = true,
+                ArmorPenetration = SecondaryAbilityAttackArmorPenetration + 8,
+                EnergyCost = SecondaryAbilityAttackEnergyCost
+            });
+    }
+
     public override void OnDetransform(Player player, OmnitrixPlayer omp) {
         KillOwnedProjectiles(player,
             ModContent.ProjectileType<FourArmsHaymakerChargeProjectile>(),
@@ -103,6 +218,7 @@ public class FourArmsTransformation : Transformation {
 
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
         float rageRatio = state.RageRatio;
+        bool potis = HasPotisAltiare(player);
 
         player.GetDamage<HeroDamage>() += 0.12f;
         player.GetAttackSpeed<HeroDamage>() += 0.04f + rageRatio * 0.12f;
@@ -121,6 +237,18 @@ public class FourArmsTransformation : Transformation {
         player.GetKnockback(DamageClass.Melee) += BaseMeleeKnockbackBonus;
         player.GetArmorPenetration(DamageClass.Melee) += BaseMeleeArmorPenBonus;
         player.GetCritChance(DamageClass.Melee) += BaseMeleeCritBonus;
+
+        if (potis) {
+            player.GetDamage<HeroDamage>() += 0.06f;
+            player.GetAttackSpeed<HeroDamage>() += 0.04f;
+            player.GetKnockback<HeroDamage>() += 0.25f;
+            player.GetArmorPenetration<HeroDamage>() += 4;
+            player.statDefense += 5;
+            player.endurance += 0.03f;
+            player.runAcceleration *= 0.96f;
+            player.maxRunSpeed *= 0.98f;
+            Lighting.AddLight(player.Center, new Vector3(0.86f, 0.38f, 0.12f) * 0.24f);
+        }
 
         if (state.BrawlerGuardActive) {
             float guardStrength = state.BrawlerGuardStrength;
@@ -151,6 +279,12 @@ public class FourArmsTransformation : Transformation {
         player.GetKnockback(DamageClass.Melee) += BerserkMeleeKnockbackBonus;
         player.GetArmorPenetration(DamageClass.Melee) += BerserkMeleeArmorPenBonus;
         player.GetCritChance(DamageClass.Melee) += BerserkMeleeCritBonus;
+
+        if (potis) {
+            player.GetDamage<HeroDamage>() += 0.08f;
+            player.GetAttackSpeed<HeroDamage>() += 0.06f;
+            player.endurance += 0.04f;
+        }
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -160,8 +294,10 @@ public class FourArmsTransformation : Transformation {
         if (omp.setAttack != OmnitrixPlayer.AttackSelection.Primary)
             return;
 
-        float comboSpeedMultiplier = 1f - state.RageRatio * 0.08f - (state.BerserkActive ? 0.14f : 0f);
-        item.useTime = item.useAnimation = Math.Max(7, (int)Math.Round(item.useTime * comboSpeedMultiplier));
+        bool potis = HasPotisAltiare(omp.Player);
+        float comboSpeedMultiplier = 1f - state.RageRatio * (potis ? 0.1f : 0.08f) - (state.BerserkActive ? 0.14f : 0f) -
+                                     (potis ? 0.06f : 0f);
+        item.useTime = item.useAnimation = Math.Max(potis ? 6 : 7, (int)Math.Round(item.useTime * comboSpeedMultiplier));
     }
 
     public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
@@ -190,15 +326,21 @@ public class FourArmsTransformation : Transformation {
             return true;
 
         state.ConsumeAllRage();
-        player.AddBuff(ModContent.BuffType<UltimateAbility>(), BerserkDurationTicks);
+        int duration = GetUltimateAbilityDuration(omp);
+        player.AddBuff(ModContent.BuffType<UltimateAbility>(), duration);
         omp.ultimateAbilityTransformationId = FullID;
 
+        bool potis = HasPotisAltiare(player);
         if (!Main.dedServ) {
-            SoundEngine.PlaySound(SoundID.Item74 with { Pitch = -0.18f, Volume = 0.75f }, player.Center);
-            for (int i = 0; i < 24; i++) {
-                Vector2 velocity = Main.rand.NextVector2Circular(4.6f, 4.6f);
-                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(18f, 30f), DustID.Torch,
-                    velocity, 90, new Color(255, 145, 90), Main.rand.NextFloat(1.15f, 1.65f));
+            SoundEngine.PlaySound(SoundID.Item74 with { Pitch = potis ? -0.26f : -0.18f, Volume = potis ? 0.86f : 0.75f },
+                player.Center);
+            int dustCount = potis ? 34 : 24;
+            for (int i = 0; i < dustCount; i++) {
+                Vector2 velocity = Main.rand.NextVector2Circular(potis ? 5.6f : 4.6f, potis ? 5.6f : 4.6f);
+                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(22f, 34f),
+                    potis && i % 3 == 0 ? DustID.WhiteTorch : DustID.Torch,
+                    velocity, 80, potis ? new Color(255, 198, 115) : new Color(255, 145, 90),
+                    Main.rand.NextFloat(potis ? 1.25f : 1.15f, potis ? 1.9f : 1.65f));
                 dust.noGravity = true;
             }
         }
@@ -235,48 +377,66 @@ public class FourArmsTransformation : Transformation {
         Vector2 direction = ResolveAimDirection(player, velocity);
         Vector2 spawnPosition = player.MountedCenter + direction * 18f;
         bool berserk = state.BerserkActive;
+        bool potis = HasPotisAltiare(player);
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
             if (HasActiveOwnedProjectile(player, SecondaryAbilityAttack))
                 return false;
 
-            int haymakerDamage = ScaleDamage(damage, SecondaryAbilityAttackModifier * (berserk ? 1.15f : 1f));
-            state.RegisterBrawlerGuard(18, berserk ? 0.16f : 0.12f);
+            float haymakerMultiplier = potis ? PotisHaymakerDamageMultiplier : SecondaryAbilityAttackModifier;
+            int haymakerDamage = ScaleDamage(damage, haymakerMultiplier * (berserk ? 1.15f : 1f));
+            state.RegisterBrawlerGuard(potis ? 24 : 18, berserk ? potis ? 0.22f : 0.16f : potis ? 0.17f : 0.12f);
             Projectile.NewProjectile(source, player.Center, direction, SecondaryAbilityAttack, haymakerDamage,
-                knockback + 2.4f, player.whoAmI, berserk ? 1f : 0f);
+                knockback + (potis ? 3.1f : 2.4f), player.whoAmI, berserk ? 1f : 0f, potis ? 1f : 0f);
             return false;
         }
 
         if (omp.altAttack) {
-            int clapDamage = ScaleDamage(damage, SecondaryAttackModifier * (berserk ? 1.08f : 1f));
-            state.RegisterBrawlerGuard(18, berserk ? 0.13f : 0.1f);
-            Projectile.NewProjectile(source, spawnPosition, direction * SecondaryShootSpeed, SecondaryAttack, clapDamage,
-                knockback + 2f, player.whoAmI);
+            float clapMultiplier = potis ? PotisSecondaryDamageMultiplier : SecondaryAttackModifier;
+            float clapSpeed = potis ? PotisSecondaryShootSpeed : SecondaryShootSpeed;
+            int clapDamage = ScaleDamage(damage, clapMultiplier * (berserk ? 1.08f : 1f));
+            state.RegisterBrawlerGuard(potis ? 24 : 18, berserk ? potis ? 0.18f : 0.13f : potis ? 0.14f : 0.1f);
+            Projectile.NewProjectile(source, spawnPosition, direction * clapSpeed, SecondaryAttack, clapDamage,
+                knockback + (potis ? 2.6f : 2f), player.whoAmI, clapSpeed, potis ? 1f : 0f);
             return false;
         }
 
         int comboStep = state.ConsumeComboStep();
         bool finisher = comboStep >= 2;
-        float punchScale = 1.18f + state.RageRatio * 0.12f + (berserk ? 0.2f : 0f);
+        float punchScale = 1.18f + state.RageRatio * 0.12f + (berserk ? 0.2f : 0f) + (potis ? 0.12f : 0f);
+        int comboVariantOffset = potis ? 10 : 0;
+        float primaryShootSpeed = potis ? PotisPrimaryShootSpeed : PrimaryShootSpeed;
 
         if (finisher) {
             float[] spread = { -0.18f, 0f, 0.18f };
-            int finisherDamage = ScaleDamage(damage, FinisherDamageMultiplier * (berserk ? 1.12f : 1f));
-            state.RegisterBrawlerGuard(24, berserk ? 0.18f : 0.14f);
+            float finisherMultiplier = potis ? PotisFinisherDamageMultiplier : FinisherDamageMultiplier;
+            int finisherDamage = ScaleDamage(damage, finisherMultiplier * (berserk ? 1.12f : 1f));
+            state.RegisterBrawlerGuard(potis ? 34 : 24, berserk ? potis ? 0.24f : 0.18f : potis ? 0.19f : 0.14f);
             for (int i = 0; i < spread.Length; i++) {
                 Vector2 punchDirection = direction.RotatedBy(spread[i]).SafeNormalize(direction);
                 Vector2 finisherSpawn = player.MountedCenter + punchDirection * 20f;
-                Projectile.NewProjectile(source, finisherSpawn, punchDirection * Math.Max(PrimaryShootSpeed, 10),
-                    PrimaryAttack, finisherDamage, knockback + 3.1f, player.whoAmI, punchScale + 0.16f, 2f);
+                Projectile.NewProjectile(source, finisherSpawn, punchDirection * Math.Max(primaryShootSpeed, 10),
+                    PrimaryAttack, finisherDamage, knockback + (potis ? 3.8f : 3.1f), player.whoAmI, punchScale + 0.16f,
+                    2f + comboVariantOffset);
+            }
+
+            if (potis) {
+                int fissureDamage = ScaleDamage(finisherDamage, PotisFinisherFissureDamageMultiplier);
+                Projectile.NewProjectile(source, player.Bottom + new Vector2(direction.X * 8f, -10f), Vector2.Zero,
+                    ModContent.ProjectileType<FourArmsFissureProjectile>(), fissureDamage, knockback + 1.6f,
+                    player.whoAmI, Math.Sign(direction.X == 0f ? player.direction : direction.X), 1f);
             }
 
             return false;
         }
 
-        int punchDamage = ScaleDamage(damage, PrimaryAttackModifier * (berserk ? 1.08f : 1f));
-        state.RegisterBrawlerGuard(15, 0.09f + state.RageRatio * 0.04f + (berserk ? 0.03f : 0f));
-        Projectile.NewProjectile(source, spawnPosition, direction * Math.Max(PrimaryShootSpeed, 10), PrimaryAttack,
-            punchDamage, knockback + comboStep * 0.35f, player.whoAmI, punchScale, comboStep);
+        float punchMultiplier = potis ? PotisPrimaryDamageMultiplier : PrimaryAttackModifier;
+        int punchDamage = ScaleDamage(damage, punchMultiplier * (berserk ? 1.08f : 1f));
+        state.RegisterBrawlerGuard(potis ? 20 : 15,
+            0.09f + state.RageRatio * (potis ? 0.05f : 0.04f) + (berserk ? 0.03f : 0f) + (potis ? 0.03f : 0f));
+        Projectile.NewProjectile(source, spawnPosition, direction * Math.Max(primaryShootSpeed, 10), PrimaryAttack,
+            punchDamage, knockback + comboStep * 0.35f + (potis ? 0.35f : 0f), player.whoAmI, punchScale,
+            comboStep + comboVariantOffset);
         return false;
     }
 
@@ -308,21 +468,26 @@ public class FourArmsTransformation : Transformation {
         string rageText = compact
             ? $"Rage {(int)Math.Round(state.RageRatio * 100f)}%"
             : $"Rage {(int)Math.Round(state.RageRatio * 100f)}%";
+        bool potis = HasPotisAltiare(omp.Player);
+        string berserkName = potis ? "Overdrive" : "Berserk";
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? $"{(state.FinisherReady ? "Finisher" : $"Hit {state.NextComboHit}")} • {rageText}"
-                : $"{(state.FinisherReady ? "Next hit cleaves" : $"Combo {state.NextComboHit}/3")} • {rageText}",
+                ? $"{(state.FinisherReady ? potis ? "Faultline" : "Finisher" : $"Hit {state.NextComboHit}")} • {rageText}"
+                : $"{(state.FinisherReady ? potis ? "Next hit cracks ground" : "Next hit cleaves" : $"Combo {state.NextComboHit}/3")} • {rageText}",
+            OmnitrixPlayer.AttackSelection.Secondary => potis
+                ? compact ? $"3 OE • {rageText}" : $"Ground crack • 3 OE • {rageText}"
+                : rageText,
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"Tap down/F • {rageText}"
-                : $"Double tap down or press F • {rageText}",
+                : $"{(potis ? "Meteor slam" : "Double tap down or press F")} • {rageText}",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
                 ? $"Hold to charge • {rageText}"
-                : $"Hold attack to charge • {rageText}",
+                : $"{(potis ? "Faster charge + quake" : "Hold attack to charge")} • {rageText}",
             OmnitrixPlayer.AttackSelection.Ultimate => state.BerserkActive
                 ? compact
-                    ? $"Berserk {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)}"
-                    : $"Berserk active • {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)} left"
+                    ? $"{berserkName} {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)}"
+                    : $"{berserkName} active • {OmnitrixPlayer.FormatCooldownTicks(state.BerserkTicksRemaining)} left"
                 : state.HasBerserkThreshold
                     ? compact ? "Rage Ready" : "90% Rage ready"
                     : compact ? "Need 90% Rage" : $"Needs 90% Rage • {rageText}",
@@ -356,8 +521,11 @@ public class FourArmsTransformation : Transformation {
     public override bool TryGetTransformationTint(Player player, OmnitrixPlayer omp, out Color tint,
         out float blendStrength, out bool forceFullBright) {
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
-        tint = state.BerserkActive ? new Color(255, 115, 70) : new Color(255, 92, 62);
-        blendStrength = state.BerserkActive ? 0.13f : state.RageRatio * 0.08f;
+        bool potis = HasPotisAltiare(player);
+        tint = potis
+            ? state.BerserkActive ? new Color(255, 170, 76) : new Color(255, 132, 54)
+            : state.BerserkActive ? new Color(255, 115, 70) : new Color(255, 92, 62);
+        blendStrength = state.BerserkActive ? potis ? 0.18f : 0.13f : state.RageRatio * (potis ? 0.11f : 0.08f);
         forceFullBright = state.BerserkActive;
         return blendStrength > 0f;
     }
@@ -416,5 +584,9 @@ public class FourArmsTransformation : Transformation {
                projectileType == SecondaryAttack ||
                projectileType == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>() ||
                projectileType == ModContent.ProjectileType<FourArmsFissureProjectile>();
+    }
+
+    private static bool HasPotisAltiare(Player player) {
+        return player?.GetModPlayer<PotisAltiarePlayer>()?.potisAltiareEquipped == true;
     }
 }

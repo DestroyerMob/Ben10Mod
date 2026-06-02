@@ -9,9 +9,13 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class FourArmsHaymakerChargeProjectile : ModProjectile {
     private const int MaxChargeFrames = 54;
+    private const int PotisMaxChargeFrames = 46;
     private const float PunchSpeed = 12f;
+    private const float PotisPunchSpeed = 14.5f;
 
     private bool Berserked => Projectile.ai[0] >= 0.5f;
+    private bool PotisInfused => Projectile.ai[1] >= 0.5f;
+    private int ChargeFrameTarget => PotisInfused ? PotisMaxChargeFrames : MaxChargeFrames;
     private ref float ChargeFrames => ref Projectile.localAI[0];
     private ref float ReleasedFlag => ref Projectile.localAI[1];
 
@@ -53,7 +57,7 @@ public class FourArmsHaymakerChargeProjectile : ModProjectile {
         owner.noKnockback = true;
         owner.velocity.X *= 0.82f;
 
-        float chargeRatio = MathHelper.Clamp(ChargeFrames / MaxChargeFrames, 0f, 1f);
+        float chargeRatio = MathHelper.Clamp(ChargeFrames / ChargeFrameTarget, 0f, 1f);
         owner.GetModPlayer<FourArmsGroundSlamPlayer>().RegisterHaymakerCharge(chargeRatio);
 
         if (!omp.IsSecondaryAbilityAttackLoaded) {
@@ -63,10 +67,10 @@ public class FourArmsHaymakerChargeProjectile : ModProjectile {
         }
 
         if (owner.channel && !owner.noItems && !owner.CCed) {
-            if (ChargeFrames < MaxChargeFrames)
+            if (ChargeFrames < ChargeFrameTarget)
                 ChargeFrames++;
 
-            SpawnChargeDust(owner, direction, chargeRatio);
+            SpawnChargeDust(owner, direction, chargeRatio, PotisInfused);
             return;
         }
 
@@ -81,27 +85,37 @@ public class FourArmsHaymakerChargeProjectile : ModProjectile {
             return;
 
         ReleasedFlag = 1f;
-        float chargeRatio = MathHelper.Clamp(ChargeFrames / MaxChargeFrames, 0f, 1f);
-        float releaseMultiplier = MathHelper.Lerp(0.92f, 1.72f, chargeRatio) * (Berserked ? 1.12f : 1f);
+        float chargeRatio = MathHelper.Clamp(ChargeFrames / ChargeFrameTarget, 0f, 1f);
+        float releaseMultiplier = MathHelper.Lerp(PotisInfused ? 1.02f : 0.92f, PotisInfused ? 1.88f : 1.72f, chargeRatio) *
+                                  (Berserked ? 1.12f : 1f);
         int releaseDamage = System.Math.Max(1, (int)System.Math.Round(Projectile.damage * releaseMultiplier));
-        float releaseScale = 1.38f + chargeRatio * 0.72f + (Berserked ? 0.14f : 0f);
-        float releaseKnockback = Projectile.knockBack + 2.2f + chargeRatio * 4.2f;
+        float releaseScale = 1.38f + chargeRatio * 0.72f + (Berserked ? 0.14f : 0f) + (PotisInfused ? 0.28f : 0f);
+        float releaseKnockback = Projectile.knockBack + 2.2f + chargeRatio * (PotisInfused ? 5.1f : 4.2f);
         Vector2 spawnPosition = owner.MountedCenter + direction * 22f;
 
-        Projectile.NewProjectile(Projectile.GetSource_FromThis(), spawnPosition, direction * PunchSpeed,
+        Projectile.NewProjectile(Projectile.GetSource_FromThis(), spawnPosition, direction * (PotisInfused ? PotisPunchSpeed : PunchSpeed),
             ModContent.ProjectileType<FourArmsPunchProjectile>(), releaseDamage, releaseKnockback, owner.whoAmI,
-            releaseScale, 3f);
+            releaseScale, PotisInfused ? 13f : 3f);
+
+        if (PotisInfused) {
+            int fissureDamage = System.Math.Max(1, (int)System.Math.Round(releaseDamage * 0.46f));
+            Projectile.NewProjectile(Projectile.GetSource_FromThis(), owner.Bottom + new Vector2(direction.X * 14f, -10f), Vector2.Zero,
+                ModContent.ProjectileType<FourArmsFissureProjectile>(), fissureDamage, releaseKnockback * 0.62f,
+                owner.whoAmI, System.Math.Sign(direction.X == 0f ? owner.direction : direction.X), 1f);
+        }
 
         omp.NotifyLoadedAbilityAttackFired();
         omp.ClearLoadedAbilityAttack(addCooldownIfUsed: true);
         owner.channel = false;
 
-        SoundEngine.PlaySound(SoundID.Item1 with { Pitch = -0.28f, Volume = 0.82f }, spawnPosition);
-        for (int i = 0; i < 18; i++) {
+        SoundEngine.PlaySound(SoundID.Item1 with { Pitch = PotisInfused ? -0.36f : -0.28f, Volume = PotisInfused ? 0.94f : 0.82f },
+            spawnPosition);
+        for (int i = 0; i < (PotisInfused ? 28 : 18); i++) {
             Dust dust = Dust.NewDustPerfect(spawnPosition + Main.rand.NextVector2Circular(10f, 10f),
-                i % 4 == 0 ? DustID.Torch : DustID.Smoke,
-                direction.RotatedByRandom(0.34f) * Main.rand.NextFloat(2.4f, 6.6f), 100,
-                i % 4 == 0 ? new Color(255, 168, 105) : new Color(225, 205, 190), Main.rand.NextFloat(0.95f, 1.45f));
+                PotisInfused && i % 5 == 0 ? DustID.WhiteTorch : i % 4 == 0 ? DustID.Torch : DustID.Smoke,
+                direction.RotatedByRandom(PotisInfused ? 0.42f : 0.34f) * Main.rand.NextFloat(2.4f, PotisInfused ? 8f : 6.6f),
+                90, PotisInfused ? new Color(255, 205, 125) : i % 4 == 0 ? new Color(255, 168, 105) : new Color(225, 205, 190),
+                Main.rand.NextFloat(PotisInfused ? 1.08f : 0.95f, PotisInfused ? 1.75f : 1.45f));
             dust.noGravity = true;
         }
     }
@@ -128,15 +142,18 @@ public class FourArmsHaymakerChargeProjectile : ModProjectile {
         return direction.SafeNormalize(new Vector2(owner.direction, 0f));
     }
 
-    private static void SpawnChargeDust(Player owner, Vector2 direction, float chargeRatio) {
+    private static void SpawnChargeDust(Player owner, Vector2 direction, float chargeRatio, bool potisInfused) {
         if (Main.dedServ || !Main.rand.NextBool(2))
             return;
 
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
         Vector2 dustPosition = owner.MountedCenter + direction * 18f + normal * Main.rand.NextFloat(-10f, 10f);
         Vector2 dustVelocity = direction * Main.rand.NextFloat(0.6f, 1.8f) + normal * Main.rand.NextFloat(-0.45f, 0.45f);
-        Dust dust = Dust.NewDustPerfect(dustPosition, Main.rand.NextBool(3) ? DustID.Torch : DustID.Smoke, dustVelocity, 100,
-            Color.Lerp(new Color(225, 190, 170), new Color(255, 170, 110), chargeRatio), 0.95f + chargeRatio * 0.45f);
+        int dustType = potisInfused && Main.rand.NextBool(3) ? DustID.WhiteTorch : Main.rand.NextBool(3) ? DustID.Torch : DustID.Smoke;
+        Color startColor = potisInfused ? new Color(255, 205, 130) : new Color(225, 190, 170);
+        Color endColor = potisInfused ? new Color(255, 238, 174) : new Color(255, 170, 110);
+        Dust dust = Dust.NewDustPerfect(dustPosition, dustType, dustVelocity, potisInfused ? 85 : 100,
+            Color.Lerp(startColor, endColor, chargeRatio), (potisInfused ? 1.08f : 0.95f) + chargeRatio * (potisInfused ? 0.62f : 0.45f));
         dust.noGravity = true;
     }
 }

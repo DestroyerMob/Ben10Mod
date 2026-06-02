@@ -203,16 +203,19 @@ public class ChromaStoneTransformation : Transformation {
 
         ChromaStoneStatePlayer state = player.GetModPlayer<ChromaStoneStatePlayer>();
         float radianceRatio = state.VisualRadianceRatio;
+        EmitCrystalVolleyReadabilityCue(player, state, radianceRatio);
+
         int spawnRate = state.DischargeActive ? 1 : radianceRatio >= 0.75f ? 1 : radianceRatio >= 0.38f ? 2 : state.VisibleFacetCount > 0 ? 3 : 5;
         if (!Main.rand.NextBool(spawnRate))
             return;
 
         Vector2 offset = Main.rand.NextVector2Circular(player.width * 0.55f, player.height * 0.65f);
         Dust dust = Dust.NewDustPerfect(player.Center + offset, DustID.WhiteTorch,
-            Main.rand.NextVector2Circular(0.45f, 0.45f), 100,
-            ChromaStonePrismHelper.GetSpectrumColor(offset.Length() * 0.012f + radianceRatio * 2.6f),
-            Main.rand.NextFloat(0.95f, 1.12f + radianceRatio * 0.34f));
+            Main.rand.NextVector2Circular(0.65f, 0.65f), 75,
+            ChromaStonePrismHelper.GetSpectrumColor(offset.Length() * 0.012f + radianceRatio * 2.6f, 1.08f),
+            Main.rand.NextFloat(1.05f, 1.24f + radianceRatio * 0.42f));
         dust.noGravity = true;
+        dust.fadeIn = 0.72f;
     }
 
     public override void ModifyHurt(Player player, OmnitrixPlayer omp, ref Player.HurtModifiers modifiers) {
@@ -307,28 +310,75 @@ public class ChromaStoneTransformation : Transformation {
         return false;
     }
 
+    private static void EmitCrystalVolleyReadabilityCue(Player player, ChromaStoneStatePlayer state, float radianceRatio) {
+        if (state.DischargeActive || state.Guarding)
+            return;
+
+        float readiness = state.PrismBoltReadinessRatio;
+        if (readiness <= 0f)
+            return;
+
+        Vector2 facingDirection = new(player.direction == 0 ? 1 : player.direction, 0f);
+        Vector2 cueCenter = player.MountedCenter + facingDirection * (14f + readiness * 8f) - Vector2.UnitY * (2f + readiness * 5f);
+        Color cueColor = ChromaStonePrismHelper.GetSpectrumColor(readiness * 2.4f + radianceRatio * 1.5f,
+            1.08f + readiness * 0.28f);
+        Lighting.AddLight(cueCenter, cueColor.ToVector3() * (0.12f + readiness * 0.32f));
+
+        int cueInterval = state.NextVolleyIsPrismBolt ? 6 : readiness >= 0.66f ? 10 : 14;
+        if (Main.GameUpdateCount % (ulong)cueInterval != (ulong)(player.whoAmI % cueInterval))
+            return;
+
+        if (state.NextVolleyIsPrismBolt) {
+            for (int i = 0; i < 8; i++) {
+                float angle = MathHelper.TwoPi * i / 8f + Main.GlobalTimeWrappedHourly * 3.4f;
+                Vector2 ringDirection = angle.ToRotationVector2();
+                Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.22f + radianceRatio * 2f, 1.22f);
+                Dust dust = Dust.NewDustPerfect(cueCenter + ringDirection * 18f, DustID.WhiteTorch,
+                    ringDirection * 0.8f + facingDirection * 0.18f, 60, prismColor, Main.rand.NextFloat(1.12f, 1.42f));
+                dust.noGravity = true;
+                dust.fadeIn = 0.95f;
+            }
+
+            Dust core = Dust.NewDustPerfect(cueCenter + Main.rand.NextVector2Circular(5f, 5f), DustID.GemDiamond,
+                facingDirection * Main.rand.NextFloat(0.6f, 1.1f), 55, Color.White, Main.rand.NextFloat(0.95f, 1.2f));
+            core.noGravity = true;
+            core.fadeIn = 0.9f;
+            return;
+        }
+
+        for (int i = 0; i < 2; i++) {
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(readiness * 1.8f + i * 0.35f + radianceRatio, 1.12f);
+            Dust dust = Dust.NewDustPerfect(cueCenter + Main.rand.NextVector2Circular(7f, 9f), DustID.WhiteTorch,
+                Main.rand.NextVector2Circular(0.55f, 0.55f), 70, prismColor, Main.rand.NextFloat(0.86f, 1.08f));
+            dust.noGravity = true;
+            dust.fadeIn = 0.78f;
+        }
+    }
+
     private static void EmitPrismBoltFirePulse(Player player, Vector2 direction, float powerRatio) {
         if (Main.dedServ)
             return;
 
         Vector2 pulseCenter = player.MountedCenter + direction.SafeNormalize(new Vector2(player.direction, 0f)) * 12f;
-        SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.08f, Volume = 0.5f }, pulseCenter);
+        SoundEngine.PlaySound(SoundID.Item29 with { Pitch = -0.12f, Volume = 0.68f }, pulseCenter);
 
-        for (int i = 0; i < 18; i++) {
-            float angle = MathHelper.TwoPi * i / 18f;
+        for (int i = 0; i < 26; i++) {
+            float angle = MathHelper.TwoPi * i / 26f;
             Vector2 ringDirection = angle.ToRotationVector2();
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.18f + powerRatio * 1.8f, 1.08f);
-            Dust dust = Dust.NewDustPerfect(pulseCenter + ringDirection * 18f, DustID.WhiteTorch,
-                ringDirection * Main.rand.NextFloat(0.8f, 2.4f), 90, prismColor, Main.rand.NextFloat(0.92f, 1.22f));
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.18f + powerRatio * 1.8f, 1.26f);
+            Dust dust = Dust.NewDustPerfect(pulseCenter + ringDirection * 24f, DustID.WhiteTorch,
+                ringDirection * Main.rand.NextFloat(1.2f, 3.2f), 65, prismColor, Main.rand.NextFloat(1.15f, 1.65f));
             dust.noGravity = true;
+            dust.fadeIn = 1.05f;
         }
 
-        for (int i = 0; i < 8; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.27f + powerRatio, 1.12f);
-            Dust dust = Dust.NewDustPerfect(pulseCenter + Main.rand.NextVector2Circular(8f, 8f), DustID.GemDiamond,
-                direction.RotatedByRandom(0.3f) * Main.rand.NextFloat(2.4f, 5f), 80, prismColor,
-                Main.rand.NextFloat(0.9f, 1.15f));
+        for (int i = 0; i < 12; i++) {
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.27f + powerRatio, 1.24f);
+            Dust dust = Dust.NewDustPerfect(pulseCenter + Main.rand.NextVector2Circular(10f, 10f), DustID.GemDiamond,
+                direction.RotatedByRandom(0.38f) * Main.rand.NextFloat(3f, 6.2f), 55, prismColor,
+                Main.rand.NextFloat(1.05f, 1.42f));
             dust.noGravity = true;
+            dust.fadeIn = 0.9f;
         }
     }
 
@@ -358,12 +408,14 @@ public class ChromaStoneTransformation : Transformation {
         ChromaStoneStatePlayer state = omp.Player.GetModPlayer<ChromaStoneStatePlayer>();
         OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
         string radianceText = $"Radiance {(int)Math.Round(state.RadianceRatio * 100f)}%";
+        string prismBoltText = state.NextVolleyIsPrismBolt ? "Prism Bolt next" : $"Prism {state.PrismBoltVolleyCount}/3";
+        string compactPrismBoltText = state.NextVolleyIsPrismBolt ? "Prism next" : $"Prism {state.PrismBoltVolleyCount}/3";
         int dischargePowerPercent = (int)Math.Round(state.ActiveDischargeRadianceRatio * 100f);
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? $"Facets {state.VisibleFacetCount}/3 • {radianceText}"
-                : $"Volley + shards • Facets {state.VisibleFacetCount}/3 • {radianceText}",
+                ? $"{compactPrismBoltText} • Facets {state.VisibleFacetCount}/3 • {radianceText}"
+                : $"Volley + shards • {prismBoltText} • Facets {state.VisibleFacetCount}/3 • {radianceText}",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? $"{state.VisibleFacetCount}/3 Facets • {radianceText}"
                 : $"Beam focus {state.VisibleFacetCount}/3 • {radianceText}",

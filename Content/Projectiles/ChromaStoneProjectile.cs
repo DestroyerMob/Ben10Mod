@@ -61,14 +61,26 @@ public class ChromaStoneProjectile : ModProjectile {
 
         Projectile.rotation = Projectile.velocity.ToRotation();
         Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(PowerRatio * 2.6f + Projectile.identity * 0.07f,
-            IsPrismBolt ? 1.14f : 1f);
-        Lighting.AddLight(Projectile.Center, prismColor.ToVector3() * (IsPrismBolt ? 0.58f : 0.4f));
+            IsPrismBolt ? 1.28f : IsShard ? 1.08f : 1.16f);
+        Lighting.AddLight(Projectile.Center, prismColor.ToVector3() * (IsPrismBolt ? 0.95f : IsShard ? 0.52f : 0.68f));
 
         if (!Main.dedServ && Main.rand.NextBool(IsPrismBolt ? 1 : 2)) {
-            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(6f, 6f), DustID.WhiteTorch,
-                -Projectile.velocity * Main.rand.NextFloat(0.04f, 0.12f), 100, prismColor,
-                Main.rand.NextFloat(0.88f, IsPrismBolt ? 1.3f : 1.14f));
+            Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
+            float dustRadius = IsPrismBolt ? 9f : IsShard ? 5f : 7f;
+            Dust dust = Dust.NewDustPerfect(Projectile.Center - direction * 3f + Main.rand.NextVector2Circular(dustRadius, dustRadius),
+                DustID.WhiteTorch, -direction * Main.rand.NextFloat(IsPrismBolt ? 0.45f : 0.25f, IsPrismBolt ? 1.25f : 0.85f) +
+                Main.rand.NextVector2Circular(0.28f, 0.28f), 65, prismColor,
+                Main.rand.NextFloat(IsPrismBolt ? 1.35f : IsShard ? 0.95f : 1.08f, IsPrismBolt ? 1.85f : IsShard ? 1.18f : 1.42f));
             dust.noGravity = true;
+            dust.fadeIn = IsPrismBolt ? 1.1f : 0.72f;
+
+            if (IsPrismBolt && Main.rand.NextBool(2)) {
+                Dust sparkle = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(6f, 6f),
+                    DustID.GemDiamond, Main.rand.NextVector2Circular(0.8f, 0.8f) - direction * Main.rand.NextFloat(0.2f, 0.65f),
+                    55, Color.White, Main.rand.NextFloat(0.85f, 1.18f));
+                sparkle.noGravity = true;
+                sparkle.fadeIn = 0.9f;
+            }
         }
     }
 
@@ -152,13 +164,15 @@ public class ChromaStoneProjectile : ModProjectile {
         if (Main.dedServ)
             return;
 
-        int dustCount = IsPrismBolt ? 14 : 10;
+        int dustCount = IsPrismBolt ? 24 : IsShard ? 10 : 16;
         for (int i = 0; i < dustCount; i++) {
-            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.24f + PowerRatio * 0.6f);
+            Color prismColor = ChromaStonePrismHelper.GetSpectrumColor(i * 0.24f + PowerRatio * 0.6f,
+                IsPrismBolt ? 1.24f : 1.12f);
             Dust dust = Dust.NewDustPerfect(Projectile.Center, DustID.WhiteTorch,
-                Main.rand.NextVector2Circular(IsPrismBolt ? 3.6f : 2.8f, IsPrismBolt ? 3.6f : 2.8f), 95,
-                prismColor, Main.rand.NextFloat(0.95f, IsPrismBolt ? 1.3f : 1.16f));
+                Main.rand.NextVector2Circular(IsPrismBolt ? 5.6f : 3.6f, IsPrismBolt ? 5.6f : 3.6f), 75,
+                prismColor, Main.rand.NextFloat(1.05f, IsPrismBolt ? 1.65f : 1.34f));
             dust.noGravity = true;
+            dust.fadeIn = IsPrismBolt ? 1f : 0.72f;
         }
     }
 
@@ -169,8 +183,8 @@ public class ChromaStoneProjectile : ModProjectile {
 
             float progress = i / (float)Projectile.oldPos.Length;
             Vector2 trailCenter = Projectile.oldPos[i] + Projectile.Size * 0.5f - Main.screenPosition;
-            Color trailColor = Color.Lerp(new Color(115, 214, 255), Color.White, 0.42f) * ((1f - progress) * 0.42f);
-            Vector2 scale = new Vector2(MathHelper.Lerp(18f, 5f, progress), MathHelper.Lerp(4.2f, 1.6f, progress)) *
+            Color trailColor = Color.Lerp(new Color(115, 214, 255), Color.White, 0.5f) * ((1f - progress) * 0.68f);
+            Vector2 scale = new Vector2(MathHelper.Lerp(23f, 6f, progress), MathHelper.Lerp(5.6f, 2f, progress)) *
                             Projectile.scale;
             ChromaStonePrismHelper.DrawRotatedRect(pixel, trailCenter - direction * progress * 3f, rotation, scale, trailColor);
         }
@@ -184,17 +198,17 @@ public class ChromaStoneProjectile : ModProjectile {
         Color blueMiddle = Color.Lerp(new Color(178, 238, 255), middle, 0.28f);
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 1.35f, bodyWidth * 1.8f) * Projectile.scale, blueOuter * 0.22f);
+            new Vector2(bodyLength * 1.45f, bodyWidth * 2.1f) * Projectile.scale, blueOuter * 0.42f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength, bodyWidth) * Projectile.scale, blueMiddle * 0.68f);
+            new Vector2(bodyLength, bodyWidth) * Projectile.scale, blueMiddle * 0.9f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center + normal * bodyWidth * 0.58f, rotation + 0.5f,
-            new Vector2(bodyLength * 0.2f, Math.Max(1.4f, bodyWidth * 0.25f)) * Projectile.scale, blueOuter * 0.42f);
+            new Vector2(bodyLength * 0.2f, Math.Max(1.4f, bodyWidth * 0.25f)) * Projectile.scale, blueOuter * 0.62f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center - normal * bodyWidth * 0.58f, rotation - 0.5f,
-            new Vector2(bodyLength * 0.2f, Math.Max(1.4f, bodyWidth * 0.25f)) * Projectile.scale, blueOuter * 0.42f);
+            new Vector2(bodyLength * 0.2f, Math.Max(1.4f, bodyWidth * 0.25f)) * Projectile.scale, blueOuter * 0.62f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 0.42f, Math.Max(1.6f, bodyWidth * 0.26f)) * Projectile.scale, core * 0.76f);
+            new Vector2(bodyLength * 0.48f, Math.Max(1.8f, bodyWidth * 0.28f)) * Projectile.scale, core);
 
-        Main.EntitySpriteDraw(texture, center, null, Color.White * 0.74f, spriteRotation, spriteOrigin,
+        Main.EntitySpriteDraw(texture, center, null, Color.White * 0.92f, spriteRotation, spriteOrigin,
             Projectile.scale * (1.15f + PowerRatio * 0.1f), SpriteEffects.None, 0);
     }
 
@@ -206,9 +220,9 @@ public class ChromaStoneProjectile : ModProjectile {
             float progress = i / (float)Projectile.oldPos.Length;
             Vector2 trailCenter = Projectile.oldPos[i] + Projectile.Size * 0.5f - Main.screenPosition;
             Color trailColor = ChromaStonePrismHelper.GetSpectrumColor(progress * 1.5f + i * 0.06f) *
-                               ((1f - progress) * (IsBurstShard ? 0.34f : 0.24f));
-            Vector2 scale = new Vector2(MathHelper.Lerp(IsBurstShard ? 12f : 9f, 3f, progress),
-                MathHelper.Lerp(IsBurstShard ? 3.2f : 2.5f, 1.2f, progress)) * Projectile.scale;
+                               ((1f - progress) * (IsBurstShard ? 0.5f : 0.38f));
+            Vector2 scale = new Vector2(MathHelper.Lerp(IsBurstShard ? 14f : 11f, 3.5f, progress),
+                MathHelper.Lerp(IsBurstShard ? 3.8f : 3f, 1.4f, progress)) * Projectile.scale;
             ChromaStonePrismHelper.DrawRotatedRect(pixel, trailCenter - direction * progress * 2f, rotation, scale, trailColor);
         }
     }
@@ -220,13 +234,13 @@ public class ChromaStoneProjectile : ModProjectile {
         float wobble = (Projectile.identity % 2 == 0 ? 1f : -1f) * 0.24f;
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation + wobble,
-            new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer * 0.5f);
+            new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer * 0.72f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center + normal * bodyWidth * 0.45f, rotation + 0.75f,
-            new Vector2(bodyLength * 0.34f, Math.Max(1.2f, bodyWidth * 0.2f)) * Projectile.scale, middle * 0.32f);
+            new Vector2(bodyLength * 0.34f, Math.Max(1.2f, bodyWidth * 0.2f)) * Projectile.scale, middle * 0.5f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center - normal * bodyWidth * 0.45f, rotation - 0.75f,
-            new Vector2(bodyLength * 0.34f, Math.Max(1.2f, bodyWidth * 0.2f)) * Projectile.scale, middle * 0.32f);
+            new Vector2(bodyLength * 0.34f, Math.Max(1.2f, bodyWidth * 0.2f)) * Projectile.scale, middle * 0.5f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 0.35f, Math.Max(1.2f, bodyWidth * 0.18f)) * Projectile.scale, core * 0.5f);
+            new Vector2(bodyLength * 0.35f, Math.Max(1.2f, bodyWidth * 0.18f)) * Projectile.scale, core * 0.78f);
     }
 
     private void DrawPrismBoltTrail(Texture2D pixel, Texture2D texture, float spriteRotation, Vector2 spriteOrigin) {
@@ -244,7 +258,7 @@ public class ChromaStoneProjectile : ModProjectile {
 
             Vector2 beamScale = new(MathHelper.Lerp(34f, 8f, progress), MathHelper.Lerp(7.5f, 2f, progress));
             ChromaStonePrismHelper.DrawRotatedRect(pixel, trailCenter, Projectile.rotation, beamScale * Projectile.scale,
-                trailColor * 0.32f);
+                trailColor * 0.46f);
         }
     }
 
@@ -254,21 +268,21 @@ public class ChromaStoneProjectile : ModProjectile {
         float bodyWidth = 10f + PowerRatio * 1.2f;
 
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 1.35f, bodyWidth * 1.6f) * Projectile.scale, outer * 0.24f);
+            new Vector2(bodyLength * 1.42f, bodyWidth * 1.78f) * Projectile.scale, outer * 0.36f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer * 0.72f);
+            new Vector2(bodyLength, bodyWidth) * Projectile.scale, outer * 0.92f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 0.58f, bodyWidth * 0.34f) * Projectile.scale, middle * 0.62f);
+            new Vector2(bodyLength * 0.58f, bodyWidth * 0.34f) * Projectile.scale, middle * 0.82f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center + normal * bodyWidth * 0.48f, rotation + 0.55f,
-            new Vector2(bodyLength * 0.32f, Math.Max(2.2f, bodyWidth * 0.24f)) * Projectile.scale, middle * 0.52f);
+            new Vector2(bodyLength * 0.32f, Math.Max(2.2f, bodyWidth * 0.24f)) * Projectile.scale, middle * 0.68f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center - normal * bodyWidth * 0.48f, rotation - 0.55f,
-            new Vector2(bodyLength * 0.32f, Math.Max(2.2f, bodyWidth * 0.24f)) * Projectile.scale, middle * 0.52f);
+            new Vector2(bodyLength * 0.32f, Math.Max(2.2f, bodyWidth * 0.24f)) * Projectile.scale, middle * 0.68f);
         ChromaStonePrismHelper.DrawRotatedRect(pixel, center, rotation,
-            new Vector2(bodyLength * 0.38f, Math.Max(2.2f, bodyWidth * 0.18f)) * Projectile.scale, core * 0.78f);
+            new Vector2(bodyLength * 0.4f, Math.Max(2.4f, bodyWidth * 0.2f)) * Projectile.scale, core);
 
-        Main.EntitySpriteDraw(texture, center, null, outer * 0.42f, spriteRotation, spriteOrigin,
+        Main.EntitySpriteDraw(texture, center, null, outer * 0.58f, spriteRotation, spriteOrigin,
             Projectile.scale * (2.12f + PowerRatio * 0.18f), SpriteEffects.None, 0);
-        Main.EntitySpriteDraw(texture, center, null, middle * 0.72f, spriteRotation, spriteOrigin,
+        Main.EntitySpriteDraw(texture, center, null, middle * 0.9f, spriteRotation, spriteOrigin,
             Projectile.scale * (1.72f + PowerRatio * 0.16f), SpriteEffects.None, 0);
         Main.EntitySpriteDraw(texture, center, null, Color.White, spriteRotation, spriteOrigin,
             Projectile.scale * (1.36f + PowerRatio * 0.14f), SpriteEffects.None, 0);

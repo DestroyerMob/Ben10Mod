@@ -39,6 +39,9 @@ public class ChromaStoneStatePlayer : ModPlayer {
 
     public float PrismCharge => prismCharge;
     public float PrismChargeRatio => MathHelper.Clamp(prismCharge / FacetProgressThreshold, 0f, 1f);
+    public int PrismBoltVolleyCount => Math.Clamp(volleyShotCounter, 0, PrismBoltInterval - 1);
+    public float PrismBoltReadinessRatio => MathHelper.Clamp(PrismBoltVolleyCount / (float)(PrismBoltInterval - 1), 0f, 1f);
+    public bool NextVolleyIsPrismBolt => PrismBoltVolleyCount >= PrismBoltInterval - 1;
     public float Radiance => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStoneRadiance;
     public float RadianceRatio => Player.GetModPlayer<AlienIdentityPlayer>().ChromaStoneRadianceRatio;
     public int StoredFacets => Math.Clamp(storedFacets, 0, MaxFacets);

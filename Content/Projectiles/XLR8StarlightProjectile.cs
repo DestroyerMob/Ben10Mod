@@ -12,20 +12,47 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class XLR8StarlightProjectile : ModProjectile {
     private const int StrikeLifetime = 7;
+    private const int PotisStrikeLifetime = 8;
     private const float BaseReach = 154f;
     private const float OverdriveReach = 256f;
+    private const float PotisBaseReach = 210f;
+    private const float PotisOverdriveReach = 305f;
     private const float BaseCollisionWidth = 14f;
     private const float OverdriveCollisionWidth = 18f;
+    private const float PotisBaseCollisionWidth = 20f;
+    private const float PotisOverdriveCollisionWidth = 24f;
     private const float FistForwardOffset = 12f;
     private const float FistVerticalOffset = -4f;
 
-    private bool Empowered => Projectile.ai[0] >= 0.5f;
+    private int StrikeMode => (int)Math.Round(Projectile.ai[0]);
+    private bool PotisInfused => StrikeMode >= 2;
+    private bool Empowered => StrikeMode == 1 || StrikeMode == 3;
     private int StrikeSerial => (int)Math.Round(Projectile.ai[1]);
     private int ActivationDelay => Math.Max(0, (int)Math.Round(Projectile.ai[2]));
+    private int LifetimeFrames => PotisInfused ? PotisStrikeLifetime : StrikeLifetime;
+    private float CurrentReach => PotisInfused
+        ? Empowered ? PotisOverdriveReach : PotisBaseReach
+        : Empowered ? OverdriveReach : BaseReach;
+    private float CurrentCollisionWidth => PotisInfused
+        ? Empowered ? PotisOverdriveCollisionWidth : PotisBaseCollisionWidth
+        : Empowered ? OverdriveCollisionWidth : BaseCollisionWidth;
+    private float CurrentScale => PotisInfused
+        ? Empowered ? 1.34f : 1.18f
+        : Empowered ? 1.28f : 1.12f;
     private float StrikeSide => (StrikeSerial & 1) == 0 ? -1f : 1f;
-    private Color StrikeColor => (StrikeSerial & 1) == 0
-        ? (Empowered ? new Color(18, 34, 84) : new Color(10, 18, 42))
-        : (Empowered ? new Color(90, 190, 255) : new Color(28, 108, 255));
+    private Color StrikeColor {
+        get {
+            if (PotisInfused) {
+                return (StrikeSerial & 1) == 0
+                    ? (Empowered ? new Color(80, 255, 238) : new Color(44, 218, 255))
+                    : (Empowered ? new Color(255, 246, 150) : new Color(168, 242, 255));
+            }
+
+            return (StrikeSerial & 1) == 0
+                ? (Empowered ? new Color(18, 34, 84) : new Color(10, 18, 42))
+                : (Empowered ? new Color(90, 190, 255) : new Color(28, 108, 255));
+        }
+    }
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.PiercingStarlight}";
 
@@ -60,7 +87,8 @@ public class XLR8StarlightProjectile : ModProjectile {
 
         if (Projectile.localAI[1] < 0f) {
             Projectile.localAI[1] = ActivationDelay;
-            Projectile.timeLeft = StrikeLifetime + ActivationDelay;
+            Projectile.timeLeft = LifetimeFrames + ActivationDelay;
+            Projectile.localNPCHitCooldown = LifetimeFrames;
         }
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
@@ -69,18 +97,19 @@ public class XLR8StarlightProjectile : ModProjectile {
 
         if (Projectile.localAI[1] > 0f) {
             Projectile.localAI[1]--;
-            Projectile.Center = GetStrikeOrigin(owner, direction, Empowered ? 1.28f : 1.12f);
+            Projectile.Center = GetStrikeOrigin(owner, direction, CurrentScale);
             return;
         }
 
-        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        int lifetimeFrames = LifetimeFrames;
+        float progress = 1f - Projectile.timeLeft / (float)lifetimeFrames;
         float reachProgress = EaseOutCubic(progress);
         float laneProgress = 1f - progress;
-        float scale = Empowered ? 1.28f : 1.12f;
+        float scale = CurrentScale;
         Vector2 strikeOrigin = GetStrikeOrigin(owner, direction, scale);
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
         Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * laneProgress * scale;
-        float reach = MathHelper.Lerp(14f, Empowered ? OverdriveReach : BaseReach, reachProgress) * scale;
+        float reach = MathHelper.Lerp(14f, CurrentReach, reachProgress) * scale;
 
         Projectile.scale = scale;
         Projectile.rotation = direction.ToRotation();
@@ -98,7 +127,15 @@ public class XLR8StarlightProjectile : ModProjectile {
         }
 
         Color strikeColor = StrikeColor;
-        Lighting.AddLight(Projectile.Center, strikeColor.ToVector3() * 0.0026f);
+        Lighting.AddLight(Projectile.Center, strikeColor.ToVector3() * (PotisInfused ? 0.0048f : 0.0026f));
+
+        if (PotisInfused && Main.rand.NextBool(Empowered ? 1 : 2)) {
+            Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(5f, 5f),
+                Main.rand.NextBool(4) ? DustID.WhiteTorch : DustID.BlueCrystalShard,
+                -direction * Main.rand.NextFloat(0.8f, Empowered ? 3.2f : 2.4f), 120,
+                strikeColor, Main.rand.NextFloat(0.9f, Empowered ? 1.35f : 1.18f));
+            dust.noGravity = true;
+        }
     }
 
     public override bool PreDraw(ref Color lightColor) {
@@ -110,14 +147,15 @@ public class XLR8StarlightProjectile : ModProjectile {
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Vector2 strikeOrigin = GetStrikeOrigin(owner, direction, Projectile.scale);
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
-        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        int lifetimeFrames = LifetimeFrames;
+        float progress = 1f - Projectile.timeLeft / (float)lifetimeFrames;
         float reachProgress = EaseOutCubic(progress);
         Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * (1f - progress) * Projectile.scale;
         Vector2 worldStart = strikeOrigin + laneOffset;
         Vector2 worldEnd = Projectile.Center;
         float opacity = Utils.GetLerpValue(0f, 0.16f, progress, true) *
-                        Utils.GetLerpValue(0f, 0.38f, Projectile.timeLeft / (float)StrikeLifetime, true);
-        float beamWidth = (Empowered ? 16f : 13.5f) * Projectile.scale;
+                        Utils.GetLerpValue(0f, 0.38f, Projectile.timeLeft / (float)lifetimeFrames, true);
+        float beamWidth = (PotisInfused ? Empowered ? 20f : 17f : Empowered ? 16f : 13.5f) * Projectile.scale;
         Color strikeColor = StrikeColor;
 
         DrawBeam(slashTexture, worldStart, worldEnd, beamWidth, strikeColor, opacity);
@@ -126,7 +164,7 @@ public class XLR8StarlightProjectile : ModProjectile {
             if (Projectile.oldPos[i] == Vector2.Zero)
                 continue;
 
-            float previousProgress = MathHelper.Clamp(progress - (i + 1f) / StrikeLifetime, 0f, 1f);
+            float previousProgress = MathHelper.Clamp(progress - (i + 1f) / lifetimeFrames, 0f, 1f);
             float previousReachProgress = EaseOutCubic(previousProgress);
             float previousLaneProgress = 1f - previousProgress;
             Vector2 trailStart = strikeOrigin +
@@ -147,7 +185,7 @@ public class XLR8StarlightProjectile : ModProjectile {
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         Vector2 normal = direction.RotatedBy(MathHelper.PiOver2);
-        float progress = 1f - Projectile.timeLeft / (float)StrikeLifetime;
+        float progress = 1f - Projectile.timeLeft / (float)LifetimeFrames;
         float reachProgress = EaseOutCubic(progress);
         Vector2 laneOffset = normal * StrikeSide * MathHelper.Lerp(7f, 1.5f, reachProgress) * (1f - progress) * Projectile.scale;
         Vector2 lineStart = GetStrikeOrigin(owner, direction, Projectile.scale) + laneOffset;
@@ -159,12 +197,24 @@ public class XLR8StarlightProjectile : ModProjectile {
             targetHitbox.Size(),
             lineStart,
             lineEnd,
-            (Empowered ? OverdriveCollisionWidth : BaseCollisionWidth) * Projectile.scale,
+            CurrentCollisionWidth * Projectile.scale,
             ref collisionPoint
         );
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        if (!PotisInfused || Main.dedServ)
+            return;
+
+        Color strikeColor = StrikeColor;
+        Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
+        for (int i = 0; i < (Empowered ? 14 : 10); i++) {
+            Dust dust = Dust.NewDustPerfect(target.Center + Main.rand.NextVector2Circular(10f, 10f),
+                i % 4 == 0 ? DustID.WhiteTorch : DustID.BlueCrystalShard,
+                direction.RotatedByRandom(0.7f) * Main.rand.NextFloat(1.2f, Empowered ? 5.2f : 3.8f),
+                95, strikeColor, Main.rand.NextFloat(1f, Empowered ? 1.45f : 1.25f));
+            dust.noGravity = true;
+        }
     }
 
     private static Vector2 GetStrikeOrigin(Player owner, Vector2 direction, float scale) {

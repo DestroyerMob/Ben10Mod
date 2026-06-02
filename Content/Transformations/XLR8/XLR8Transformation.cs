@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Accessories;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -21,6 +22,24 @@ public class XLR8Transformation : Transformation {
     private const float OverdriveVectorDashRange = 600f;
     private const int PrimaryStrikeBurstCount = 5;
     private const int PrimaryStrikeSpacing = 2;
+    private const int PotisVectorDashEnergyCost = 15;
+    private const int PotisVectorDashCooldown = 11 * 60;
+    private const float PotisBaseAttackUseTimeMultiplier = 0.78f;
+    private const float PotisOverdriveAttackUseTimeMultiplier = 0.62f;
+    private const float PotisBaseVectorDashRange = 540f;
+    private const float PotisOverdriveVectorDashRange = 760f;
+    private const int PotisPrimaryStrikeBurstCount = 7;
+    private const int PotisPrimaryStrikeSpacing = 1;
+    private const float PotisPrimaryDamageMultiplier = 0.72f;
+    private const float PotisSecondaryDamageMultiplier = 1.18f;
+    private const float PotisVectorDashDamageMultiplier = 1.08f;
+    private const int PotisPrimaryAttackSpeed = 8;
+    private const int PotisPrimaryShootSpeed = 22;
+    private const int PotisSecondaryAttackSpeed = 66;
+    private const int PotisSecondaryShootSpeed = 16;
+    private const int PotisUltimateAbilityCost = 75;
+    private const int PotisUltimateAbilityDuration = 5 * 60;
+    private const int PotisUltimateAbilityCooldown = 52 * 60;
 
     public override string FullID                  => "Ben10Mod:XLR8";
     public override string TransformationName      => "XLR8";
@@ -68,19 +87,139 @@ public class XLR8Transformation : Transformation {
     public override int    UltimateAbilityDuration => 4 * 60;
     public override int    UltimateAbilityCooldown => 60 * 60;
 
+    public override int GetMoveSetIndex(OmnitrixPlayer omp) => HasPotisAltiare(omp?.Player) ? 1 : 0;
+
+    public override string GetDescription(OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return Description;
+
+        return $"{Description} Potis Altiare turns XLR8 into a slipstream duelist with denser afterimages, safer piercing dashes, longer cursor vectors, and a brighter timebreak field.";
+    }
+
+    public override List<string> GetAbilities(OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return base.GetAbilities(omp);
+
+        return new List<string> {
+            "Afterimage Flurry releases denser Potis speed-strikes with brighter, easier-to-read lanes.",
+            "Slipstream Cut is a longer, safer piercing dash for staying inside bosses without eating every contact hit.",
+            "Slipstream Overdrive makes XLR8 faster, sharper, and slightly tougher while keeping his attack tempo readable.",
+            "Chrono Vector reaches farther, costs less Omnitrix energy, and leaves a stronger time trail.",
+            "Water running at speed.",
+            "Timebreak Field extends the battlefield freeze and gives XLR8 a short survivability window while it is active."
+        };
+    }
+
+    public override string GetAbilitySelectionDisplayName(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
+        if (!HasPotisAltiare(omp?.Player))
+            return base.GetAbilitySelectionDisplayName(selection, omp);
+
+        return selection switch {
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => "Slipstream Overdrive",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => "Chrono Vector",
+            OmnitrixPlayer.AttackSelection.Ultimate => "Timebreak Field",
+            _ => base.GetAbilitySelectionDisplayName(selection, omp)
+        };
+    }
+
+    public override int GetSecondaryAbilityCooldown(OmnitrixPlayer omp) {
+        int cooldown = HasPotisAltiare(omp?.Player) ? PotisVectorDashCooldown : VectorDashCooldown;
+        return ApplyAbilityCooldownMultiplier(cooldown, omp.secondaryAbilityCooldownMultiplier);
+    }
+
+    public override int GetUltimateAbilityCost(OmnitrixPlayer omp) {
+        return HasPotisAltiare(omp?.Player) ? PotisUltimateAbilityCost : UltimateAbilityCost;
+    }
+
+    public override int GetUltimateAbilityDuration(OmnitrixPlayer omp) {
+        return HasPotisAltiare(omp?.Player) ? PotisUltimateAbilityDuration : UltimateAbilityDuration;
+    }
+
+    public override int GetUltimateAbilityCooldown(OmnitrixPlayer omp) {
+        int cooldown = HasPotisAltiare(omp?.Player) ? PotisUltimateAbilityCooldown : UltimateAbilityCooldown;
+        return ApplyAbilityCooldownMultiplier(cooldown, omp.ultimateAbilityCooldownMultiplier);
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetPrimaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreatePrimaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Afterimage Flurry",
+                ProjectileType = PrimaryAttack,
+                DamageMultiplier = PotisPrimaryDamageMultiplier,
+                UseTime = PotisPrimaryAttackSpeed,
+                ShootSpeed = PotisPrimaryShootSpeed,
+                UseStyle = PrimaryUseStyle,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = PrimaryArmorPenetration + 4
+            });
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreateSecondaryAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Slipstream Cut",
+                ProjectileType = SecondaryAttack,
+                DamageMultiplier = PotisSecondaryDamageMultiplier,
+                UseTime = PotisSecondaryAttackSpeed,
+                ShootSpeed = PotisSecondaryShootSpeed,
+                UseStyle = SecondaryUseStyle,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = SecondaryArmorPenetration + 5
+            });
+    }
+
+    protected override IReadOnlyList<TransformationAttackProfile> GetSecondaryAbilityAttackProfiles() {
+        return CreateMoveSetProfiles(
+            CreateSecondaryAbilityAttackProfile(),
+            new TransformationAttackProfile {
+                DisplayName = "Chrono Vector",
+                ProjectileType = SecondaryAbilityAttack,
+                DamageMultiplier = PotisVectorDashDamageMultiplier,
+                UseTime = SecondaryAbilityAttackSpeed,
+                ShootSpeed = SecondaryAbilityAttackShootSpeed,
+                UseStyle = SecondaryAbilityAttackUseStyle,
+                Channel = false,
+                NoMelee = true,
+                ArmorPenetration = SecondaryAbilityAttackArmorPenetration + 5,
+                EnergyCost = PotisVectorDashEnergyCost,
+                SingleUse = true
+            });
+    }
+
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
-        
-        player.moveSpeed *= omp.PrimaryAbilityEnabled ? 5.2f : 2.7f;
-        player.accRunSpeed *= omp.PrimaryAbilityEnabled ? 4.3f : 2.2f;
-        player.runAcceleration *= omp.PrimaryAbilityEnabled ? 2.15f : 1.45f;
-        player.maxRunSpeed += omp.PrimaryAbilityEnabled ? 2.2f : 1.1f;
-        player.GetAttackSpeed(DamageClass.Generic) += omp.PrimaryAbilityEnabled ? 1.25f : 0.75f;
-        player.GetCritChance<HeroDamage>() += omp.PrimaryAbilityEnabled ? 16f : 8f;
+
+        bool potis = HasPotisAltiare(player);
+        bool overdrive = omp.PrimaryAbilityEnabled;
+        player.moveSpeed *= overdrive ? potis ? 5.65f : 5.2f : potis ? 3.05f : 2.7f;
+        player.accRunSpeed *= overdrive ? potis ? 4.65f : 4.3f : potis ? 2.45f : 2.2f;
+        player.runAcceleration *= overdrive ? potis ? 2.35f : 2.15f : potis ? 1.62f : 1.45f;
+        player.maxRunSpeed += overdrive ? potis ? 2.65f : 2.2f : potis ? 1.42f : 1.1f;
+        player.GetAttackSpeed(DamageClass.Generic) += overdrive ? potis ? 1.42f : 1.25f : potis ? 0.88f : 0.75f;
+        player.GetCritChance<HeroDamage>() += overdrive ? potis ? 20f : 16f : potis ? 11f : 8f;
         player.pickSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         player.tileSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         player.wallSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
-        player.jumpSpeedBoost += omp.PrimaryAbilityEnabled ? 3f : 1.6f;
+        player.jumpSpeedBoost += overdrive ? potis ? 3.35f : 3f : potis ? 1.9f : 1.6f;
+        if (potis) {
+            player.GetDamage<HeroDamage>() += 0.05f;
+            player.GetAttackSpeed<HeroDamage>() += 0.08f;
+            player.GetArmorPenetration<HeroDamage>() += 4;
+            player.statDefense += 3;
+            player.endurance += 0.03f;
+            Lighting.AddLight(player.Center, new Vector3(0.1f, 0.78f, 0.95f) * 0.2f);
+        }
+
+        if (omp.IsUltimateAbilityActive) {
+            player.statDefense += potis ? 8 : 5;
+            player.endurance += potis ? 0.08f : 0.04f;
+            player.armorEffectDrawShadow = true;
+        }
+
         if (Math.Abs(player.velocity.X) > 2) {
             player.waterWalk =  true;
         }
@@ -89,11 +228,12 @@ public class XLR8Transformation : Transformation {
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
         base.ModifyPlumbersBadgeStats(item, omp);
 
+        bool potis = HasPotisAltiare(omp.Player);
         float speedMultiplier = omp.PrimaryAbilityEnabled
-            ? OverdriveAttackUseTimeMultiplier
-            : BaseAttackUseTimeMultiplier;
+            ? potis ? PotisOverdriveAttackUseTimeMultiplier : OverdriveAttackUseTimeMultiplier
+            : potis ? PotisBaseAttackUseTimeMultiplier : BaseAttackUseTimeMultiplier;
         bool firingPrimary = !omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded && !omp.ultimateAttack;
-        int minUseTime = firingPrimary ? 7 : 6;
+        int minUseTime = firingPrimary ? potis ? 5 : 7 : potis ? 5 : 6;
 
         item.useTime = item.useAnimation = Math.Max(minUseTime, (int)Math.Round(item.useTime * speedMultiplier));
     }
@@ -111,26 +251,34 @@ public class XLR8Transformation : Transformation {
 
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
+        bool potis = HasPotisAltiare(player);
         if (!omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded) {
             if (HasActiveOwnedProjectile(player, ModContent.ProjectileType<XLR8StarlightProjectile>()))
                 return false;
 
             Vector2 attackDirection = ResolveAimDirection(player, velocity);
-            float empoweredFlag = omp.PrimaryAbilityEnabled ? 1f : 0f;
+            float strikeMode = potis
+                ? omp.PrimaryAbilityEnabled ? 3f : 2f
+                : omp.PrimaryAbilityEnabled ? 1f : 0f;
+            int burstCount = potis ? PotisPrimaryStrikeBurstCount : PrimaryStrikeBurstCount;
+            int strikeSpacing = potis ? PotisPrimaryStrikeSpacing : PrimaryStrikeSpacing;
+            int shootSpeed = potis ? PotisPrimaryShootSpeed : PrimaryShootSpeed;
+            float spread = potis ? 0.12f : 0.085f;
+            int strikeDamage = potis ? Math.Max(1, (int)Math.Round(damage * PotisPrimaryDamageMultiplier)) : damage;
 
-            for (int i = 0; i < PrimaryStrikeBurstCount; i++) {
-                Vector2 burstDirection = attackDirection.RotatedBy(Main.rand.NextFloat(-0.085f, 0.085f));
+            for (int i = 0; i < burstCount; i++) {
+                Vector2 burstDirection = attackDirection.RotatedBy(Main.rand.NextFloat(-spread, spread));
                 omp.transformationAttackSerial++;
                 int burstProjectileIndex = Projectile.NewProjectile(source,
                     player.MountedCenter + burstDirection * 12f,
-                    burstDirection * PrimaryShootSpeed,
+                    burstDirection * shootSpeed,
                     ModContent.ProjectileType<XLR8StarlightProjectile>(),
-                    damage,
+                    strikeDamage,
                     knockback,
                     player.whoAmI,
-                    empoweredFlag,
+                    strikeMode,
                     omp.transformationAttackSerial,
-                    i * PrimaryStrikeSpacing);
+                    i * strikeSpacing);
 
                 if (burstProjectileIndex >= 0 && burstProjectileIndex < Main.maxProjectiles)
                     Main.projectile[burstProjectileIndex].netUpdate = true;
@@ -139,8 +287,26 @@ public class XLR8Transformation : Transformation {
             return false;
         }
 
-        if (!omp.IsSecondaryAbilityAttackLoaded)
-            return base.Shoot(player, omp, source, position, velocity, damage, knockback);
+        if (!omp.IsSecondaryAbilityAttackLoaded) {
+            if (!potis)
+                return base.Shoot(player, omp, source, position, velocity, damage, knockback);
+
+            Vector2 dashDirection = ResolveAimDirection(player, velocity);
+            int slipstreamDamage = Math.Max(1, (int)Math.Round(damage * PotisSecondaryDamageMultiplier));
+            int slipstreamProjectileIndex = Projectile.NewProjectile(source,
+                player.MountedCenter + dashDirection * 18f,
+                dashDirection * PotisSecondaryShootSpeed,
+                SecondaryAttack,
+                slipstreamDamage,
+                knockback + 0.8f,
+                player.whoAmI,
+                1f);
+
+            if (slipstreamProjectileIndex >= 0 && slipstreamProjectileIndex < Main.maxProjectiles)
+                Main.projectile[slipstreamProjectileIndex].netUpdate = true;
+
+            return false;
+        }
 
         if (Main.netMode == NetmodeID.Server ||
             (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI != Main.myPlayer))
@@ -151,17 +317,22 @@ public class XLR8Transformation : Transformation {
         if (offset == Vector2.Zero)
             offset = new Vector2(player.direction, 0f);
 
-        float maxRange = omp.PrimaryAbilityEnabled ? OverdriveVectorDashRange : BaseVectorDashRange;
+        float maxRange = omp.PrimaryAbilityEnabled
+            ? potis ? PotisOverdriveVectorDashRange : OverdriveVectorDashRange
+            : potis ? PotisBaseVectorDashRange : BaseVectorDashRange;
         float requestedDistance = Math.Min(offset.Length(), maxRange);
         Vector2 direction = offset.SafeNormalize(new Vector2(player.direction, 0f));
         bool empowered = omp.PrimaryAbilityEnabled;
-        float dashSpeed = XLR8VectorDashProjectile.GetDashSpeed(empowered);
+        float dashSpeed = XLR8VectorDashProjectile.GetDashSpeed(empowered, potis);
+        int maxDashFrames = potis ? XLR8VectorDashProjectile.PotisMaxDashFrames : XLR8VectorDashProjectile.MaxDashFrames;
         int dashFrames = Utils.Clamp((int)Math.Ceiling(requestedDistance / dashSpeed),
-            XLR8VectorDashProjectile.MinDashFrames, XLR8VectorDashProjectile.MaxDashFrames);
-        int dashDamage = Math.Max(1, (int)Math.Round(damage * SecondaryAbilityAttackModifier));
+            XLR8VectorDashProjectile.MinDashFrames, maxDashFrames);
+        float damageMultiplier = potis ? PotisVectorDashDamageMultiplier : SecondaryAbilityAttackModifier;
+        int dashDamage = Math.Max(1, (int)Math.Round(damage * damageMultiplier));
 
         int projectileIndex = Projectile.NewProjectile(source, player.MountedCenter + direction * 18f, direction * dashSpeed,
-            SecondaryAbilityAttack, dashDamage, knockback + 1f, player.whoAmI, empowered ? 1f : 0f);
+            SecondaryAbilityAttack, dashDamage, knockback + (potis ? 1.35f : 1f), player.whoAmI,
+            empowered ? 1f : 0f, potis ? 1f : 0f);
         if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
             Projectile projectile = Main.projectile[projectileIndex];
             projectile.timeLeft = dashFrames;
@@ -169,17 +340,53 @@ public class XLR8Transformation : Transformation {
         }
 
         if (!Main.dedServ) {
-            int dustCount = empowered ? 22 : 16;
+            int dustCount = potis ? empowered ? 34 : 26 : empowered ? 22 : 16;
+            Color dustColor = potis ? new Color(160, 250, 255) : new Color(120, 210, 255);
             for (int i = 0; i < dustCount; i++) {
-                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(12f, 18f), DustID.BlueCrystalShard,
-                    direction.RotatedByRandom(0.45f) * Main.rand.NextFloat(1.8f, 4.8f), 110,
-                    new Color(120, 210, 255), Main.rand.NextFloat(1f, 1.25f));
+                Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(12f, 18f),
+                    potis && i % 4 == 0 ? DustID.WhiteTorch : DustID.BlueCrystalShard,
+                    direction.RotatedByRandom(potis ? 0.55f : 0.45f) * Main.rand.NextFloat(1.8f, potis ? 6.2f : 4.8f),
+                    110, dustColor, Main.rand.NextFloat(1f, potis ? 1.45f : 1.25f));
                 dust.noGravity = true;
             }
         }
 
-        SoundEngine.PlaySound(SoundID.Item8 with { Pitch = 0.3f, Volume = 0.82f }, player.Center);
+        SoundEngine.PlaySound(SoundID.Item8 with { Pitch = potis ? 0.42f : 0.3f, Volume = potis ? 0.9f : 0.82f },
+            player.Center);
         return false;
+    }
+
+    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        bool potis = HasPotisAltiare(player);
+        if ((!potis && !omp.IsUltimateAbilityActive) || Main.dedServ)
+            return;
+
+        float speed = player.velocity.Length();
+        if (speed < 3f)
+            return;
+
+        int interval = omp.IsUltimateAbilityActive ? 1 : 2;
+        if (Main.GameUpdateCount % interval != 0)
+            return;
+
+        Color trailColor = potis ? new Color(132, 248, 255) : new Color(96, 184, 255);
+        Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(12f, 18f),
+            potis && Main.rand.NextBool(3) ? DustID.WhiteTorch : DustID.BlueCrystalShard,
+            -player.velocity.SafeNormalize(Vector2.UnitX) * Main.rand.NextFloat(0.9f, potis ? 3.2f : 2.2f),
+            115, trailColor, Main.rand.NextFloat(0.9f, potis ? 1.45f : 1.15f));
+        dust.noGravity = true;
+        dust.fadeIn = 0.8f;
+    }
+
+    public override bool TryGetTransformationTint(Player player, OmnitrixPlayer omp, out Color tint,
+        out float blendStrength, out bool forceFullBright) {
+        bool potis = HasPotisAltiare(player);
+        tint = potis
+            ? omp.IsUltimateAbilityActive ? new Color(120, 248, 255) : new Color(80, 220, 255)
+            : new Color(80, 180, 255);
+        blendStrength = omp.IsUltimateAbilityActive ? potis ? 0.24f : 0.14f : potis ? 0.08f : 0f;
+        forceFullBright = omp.IsUltimateAbilityActive && potis;
+        return blendStrength > 0f;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -212,6 +419,10 @@ public class XLR8Transformation : Transformation {
         }
 
         return false;
+    }
+
+    private static bool HasPotisAltiare(Player player) {
+        return player?.GetModPlayer<PotisAltiarePlayer>()?.potisAltiareEquipped == true;
     }
     
     public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [
