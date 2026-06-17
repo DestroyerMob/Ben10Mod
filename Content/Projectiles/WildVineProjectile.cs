@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -49,12 +50,20 @@ public class WildVineProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        Player player = Main.player[Projectile.owner];
+        Vector2 anchorPosition = player.active
+            ? WildVineAnchorProjectile.ResolveControlPoint(player, target.Center, 520f)
+            : Projectile.Center;
+
         if (target.boss || !target.CanBeChasedBy(this)) {
+            target.AddBuff(ModContent.BuffType<WildVineTethered>(), 90);
+            CreateAnchorAt(anchorPosition, WildVineAnchorProjectile.ModeSnare, 0.82f);
             StartReturn();
             return;
         }
 
-        target.AddBuff(BuffID.Poisoned, 5 * 60);
+        target.AddBuff(ModContent.BuffType<WildVineTethered>(), 4 * 60);
+        CreateAnchorAt(anchorPosition, WildVineAnchorProjectile.ModeSnare, 1.08f);
         Projectile.ai[0] = StateLatched;
         Projectile.ai[1] = target.whoAmI + 1;
         Projectile.velocity = Vector2.Zero;
@@ -64,6 +73,7 @@ public class WildVineProjectile : ModProjectile {
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
+        CreateAnchorAt(Projectile.Center, WildVineAnchorProjectile.ModeSnare, 1f);
         StartReturn();
         return false;
     }
@@ -128,17 +138,19 @@ public class WildVineProjectile : ModProjectile {
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
-        Vector2 toPlayerCenter = player.MountedCenter - npc.Center;
-        float distanceSquared = toPlayerCenter.LengthSquared();
+        Vector2 controlPoint = WildVineAnchorProjectile.ResolveControlPoint(player, npc.Center, 520f);
+        Vector2 toControlPoint = controlPoint - npc.Center;
+        float distanceSquared = toControlPoint.LengthSquared();
         if (distanceSquared <= ReleaseDistanceSq) {
-            Vector2 pushAway = (-toPlayerCenter).SafeNormalize(Vector2.UnitX);
+            Vector2 pushAway = (-toControlPoint).SafeNormalize(Vector2.UnitX);
             npc.velocity = pushAway * ReleasePushSpeed;
+            npc.AddBuff(ModContent.BuffType<WildVineTethered>(), 90);
             npc.netUpdate = true;
             StartReturn();
             return;
         }
 
-        Vector2 pullDirection = toPlayerCenter.SafeNormalize(Vector2.Zero);
+        Vector2 pullDirection = toControlPoint.SafeNormalize(Vector2.Zero);
         float resist = MathHelper.Clamp(1f - npc.knockBackResist, 0f, 0.85f);
         float strength = PullStrength * (1f - resist);
 
@@ -167,6 +179,15 @@ public class WildVineProjectile : ModProjectile {
         Projectile.ai[1] = 0;
         Projectile.tileCollide = false;
         Projectile.netUpdate = true;
+    }
+
+    private void CreateAnchorAt(Vector2 position, float mode, float radiusScale) {
+        if (Projectile.owner != Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        int anchorDamage = System.Math.Max(1, (int)System.Math.Round(Projectile.damage * 0.46f));
+        WildVineAnchorProjectile.CreateOrRefresh(Projectile.GetSource_FromThis(), position, anchorDamage, Projectile.owner,
+            mode, 4 * 60, radiusScale);
     }
 
     private void DrawChain() {

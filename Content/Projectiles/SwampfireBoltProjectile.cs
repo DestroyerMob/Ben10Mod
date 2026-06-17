@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -14,7 +16,7 @@ public class SwampfireBoltProjectile : ModProjectile {
         Projectile.width = 18;
         Projectile.height = 18;
         Projectile.friendly = true;
-        Projectile.DamageType = DamageClass.Magic;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.penetrate = 1;
         Projectile.timeLeft = 90;
         Projectile.tileCollide = true;
@@ -63,7 +65,15 @@ public class SwampfireBoltProjectile : ModProjectile {
         }
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        if (target.HasBuff(ModContent.BuffType<FuelVapour>())) {
+            modifiers.FinalDamage *= 1.12f;
+            modifiers.ArmorPenetration += 5;
+        }
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.OnFire3, 240);
+        target.AddBuff(ModContent.BuffType<FuelVapour>(), 6 * 60);
+        target.AddBuff(BuffID.OnFire3, 120);
     }
 }

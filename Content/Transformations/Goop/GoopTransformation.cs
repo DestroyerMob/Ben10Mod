@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Projectiles;
@@ -14,17 +15,18 @@ namespace Ben10Mod.Content.Transformations.Goop;
 public class GoopTransformation : Transformation {
     private const float LandingSquishVelocityThreshold = 3.5f;
     private const float LiquefyTrailMultiplier = 1.8f;
+    private const int FallbackBaseDamage = 18;
 
     public override string FullID => "Ben10Mod:Goop";
     public override string TransformationName => "Goop";
     public override int TransformationBuffId => ModContent.BuffType<Goop_Buff>();
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
-    public override string Description => "A slippery Polymorph who pelts enemies with corrosive slime, litters the ground with puddles, and melts into motion when he needs to slip away.";
+    public override string Description => "A ground-control blob who turns the floor into a corrosive hazard map, then reshapes or detonates it.";
     public override List<string> Abilities => new() {
-        "Corrosive globs that splash on impact",
-        "Lobbed slime puddles that control the ground",
-        "Liquefy for faster, lower, slipperier movement",
-        "Toxic Deluge that blankets the area in acid"
+        "Corrosive globs become empowered when fired through puddles",
+        "Slime puddles merge, grow, and dissolve enemies standing in them",
+        "Liquefy slides faster over owned puddles and leaves more slime",
+        "Toxic Deluge detonates active puddles before surging forward"
     };
     public override string PrimaryAttackName => "Corrosive Glob";
     public override string SecondaryAttackName => "Slime Puddle";
@@ -77,6 +79,13 @@ public class GoopTransformation : Transformation {
         player.maxFallSpeed *= 0.72f;
         player.jumpSpeedBoost += 1.6f;
         player.noKnockback = true;
+
+        if (GoopPuddleProjectile.FindOwnedPuddleAtPoint(player.whoAmI, player.Bottom + new Vector2(0f, -4f), 20f) == null)
+            return;
+
+        player.moveSpeed += 0.12f;
+        player.runAcceleration += 0.16f;
+        player.maxRunSpeed += 1.35f;
     }
 
     public override void PostUpdate(Player player, OmnitrixPlayer omp) {
@@ -128,6 +137,8 @@ public class GoopTransformation : Transformation {
 
         if (omp.goopLandingSplashTime > 0)
             omp.goopLandingSplashTime--;
+
+        TryApplyLiquefyPuddleSlide(player, omp);
 
         omp.goopWasGrounded = grounded;
         omp.goopPreviousVerticalVelocity = player.velocity.Y;
@@ -196,10 +207,14 @@ public class GoopTransformation : Transformation {
         Vector2 fireDirection = velocity.SafeNormalize(new Vector2(player.direction, 0f));
 
         if (omp.ultimateAttack) {
+            int detonatedPuddles = player.whoAmI == Main.myPlayer
+                ? GoopPuddleProjectile.DetonateOwnedPuddles(player.whoAmI, source, 1.75f, Math.Max(1, (int)(damage * 0.45f)))
+                : 0;
             int projectileIndex = Projectile.NewProjectile(source, player.Center + fireDirection * 18f, fireDirection * 10.5f,
                 ModContent.ProjectileType<GoopDelugeProjectile>(), damage, knockback + 1f, player.whoAmI);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
-                Main.projectile[projectileIndex].scale = omp.PrimaryAbilityEnabled ? 1.18f : 1f;
+                Main.projectile[projectileIndex].scale = MathHelper.Clamp((omp.PrimaryAbilityEnabled ? 1.12f : 1f) +
+                                                                           detonatedPuddles * 0.07f, 1f, 1.72f);
                 Main.projectile[projectileIndex].netUpdate = true;
             }
 
@@ -229,12 +244,75 @@ public class GoopTransformation : Transformation {
         return false;
     }
 
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        int puddleType = ModContent.ProjectileType<GoopPuddleProjectile>();
+        int detonationType = ModContent.ProjectileType<GoopPuddleDetonationProjectile>();
+        if (projectile.type != PrimaryAttack && projectile.type != SecondaryAttack && projectile.type != UltimateAttack &&
+            projectile.type != puddleType && projectile.type != detonationType)
+            return;
+
+        bool dissolved = target.HasBuff(ModContent.BuffType<GoopDissolved>());
+        if (!dissolved)
+            return;
+
+        int activePuddles = Math.Min(GoopPuddleProjectile.CountOwnedPuddles(player.whoAmI), GoopPuddleProjectile.MaxOwnedPuddles);
+        modifiers.FinalDamage *= 1f + 0.1f + activePuddles * 0.025f;
+        modifiers.ArmorPenetration += 6 + activePuddles;
+
+        if (projectile.type == PrimaryAttack && projectile.ai[0] > 0f)
+            modifiers.FinalDamage *= 1.08f;
+    }
+
     private static void ResetGoopVisualState(OmnitrixPlayer omp) {
         omp.GoopVisualScale = Vector2.One;
         omp.goopWasGrounded = false;
         omp.goopPreviousVerticalVelocity = 0f;
         omp.goopLandingSquish = 0f;
         omp.goopLandingSplashTime = 0;
+    }
+
+    private static void TryApplyLiquefyPuddleSlide(Player player, OmnitrixPlayer omp) {
+        if (!omp.PrimaryAbilityEnabled)
+            return;
+
+        Projectile puddle = GoopPuddleProjectile.FindOwnedPuddleAtPoint(player.whoAmI, player.Bottom + new Vector2(0f, -4f), 22f);
+        if (puddle == null)
+            return;
+
+        int slideDirection = player.controlRight ? 1 : player.controlLeft ? -1 : 0;
+        if (slideDirection == 0 && Math.Abs(player.velocity.X) > 0.35f)
+            slideDirection = Math.Sign(player.velocity.X);
+        if (slideDirection == 0)
+            slideDirection = player.direction;
+
+        float speedLimit = 9.2f + (GoopPuddleProjectile.GetPuddleScale(puddle) - 1f) * 2.2f;
+        player.velocity.X = MathHelper.Clamp(player.velocity.X + slideDirection * 0.28f, -speedLimit, speedLimit);
+        player.velocity.Y *= 0.92f;
+        omp.GoopVisualScale = Vector2.Lerp(omp.GoopVisualScale, new Vector2(1.54f, 0.58f), 0.22f);
+
+        if (player.whoAmI != Main.myPlayer || Math.Abs(player.velocity.X) < 2.2f)
+            return;
+
+        if ((Main.GameUpdateCount + (ulong)player.whoAmI) % 18 != 0)
+            return;
+
+        int damage = ResolveHeroDamage(player, 0.2f);
+        GoopPuddleProjectile.CreateOrGrow(player.GetSource_FromThis(), player.Bottom + new Vector2(-slideDirection * 10f, -8f),
+            damage, player.whoAmI, growth: 0.08f, refreshTime: GoopPuddleProjectile.BaseLifetime / 2);
+    }
+
+    private static int ResolveHeroDamage(Player player, float multiplier) {
+        float baseDamage = ResolveBaseDamage(player) * multiplier;
+        return Math.Max(1, (int)Math.Round(player.GetDamage<HeroDamage>().ApplyTo(baseDamage)));
+    }
+
+    private static int ResolveBaseDamage(Player player) {
+        Item heldItem = player.HeldItem;
+        if (heldItem != null && !heldItem.IsAir && heldItem.CountsAsClass(ModContent.GetInstance<HeroDamage>()))
+            return Math.Max(1, heldItem.damage);
+
+        return FallbackBaseDamage;
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

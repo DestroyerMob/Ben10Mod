@@ -1,3 +1,5 @@
+using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -14,7 +16,7 @@ public class SwampfireSeedProjectile : ModProjectile {
         Projectile.width = 20;
         Projectile.height = 20;
         Projectile.friendly = true;
-        Projectile.DamageType = DamageClass.Magic;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
         Projectile.penetrate = 1;
         Projectile.timeLeft = 120;
         Projectile.tileCollide = true;
@@ -52,19 +54,25 @@ public class SwampfireSeedProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.OnFire3, 180);
-        target.AddBuff(BuffID.Poisoned, 180);
+        target.AddBuff(ModContent.BuffType<FuelVapour>(), 5 * 60);
+        target.AddBuff(BuffID.OnFire3, 90);
+        PlantBloomPod(target.Bottom, 0.3f);
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
-        if (Projectile.owner == Main.myPlayer || Main.netMode != NetmodeID.MultiplayerClient) {
-            Vector2 vineCenter = Projectile.Center + new Vector2(0f, -Projectile.height * 1.8f);
-            Projectile.NewProjectile(Projectile.GetSource_FromThis(), vineCenter, Vector2.Zero,
-                ModContent.ProjectileType<SwampfireVineProjectile>(), Projectile.damage, 0f, Projectile.owner);
-        }
+        PlantBloomPod(Projectile.Bottom, 0.25f);
 
         Projectile.Kill();
         return false;
+    }
+
+    private void PlantBloomPod(Vector2 groundPoint, float startingGrowth) {
+        if (Projectile.owner != Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        Vector2 podCenter = groundPoint + new Vector2(0f, -SwampfireVineProjectile.DefaultHeight * 0.5f + 8f);
+        SwampfireVineProjectile.CreateOrGrow(Projectile.GetSource_FromThis(), podCenter, Projectile.damage,
+            Projectile.owner, startingGrowth, SwampfireVineProjectile.BaseLifetime);
     }
 
     public override void OnKill(int timeLeft) {

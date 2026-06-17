@@ -26,14 +26,14 @@ public class WildVineTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<WildVine_Buff>();
 
     public override string Description =>
-        "A flexible Florauna who controls space with thorn lashes, toxic seed blooms, mobile vine grapples, and a snaring briar throw.";
+        "A trap-controller Florauna who grows vine anchors, tethers enemies, and decides where enemies should be moved.";
 
     public override List<string> Abilities => new() {
-        "Thorn whip that poisons on contact",
-        "Gas seed bomb with a cursor-driven lob and lingering toxic cloud",
-        "Vine Grapple for fast repositioning",
-        "Briar Snare that hooks smaller enemies and drags them in",
-        "Verdant Bloom that floods a target zone with oversized toxic blooms"
+        "Thorn whip pulls light enemies or tethers heavy ones toward your vine geometry",
+        "Gas seed bombs grow vine anchors when they land on tiles",
+        "Vine Grapple repositions Wildvine or yanks enemies toward anchors",
+        "Briar Snare creates a temporary anchor and drags enemies into control points",
+        "Verdant Bloom grows from existing anchors before falling back to a seed barrage"
     };
 
     public override string PrimaryAttackName => "Thorn Whip";
@@ -152,6 +152,33 @@ public class WildVineTransformation : Transformation {
     private static void FireVerdantBloom(Player player, EntitySource_ItemUse_WithAmmo source, int damage, float knockback,
         Vector2 direction, float damageMultiplier, float shootSpeed) {
         Vector2 focusPoint = ResolveAimTarget(player, direction, 300f, 120f, 460f);
+        List<Vector2> anchorCenters = WildVineAnchorProjectile.CollectOwnedAnchorCenters(player.whoAmI, focusPoint, 520f, 5);
+        if (anchorCenters.Count > 0) {
+            int bloomCloudDamage = ScaleDamage(damage, damageMultiplier * 0.82f);
+            int anchorDamage = ScaleDamage(damage, damageMultiplier * 0.42f);
+
+            for (int i = 0; i < anchorCenters.Count; i++) {
+                Vector2 anchorCenter = anchorCenters[i];
+                WildVineAnchorProjectile.CreateOrRefresh(source, anchorCenter, anchorDamage, player.whoAmI,
+                    WildVineAnchorProjectile.ModeBloom, 7 * 60, 1.26f);
+
+                int cloudIndex = Projectile.NewProjectile(source, anchorCenter, Vector2.Zero,
+                    ModContent.ProjectileType<WildVineGasCloudProjectile>(), bloomCloudDamage, knockback + 0.6f,
+                    player.whoAmI, WildVineBomb.VariantBloom, 1f);
+                if (cloudIndex >= 0 && cloudIndex < Main.maxProjectiles)
+                    Main.projectile[cloudIndex].netUpdate = true;
+
+                Vector2 targetPosition = anchorCenter + new Vector2((i - (anchorCenters.Count - 1) * 0.5f) * 32f,
+                    Main.rand.NextFloat(-18f, 18f));
+                Vector2 spawnPosition = GetSeedSpawnPosition(player, direction) +
+                                        direction.RotatedBy(MathHelper.PiOver2) * (i - (anchorCenters.Count - 1) * 0.5f) * 8f;
+                SpawnSeedBomb(player, source, damage, knockback + 0.6f, direction, targetPosition,
+                    damageMultiplier, shootSpeed + 1.25f, WildVineBomb.VariantBloom, spawnPosition);
+            }
+
+            return;
+        }
+
         Vector2[] targetOffsets = {
             new Vector2(-110f, 14f),
             new Vector2(-55f, -12f),

@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,6 +18,7 @@ public class WildVineGasCloudProjectile : ModProjectile {
     private const float BloomMaxRadius = 124f;
 
     private bool IsBloomVariant => Projectile.ai[0] >= WildVineBomb.VariantBloom;
+    private bool GrewFromAnchor => Projectile.ai[1] > 0f;
     private int MaxLifetime => IsBloomVariant ? BloomLifetime : RegularLifetime;
     private float MaxRadius => IsBloomVariant ? BloomMaxRadius : RegularMaxRadius;
 
@@ -102,10 +104,22 @@ public class WildVineGasCloudProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.velocity *= IsBloomVariant ? 0.82f : 0.9f;
-        target.AddBuff(BuffID.Poisoned, IsBloomVariant ? 6 * 60 : 4 * 60);
+        target.AddBuff(ModContent.BuffType<WildVineTethered>(), IsBloomVariant ? 3 * 60 : 2 * 60);
         if (IsBloomVariant)
-            target.AddBuff(BuffID.Venom, 2 * 60);
+            target.AddBuff(BuffID.Poisoned, 2 * 60);
+
+        Vector2 destination = Projectile.Center;
+        Projectile anchor = WildVineAnchorProjectile.FindClosestOwnedAnchor(Projectile.owner, target.Center,
+            GrewFromAnchor || IsBloomVariant ? 340f : 220f);
+        if (anchor != null)
+            destination = anchor.Center;
+
+        Vector2 pullDirection = target.Center.DirectionTo(destination).SafeNormalize(Vector2.Zero);
+        float pullStrength = IsBloomVariant ? 2.8f : 1.8f;
+        if (target.boss)
+            pullStrength *= 0.3f;
+
+        target.velocity = Vector2.Lerp(target.velocity, pullDirection * pullStrength, GrewFromAnchor ? 0.34f : 0.22f);
 
         target.netUpdate = true;
     }

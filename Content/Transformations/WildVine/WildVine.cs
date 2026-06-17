@@ -7,14 +7,14 @@ namespace Ben10Mod.Content.Transformations.WildVine;
 
 public class WildVine : ModItem {
     public static string TransformationDescription =>
-        "A flexible plant-form control fighter. Wildvine mixes thorn lashes, toxic blooms, a mobility vine grapple, and a briar snare for battlefield control.";
+        "A trap-control plant fighter. Wildvine grows anchors, tethers enemies, and moves targets into the geometry he creates.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Main attack: thorn whip that poisons on hit.",
-        "Alt attack: lob a gas seed that blooms into a lingering toxic cloud.",
-        "Primary ability: Vine Grapple for quick repositioning.",
-        "Secondary ability: Briar Snare that hooks smaller enemies and drags them toward you.",
-        "Ultimate attack: Verdant Bloom, a barrage of bloom seeds that saturates an area with larger toxic clouds."
+        "Main attack: thorn whip pulls light enemies or tethers heavy ones.",
+        "Alt attack: seed bombs grow vine anchors when they land on tiles.",
+        "Primary ability: Vine Grapple moves Wildvine or yanks enemies toward anchors.",
+        "Secondary ability: Briar Snare creates a temporary vine anchor and drags enemies into position.",
+        "Ultimate attack: Verdant Bloom grows from existing anchors before using a fallback seed barrage."
     };
 
     public override void Load() {

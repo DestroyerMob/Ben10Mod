@@ -11,7 +11,8 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class StinkFlyProjectile : ModProjectile {
     private const float ChildDamageMultiplier = 0.32f;
-    private static readonly float[] BurstAngles = { -0.54f, -0.18f, 0.18f, 0.54f };
+    private const int MinDroplets = 4;
+    private const int MaxDroplets = 9;
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
@@ -64,6 +65,9 @@ public class StinkFlyProjectile : ModProjectile {
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         target.AddBuff(ModContent.BuffType<EnemySlow>(), 3 * 60);
         target.AddBuff(BuffID.Poisoned, 4 * 60);
+
+        if (Projectile.ai[0] >= 0.55f)
+            target.AddBuff(BuffID.Venom, 2 * 60);
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
@@ -74,15 +78,24 @@ public class StinkFlyProjectile : ModProjectile {
     public override void OnKill(int timeLeft) {
         Vector2 baseVelocity = Projectile.velocity.LengthSquared() > 0.01f ? Projectile.velocity : Projectile.oldVelocity;
         Vector2 baseDirection = baseVelocity.SafeNormalize(new Vector2(Main.player[Projectile.owner].direction, 0f));
+        float speedPressure = MathHelper.Clamp(Projectile.ai[0], 0f, 1f);
 
         if (Projectile.owner == Main.myPlayer || Main.netMode != NetmodeID.MultiplayerClient) {
             int childDamage = System.Math.Max(1, (int)System.Math.Round(Projectile.damage * ChildDamageMultiplier));
-            for (int i = 0; i < BurstAngles.Length; i++) {
-                int projectileType = i % 2 == 0
+            int dropletCount = MinDroplets + (int)System.Math.Round((MaxDroplets - MinDroplets) * speedPressure);
+            float rainWidth = MathHelper.Lerp(56f, 164f, speedPressure);
+
+            for (int i = 0; i < dropletCount; i++) {
+                float progress = dropletCount <= 1 ? 0.5f : i / (float)(dropletCount - 1);
+                int projectileType = i % 3 == 0
                     ? ModContent.ProjectileType<StinkFlySlowProjectile>()
                     : ModContent.ProjectileType<StinkFlyPoisonProjectile>();
-                Vector2 childVelocity = baseDirection.RotatedBy(BurstAngles[i]) * Main.rand.NextFloat(9.5f, 12.5f);
-                Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, childVelocity, projectileType,
+                float lateralOffset = (progress - 0.5f) * rainWidth + Main.rand.NextFloat(-10f, 10f);
+                Vector2 childPosition = Projectile.Center + new Vector2(lateralOffset, Main.rand.NextFloat(-54f, -18f));
+                float lateralVelocity = MathHelper.Lerp(-2.4f, 2.4f, progress) +
+                                        baseDirection.X * MathHelper.Lerp(0.8f, 2.2f, speedPressure);
+                Vector2 childVelocity = new(lateralVelocity, Main.rand.NextFloat(8.5f, 12.5f) + speedPressure * 3.5f);
+                Projectile.NewProjectile(Projectile.GetSource_FromThis(), childPosition, childVelocity, projectileType,
                     childDamage, Projectile.knockBack * 0.75f, Projectile.owner);
             }
         }

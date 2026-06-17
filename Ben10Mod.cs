@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Common.Absorption;
 using Ben10Mod.Common.CustomVisuals;
+using Ben10Mod.Common.Networking;
 using Ben10Mod.Common.Systems;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.Items.Armour;
@@ -323,12 +324,12 @@ namespace Ben10Mod {
 					if (!player.active)
 						return;
 
-					TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
-					string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
+					TransformationPaletteColorEntry[] entries = OmnitrixPacketRouter.ReadTransformationPaletteEntries(reader);
+					string[] enabledChannelKeys = OmnitrixPacketRouter.ReadPaletteChannelKeys(reader);
 					KeyValuePair<string, string>[] selectedCostumeEntries =
-						OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
+						OmnitrixPacketRouter.ReadSelectedTransformationCostumes(reader);
 					OmnitrixVisualPaletteColorEntry[] visualPaletteEntries =
-						OmnitrixPlayer.ReadOmnitrixVisualPaletteEntries(reader);
+						OmnitrixPacketRouter.ReadOmnitrixVisualPaletteEntries(reader);
 					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
 					omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys, selectedCostumeEntries,
 						visualPaletteEntries);
@@ -347,12 +348,12 @@ namespace Ben10Mod {
 					if (!player.active)
 						return;
 
-					TransformationPaletteColorEntry[] entries = OmnitrixPlayer.ReadTransformationPaletteEntries(reader);
-					string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
+					TransformationPaletteColorEntry[] entries = OmnitrixPacketRouter.ReadTransformationPaletteEntries(reader);
+					string[] enabledChannelKeys = OmnitrixPacketRouter.ReadPaletteChannelKeys(reader);
 					KeyValuePair<string, string>[] selectedCostumeEntries =
-						OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
+						OmnitrixPacketRouter.ReadSelectedTransformationCostumes(reader);
 					OmnitrixVisualPaletteColorEntry[] visualPaletteEntries =
-						OmnitrixPlayer.ReadOmnitrixVisualPaletteEntries(reader);
+						OmnitrixPacketRouter.ReadOmnitrixVisualPaletteEntries(reader);
 					player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries,
 						enabledChannelKeys,
 						selectedCostumeEntries,

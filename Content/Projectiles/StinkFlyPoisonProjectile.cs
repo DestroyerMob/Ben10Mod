@@ -1,3 +1,5 @@
+using System;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,7 +20,7 @@ public class StinkFlyPoisonProjectile : ModProjectile {
         Projectile.hostile = false;
         Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
-        Projectile.penetrate = 3;
+        Projectile.penetrate = 1;
         Projectile.timeLeft = 96;
         Projectile.extraUpdates = 1;
         Projectile.hide = true;
@@ -58,7 +60,65 @@ public class StinkFlyPoisonProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        bool slimed = target.HasBuff(ModContent.BuffType<EnemySlow>());
         target.AddBuff(BuffID.Poisoned, 5 * 60);
+
+        if (!slimed)
+            return;
+
+        target.AddBuff(BuffID.Venom, 2 * 60);
+        TryChainFromSlimedTarget(target);
+    }
+
+    private void TryChainFromSlimedTarget(NPC sourceTarget) {
+        if (Projectile.ai[0] >= 1f)
+            return;
+
+        if (Projectile.owner != Main.myPlayer && Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        NPC chainTarget = FindChainTarget(sourceTarget);
+        if (chainTarget == null)
+            return;
+
+        Vector2 chainDirection = sourceTarget.Center.DirectionTo(chainTarget.Center)
+            .SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX));
+        int chainDamage = Math.Max(1, (int)Math.Round(Projectile.damage * 0.62f));
+        int projectileIndex = Projectile.NewProjectile(Projectile.GetSource_FromThis(), sourceTarget.Center, chainDirection * 17f,
+            Type, chainDamage, Projectile.knockBack * 0.7f, Projectile.owner, 1f);
+
+        if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles)
+            Main.projectile[projectileIndex].netUpdate = true;
+    }
+
+    private NPC FindChainTarget(NPC sourceTarget) {
+        const float maxChainRange = 360f;
+        NPC bestTarget = null;
+        float bestScore = maxChainRange;
+
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC candidate = Main.npc[i];
+            if (candidate == null || candidate.whoAmI == sourceTarget.whoAmI || !candidate.active ||
+                !candidate.CanBeChasedBy(Projectile))
+                continue;
+
+            float distance = Vector2.Distance(sourceTarget.Center, candidate.Center);
+            if (distance > maxChainRange)
+                continue;
+
+            if (!Collision.CanHitLine(sourceTarget.position, sourceTarget.width, sourceTarget.height, candidate.position,
+                    candidate.width, candidate.height))
+                continue;
+
+            float score = candidate.HasBuff(ModContent.BuffType<EnemySlow>()) ? distance * 0.72f : distance;
+            if (score >= bestScore)
+                continue;
+
+            bestScore = score;
+            bestTarget = candidate;
+        }
+
+        return bestTarget;
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {

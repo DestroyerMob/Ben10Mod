@@ -1,4 +1,5 @@
 using System;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -123,6 +124,7 @@ public class GoopDelugeProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        target.AddBuff(ModContent.BuffType<GoopDissolved>(), 5 * 60);
         target.AddBuff(BuffID.Venom, 6 * 60);
 
         Player owner = Main.player[Projectile.owner];
@@ -192,11 +194,14 @@ public class GoopDelugeProjectile : ModProjectile {
         if (Projectile.owner != Main.myPlayer)
             return;
 
-        int puddleDamage = Math.Max(1, (int)(Projectile.damage * damageMultiplier));
-        for (int i = 0; i < BurstPuddleCount; i++) {
-            float angle = MathHelper.TwoPi * i / BurstPuddleCount + Main.rand.NextFloat(-0.12f, 0.12f);
+        float delugeScale = MathHelper.Clamp(Projectile.scale, 1f, 1.75f);
+        int puddleCount = BurstPuddleCount + (int)Math.Round((delugeScale - 1f) * 5f);
+        int puddleDamage = Math.Max(1, (int)(Projectile.damage * damageMultiplier * MathHelper.Lerp(1f, 1.28f, delugeScale - 1f)));
+        for (int i = 0; i < puddleCount; i++) {
+            float angle = MathHelper.TwoPi * i / puddleCount + Main.rand.NextFloat(-0.12f, 0.12f);
             Vector2 direction = angle.ToRotationVector2();
-            Vector2 velocity = direction * Main.rand.NextFloat(4.8f, 7.6f) * speedMultiplier + new Vector2(0f, -2.2f);
+            Vector2 velocity = direction * Main.rand.NextFloat(4.8f, 7.6f) * speedMultiplier * MathHelper.Lerp(1f, 1.22f, delugeScale - 1f) +
+                               new Vector2(0f, -2.2f);
             Projectile.NewProjectile(source, owner.Center + direction * Main.rand.NextFloat(6f, 14f), velocity,
                 ModContent.ProjectileType<GoopPuddleBombProjectile>(), puddleDamage, 0f, owner.whoAmI);
         }

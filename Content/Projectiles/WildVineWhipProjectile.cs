@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -33,7 +34,25 @@ public class WildVineWhipProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.Poisoned, 4 * 60);
+        Player owner = Main.player[Projectile.owner];
+        if (!owner.active)
+            return;
+
+        Vector2 destination = WildVineAnchorProjectile.ResolveControlPoint(owner, target.Center, 430f);
+        Vector2 pullDirection = target.Center.DirectionTo(destination).SafeNormalize(Vector2.Zero);
+        bool lightEnemy = !target.boss && target.knockBackResist >= 0.45f && target.lifeMax < 5000;
+
+        target.AddBuff(ModContent.BuffType<WildVineTethered>(), lightEnemy ? 75 : 120);
+        if (lightEnemy) {
+            float pullSpeed = MathHelper.Lerp(5.5f, 9.5f, MathHelper.Clamp(target.knockBackResist, 0f, 1f));
+            target.velocity = Vector2.Lerp(target.velocity, pullDirection * pullSpeed, 0.55f);
+        }
+        else {
+            target.velocity *= target.boss ? 0.86f : 0.72f;
+            target.velocity += pullDirection * (target.boss ? 0.45f : 1.5f);
+        }
+
+        target.netUpdate = true;
     }
 
     public override bool PreDraw(ref Color lightColor) {

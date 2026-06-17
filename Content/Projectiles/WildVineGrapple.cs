@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Buffs.Debuffs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -22,9 +23,30 @@ namespace Ben10Mod.Content.Projectiles
             Projectile.CloneDefaults(ProjectileID.AmberHook);
             Projectile.width = 18;
             Projectile.height = 18;
+            Projectile.friendly = true;
+            Projectile.damage = 0;
         }
 
-        public override bool? CanHitNPC(NPC target) => false;
+        public override bool? CanHitNPC(NPC target) {
+            if (!target.CanBeChasedBy(this))
+                return false;
+
+            return null;
+        }
+
+        public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+            Player owner = Main.player[Projectile.owner];
+            if (!owner.active || owner.dead)
+                return;
+
+            Vector2 destination = WildVineAnchorProjectile.ResolveControlPoint(owner, target.Center, 480f);
+            Vector2 pullDirection = target.Center.DirectionTo(destination).SafeNormalize(Vector2.Zero);
+            float pullSpeed = target.boss ? 2.2f : MathHelper.Lerp(6f, 11f, MathHelper.Clamp(target.knockBackResist, 0f, 1f));
+            target.AddBuff(ModContent.BuffType<WildVineTethered>(), target.boss ? 90 : 150);
+            target.velocity = Vector2.Lerp(target.velocity, pullDirection * pullSpeed, target.boss ? 0.22f : 0.62f);
+            target.netUpdate = true;
+            Projectile.Kill();
+        }
 
         public override bool? CanUseGrapple(Player player)
         {

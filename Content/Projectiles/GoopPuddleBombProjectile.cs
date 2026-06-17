@@ -46,8 +46,8 @@ public class GoopPuddleBombProjectile : ModProjectile {
     public override void OnKill(int timeLeft) {
         if (Projectile.owner == Main.myPlayer) {
             int puddleDamage = System.Math.Max(1, (int)(Projectile.damage * 0.5f));
-            Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Bottom + new Vector2(0f, -8f), Vector2.Zero,
-                ModContent.ProjectileType<GoopPuddleProjectile>(), puddleDamage, 0f, Projectile.owner);
+            GoopPuddleProjectile.CreateOrGrow(Projectile.GetSource_FromThis(), Projectile.Bottom + new Vector2(0f, -8f),
+                puddleDamage, Projectile.owner, growth: 0.16f);
         }
 
         for (int i = 0; i < 16; i++) {

@@ -1,4 +1,5 @@
 using System;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.DamageClasses;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -14,6 +15,10 @@ public class WildVineBomb : ModProjectile {
     public const float VariantBloom = 1f;
 
     private bool IsBloomVariant => Projectile.ai[0] >= VariantBloom;
+    private bool LandedOnTiles {
+        get => Projectile.localAI[0] > 0f;
+        set => Projectile.localAI[0] = value ? 1f : 0f;
+    }
 
     public override void SetDefaults() {
         Projectile.width = 14;
@@ -56,14 +61,15 @@ public class WildVineBomb : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.Poisoned, IsBloomVariant ? 7 * 60 : 5 * 60);
+        target.AddBuff(BuffID.Poisoned, IsBloomVariant ? 4 * 60 : 2 * 60);
         if (IsBloomVariant)
-            target.AddBuff(BuffID.Venom, 2 * 60);
+            target.AddBuff(ModContent.BuffType<WildVineTethered>(), 2 * 60);
 
         Projectile.Kill();
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {
+        LandedOnTiles = true;
         Projectile.velocity = oldVelocity * 0.25f;
         Projectile.Kill();
         return false;
@@ -75,9 +81,16 @@ public class WildVineBomb : ModProjectile {
         if (Projectile.owner == Main.myPlayer || Main.netMode != NetmodeID.MultiplayerClient) {
             float cloudMultiplier = IsBloomVariant ? 0.82f : 0.6f;
             int cloudDamage = Math.Max(1, (int)Math.Round(Projectile.damage * cloudMultiplier));
+            if (LandedOnTiles) {
+                int anchorDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (IsBloomVariant ? 0.55f : 0.38f)));
+                WildVineAnchorProjectile.CreateOrRefresh(Projectile.GetSource_FromThis(), Projectile.Bottom + new Vector2(0f, -8f),
+                    anchorDamage, Projectile.owner, IsBloomVariant ? WildVineAnchorProjectile.ModeBloom : WildVineAnchorProjectile.ModeSeed,
+                    IsBloomVariant ? 7 * 60 : WildVineAnchorProjectile.BaseLifetime, IsBloomVariant ? 1.18f : 1f);
+            }
+
             Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, Vector2.Zero,
                 ModContent.ProjectileType<WildVineGasCloudProjectile>(), cloudDamage, IsBloomVariant ? 0.5f : 0f,
-                Projectile.owner, Projectile.ai[0]);
+                Projectile.owner, Projectile.ai[0], LandedOnTiles ? 1f : 0f);
         }
 
         int burstCount = IsBloomVariant ? 28 : 18;
