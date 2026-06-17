@@ -286,8 +286,11 @@ public class EyeGuyTransformation : Transformation {
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<EyeGuy>();
+        var state = player.GetModPlayer<EyeGuyStatePlayer>();
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
-        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+        player.body = EquipLoader.GetEquipSlot(Mod,
+            state.AllEyesOpenActive ? EyeGuy.UltimateBodyEquipName : costume.Name,
+            EquipType.Body);
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
     }
 

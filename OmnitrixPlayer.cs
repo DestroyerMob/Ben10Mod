@@ -194,6 +194,8 @@ namespace Ben10Mod {
         private readonly HashSet<int> activeEvents = new();
         private readonly Dictionary<string, Dictionary<string, TransformationPaletteChannelSettings>> transformationPaletteOverrides =
             new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TransformationPaletteChannelSettings> omnitrixVisualPaletteOverrides =
+            new(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> paletteEnabledChannels =
             new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> selectedTransformationCostumes =
@@ -481,6 +483,21 @@ namespace Ben10Mod {
             tag["transformationPalette"] = paletteEntries;
             tag["paletteEnabledChannels"] = BuildNormalizedPaletteEnabledChannelKeys().ToArray();
 
+            List<TagCompound> visualPaletteEntries = new();
+            foreach (OmnitrixVisualPaletteColorEntry entry in BuildNormalizedOmnitrixVisualPaletteEntries()) {
+                visualPaletteEntries.Add(new TagCompound {
+                    ["channelId"] = entry.ChannelId,
+                    ["r"] = (int)entry.Color.R,
+                    ["g"] = (int)entry.Color.G,
+                    ["b"] = (int)entry.Color.B,
+                    ["hue"] = (int)entry.Hue,
+                    ["saturation"] = (int)entry.Saturation,
+                    ["brightness"] = (int)entry.Brightness
+                });
+            }
+
+            tag["omnitrixVisualPalette"] = visualPaletteEntries;
+
             List<TagCompound> costumeEntries = new();
             foreach (KeyValuePair<string, string> entry in BuildNormalizedSelectedTransformationCostumes()) {
                 costumeEntries.Add(new TagCompound {
@@ -570,6 +587,7 @@ namespace Ben10Mod {
             }
 
             transformationPaletteOverrides.Clear();
+            omnitrixVisualPaletteOverrides.Clear();
             paletteEnabledChannels.Clear();
             selectedTransformationCostumes.Clear();
             customTransformationNames.Clear();
@@ -592,6 +610,31 @@ namespace Ben10Mod {
                         : TransformationPaletteColorEntry.NeutralBrightness;
                     AddNormalizedTransformationPaletteEntry(new TransformationPaletteColorEntry(
                         transformationId,
+                        channelId,
+                        new Color(r, g, b),
+                        hue,
+                        saturation,
+                        brightness
+                    ));
+                }
+            }
+
+            if (tag.TryGet("omnitrixVisualPalette", out List<TagCompound> visualPaletteEntries)) {
+                foreach (TagCompound visualPaletteEntry in visualPaletteEntries) {
+                    string channelId = visualPaletteEntry.GetString("channelId");
+                    byte r = (byte)visualPaletteEntry.GetInt("r");
+                    byte g = (byte)visualPaletteEntry.GetInt("g");
+                    byte b = (byte)visualPaletteEntry.GetInt("b");
+                    byte hue = visualPaletteEntry.ContainsKey("hue")
+                        ? (byte)visualPaletteEntry.GetInt("hue")
+                        : TransformationPaletteColorEntry.NeutralHue;
+                    byte saturation = visualPaletteEntry.ContainsKey("saturation")
+                        ? (byte)visualPaletteEntry.GetInt("saturation")
+                        : TransformationPaletteColorEntry.NeutralSaturation;
+                    byte brightness = visualPaletteEntry.ContainsKey("brightness")
+                        ? (byte)visualPaletteEntry.GetInt("brightness")
+                        : TransformationPaletteColorEntry.NeutralBrightness;
+                    AddNormalizedOmnitrixVisualPaletteEntry(new OmnitrixVisualPaletteColorEntry(
                         channelId,
                         new Color(r, g, b),
                         hue,
@@ -1018,6 +1061,7 @@ namespace Ben10Mod {
 
             var trans = CurrentTransformation;
             NormalizeAttackSelectionForCurrentTransformation(trans);
+            RefreshRemoteHeldBadgeStats();
             if (trans != null)
                 trans.PostUpdate(Player, this);
 
@@ -2492,6 +2536,122 @@ namespace Ben10Mod {
             return changed;
         }
 
+        public IReadOnlyList<OmnitrixVisualPaletteChannel> GetOmnitrixVisualPaletteChannels() {
+            return OmnitrixVisualPalette.Channels;
+        }
+
+        public bool HasOmnitrixVisualPaletteCustomizationData() {
+            return BuildNormalizedOmnitrixVisualPaletteEntries().Count > 0;
+        }
+
+        public TransformationPaletteChannelSettings GetOmnitrixVisualPaletteSettings(string channelId) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return new TransformationPaletteChannelSettings(Color.White);
+
+            if (omnitrixVisualPaletteOverrides.TryGetValue(channel.Id, out TransformationPaletteChannelSettings settings))
+                return NormalizeOmnitrixVisualPaletteSettings(settings, channel.DefaultColor);
+
+            return new TransformationPaletteChannelSettings(channel.DefaultColor);
+        }
+
+        public Color GetOmnitrixVisualColor(string channelId) {
+            TransformationPaletteChannelSettings settings = GetOmnitrixVisualPaletteSettings(channelId);
+            return TransformationPaletteMath.ApplyHueSaturationAndBrightness(settings.Color, settings.Hue,
+                settings.Saturation, settings.Brightness);
+        }
+
+        public Color GetOmnitrixVisualColor(string channelId, Color fallbackColor) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return fallbackColor;
+
+            if (!omnitrixVisualPaletteOverrides.TryGetValue(channel.Id, out TransformationPaletteChannelSettings settings))
+                return fallbackColor;
+
+            settings = NormalizeOmnitrixVisualPaletteSettings(settings, channel.DefaultColor);
+            return TransformationPaletteMath.ApplyHueSaturationAndBrightness(settings.Color, settings.Hue,
+                settings.Saturation, settings.Brightness);
+        }
+
+        public bool SetOmnitrixVisualPaletteColor(string channelId, Color color, bool sync = true) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetOmnitrixVisualPaletteSettings(channel.Id);
+            bool changed = SetOmnitrixVisualPaletteSettings(channel.Id,
+                new TransformationPaletteChannelSettings(color, currentSettings.Hue, currentSettings.Saturation,
+                    currentSettings.Brightness));
+
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetOmnitrixVisualPaletteHue(string channelId, byte hue, bool sync = true) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetOmnitrixVisualPaletteSettings(channel.Id);
+            bool changed = SetOmnitrixVisualPaletteSettings(channel.Id,
+                new TransformationPaletteChannelSettings(currentSettings.Color, hue, currentSettings.Saturation,
+                    currentSettings.Brightness));
+
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetOmnitrixVisualPaletteSaturation(string channelId, byte saturation, bool sync = true) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetOmnitrixVisualPaletteSettings(channel.Id);
+            bool changed = SetOmnitrixVisualPaletteSettings(channel.Id,
+                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue, saturation,
+                    currentSettings.Brightness));
+
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool SetOmnitrixVisualPaletteBrightness(string channelId, byte brightness, bool sync = true) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            TransformationPaletteChannelSettings currentSettings = GetOmnitrixVisualPaletteSettings(channel.Id);
+            bool changed = SetOmnitrixVisualPaletteSettings(channel.Id,
+                new TransformationPaletteChannelSettings(currentSettings.Color, currentSettings.Hue,
+                    currentSettings.Saturation, brightness));
+
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool ResetOmnitrixVisualPaletteChannel(string channelId, bool sync = true) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            bool changed = omnitrixVisualPaletteOverrides.Remove(channel.Id);
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
+        public bool ResetOmnitrixVisualPalette(bool sync = true) {
+            bool changed = omnitrixVisualPaletteOverrides.Count > 0;
+            omnitrixVisualPaletteOverrides.Clear();
+            if (changed && sync)
+                SyncTransformationPaletteStateToServerOrClients();
+
+            return changed;
+        }
+
         public bool HasPalettePreset(string transformationId, int presetIndex) {
             return TryGetPalettePreset(transformationId, presetIndex, out _);
         }
@@ -2801,6 +2961,14 @@ namespace Ben10Mod {
                 return;
 
             SoundEngine.PlaySound(SoundID.MaxMana, Player.Center);
+        }
+
+        private void RefreshRemoteHeldBadgeStats() {
+            if (Main.netMode != NetmodeID.MultiplayerClient || Player.whoAmI == Main.myPlayer)
+                return;
+
+            if (Player.HeldItem?.ModItem is PlumbersBadge badge)
+                badge.RefreshHeldStats(Player, this);
         }
 
         private static bool IsAbilityAttackSelection(AttackSelection selection) {
@@ -3216,18 +3384,22 @@ namespace Ben10Mod {
             List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
             List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
             List<KeyValuePair<string, string>> selectedCostumeEntries = new(BuildNormalizedSelectedTransformationCostumes());
+            List<OmnitrixVisualPaletteColorEntry> visualPaletteEntries = BuildNormalizedOmnitrixVisualPaletteEntries();
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.RequestSyncTransformationPaletteState);
             WriteTransformationPaletteEntries(packet, entries);
             WritePaletteChannelKeys(packet, enabledChannelKeys);
             WriteSelectedTransformationCostumes(packet, selectedCostumeEntries);
+            WriteOmnitrixVisualPaletteEntries(packet, visualPaletteEntries);
             packet.Send();
         }
 
         public void ApplyTransformationPaletteStateSync(IReadOnlyList<TransformationPaletteColorEntry> entries,
             IReadOnlyList<string> enabledChannelKeys = null,
-            IReadOnlyList<KeyValuePair<string, string>> selectedCostumeEntries = null) {
+            IReadOnlyList<KeyValuePair<string, string>> selectedCostumeEntries = null,
+            IReadOnlyList<OmnitrixVisualPaletteColorEntry> visualPaletteEntries = null) {
             transformationPaletteOverrides.Clear();
+            omnitrixVisualPaletteOverrides.Clear();
             paletteEnabledChannels.Clear();
             selectedTransformationCostumes.Clear();
 
@@ -3248,6 +3420,11 @@ namespace Ben10Mod {
                     KeyValuePair<string, string> entry = selectedCostumeEntries[i];
                     SetSelectedTransformationCostume(entry.Key, entry.Value, sync: false);
                 }
+            }
+
+            if (visualPaletteEntries != null) {
+                for (int i = 0; i < visualPaletteEntries.Count; i++)
+                    AddNormalizedOmnitrixVisualPaletteEntry(visualPaletteEntries[i]);
             }
         }
 
@@ -3964,6 +4141,7 @@ namespace Ben10Mod {
             List<TransformationPaletteColorEntry> entries = BuildNormalizedTransformationPaletteEntries();
             List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
             List<KeyValuePair<string, string>> selectedCostumeEntries = new(BuildNormalizedSelectedTransformationCostumes());
+            List<OmnitrixVisualPaletteColorEntry> visualPaletteEntries = BuildNormalizedOmnitrixVisualPaletteEntries();
 
             ModPacket packet = Mod.GetPacket();
             packet.Write((byte)Ben10Mod.MessageType.SyncTransformationPaletteState);
@@ -3971,6 +4149,7 @@ namespace Ben10Mod {
             WriteTransformationPaletteEntries(packet, entries);
             WritePaletteChannelKeys(packet, enabledChannelKeys);
             WriteSelectedTransformationCostumes(packet, selectedCostumeEntries);
+            WriteOmnitrixVisualPaletteEntries(packet, visualPaletteEntries);
             packet.Send(toWho, ignoreClient);
         }
 
@@ -3995,6 +4174,14 @@ namespace Ben10Mod {
 
             for (int i = 0; i < enabledChannelKeys.Count; i++)
                 paletteEnabledChannels.Add(enabledChannelKeys[i]);
+        }
+
+        private void NormalizeOmnitrixVisualPaletteState() {
+            List<OmnitrixVisualPaletteColorEntry> entries = BuildNormalizedOmnitrixVisualPaletteEntries();
+            omnitrixVisualPaletteOverrides.Clear();
+
+            for (int i = 0; i < entries.Count; i++)
+                AddNormalizedOmnitrixVisualPaletteEntry(entries[i]);
         }
 
         private List<TransformationPaletteColorEntry> BuildNormalizedTransformationPaletteEntries() {
@@ -4059,6 +4246,27 @@ namespace Ben10Mod {
             List<string> enabledChannelKeys = BuildNormalizedPaletteEnabledChannelKeys();
             enabledChannelKeys.RemoveAll(key => !key.StartsWith(normalizedOwnerId + "|", StringComparison.OrdinalIgnoreCase));
             return enabledChannelKeys;
+        }
+
+        private List<OmnitrixVisualPaletteColorEntry> BuildNormalizedOmnitrixVisualPaletteEntries() {
+            List<OmnitrixVisualPaletteColorEntry> entries = new();
+
+            foreach ((string channelId, TransformationPaletteChannelSettings settings) in omnitrixVisualPaletteOverrides) {
+                if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                    continue;
+
+                TransformationPaletteChannelSettings normalizedSettings =
+                    NormalizeOmnitrixVisualPaletteSettings(settings, channel.DefaultColor);
+                if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
+                    continue;
+
+                entries.Add(new OmnitrixVisualPaletteColorEntry(channel.Id, normalizedSettings.Color,
+                    normalizedSettings.Hue, normalizedSettings.Saturation, normalizedSettings.Brightness));
+            }
+
+            entries.Sort(static (left, right) => string.Compare(left.ChannelId, right.ChannelId,
+                StringComparison.OrdinalIgnoreCase));
+            return entries;
         }
 
         private IEnumerable<TagCompound> BuildPalettePresetTagEntries() {
@@ -4245,6 +4453,19 @@ namespace Ben10Mod {
             channelSettings[channel.Id] = normalizedSettings;
         }
 
+        private void AddNormalizedOmnitrixVisualPaletteEntry(OmnitrixVisualPaletteColorEntry entry) {
+            if (!OmnitrixVisualPalette.TryGetChannel(entry.ChannelId, out OmnitrixVisualPaletteChannel channel))
+                return;
+
+            TransformationPaletteChannelSettings normalizedSettings =
+                NormalizeOmnitrixVisualPaletteSettings(new TransformationPaletteChannelSettings(entry.Color, entry.Hue,
+                    entry.Saturation, entry.Brightness), channel.DefaultColor);
+            if (normalizedSettings.Color == channel.DefaultColor && normalizedSettings.HasNeutralAdjustments)
+                return;
+
+            omnitrixVisualPaletteOverrides[channel.Id] = normalizedSettings;
+        }
+
         private bool RemovePaletteOverride(string transformationId, string channelId) {
             if (!transformationPaletteOverrides.TryGetValue(transformationId,
                     out Dictionary<string, TransformationPaletteChannelSettings> channelColors))
@@ -4271,6 +4492,16 @@ namespace Ben10Mod {
             );
         }
 
+        private static TransformationPaletteChannelSettings NormalizeOmnitrixVisualPaletteSettings(
+            TransformationPaletteChannelSettings settings, Color fallbackColor) {
+            return new TransformationPaletteChannelSettings(
+                NormalizePaletteColor(settings.Color == default ? fallbackColor : settings.Color),
+                settings.Hue,
+                settings.Saturation,
+                settings.Brightness
+            );
+        }
+
         private bool SetPaletteSettings(string transformationId, TransformationPaletteChannel channel,
             TransformationPaletteChannelSettings settings) {
             settings = NormalizePaletteSettings(settings, channel.DefaultColor);
@@ -4289,6 +4520,24 @@ namespace Ben10Mod {
                 return false;
 
             channelSettings[channel.Id] = settings;
+            return true;
+        }
+
+        private bool SetOmnitrixVisualPaletteSettings(string channelId, TransformationPaletteChannelSettings settings) {
+            if (!OmnitrixVisualPalette.TryGetChannel(channelId, out OmnitrixVisualPaletteChannel channel))
+                return false;
+
+            settings = NormalizeOmnitrixVisualPaletteSettings(settings, channel.DefaultColor);
+            bool isDefault = settings.Color == channel.DefaultColor && settings.HasNeutralAdjustments;
+            if (isDefault)
+                return omnitrixVisualPaletteOverrides.Remove(channel.Id);
+
+            if (omnitrixVisualPaletteOverrides.TryGetValue(channel.Id,
+                    out TransformationPaletteChannelSettings existingSettings) &&
+                NormalizeOmnitrixVisualPaletteSettings(existingSettings, channel.DefaultColor).Equals(settings))
+                return false;
+
+            omnitrixVisualPaletteOverrides[channel.Id] = settings;
             return true;
         }
 
@@ -4317,6 +4566,23 @@ namespace Ben10Mod {
 
             for (int i = 0; i < count; i++)
                 writer.Write(channelKeys[i] ?? string.Empty);
+        }
+
+        internal static void WriteOmnitrixVisualPaletteEntries(BinaryWriter writer,
+            IReadOnlyList<OmnitrixVisualPaletteColorEntry> entries) {
+            ushort count = (ushort)Math.Min(entries?.Count ?? 0, ushort.MaxValue);
+            writer.Write(count);
+
+            for (int i = 0; i < count; i++) {
+                OmnitrixVisualPaletteColorEntry entry = entries[i];
+                writer.Write(entry.ChannelId ?? string.Empty);
+                writer.Write(entry.Color.R);
+                writer.Write(entry.Color.G);
+                writer.Write(entry.Color.B);
+                writer.Write(entry.Hue);
+                writer.Write(entry.Saturation);
+                writer.Write(entry.Brightness);
+            }
         }
 
         internal static void WriteSelectedTransformationCostumes(BinaryWriter writer,
@@ -4358,6 +4624,25 @@ namespace Ben10Mod {
                 channelKeys[i] = reader.ReadString();
 
             return channelKeys;
+        }
+
+        internal static OmnitrixVisualPaletteColorEntry[] ReadOmnitrixVisualPaletteEntries(BinaryReader reader) {
+            ushort count = reader.ReadUInt16();
+            OmnitrixVisualPaletteColorEntry[] entries = new OmnitrixVisualPaletteColorEntry[count];
+
+            for (int i = 0; i < count; i++) {
+                string channelId = reader.ReadString();
+                byte r = reader.ReadByte();
+                byte g = reader.ReadByte();
+                byte b = reader.ReadByte();
+                byte hue = reader.ReadByte();
+                byte saturation = reader.ReadByte();
+                byte brightness = reader.ReadByte();
+                entries[i] = new OmnitrixVisualPaletteColorEntry(channelId, new Color(r, g, b), hue, saturation,
+                    brightness);
+            }
+
+            return entries;
         }
 
         internal static KeyValuePair<string, string>[] ReadSelectedTransformationCostumes(BinaryReader reader) {
@@ -4407,6 +4692,7 @@ namespace Ben10Mod {
 
             transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
             NormalizeTransformationPaletteState();
+            NormalizeOmnitrixVisualPaletteState();
             NormalizePalettePresets();
             NormalizeCustomTransformationNames();
 

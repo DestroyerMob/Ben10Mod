@@ -52,6 +52,83 @@ public readonly struct TransformationPaletteChannelSettings {
         Brightness == TransformationPaletteColorEntry.NeutralBrightness;
 }
 
+public readonly struct OmnitrixVisualPaletteColorEntry {
+    public OmnitrixVisualPaletteColorEntry(string channelId, Color color,
+        byte hue = TransformationPaletteColorEntry.NeutralHue,
+        byte saturation = TransformationPaletteColorEntry.NeutralSaturation,
+        byte brightness = TransformationPaletteColorEntry.NeutralBrightness) {
+        ChannelId = channelId ?? string.Empty;
+        Color = new Color(color.R, color.G, color.B, 255);
+        Hue = hue;
+        Saturation = saturation;
+        Brightness = brightness;
+    }
+
+    public string ChannelId { get; }
+    public Color Color { get; }
+    public byte Hue { get; }
+    public byte Saturation { get; }
+    public byte Brightness { get; }
+}
+
+public sealed class OmnitrixVisualPaletteChannel {
+    public OmnitrixVisualPaletteChannel(string id, string displayName, string description, Color defaultColor) {
+        Id = string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? Id : displayName.Trim();
+        Description = description ?? string.Empty;
+        DefaultColor = new Color(defaultColor.R, defaultColor.G, defaultColor.B, 255);
+    }
+
+    public string Id { get; }
+    public string DisplayName { get; }
+    public string Description { get; }
+    public Color DefaultColor { get; }
+    public bool IsValid => !string.IsNullOrWhiteSpace(Id);
+}
+
+public static class OmnitrixVisualPalette {
+    public const string Omnibar = "omnibar";
+    public const string TransformEffect = "transformEffect";
+    public const string DetransformEffect = "detransformEffect";
+
+    private static readonly IReadOnlyList<OmnitrixVisualPaletteChannel> s_channels = Array.AsReadOnly([
+        new OmnitrixVisualPaletteChannel(
+            Omnibar,
+            "Omnibar",
+            "Changes the Omnitrix energy bar fill colour on the HUD.",
+            new Color(92, 255, 148)),
+        new OmnitrixVisualPaletteChannel(
+            TransformEffect,
+            "Transform Effect",
+            "Tints transformation dust and feedback text when you transform.",
+            new Color(0, 255, 0)),
+        new OmnitrixVisualPaletteChannel(
+            DetransformEffect,
+            "Detransform Effect",
+            "Tints the timeout and detransformation dust burst.",
+            new Color(255, 96, 80))
+    ]);
+
+    public static IReadOnlyList<OmnitrixVisualPaletteChannel> Channels => s_channels;
+
+    public static bool TryGetChannel(string channelId, out OmnitrixVisualPaletteChannel channel) {
+        channel = null;
+        if (string.IsNullOrWhiteSpace(channelId))
+            return false;
+
+        for (int i = 0; i < s_channels.Count; i++) {
+            OmnitrixVisualPaletteChannel candidate = s_channels[i];
+            if (candidate != null &&
+                string.Equals(candidate.Id, channelId, StringComparison.OrdinalIgnoreCase)) {
+                channel = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 public sealed class TransformationPaletteOverlay {
     private Asset<Texture2D> _baseTextureAsset;
     private Asset<Texture2D> _maskTextureAsset;

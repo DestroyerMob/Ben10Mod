@@ -251,8 +251,8 @@ namespace Ben10Mod.Content.Interface {
                 Rectangle compactBarRect = new Rectangle(compactX, y + 8, compactWidth, compactBarHeight);
                 Rectangle fillRect = new Rectangle(compactBarRect.X + 2, compactBarRect.Y + 2,
                     Math.Max(0, (int)((compactBarRect.Width - 4) * fillPercent)), Math.Max(1, compactBarRect.Height - 4));
-                Color barBorder = new Color(88, 198, 138);
-                Color barFill = new Color(92, 255, 148);
+                Color barFill = omp.GetOmnitrixVisualColor(OmnitrixVisualPalette.Omnibar);
+                Color barBorder = Color.Lerp(barFill, Color.White, 0.28f);
 
                 Main.spriteBatch.Draw(pixel, compactBarRect, new Color(10, 18, 24, 190));
                 Main.spriteBatch.Draw(pixel, new Rectangle(compactBarRect.X, compactBarRect.Y, compactBarRect.Width, 2), barBorder);
@@ -332,7 +332,7 @@ namespace Ben10Mod.Content.Interface {
 
             if (fillWidth > 0) {
                 Rectangle fillRect = new Rectangle(innerX, innerY, fillWidth, innerHeight);
-                Main.spriteBatch.Draw(fillTex, fillRect, Color.White);
+                Main.spriteBatch.Draw(fillTex, fillRect, omp.GetOmnitrixVisualColor(OmnitrixVisualPalette.Omnibar));
             }
 
             Rectangle barRect = new Rectangle(x, y, barWidth, barHeight);

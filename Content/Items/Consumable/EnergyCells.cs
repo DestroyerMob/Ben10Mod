@@ -11,12 +11,11 @@ namespace Ben10Mod.Content.Items.Consumable
         private const int HealingPotionCooldownTicks = 60 * 60;
 
         protected abstract int RestoreAmount { get; }
-        protected abstract int TextureItemId { get; }
         protected abstract int Rarity { get; }
         protected abstract int ItemValue { get; }
         protected virtual int CooldownDuration => HealingPotionCooldownTicks;
 
-        public override string Texture => $"Terraria/Images/Item_{TextureItemId}";
+        public override string Texture => $"Ben10Mod/Content/Items/Consumable/{GetType().Name}";
 
         public override void SetStaticDefaults() {
             Item.ResearchUnlockCount = 30;
@@ -62,7 +61,6 @@ namespace Ben10Mod.Content.Items.Consumable
     public sealed class LesserEnergyCell : EnergyCellBase
     {
         protected override int RestoreAmount => 50;
-        protected override int TextureItemId => ItemID.LesserManaPotion;
         protected override int Rarity => ItemRarityID.White;
         protected override int ItemValue => Item.buyPrice(silver: 2);
 
@@ -79,7 +77,6 @@ namespace Ben10Mod.Content.Items.Consumable
     public sealed class EnergyCell : EnergyCellBase
     {
         protected override int RestoreAmount => 100;
-        protected override int TextureItemId => ItemID.ManaPotion;
         protected override int Rarity => ItemRarityID.Blue;
         protected override int ItemValue => Item.buyPrice(silver: 6);
 
@@ -95,7 +92,6 @@ namespace Ben10Mod.Content.Items.Consumable
     public sealed class GreaterEnergyCell : EnergyCellBase
     {
         protected override int RestoreAmount => 200;
-        protected override int TextureItemId => ItemID.GreaterManaPotion;
         protected override int Rarity => ItemRarityID.Pink;
         protected override int ItemValue => Item.buyPrice(silver: 18);
 
@@ -112,7 +108,6 @@ namespace Ben10Mod.Content.Items.Consumable
     public sealed class SuperEnergyCell : EnergyCellBase
     {
         protected override int RestoreAmount => 300;
-        protected override int TextureItemId => ItemID.SuperManaPotion;
         protected override int Rarity => ItemRarityID.Yellow;
         protected override int ItemValue => Item.buyPrice(gold: 1);
 

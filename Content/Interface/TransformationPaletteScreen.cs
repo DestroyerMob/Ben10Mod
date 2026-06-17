@@ -383,6 +383,7 @@ public class TransformationPaletteScreen : UIState {
     private const float FloatingPanelInnerMargin = 8f;
     private const float PaletteTabButtonWidth = 120f;
     private const float CostumesTabButtonWidth = 120f;
+    private const float VisualsTabButtonWidth = 110f;
     private const float CustomNamesTabButtonWidth = 140f;
     private const float CloseButtonWidth = 170f;
     private const float HeaderButtonGap = 10f;
@@ -391,6 +392,7 @@ public class TransformationPaletteScreen : UIState {
     private enum CustomizationTab {
         Palette,
         Costumes,
+        Visuals,
         CustomNames
     }
 
@@ -432,13 +434,16 @@ public class TransformationPaletteScreen : UIState {
     private UIText statusText;
     private UITextPanel<string> paletteTabButton;
     private UITextPanel<string> costumesTabButton;
+    private UITextPanel<string> visualsTabButton;
     private UITextPanel<string> customNamesTabButton;
     private UITextPanel<string> closeButton;
     private UIPanel paletteListPanel;
     private UIPanel costumeListPanel;
+    private UIPanel visualListPanel;
     private UIPanel customNameListPanel;
     private UIPanel paletteDetailPanel;
     private UIPanel costumeDetailPanel;
+    private UIPanel visualDetailPanel;
     private UIPanel customNameDetailPanel;
     private UIList channelList;
     private UIScrollbar channelScrollbar;
@@ -467,6 +472,22 @@ public class TransformationPaletteScreen : UIState {
     private UIText costumeDescriptionText;
     private UIText costumeHintText;
     private UITextPanel<string> useDefaultCostumeButton;
+    private UIList visualChannelList;
+    private UIScrollbar visualChannelScrollbar;
+    private UIText selectedVisualText;
+    private UIText visualDescriptionText;
+    private UIList visualSliderList;
+    private UIScrollbar visualSliderScrollbar;
+    private PaletteByteSlider visualRedSlider;
+    private PaletteByteSlider visualGreenSlider;
+    private PaletteByteSlider visualBlueSlider;
+    private PaletteByteSlider visualBrightnessSlider;
+    private PaletteByteSlider visualHueSlider;
+    private PaletteByteSlider visualSaturationSlider;
+    private UITextPanel<string> visualAdvancedOptionsButton;
+    private UITextPanel<string> applyVisualButton;
+    private UITextPanel<string> resetVisualChannelButton;
+    private UITextPanel<string> resetAllVisualsButton;
     private UIList customNameList;
     private UIScrollbar customNameScrollbar;
     private UIText selectedNameText;
@@ -482,9 +503,11 @@ public class TransformationPaletteScreen : UIState {
     private string _currentChannelSignature = string.Empty;
     private string _currentChannelEnabledSignature = string.Empty;
     private string _currentPaletteCostumeId = string.Empty;
+    private string _currentVisualChannelSignature = string.Empty;
     private string _currentCustomNameSignature = string.Empty;
     private string _currentCostumeSignature = string.Empty;
     private string _selectedChannelId = string.Empty;
+    private string _selectedVisualChannelId = OmnitrixVisualPalette.Omnibar;
     private string _selectedCustomNameTransformationId = string.Empty;
     private string _loadedCustomNameValue = string.Empty;
     private bool _selectedChannelPaletteEnabled = true;
@@ -493,13 +516,21 @@ public class TransformationPaletteScreen : UIState {
     private bool _suppressCustomNameCallbacks;
     private bool _hasPendingCustomNameChanges;
     private readonly List<TransformationPaletteChannel> _activeChannels = new();
+    private readonly List<OmnitrixVisualPaletteChannel> _activeVisualChannels = new();
     private readonly List<CostumeListEntry> _availableCostumeEntries = new();
     private readonly List<string> _availableCustomNameTransformationIds = new();
     private readonly Dictionary<string, Color> _pendingColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingHueValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingSaturationValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, byte> _pendingBrightnessValues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Color> _pendingVisualColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, byte> _pendingVisualHueValues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, byte> _pendingVisualSaturationValues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, byte> _pendingVisualBrightnessValues = new(StringComparer.OrdinalIgnoreCase);
     private bool _showAdvancedPaletteOptions;
+    private bool _showAdvancedVisualOptions;
+    private bool _suppressVisualSliderCallbacks;
+    private bool _hasPendingVisualChanges;
     private bool _layoutRefreshPending = true;
     private int _lastLayoutScreenWidth = -1;
     private int _lastLayoutScreenHeight = -1;
@@ -535,10 +566,13 @@ public class TransformationPaletteScreen : UIState {
             width: PaletteTabButtonWidth);
         costumesTabButton = CreateActionButton("Costumes", 682f, 34f,
             (_, _) => SetActiveTab(CustomizationTab.Costumes), width: CostumesTabButtonWidth);
+        visualsTabButton = CreateActionButton("Visuals", 812f, 34f,
+            (_, _) => SetActiveTab(CustomizationTab.Visuals), width: VisualsTabButtonWidth);
         customNamesTabButton = CreateActionButton("Custom Names", 812f, 34f,
             (_, _) => SetActiveTab(CustomizationTab.CustomNames), width: CustomNamesTabButtonWidth);
         mainPanel.Append(paletteTabButton);
         mainPanel.Append(costumesTabButton);
+        mainPanel.Append(visualsTabButton);
         mainPanel.Append(customNamesTabButton);
 
         targetText = new UIText("No transformation selected", 1f);
@@ -750,6 +784,115 @@ public class TransformationPaletteScreen : UIState {
         costumeHintText.Width.Set(554f, 0f);
         costumeDetailPanel.Append(costumeHintText);
 
+        visualListPanel = new UIPanel();
+        visualListPanel.Width.Set(320f, 0f);
+        visualListPanel.Height.Set(512f, 0f);
+        visualListPanel.HAlign = 0.5f;
+        visualListPanel.Left.Set(0f, 0f);
+        visualListPanel.Top.Set(FloatingPanelContentTop, 0f);
+        visualListPanel.PaddingTop = 0f;
+        visualListPanel.PaddingBottom = 0f;
+        visualListPanel.PaddingLeft = 0f;
+        visualListPanel.PaddingRight = 0f;
+        selectionPanel.Append(visualListPanel);
+
+        UIText visualListHeader = new UIText("Omnitrix Visuals", 1.05f);
+        visualListHeader.Left.Set(16f, 0f);
+        visualListHeader.Top.Set(12f, 0f);
+        visualListPanel.Append(visualListHeader);
+
+        visualChannelList = new UIList();
+        visualChannelList.Width.Set(-30f, 1f);
+        visualChannelList.Height.Set(-52f, 1f);
+        visualChannelList.Left.Set(10f, 0f);
+        visualChannelList.Top.Set(40f, 0f);
+        visualChannelList.ListPadding = 8f;
+        visualListPanel.Append(visualChannelList);
+
+        visualChannelScrollbar = new UIScrollbar();
+        visualChannelScrollbar.Height.Set(-52f, 1f);
+        visualChannelScrollbar.Left.Set(-20f, 1f);
+        visualChannelScrollbar.Top.Set(40f, 0f);
+        visualListPanel.Append(visualChannelScrollbar);
+        visualChannelList.SetScrollbar(visualChannelScrollbar);
+
+        visualDetailPanel = new UIPanel();
+        visualDetailPanel.Width.Set(590f, 0f);
+        visualDetailPanel.Height.Set(512f, 0f);
+        visualDetailPanel.HAlign = 0.5f;
+        visualDetailPanel.Left.Set(0f, 0f);
+        visualDetailPanel.Top.Set(FloatingPanelContentTop, 0f);
+        visualDetailPanel.PaddingTop = 0f;
+        visualDetailPanel.PaddingBottom = 0f;
+        visualDetailPanel.PaddingLeft = 0f;
+        visualDetailPanel.PaddingRight = 0f;
+        detailPanel.Append(visualDetailPanel);
+
+        selectedVisualText = new UIText("Omnibar", 1.05f);
+        selectedVisualText.Left.Set(18f, 0f);
+        selectedVisualText.Top.Set(16f, 0f);
+        visualDetailPanel.Append(selectedVisualText);
+
+        visualDescriptionText = new UIText("Customize shared Omnitrix interface and effect colours.", 0.9f) {
+            IsWrapped = true
+        };
+        visualDescriptionText.Left.Set(18f, 0f);
+        visualDescriptionText.Top.Set(48f, 0f);
+        visualDescriptionText.Width.Set(554f, 0f);
+        visualDetailPanel.Append(visualDescriptionText);
+
+        visualAdvancedOptionsButton = CreateActionButton("Advanced RGB: Hidden", 18f, 92f,
+            (_, _) => ToggleAdvancedVisualOptions(), width: 170f);
+        visualDetailPanel.Append(visualAdvancedOptionsButton);
+
+        UIPanel visualSliderPanel = new UIPanel();
+        visualSliderPanel.Left.Set(18f, 0f);
+        visualSliderPanel.Top.Set(134f, 0f);
+        visualSliderPanel.Width.Set(554f, 0f);
+        visualSliderPanel.Height.Set(254f, 0f);
+        visualSliderPanel.PaddingTop = 8f;
+        visualSliderPanel.PaddingBottom = 8f;
+        visualSliderPanel.PaddingLeft = 8f;
+        visualSliderPanel.PaddingRight = 8f;
+        visualDetailPanel.Append(visualSliderPanel);
+
+        visualSliderList = new UIList();
+        visualSliderList.Left.Set(0f, 0f);
+        visualSliderList.Top.Set(0f, 0f);
+        visualSliderList.Width.Set(-24f, 1f);
+        visualSliderList.Height.Set(0f, 1f);
+        visualSliderList.ListPadding = 8f;
+        visualSliderPanel.Append(visualSliderList);
+
+        visualSliderScrollbar = new UIScrollbar();
+        visualSliderScrollbar.Left.Set(-20f, 1f);
+        visualSliderScrollbar.Top.Set(0f, 0f);
+        visualSliderScrollbar.Height.Set(0f, 1f);
+        visualSliderPanel.Append(visualSliderScrollbar);
+        visualSliderList.SetScrollbar(visualSliderScrollbar);
+
+        visualBrightnessSlider = CreateColorSlider("Brightness", new Color(255, 232, 150), FormatBrightnessValue,
+            _ => UpdatePendingVisualColorFromSliders());
+        visualRedSlider = CreateColorSlider("Red", new Color(225, 80, 80), value => value.ToString(),
+            _ => UpdatePendingVisualColorFromSliders());
+        visualGreenSlider = CreateColorSlider("Green", new Color(90, 220, 120), value => value.ToString(),
+            _ => UpdatePendingVisualColorFromSliders());
+        visualBlueSlider = CreateColorSlider("Blue", new Color(90, 155, 245), value => value.ToString(),
+            _ => UpdatePendingVisualColorFromSliders());
+        visualHueSlider = CreateColorSlider("Hue", new Color(110, 210, 255), FormatHueValue,
+            _ => UpdatePendingVisualColorFromSliders());
+        visualSaturationSlider = CreateColorSlider("Saturation", new Color(255, 210, 120), FormatSaturationValue,
+            _ => UpdatePendingVisualColorFromSliders());
+        RebuildVisualSliderControls();
+
+        applyVisualButton = CreateActionButton("Apply Changes", 18f, 408f, (_, _) => ApplyPendingVisualColors(), width: 150f);
+        resetVisualChannelButton = CreateActionButton("Reset Visual", 180f, 408f, (_, _) => ResetSelectedVisualColor(),
+            width: 150f);
+        resetAllVisualsButton = CreateActionButton("Reset All", 342f, 408f, (_, _) => ResetAllVisualColors(), width: 150f);
+        visualDetailPanel.Append(applyVisualButton);
+        visualDetailPanel.Append(resetVisualChannelButton);
+        visualDetailPanel.Append(resetAllVisualsButton);
+
         customNameListPanel = new UIPanel();
         customNameListPanel.Width.Set(320f, 0f);
         customNameListPanel.Height.Set(512f, 0f);
@@ -857,6 +1000,7 @@ public class TransformationPaletteScreen : UIState {
 
         closeButton = CreateActionButton("Close", 786f, 82f, (_, _) => {
             CommitPendingColors();
+            CommitPendingVisualColors();
             CommitSelectedCustomName();
             ModContent.GetInstance<UISystem>().HideMyUI();
             Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>().showingUI = false;
@@ -878,6 +1022,7 @@ public class TransformationPaletteScreen : UIState {
         ResetWindowLayout();
         RefreshPaletteContext(force: true);
         RefreshCostumeContext(force: true);
+        RefreshVisualContext(force: true);
         RefreshCustomNameContext(force: true);
         SetActiveTab(_activeTab, refreshState: true);
     }
@@ -889,6 +1034,7 @@ public class TransformationPaletteScreen : UIState {
         }
 
         CommitPendingColors();
+        CommitPendingVisualColors();
         CommitSelectedCustomName();
         customNameInput?.SetFocused(false);
         base.OnDeactivate();
@@ -902,6 +1048,7 @@ public class TransformationPaletteScreen : UIState {
         RefreshWindowLayoutIfNeeded();
         RefreshPaletteContext(force: false);
         RefreshCostumeContext(force: false);
+        RefreshVisualContext(force: false);
         RefreshCustomNameContext(force: false);
 
         if (mainPanel.ContainsPoint(Main.MouseScreen) ||
@@ -928,6 +1075,7 @@ public class TransformationPaletteScreen : UIState {
 
     private void SetActiveTab(CustomizationTab tab, bool refreshState = true) {
         if (_activeTab != tab) {
+            CommitPendingVisualColors();
             CommitSelectedCustomName();
             customNameInput?.SetFocused(false);
             _activeTab = tab;
@@ -935,20 +1083,24 @@ public class TransformationPaletteScreen : UIState {
 
         SetPanelVisibility(paletteListPanel, tab == CustomizationTab.Palette);
         SetPanelVisibility(costumeListPanel, tab == CustomizationTab.Costumes);
+        SetPanelVisibility(visualListPanel, tab == CustomizationTab.Visuals);
         SetPanelVisibility(customNameListPanel, tab == CustomizationTab.CustomNames);
         SetPanelVisibility(paletteDetailPanel, tab == CustomizationTab.Palette);
         SetPanelVisibility(costumeDetailPanel, tab == CustomizationTab.Costumes);
+        SetPanelVisibility(visualDetailPanel, tab == CustomizationTab.Visuals);
         SetPanelVisibility(customNameDetailPanel, tab == CustomizationTab.CustomNames);
 
         selectionPanel.DragLabel = tab switch {
             CustomizationTab.Palette => "Palette Parts",
             CustomizationTab.Costumes => "Costume List",
+            CustomizationTab.Visuals => "Visual Channels",
             CustomizationTab.CustomNames => "Name Targets",
             _ => "Selection"
         };
         detailPanel.DragLabel = tab switch {
             CustomizationTab.Palette => "Palette Controls",
             CustomizationTab.Costumes => "Costume Details",
+            CustomizationTab.Visuals => "Visual Controls",
             CustomizationTab.CustomNames => "Name Details",
             _ => "Details"
         };
@@ -960,12 +1112,14 @@ public class TransformationPaletteScreen : UIState {
 
         RefreshPaletteContext(force: true);
         RefreshCostumeContext(force: true);
+        RefreshVisualContext(force: true);
         RefreshCustomNameContext(force: true);
     }
 
     private void UpdateTabButtonState() {
         UpdateTabButtonVisual(paletteTabButton, _activeTab == CustomizationTab.Palette);
         UpdateTabButtonVisual(costumesTabButton, _activeTab == CustomizationTab.Costumes);
+        UpdateTabButtonVisual(visualsTabButton, _activeTab == CustomizationTab.Visuals);
         UpdateTabButtonVisual(customNamesTabButton, _activeTab == CustomizationTab.CustomNames);
     }
 
@@ -1022,7 +1176,8 @@ public class TransformationPaletteScreen : UIState {
 
     private void ApplyHeaderLayout(float headerWidth) {
         float rightEdge = headerWidth - 24f;
-        float tabsTotalWidth = PaletteTabButtonWidth + CostumesTabButtonWidth + CustomNamesTabButtonWidth + HeaderButtonGap * 2f;
+        float tabsTotalWidth = PaletteTabButtonWidth + CostumesTabButtonWidth + VisualsTabButtonWidth +
+                               CustomNamesTabButtonWidth + HeaderButtonGap * 3f;
         float tabsLeft = Math.Max(24f, rightEdge - tabsTotalWidth);
 
         paletteTabButton.Left.Set(tabsLeft, 0f);
@@ -1033,7 +1188,12 @@ public class TransformationPaletteScreen : UIState {
         costumesTabButton.Top.Set(34f, 0f);
         costumesTabButton.Recalculate();
 
-        customNamesTabButton.Left.Set(tabsLeft + PaletteTabButtonWidth + CostumesTabButtonWidth + HeaderButtonGap * 2f, 0f);
+        visualsTabButton.Left.Set(tabsLeft + PaletteTabButtonWidth + CostumesTabButtonWidth + HeaderButtonGap * 2f, 0f);
+        visualsTabButton.Top.Set(34f, 0f);
+        visualsTabButton.Recalculate();
+
+        customNamesTabButton.Left.Set(tabsLeft + PaletteTabButtonWidth + CostumesTabButtonWidth + VisualsTabButtonWidth +
+                                      HeaderButtonGap * 3f, 0f);
         customNamesTabButton.Top.Set(34f, 0f);
         customNamesTabButton.Recalculate();
 
@@ -1067,7 +1227,8 @@ public class TransformationPaletteScreen : UIState {
         button.BorderColor = selected ? new Color(140, 220, 170) : new Color(72, 78, 90);
     }
 
-    private PaletteByteSlider CreateColorSlider(string label, Color accentColor, Func<int, string> valueFormatter) {
+    private PaletteByteSlider CreateColorSlider(string label, Color accentColor, Func<int, string> valueFormatter,
+        Action<int> valueChanged = null) {
         PaletteByteSlider slider = new() {
             Label = label,
             AccentColor = accentColor,
@@ -1075,7 +1236,7 @@ public class TransformationPaletteScreen : UIState {
         };
         slider.Width.Set(0f, 1f);
         slider.Height.Set(42f, 0f);
-        slider.ValueChanged += _ => UpdatePendingColorFromSliders();
+        slider.ValueChanged += valueChanged ?? (_ => UpdatePendingColorFromSliders());
         return slider;
     }
 
@@ -1107,11 +1268,34 @@ public class TransformationPaletteScreen : UIState {
         }
     }
 
+    private void RebuildVisualSliderControls() {
+        if (visualSliderList == null)
+            return;
+
+        visualSliderList.Clear();
+        visualSliderList.Add(visualBrightnessSlider);
+        visualSliderList.Add(visualHueSlider);
+        visualSliderList.Add(visualSaturationSlider);
+
+        if (_showAdvancedVisualOptions) {
+            visualSliderList.Add(visualRedSlider);
+            visualSliderList.Add(visualGreenSlider);
+            visualSliderList.Add(visualBlueSlider);
+        }
+    }
+
     private void ToggleAdvancedPaletteOptions() {
         _showAdvancedPaletteOptions = !_showAdvancedPaletteOptions;
         RebuildSliderControls();
         LoadSelectedChannelIntoSliders();
         UpdateAdvancedOptionsButtonState(!string.IsNullOrWhiteSpace(_selectedChannelId));
+    }
+
+    private void ToggleAdvancedVisualOptions() {
+        _showAdvancedVisualOptions = !_showAdvancedVisualOptions;
+        RebuildVisualSliderControls();
+        LoadSelectedVisualIntoSliders();
+        UpdateVisualControlsInteractive(_activeVisualChannels.Count > 0);
     }
 
     private void UpdateAdvancedOptionsButtonState(bool interactive) {
@@ -1127,6 +1311,23 @@ public class TransformationPaletteScreen : UIState {
         advancedOptionsButton.BorderColor = !interactive
             ? new Color(62, 68, 80)
             : _showAdvancedPaletteOptions
+                ? new Color(152, 190, 255)
+                : new Color(96, 114, 156);
+    }
+
+    private void UpdateVisualAdvancedOptionsButtonState(bool interactive) {
+        if (visualAdvancedOptionsButton == null)
+            return;
+
+        visualAdvancedOptionsButton.SetText(_showAdvancedVisualOptions ? "Advanced RGB: Shown" : "Advanced RGB: Hidden");
+        visualAdvancedOptionsButton.BackgroundColor = !interactive
+            ? new Color(40, 44, 54)
+            : _showAdvancedVisualOptions
+                ? new Color(74, 88, 132)
+                : new Color(52, 58, 78);
+        visualAdvancedOptionsButton.BorderColor = !interactive
+            ? new Color(62, 68, 80)
+            : _showAdvancedVisualOptions
                 ? new Color(152, 190, 255)
                 : new Color(96, 114, 156);
     }
@@ -1422,6 +1623,114 @@ public class TransformationPaletteScreen : UIState {
         RefreshCostumeContext(force: true);
     }
 
+    private void RefreshVisualContext(bool force) {
+        Player localPlayer = Main.LocalPlayer;
+        if (localPlayer == null || Main.gameMenu || Main.myPlayer < 0 || Main.myPlayer >= Main.maxPlayers ||
+            !localPlayer.active)
+            return;
+
+        OmnitrixPlayer omp = localPlayer.GetModPlayer<OmnitrixPlayer>();
+        IReadOnlyList<OmnitrixVisualPaletteChannel> channels = omp.GetOmnitrixVisualPaletteChannels()
+            ?.Where(channel => channel != null && channel.IsValid)
+            .ToArray() ?? Array.Empty<OmnitrixVisualPaletteChannel>();
+        string channelSignature = BuildVisualChannelSignature(channels);
+        bool channelContentChanged = force || channelSignature != _currentVisualChannelSignature;
+
+        if (!channelContentChanged && _activeTab != CustomizationTab.Visuals)
+            return;
+
+        if (channelContentChanged) {
+            _currentVisualChannelSignature = channelSignature;
+            _activeVisualChannels.Clear();
+            _activeVisualChannels.AddRange(channels);
+            _pendingVisualColors.Clear();
+            _pendingVisualHueValues.Clear();
+            _pendingVisualSaturationValues.Clear();
+            _pendingVisualBrightnessValues.Clear();
+            _hasPendingVisualChanges = false;
+
+            for (int i = 0; i < _activeVisualChannels.Count; i++) {
+                OmnitrixVisualPaletteChannel channel = _activeVisualChannels[i];
+                TransformationPaletteChannelSettings settings = omp.GetOmnitrixVisualPaletteSettings(channel.Id);
+                _pendingVisualColors[channel.Id] = settings.Color;
+                _pendingVisualHueValues[channel.Id] = settings.Hue;
+                _pendingVisualSaturationValues[channel.Id] = settings.Saturation;
+                _pendingVisualBrightnessValues[channel.Id] = settings.Brightness;
+            }
+
+            if (_activeVisualChannels.Count > 0) {
+                _selectedVisualChannelId = _activeVisualChannels.Any(channel => channel.Id == _selectedVisualChannelId)
+                    ? _selectedVisualChannelId
+                    : _activeVisualChannels[0].Id;
+            }
+            else {
+                _selectedVisualChannelId = string.Empty;
+            }
+
+            RebuildVisualButtons();
+            LoadSelectedVisualIntoSliders();
+        }
+
+        if (_activeTab == CustomizationTab.Visuals)
+            UpdateVisualHeaderState(omp);
+    }
+
+    private void UpdateVisualHeaderState(OmnitrixPlayer omp) {
+        if (_activeVisualChannels.Count == 0) {
+            targetText.SetText("Omnitrix Visuals");
+            statusText.SetText("No shared Omnitrix visual channels are available.");
+            selectedVisualText.SetText("No visual selected");
+            visualDescriptionText.SetText("Visual customization is unavailable right now.");
+            UpdateVisualControlsInteractive(false);
+            return;
+        }
+
+        OmnitrixVisualPaletteChannel selectedChannel = GetSelectedVisualChannel();
+        targetText.SetText("Omnitrix Visuals");
+        statusText.SetText(_hasPendingVisualChanges
+            ? "Apply, switch tabs, or close the screen to sync these Omnitrix visual colours."
+            : "Customize shared HUD and transformation effect colours with the same controls as alien palettes.");
+        selectedVisualText.SetText(selectedChannel?.DisplayName ?? "No visual selected");
+        visualDescriptionText.SetText(selectedChannel?.Description ?? "Select a shared Omnitrix visual to customize.");
+        UpdateVisualControlsInteractive(selectedChannel != null);
+    }
+
+    private void SetVisualControlsInteractive(bool interactive) {
+        UpdateVisualControlsInteractive(interactive);
+    }
+
+    private void UpdateVisualControlsInteractive(bool interactive) {
+        if (visualBrightnessSlider != null)
+            visualBrightnessSlider.IsInteractive = interactive;
+        if (visualRedSlider != null)
+            visualRedSlider.IsInteractive = interactive;
+        if (visualGreenSlider != null)
+            visualGreenSlider.IsInteractive = interactive;
+        if (visualBlueSlider != null)
+            visualBlueSlider.IsInteractive = interactive;
+        if (visualHueSlider != null)
+            visualHueSlider.IsInteractive = interactive;
+        if (visualSaturationSlider != null)
+            visualSaturationSlider.IsInteractive = interactive;
+
+        UpdateVisualAdvancedOptionsButtonState(interactive);
+
+        if (applyVisualButton != null) {
+            applyVisualButton.BackgroundColor = interactive ? new Color(63, 82, 151) : new Color(40, 44, 54);
+            applyVisualButton.BorderColor = interactive ? new Color(130, 165, 255) : new Color(62, 68, 80);
+        }
+
+        if (resetVisualChannelButton != null) {
+            resetVisualChannelButton.BackgroundColor = interactive ? new Color(84, 70, 44) : new Color(40, 44, 54);
+            resetVisualChannelButton.BorderColor = interactive ? new Color(224, 190, 118) : new Color(62, 68, 80);
+        }
+
+        if (resetAllVisualsButton != null) {
+            resetAllVisualsButton.BackgroundColor = interactive ? new Color(84, 70, 44) : new Color(40, 44, 54);
+            resetAllVisualsButton.BorderColor = interactive ? new Color(224, 190, 118) : new Color(62, 68, 80);
+        }
+    }
+
     private void RefreshCustomNameContext(bool force) {
         Player localPlayer = Main.LocalPlayer;
         if (localPlayer == null || Main.gameMenu || Main.myPlayer < 0 || Main.myPlayer >= Main.maxPlayers ||
@@ -1709,6 +2018,21 @@ public class TransformationPaletteScreen : UIState {
         }
     }
 
+    private void RebuildVisualButtons() {
+        visualChannelList.Clear();
+
+        for (int i = 0; i < _activeVisualChannels.Count; i++) {
+            OmnitrixVisualPaletteChannel channel = _activeVisualChannels[i];
+            PaletteChannelButton button = new(channel.DisplayName, () => GetPendingVisualColor(channel.Id),
+                () => string.Equals(_selectedVisualChannelId, channel.Id, StringComparison.OrdinalIgnoreCase));
+            button.Width.Set(0f, 1f);
+            button.Height.Set(40f, 0f);
+            string channelId = channel.Id;
+            button.OnLeftClick += (_, _) => SelectVisualChannel(channelId);
+            visualChannelList.Add(button);
+        }
+    }
+
     private void SelectChannel(string channelId) {
         if (string.IsNullOrWhiteSpace(channelId))
             return;
@@ -1722,6 +2046,17 @@ public class TransformationPaletteScreen : UIState {
         RebuildChannelButtons();
     }
 
+    private void SelectVisualChannel(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return;
+
+        _selectedVisualChannelId = channelId;
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        UpdateVisualHeaderState(omp);
+        LoadSelectedVisualIntoSliders();
+        RebuildVisualButtons();
+    }
+
     private void LoadSelectedChannelIntoSliders() {
         _suppressSliderCallbacks = true;
         TransformationPaletteChannelSettings settings = GetSelectedPendingSettings();
@@ -1732,6 +2067,18 @@ public class TransformationPaletteScreen : UIState {
         hueSlider.SetValue(settings.Hue, invoke: false);
         saturationSlider.SetValue(settings.Saturation, invoke: false);
         _suppressSliderCallbacks = false;
+    }
+
+    private void LoadSelectedVisualIntoSliders() {
+        _suppressVisualSliderCallbacks = true;
+        TransformationPaletteChannelSettings settings = GetSelectedPendingVisualSettings();
+        visualBrightnessSlider.SetValue(settings.Brightness, invoke: false);
+        visualRedSlider.SetValue(settings.Color.R, invoke: false);
+        visualGreenSlider.SetValue(settings.Color.G, invoke: false);
+        visualBlueSlider.SetValue(settings.Color.B, invoke: false);
+        visualHueSlider.SetValue(settings.Hue, invoke: false);
+        visualSaturationSlider.SetValue(settings.Saturation, invoke: false);
+        _suppressVisualSliderCallbacks = false;
     }
 
     private void UpdatePendingColorFromSliders() {
@@ -1760,8 +2107,39 @@ public class TransformationPaletteScreen : UIState {
         _hasPendingPaletteChanges = true;
     }
 
+    private void UpdatePendingVisualColorFromSliders() {
+        if (_suppressVisualSliderCallbacks || string.IsNullOrWhiteSpace(_selectedVisualChannelId))
+            return;
+
+        OmnitrixVisualPaletteChannel channel = GetSelectedVisualChannel();
+        if (channel == null)
+            return;
+
+        Color pendingColor = new(visualRedSlider.Value, visualGreenSlider.Value, visualBlueSlider.Value);
+        byte pendingHue = (byte)visualHueSlider.Value;
+        byte pendingSaturation = (byte)visualSaturationSlider.Value;
+        byte pendingBrightness = (byte)visualBrightnessSlider.Value;
+
+        _pendingVisualColors[channel.Id] = pendingColor;
+        _pendingVisualHueValues[channel.Id] = pendingHue;
+        _pendingVisualSaturationValues[channel.Id] = pendingSaturation;
+        _pendingVisualBrightnessValues[channel.Id] = pendingBrightness;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        omp.SetOmnitrixVisualPaletteColor(channel.Id, pendingColor, sync: false);
+        omp.SetOmnitrixVisualPaletteHue(channel.Id, pendingHue, sync: false);
+        omp.SetOmnitrixVisualPaletteSaturation(channel.Id, pendingSaturation, sync: false);
+        omp.SetOmnitrixVisualPaletteBrightness(channel.Id, pendingBrightness, sync: false);
+        _hasPendingVisualChanges = true;
+        UpdateVisualHeaderState(omp);
+    }
+
     private void ApplyPendingColors() {
         CommitPendingColors(forceSync: true);
+    }
+
+    private void ApplyPendingVisualColors() {
+        CommitPendingVisualColors(forceSync: true);
     }
 
     private void CommitPendingColors(bool forceSync = false) {
@@ -1786,10 +2164,40 @@ public class TransformationPaletteScreen : UIState {
                 sync: false);
         }
 
-        if (changed || forceSync)
+        if (changed || forceSync || _hasPendingPaletteChanges)
             omp.SyncTransformationPaletteStateToServerOrClients();
 
         _hasPendingPaletteChanges = false;
+    }
+
+    private void CommitPendingVisualColors(bool forceSync = false) {
+        if (global::Ben10Mod.Ben10Mod.IsUnloading || Main.LocalPlayer == null)
+            return;
+
+        if (_activeVisualChannels.Count == 0)
+            return;
+
+        if (!_hasPendingVisualChanges && !forceSync)
+            return;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        bool changed = false;
+        for (int i = 0; i < _activeVisualChannels.Count; i++) {
+            OmnitrixVisualPaletteChannel channel = _activeVisualChannels[i];
+            changed |= omp.SetOmnitrixVisualPaletteColor(channel.Id, GetPendingVisualColor(channel.Id), sync: false);
+            changed |= omp.SetOmnitrixVisualPaletteHue(channel.Id, GetPendingVisualHue(channel.Id), sync: false);
+            changed |= omp.SetOmnitrixVisualPaletteSaturation(channel.Id, GetPendingVisualSaturation(channel.Id),
+                sync: false);
+            changed |= omp.SetOmnitrixVisualPaletteBrightness(channel.Id, GetPendingVisualBrightness(channel.Id),
+                sync: false);
+        }
+
+        if (changed || forceSync || _hasPendingVisualChanges)
+            omp.SyncTransformationPaletteStateToServerOrClients();
+
+        _hasPendingVisualChanges = false;
+        if (_activeTab == CustomizationTab.Visuals)
+            UpdateVisualHeaderState(omp);
     }
 
     private void TogglePaletteEnabled() {
@@ -1832,6 +2240,24 @@ public class TransformationPaletteScreen : UIState {
         LoadSelectedChannelIntoSliders();
     }
 
+    private void ResetSelectedVisualColor() {
+        OmnitrixVisualPaletteChannel channel = GetSelectedVisualChannel();
+        if (channel == null)
+            return;
+
+        _pendingVisualColors[channel.Id] = channel.DefaultColor;
+        _pendingVisualHueValues[channel.Id] = TransformationPaletteColorEntry.NeutralHue;
+        _pendingVisualSaturationValues[channel.Id] = TransformationPaletteColorEntry.NeutralSaturation;
+        _pendingVisualBrightnessValues[channel.Id] = TransformationPaletteColorEntry.NeutralBrightness;
+
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        omp.ResetOmnitrixVisualPaletteChannel(channel.Id, sync: false);
+        _hasPendingVisualChanges = true;
+        LoadSelectedVisualIntoSliders();
+        RebuildVisualButtons();
+        UpdateVisualHeaderState(omp);
+    }
+
     private void ResetAllPendingColors() {
         OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
         for (int i = 0; i < _activeChannels.Count; i++) {
@@ -1851,6 +2277,23 @@ public class TransformationPaletteScreen : UIState {
 
         _hasPendingPaletteChanges = true;
         LoadSelectedChannelIntoSliders();
+    }
+
+    private void ResetAllVisualColors() {
+        OmnitrixPlayer omp = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
+        for (int i = 0; i < _activeVisualChannels.Count; i++) {
+            OmnitrixVisualPaletteChannel channel = _activeVisualChannels[i];
+            _pendingVisualColors[channel.Id] = channel.DefaultColor;
+            _pendingVisualHueValues[channel.Id] = TransformationPaletteColorEntry.NeutralHue;
+            _pendingVisualSaturationValues[channel.Id] = TransformationPaletteColorEntry.NeutralSaturation;
+            _pendingVisualBrightnessValues[channel.Id] = TransformationPaletteColorEntry.NeutralBrightness;
+        }
+
+        omp.ResetOmnitrixVisualPalette(sync: false);
+        _hasPendingVisualChanges = true;
+        LoadSelectedVisualIntoSliders();
+        RebuildVisualButtons();
+        UpdateVisualHeaderState(omp);
     }
 
     private void CopyCurrentPalette() {
@@ -2004,11 +2447,30 @@ public class TransformationPaletteScreen : UIState {
         return channel?.DefaultColor ?? Color.Transparent;
     }
 
+    private Color GetPendingVisualColor(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return Color.Transparent;
+
+        if (_pendingVisualColors.TryGetValue(channelId, out Color color))
+            return color;
+
+        OmnitrixVisualPaletteChannel channel = _activeVisualChannels.FirstOrDefault(entry =>
+            string.Equals(entry.Id, channelId, StringComparison.OrdinalIgnoreCase));
+        return channel?.DefaultColor ?? Color.Transparent;
+    }
+
     private TransformationPaletteChannelSettings GetSelectedPendingSettings() {
         if (string.IsNullOrWhiteSpace(_selectedChannelId) || string.IsNullOrWhiteSpace(_currentTransformationId))
             return new TransformationPaletteChannelSettings(Color.White);
 
         return GetPendingSettings(_selectedChannelId);
+    }
+
+    private TransformationPaletteChannelSettings GetSelectedPendingVisualSettings() {
+        if (string.IsNullOrWhiteSpace(_selectedVisualChannelId))
+            return new TransformationPaletteChannelSettings(Color.White);
+
+        return GetPendingVisualSettings(_selectedVisualChannelId);
     }
 
     private TransformationPaletteChannelSettings GetPendingSettings(string channelId) {
@@ -2020,6 +2482,18 @@ public class TransformationPaletteScreen : UIState {
             GetPendingHue(channelId),
             GetPendingSaturation(channelId),
             GetPendingBrightness(channelId)
+        );
+    }
+
+    private TransformationPaletteChannelSettings GetPendingVisualSettings(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return new TransformationPaletteChannelSettings(Color.White);
+
+        return new TransformationPaletteChannelSettings(
+            GetPendingVisualColor(channelId),
+            GetPendingVisualHue(channelId),
+            GetPendingVisualSaturation(channelId),
+            GetPendingVisualBrightness(channelId)
         );
     }
 
@@ -2050,10 +2524,42 @@ public class TransformationPaletteScreen : UIState {
             : TransformationPaletteColorEntry.NeutralBrightness;
     }
 
+    private byte GetPendingVisualHue(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return TransformationPaletteColorEntry.NeutralHue;
+
+        return _pendingVisualHueValues.TryGetValue(channelId, out byte hue)
+            ? hue
+            : TransformationPaletteColorEntry.NeutralHue;
+    }
+
+    private byte GetPendingVisualSaturation(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return TransformationPaletteColorEntry.NeutralSaturation;
+
+        return _pendingVisualSaturationValues.TryGetValue(channelId, out byte saturation)
+            ? saturation
+            : TransformationPaletteColorEntry.NeutralSaturation;
+    }
+
+    private byte GetPendingVisualBrightness(string channelId) {
+        if (string.IsNullOrWhiteSpace(channelId))
+            return TransformationPaletteColorEntry.NeutralBrightness;
+
+        return _pendingVisualBrightnessValues.TryGetValue(channelId, out byte brightness)
+            ? brightness
+            : TransformationPaletteColorEntry.NeutralBrightness;
+    }
+
     private string GetSelectedChannelDisplayName() {
         TransformationPaletteChannel channel = _activeChannels.FirstOrDefault(entry =>
             string.Equals(entry.Id, _selectedChannelId, StringComparison.OrdinalIgnoreCase));
         return channel?.DisplayName ?? "No part selected";
+    }
+
+    private OmnitrixVisualPaletteChannel GetSelectedVisualChannel() {
+        return _activeVisualChannels.FirstOrDefault(entry =>
+            string.Equals(entry.Id, _selectedVisualChannelId, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsPaletteChannelEnabled(string channelId) {
@@ -2074,6 +2580,22 @@ public class TransformationPaletteScreen : UIState {
         StringBuilder builder = new();
         for (int i = 0; i < channels.Count; i++)
             builder.Append(channels[i].Id).Append('|');
+        return builder.ToString();
+    }
+
+    private static string BuildVisualChannelSignature(IReadOnlyList<OmnitrixVisualPaletteChannel> channels) {
+        if (channels == null || channels.Count == 0)
+            return string.Empty;
+
+        StringBuilder builder = new();
+        for (int i = 0; i < channels.Count; i++) {
+            OmnitrixVisualPaletteChannel channel = channels[i];
+            builder.Append(channel.Id)
+                .Append('=')
+                .Append(channel.DisplayName)
+                .Append('|');
+        }
+
         return builder.ToString();
     }
 

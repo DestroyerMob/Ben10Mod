@@ -39,7 +39,9 @@ namespace Ben10Mod.Content
             if (showParticles)
             {
                 transformation.SpawnTransformParticles(player, omp);
-                CombatText.NewText(player.getRect(), transformation.TransformTextColor,
+                Color textColor = omp.GetOmnitrixVisualColor(OmnitrixVisualPalette.TransformEffect,
+                    transformation.TransformTextColor);
+                CombatText.NewText(player.getRect(), textColor,
                     transformation.GetDisplayName(omp) + "!", dramatic: true);
             }
 
@@ -113,7 +115,9 @@ namespace Ben10Mod.Content
                 for (int i = 0; i < 25; i++)
                 {
                     int dustNum = Dust.NewDust(player.position - new Vector2(1, 1), player.width + 1, player.height + 1,
-                        DustID.RedTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1, Color.White, 4);
+                        DustID.RedTorch, Main.rand.Next(-4, 5), Main.rand.Next(-4, 5), 1,
+                        player.GetModPlayer<OmnitrixPlayer>().GetOmnitrixVisualColor(
+                            OmnitrixVisualPalette.DetransformEffect, Color.White), 4);
                     Main.dust[dustNum].noGravity = true;
                 }
             }

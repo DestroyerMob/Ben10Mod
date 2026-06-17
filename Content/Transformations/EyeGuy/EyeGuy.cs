@@ -5,7 +5,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.EyeGuy
 {
     public class EyeGuy : ModItem {
+        internal const string UltimateBodyEquipName = "EyeGuyUltimate";
         private const string CostumeTexturePath = "Ben10Mod/Content/Transformations/EyeGuy/EyeGuy";
+        private const string UltimateBodyTexturePath = "Ben10Mod/Content/Transformations/EyeGuy/EyeGuyUltimate";
 
         public override string Texture => "Ben10Mod/Content/Interface/EmptyAlien";
 
@@ -16,6 +18,8 @@ namespace Ben10Mod.Content.Transformations.EyeGuy
             EquipLoader.AddEquipTexture(Mod, $"{CostumeTexturePath}_{EquipType.Head}", EquipType.Head, this, equipTexture: new XLR8Head());
             EquipLoader.AddEquipTexture(Mod, $"{CostumeTexturePath}_{EquipType.Body}", EquipType.Body, this);
             EquipLoader.AddEquipTexture(Mod, $"{CostumeTexturePath}_{EquipType.Legs}", EquipType.Legs, this);
+            EquipLoader.AddEquipTexture(Mod, $"{UltimateBodyTexturePath}_{EquipType.Body}", EquipType.Body,
+                name: UltimateBodyEquipName);
         }
 
         private void SetupDrawing() {
@@ -25,10 +29,13 @@ namespace Ben10Mod.Content.Transformations.EyeGuy
             int equipSlotHead = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Head);
             int equipSlotBody = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Body);
             int equipSlotLegs = EquipLoader.GetEquipSlot(Mod, Name, EquipType.Legs);
+            int equipSlotUltimateBody = EquipLoader.GetEquipSlot(Mod, UltimateBodyEquipName, EquipType.Body);
 
             ArmorIDs.Head.Sets.DrawHead[equipSlotHead] = false;
             ArmorIDs.Body.Sets.HidesTopSkin[equipSlotBody] = true;
             ArmorIDs.Body.Sets.HidesArms[equipSlotBody] = true;
+            ArmorIDs.Body.Sets.HidesTopSkin[equipSlotUltimateBody] = true;
+            ArmorIDs.Body.Sets.HidesArms[equipSlotUltimateBody] = true;
             ArmorIDs.Legs.Sets.HidesBottomSkin[equipSlotLegs] = true;
         }
 

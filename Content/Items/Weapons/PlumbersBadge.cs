@@ -182,6 +182,14 @@ namespace Ben10Mod.Content.Items.Weapons {
             FinalizeUltimateIfEnded(player, omp);
             wasHeldLastFrame = true;
 
+            bool badgeUsable = RefreshHeldStats(player, omp);
+            if (!badgeUsable || !omp.IsTransformed)
+                state.ultimateStarted = false;
+        }
+
+        internal bool RefreshHeldStats(Player player, OmnitrixPlayer omp) {
+            omp ??= player.GetModPlayer<OmnitrixPlayer>();
+
             // Start from a neutral badge state before the active transformation applies its attack profile.
             Item.useTime          = Item.useAnimation = 25;
             Item.shootSpeed       = 10f;
@@ -193,16 +201,13 @@ namespace Ben10Mod.Content.Items.Weapons {
             Item.shoot            = ProjectileID.WoodenArrowFriendly;
             Item.UseSound         = null;
 
-            if (IsBlacklisted()) {
-                state.ultimateStarted = false;
-                return;
-            }
+            if (IsBlacklisted())
+                return false;
 
             if (!omp.IsTransformed) {
-                state.ultimateStarted = false;
                 ConfigureUntransformedBadgeStats(player, omp);
                 ApplyBadgePrefixStats();
-                return;
+                return true;
             }
 
             var trans = omp.CurrentTransformation;
@@ -211,6 +216,7 @@ namespace Ben10Mod.Content.Items.Weapons {
 
             ApplyBadgePrefixStats();
             Item.useTime = Item.useAnimation = (int)(Item.useTime / AttackSpeedMultiplier);
+            return true;
         }
 
         public override void UpdateInventory(Player player) {

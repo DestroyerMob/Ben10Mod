@@ -327,8 +327,11 @@ namespace Ben10Mod {
 					string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
 					KeyValuePair<string, string>[] selectedCostumeEntries =
 						OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
+					OmnitrixVisualPaletteColorEntry[] visualPaletteEntries =
+						OmnitrixPlayer.ReadOmnitrixVisualPaletteEntries(reader);
 					OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-					omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys, selectedCostumeEntries);
+					omp.ApplyTransformationPaletteStateSync(entries, enabledChannelKeys, selectedCostumeEntries,
+						visualPaletteEntries);
 					omp.SyncTransformationPaletteState();
 					break;
 				}
@@ -348,9 +351,12 @@ namespace Ben10Mod {
 					string[] enabledChannelKeys = OmnitrixPlayer.ReadPaletteChannelKeys(reader);
 					KeyValuePair<string, string>[] selectedCostumeEntries =
 						OmnitrixPlayer.ReadSelectedTransformationCostumes(reader);
+					OmnitrixVisualPaletteColorEntry[] visualPaletteEntries =
+						OmnitrixPlayer.ReadOmnitrixVisualPaletteEntries(reader);
 					player.GetModPlayer<OmnitrixPlayer>().ApplyTransformationPaletteStateSync(entries,
 						enabledChannelKeys,
-						selectedCostumeEntries);
+						selectedCostumeEntries,
+						visualPaletteEntries);
 					break;
 				}
 				case MessageType.RequestSyncTransformationSpeedBoostSetting: {

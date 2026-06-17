@@ -205,10 +205,12 @@ namespace Ben10Mod.Content.Transformations {
         }
         public virtual void DrawEffects(ref PlayerDrawSet drawInfo) { }
         public virtual void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
-            SpawnDustBurst(player, DustID.GreenTorch, Color.White);
+            Color dustColor = omp?.GetOmnitrixVisualColor(OmnitrixVisualPalette.TransformEffect, Color.White) ?? Color.White;
+            SpawnDustBurst(player, DustID.GreenTorch, dustColor);
         }
         public virtual void SpawnDetransformParticles(Player player, OmnitrixPlayer omp) {
-            SpawnDustBurst(player, DustID.RedTorch, Color.White);
+            Color dustColor = omp?.GetOmnitrixVisualColor(OmnitrixVisualPalette.DetransformEffect, Color.White) ?? Color.White;
+            SpawnDustBurst(player, DustID.RedTorch, dustColor);
         }
         public virtual void OnHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }
         public virtual void PostHurt(Player player, OmnitrixPlayer omp, Player.HurtInfo info) { }

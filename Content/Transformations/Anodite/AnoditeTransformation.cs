@@ -145,11 +145,13 @@ public class AnoditeTransformation : Transformation {
     }
 
     public override void SpawnTransformParticles(Player player, OmnitrixPlayer omp) {
-        SpawnDustBurst(player, DustID.PinkTorch, Color.White);
+        Color dustColor = omp?.GetOmnitrixVisualColor(OmnitrixVisualPalette.TransformEffect, Color.White) ?? Color.White;
+        SpawnDustBurst(player, DustID.PinkTorch, dustColor);
     }
 
     public override void SpawnDetransformParticles(Player player, OmnitrixPlayer omp) {
-        SpawnDustBurst(player, DustID.PinkTorch, Color.White);
+        Color dustColor = omp?.GetOmnitrixVisualColor(OmnitrixVisualPalette.DetransformEffect, Color.White) ?? Color.White;
+        SpawnDustBurst(player, DustID.PinkTorch, dustColor);
     }
 
     public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {

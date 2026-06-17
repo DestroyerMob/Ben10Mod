@@ -212,9 +212,10 @@ public class RathTransformation : Transformation {
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-        player.head = ArmorIDs.Head.AshWoodHelmet;
-        player.body = ArmorIDs.Body.Gi;
-        player.legs = ArmorIDs.Legs.FossilGreaves;
+        var costume = ModContent.GetInstance<Rath>();
+        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+        player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
     }
 
     private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {
