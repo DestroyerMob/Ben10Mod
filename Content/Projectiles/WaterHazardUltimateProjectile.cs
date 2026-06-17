@@ -58,7 +58,8 @@ public class WaterHazardUltimateProjectile : ModProjectile {
 
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float easedProgress = 1f - MathF.Pow(1f - progress, 2.7f);
-        float radius = MathHelper.Lerp(StartRadius, MaxRadius + 90f * PressureRatio, easedProgress);
+        float maxRadius = MathHelper.Lerp(150f, MaxRadius + 90f, PressureRatio);
+        float radius = MathHelper.Lerp(StartRadius, maxRadius, easedProgress);
         SpawnWaveDust(radius, PreviousRadius, aimDirection);
         PreviousRadius = radius;
         CurrentRadius = radius;

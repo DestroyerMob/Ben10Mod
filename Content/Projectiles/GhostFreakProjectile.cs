@@ -1,32 +1,31 @@
-﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
+using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles {
     public class GhostFreakProjectile : ModProjectile {
+        private bool Phased => Projectile.ai[0] >= 0.5f;
 
         public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.None}";
 
         private int oddEven = 0;
 
         public override void SetDefaults() {
-            
-            Projectile.width       = (int)(Projectile.width  * 0.6f);
-            Projectile.height      = (int)(Projectile.height * 0.6f);
-            Projectile.scale       = 0.6f;
+            Projectile.width       = 16;
+            Projectile.height      = 16;
+            Projectile.scale       = 0.72f;
             Projectile.friendly    = true;
             Projectile.hostile     = false;
-            Projectile.penetrate   = -1;
-            Projectile.timeLeft    = 35;
-            Projectile.DamageType  = DamageClass.Magic;
+            Projectile.penetrate   = 2;
+            Projectile.timeLeft    = 52;
+            Projectile.DamageType  = ModContent.GetInstance<HeroDamage>();
             Projectile.tileCollide = false;
+            Projectile.ignoreWater = true;
+            Projectile.usesLocalNPCImmunity = true;
+            Projectile.localNPCHitCooldown = 12;
 
         }
 
@@ -43,13 +42,16 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-            if (Main.rand.NextBool(5)) target.AddBuff(BuffID.Confused, 60 * 5);
+            target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyGhostFreakFear(Projectile.owner, Phased ? 2 : 1,
+                Phased ? 260 : 210);
+            if (!target.boss)
+                target.AddBuff(BuffID.Confused, Phased ? 120 : 75);
         }
 
         public override void EmitEnchantmentVisualsAt(Vector2 boxPosition, int boxWidth, int boxHeight) {
             oddEven++;
-            Random random  = new Random();
-            int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.WhiteTorch, random.Next(0, 0), random.Next(0, 0), 1, oddEven % 2 == 0 ? Color.White : Color.Black,  Projectile.timeLeft / 10);
+            int dustNum = Dust.NewDust(boxPosition, boxWidth, boxHeight, DustID.WhiteTorch, 0, 0, 1,
+                oddEven % 2 == 0 ? Color.White : Color.Black, Projectile.timeLeft / 10);
             Main.dust[dustNum].noGravity = true;
         }
     }

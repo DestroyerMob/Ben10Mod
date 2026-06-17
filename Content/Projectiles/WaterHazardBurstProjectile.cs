@@ -54,7 +54,8 @@ public class WaterHazardBurstProjectile : ModProjectile {
 
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float easedProgress = 1f - MathF.Pow(1f - progress, 2.3f);
-        float radius = MathHelper.Lerp(StartRadius, MaxRadius + 70f * PressureRatio, easedProgress);
+        float maxRadius = MathHelper.Lerp(72f, MaxRadius + 70f, PressureRatio);
+        float radius = MathHelper.Lerp(StartRadius, maxRadius, easedProgress);
         SpawnBurstDust(radius, PreviousRadius);
         PreviousRadius = radius;
         CurrentRadius = radius;

@@ -37,9 +37,15 @@ public class FourArmsTransformation : Transformation {
     private const int PotisSecondaryShootSpeed = 17;
     private const int PotisSecondaryEnergyCost = 3;
     private const int PotisHaymakerAttackSpeed = 16;
+    private const float FullRageRange = 145f;
+    private const float MinimumRageRange = 430f;
     private const float BaseMeleeDamageBonus = 0.18f;
     private const float BaseMeleeAttackSpeedBonus = 0.1f;
     private const float RageMeleeAttackSpeedBonus = 0.08f;
+    private const float TempoHeroAttackSpeedBonus = 0.07f;
+    private const float PotisTempoHeroAttackSpeedBonus = 0.09f;
+    private const float TempoMeleeAttackSpeedBonus = 0.045f;
+    private const float PotisTempoMeleeAttackSpeedBonus = 0.06f;
     private const float BaseMeleeKnockbackBonus = 1.1f;
     private const int BaseMeleeArmorPenBonus = 10;
     private const int BaseMeleeCritBonus = 8;
@@ -55,14 +61,14 @@ public class FourArmsTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<FourArms_Buff>();
 
     public override string Description =>
-        "A Tetramand bruiser built around fists, slams, and crowd-control shockwaves. Four Arms also puts real weight behind melee weapons, building Rage in close quarters before cashing it out in Berserker mode.";
+        "A Tetramand combo bruiser built around punch strings, slams, and close-range crowd control. Four Arms builds Rage fastest in brawling range, then cashes it out in Berserker mode.";
 
     public override List<string> Abilities => new() {
         "Titan Combo chains fast punches, then widens into a cleaving third hit.",
         "Shock Clap sends a short-range shockwave through crowds.",
         "Ground Slam triggers from the ability hotkey or a double tap down input.",
         "Haymaker is a charged super-armored punch for big single-target damage.",
-        "Passive Rage builds from dealing or taking close-range punishment, feeds attack speed, and boosts melee weapon pressure.",
+        "Passive Rage and Brawler Tempo build best from close-range hits, feeding faster punch strings and melee pressure.",
         "Ultimate Berserker mode activates once Rage reaches 90%, then cashes it out for faster, larger combos and fissure slams."
     };
 
@@ -218,10 +224,12 @@ public class FourArmsTransformation : Transformation {
 
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
         float rageRatio = state.RageRatio;
+        float tempoRatio = state.BrawlerTempoRatio;
         bool potis = HasPotisAltiare(player);
 
         player.GetDamage<HeroDamage>() += 0.12f;
-        player.GetAttackSpeed<HeroDamage>() += 0.04f + rageRatio * 0.12f;
+        player.GetAttackSpeed<HeroDamage>() += 0.04f + rageRatio * 0.12f +
+                                               tempoRatio * (potis ? PotisTempoHeroAttackSpeedBonus : TempoHeroAttackSpeedBonus);
         player.GetKnockback<HeroDamage>() += 0.65f;
         player.GetArmorPenetration<HeroDamage>() += 10;
         player.statDefense += 13;
@@ -233,7 +241,8 @@ public class FourArmsTransformation : Transformation {
         player.tileSpeed *= 0.9f;
         player.wallSpeed *= 0.9f;
         player.GetDamage(DamageClass.Melee) += BaseMeleeDamageBonus;
-        player.GetAttackSpeed(DamageClass.Melee) += BaseMeleeAttackSpeedBonus + rageRatio * RageMeleeAttackSpeedBonus;
+        player.GetAttackSpeed(DamageClass.Melee) += BaseMeleeAttackSpeedBonus + rageRatio * RageMeleeAttackSpeedBonus +
+                                                    tempoRatio * (potis ? PotisTempoMeleeAttackSpeedBonus : TempoMeleeAttackSpeedBonus);
         player.GetKnockback(DamageClass.Melee) += BaseMeleeKnockbackBonus;
         player.GetArmorPenetration(DamageClass.Melee) += BaseMeleeArmorPenBonus;
         player.GetCritChance(DamageClass.Melee) += BaseMeleeCritBonus;
@@ -296,7 +305,7 @@ public class FourArmsTransformation : Transformation {
 
         bool potis = HasPotisAltiare(omp.Player);
         float comboSpeedMultiplier = 1f - state.RageRatio * (potis ? 0.1f : 0.08f) - (state.BerserkActive ? 0.14f : 0f) -
-                                     (potis ? 0.06f : 0f);
+                                     (potis ? 0.06f : 0f) - state.BrawlerTempoRatio * (potis ? 0.08f : 0.06f);
         item.useTime = item.useAnimation = Math.Max(potis ? 6 : 7, (int)Math.Round(item.useTime * comboSpeedMultiplier));
     }
 
@@ -446,6 +455,10 @@ public class FourArmsTransformation : Transformation {
             return;
 
         FourArmsGroundSlamPlayer state = player.GetModPlayer<FourArmsGroundSlamPlayer>();
+        bool heavyHit = projectile.type == PrimaryAttack && projectile.ai[1] >= 2f ||
+                        projectile.type == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>();
+        float closePressure = ResolveClosePressure(player, target, projectile);
+        float rangeMultiplier = ResolveRageRangeMultiplier(projectile.type, closePressure);
         float gain = projectile.type switch {
             _ when projectile.type == PrimaryAttack => 5.5f,
             _ when projectile.type == SecondaryAttack => 4f,
@@ -454,10 +467,15 @@ public class FourArmsTransformation : Transformation {
             _ => 6.5f
         };
         gain += Math.Min(8f, damageDone * 0.022f);
+        gain *= rangeMultiplier;
+        if (projectile.type == PrimaryAttack && closePressure >= 0.68f)
+            gain += heavyHit ? 2.1f : 1.2f;
+
         state.AddRage(gain);
 
-        bool heavyHit = projectile.type == PrimaryAttack && projectile.ai[1] >= 2f ||
-                        projectile.type == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>();
+        if (projectile.type == PrimaryAttack || projectile.type == SecondaryAttack || heavyHit)
+            state.RegisterClosePressure(closePressure, heavyHit);
+
         state.RegisterBrawlerImpact(target, heavyHit);
     }
 
@@ -468,16 +486,20 @@ public class FourArmsTransformation : Transformation {
         string rageText = compact
             ? $"Rage {(int)Math.Round(state.RageRatio * 100f)}%"
             : $"Rage {(int)Math.Round(state.RageRatio * 100f)}%";
+        string tempoText = state.HasBrawlerTempo
+            ? compact ? $"Tempo {state.BrawlerTempoStacks}" : $"Tempo {state.BrawlerTempoStacks}/3"
+            : string.Empty;
         bool potis = HasPotisAltiare(omp.Player);
         string berserkName = potis ? "Overdrive" : "Berserk";
+        string WithTempo(string text) => string.IsNullOrWhiteSpace(tempoText) ? text : $"{text} • {tempoText}";
 
         return resolvedSelection switch {
-            OmnitrixPlayer.AttackSelection.Primary => compact
+            OmnitrixPlayer.AttackSelection.Primary => WithTempo(compact
                 ? $"{(state.FinisherReady ? potis ? "Faultline" : "Finisher" : $"Hit {state.NextComboHit}")} • {rageText}"
-                : $"{(state.FinisherReady ? potis ? "Next hit cracks ground" : "Next hit cleaves" : $"Combo {state.NextComboHit}/3")} • {rageText}",
+                : $"{(state.FinisherReady ? potis ? "Next hit cracks ground" : "Next hit cleaves" : $"Combo {state.NextComboHit}/3")} • {rageText}"),
             OmnitrixPlayer.AttackSelection.Secondary => potis
-                ? compact ? $"3 OE • {rageText}" : $"Ground crack • 3 OE • {rageText}"
-                : rageText,
+                ? WithTempo(compact ? $"3 OE • {rageText}" : $"Ground crack • 3 OE • {rageText}")
+                : WithTempo(rageText),
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"Tap down/F • {rageText}"
                 : $"{(potis ? "Meteor slam" : "Double tap down or press F")} • {rageText}",
@@ -584,6 +606,35 @@ public class FourArmsTransformation : Transformation {
                projectileType == SecondaryAttack ||
                projectileType == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>() ||
                projectileType == ModContent.ProjectileType<FourArmsFissureProjectile>();
+    }
+
+    private static float ResolveClosePressure(Player player, NPC target, Projectile projectile) {
+        if (player == null || target == null)
+            return 0f;
+
+        float targetSizeAllowance = Math.Max(target.width, target.height) * 0.35f;
+        float distance = Math.Max(0f, Vector2.Distance(player.Center, target.Center) - targetSizeAllowance);
+        float pressure = 1f - MathHelper.Clamp((distance - FullRageRange) / (MinimumRageRange - FullRageRange), 0f, 1f);
+
+        if (projectile.type == ModContent.ProjectileType<FourArmsFissureProjectile>())
+            pressure *= 0.62f;
+        else if (projectile.type == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>())
+            pressure *= 0.78f;
+
+        return MathHelper.Clamp(pressure, 0f, 1f);
+    }
+
+    private static float ResolveRageRangeMultiplier(int projectileType, float closePressure) {
+        if (projectileType == ModContent.ProjectileType<FourArmsFissureProjectile>())
+            return MathHelper.Lerp(0.1f, 0.68f, closePressure);
+
+        if (projectileType == ModContent.ProjectileType<FourArmsLandingShockwaveProjectile>())
+            return MathHelper.Lerp(0.24f, 1f, closePressure);
+
+        if (projectileType == ModContent.ProjectileType<FourArmsClap>())
+            return MathHelper.Lerp(0.24f, 0.95f, closePressure);
+
+        return MathHelper.Lerp(0.28f, 1.18f, closePressure);
     }
 
     private static bool HasPotisAltiare(Player player) {

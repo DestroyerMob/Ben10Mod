@@ -42,6 +42,7 @@ public class ArmodrilloDrillProjectile : ModProjectile {
             return;
         }
 
+        Projectile.scale = 1f + (GroundedDrill ? 0.07f : 0f) + (SiegeDrill ? 0.11f : 0f);
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
         float thrust = GetThrustAmount();
         owner.direction = direction.X >= 0f ? 1 : -1;
@@ -59,11 +60,30 @@ public class ArmodrilloDrillProjectile : ModProjectile {
         owner.itemTime = 2;
         owner.itemAnimation = 2;
 
-        if (Main.rand.NextBool(2)) {
+        if (GroundedDrill && Main.rand.NextBool(2)) {
+            Dust shard = Dust.NewDustPerfect(drillHeadPosition + Main.rand.NextVector2Circular(9f, 8f),
+                DustID.GemDiamond, direction * Main.rand.NextFloat(1.5f, 3.1f), 105, Color.White,
+                SiegeDrill ? 1.35f : 1.12f);
+            shard.noGravity = true;
+        }
+
+        if (Main.rand.NextBool(SiegeDrill ? 1 : 2)) {
             Dust dust = Dust.NewDustPerfect(drillHeadPosition + Main.rand.NextVector2Circular(8f, 8f), DustID.Smoke,
                 direction * Main.rand.NextFloat(1.1f, 2.2f), 110, new Color(170, 130, 70), 1.1f);
             dust.noGravity = true;
         }
+    }
+
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        if (!GroundedDrill)
+            return;
+
+        target.AddBuff(BuffID.BrokenArmor, SiegeDrill ? 180 : 105);
+        if (SiegeDrill)
+            target.AddBuff(BuffID.Slow, 75);
+
+        Vector2 shoveDirection = Projectile.velocity.SafeNormalize(new Vector2(Projectile.spriteDirection, 0f));
+        target.velocity.X += shoveDirection.X * (SiegeDrill ? 2.8f : 1.6f);
     }
 
     public override bool PreDraw(ref Color lightColor) {
@@ -95,4 +115,8 @@ public class ArmodrilloDrillProjectile : ModProjectile {
         float armReach = MathHelper.Lerp(MinArmReach, MaxArmReach, thrust);
         return owner.MountedCenter + direction * armReach - normal * HandNormalOffset;
     }
+
+    private bool GroundedDrill => Projectile.ai[0] > 0.5f;
+
+    private bool SiegeDrill => Projectile.ai[1] > 0.5f;
 }

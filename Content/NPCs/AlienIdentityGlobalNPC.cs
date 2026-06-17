@@ -5,6 +5,7 @@ using Ben10Mod.Content.Transformations.EyeGuy;
 using Ben10Mod.Content.Transformations.Frankenstrike;
 using Ben10Mod.Content.Transformations.HeatBlast;
 using Ben10Mod.Content.Transformations.Humungousaur;
+using Ben10Mod.Content.Transformations.Rath;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -57,6 +58,12 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int WaterHazardSoak;
     public int WaterHazardSoakTime;
 
+    public int GhostFreakFearOwner = -1;
+    public int GhostFreakFearStacks;
+    public int GhostFreakFearTime;
+    public int GhostFreakHauntOwner = -1;
+    public int GhostFreakHauntTime;
+
     public int JetrayLockOwner = -1;
     public int JetrayLockTime;
 
@@ -86,6 +93,10 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int WhampirePreyTime;
     public int WhampireHypnosisTime;
 
+    public int RathPreyOwner = -1;
+    public int RathPreyTime;
+    public int RathRendStacks;
+
     public int SnareOhCurseOwner = -1;
     public int SnareOhCurseStacks;
     public int SnareOhCurseTime;
@@ -113,6 +124,8 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsHumungousaurShatteredFor(int owner) => HumungousaurShatteredOwner == owner && HumungousaurShatteredTime > 0;
     public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
     public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
+    public bool IsGhostFreakFearedFor(int owner) => GhostFreakFearOwner == owner && GhostFreakFearTime > 0 && GhostFreakFearStacks > 0;
+    public bool IsGhostFreakHauntedFor(int owner) => GhostFreakHauntOwner == owner && GhostFreakHauntTime > 0;
     public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
     public bool HasBigChillFrostbiteFor(int owner) => BigChillOwner == owner && BigChillFrostbiteTime > 0 && BigChillFrostbiteStacks > 0;
     public bool IsBigChillDeepFrozenFor(int owner) => BigChillOwner == owner && BigChillDeepFreezeTime > 0;
@@ -120,6 +133,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool HasHeatBlastFlashpointFor(int owner) => HeatBlastOwner == owner && HeatBlastFlashpointTime > 0 && HeatBlastFlashpointStacks > 0;
     public bool IsEyeGuyExposedFor(int owner) => EyeGuyOwner == owner && EyeGuyExposedTime > 0;
     public bool IsWhampirePreyFor(int owner) => WhampirePreyOwner == owner && WhampirePreyTime > 0;
+    public bool IsRathPreyFor(int owner) => RathPreyOwner == owner && RathPreyTime > 0 && RathRendStacks > 0;
     public bool IsSnareOhCursedFor(int owner) => SnareOhCurseOwner == owner && SnareOhCurseTime > 0 && SnareOhCurseStacks > 0;
     public bool IsAlienXJudgedFor(int owner) => AlienXJudgementOwner == owner && AlienXJudgementTime > 0 && AlienXJudgementStacks > 0;
     public bool IsDreamboundFor(int owner) => PeskyDustOwner == owner && PeskyDustDreamTime > 0;
@@ -129,9 +143,11 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int GetFrankenstrikeConductiveStacks(int owner) => FrankenstrikeConductiveOwner == owner ? FrankenstrikeConductiveStacks : 0;
     public int GetHumungousaurBreachStacks(int owner) => IsHumungousaurBreachedFor(owner) ? HumungousaurBreachStacks : 0;
     public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
+    public int GetGhostFreakFearStacks(int owner) => IsGhostFreakFearedFor(owner) ? GhostFreakFearStacks : 0;
     public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
     public int GetAlienXJudgementStacks(int owner) => IsAlienXJudgedFor(owner) ? AlienXJudgementStacks : 0;
     public int GetHeatBlastFlashpointStacks(int owner) => HasHeatBlastFlashpointFor(owner) ? HeatBlastFlashpointStacks : 0;
+    public int GetRathRendStacks(int owner) => IsRathPreyFor(owner) ? RathRendStacks : 0;
     public int GetBigChillFrostbiteStacks(int owner) {
         if (BigChillOwner != owner)
             return 0;
@@ -391,6 +407,31 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         return consumed;
     }
 
+    public void ApplyGhostFreakFear(int owner, int stacks, int refreshTime) {
+        if (GhostFreakFearOwner != owner) {
+            GhostFreakFearOwner = owner;
+            GhostFreakFearStacks = 0;
+        }
+
+        GhostFreakFearStacks = Utils.Clamp(GhostFreakFearStacks + stacks, 0, 5);
+        GhostFreakFearTime = Utils.Clamp(System.Math.Max(GhostFreakFearTime, refreshTime), 1, 420);
+    }
+
+    public void ApplyGhostFreakHaunt(int owner, int time) {
+        GhostFreakHauntOwner = owner;
+        GhostFreakHauntTime = Utils.Clamp(time, 1, 420);
+        ApplyGhostFreakFear(owner, 2, time);
+    }
+
+    public bool ConsumeGhostFreakHaunt(int owner) {
+        if (!IsGhostFreakHauntedFor(owner))
+            return false;
+
+        GhostFreakHauntOwner = -1;
+        GhostFreakHauntTime = 0;
+        return true;
+    }
+
     public void ApplyJetrayLock(int owner, int time) {
         JetrayLockOwner = owner;
         JetrayLockTime = Utils.Clamp(time, 1, 420);
@@ -578,6 +619,34 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         WhampireHypnosisTime = Utils.Clamp(time, 1, 240);
     }
 
+    public void ApplyRathPrey(int owner, int stacks, int time) {
+        if (RathPreyOwner != owner) {
+            RathPreyOwner = owner;
+            RathRendStacks = 0;
+        }
+
+        RathRendStacks = Utils.Clamp(RathRendStacks + System.Math.Max(0, stacks), 1, RathTransformation.RendMaxStacks);
+        RathPreyTime = Utils.Clamp(System.Math.Max(RathPreyTime, time), 1, RathTransformation.RendDurationTicks);
+    }
+
+    public int ConsumeRathRend(int owner) {
+        int stacks = GetRathRendStacks(owner);
+        if (stacks <= 0)
+            return 0;
+
+        ClearRathPrey(owner);
+        return stacks;
+    }
+
+    public void ClearRathPrey(int owner = -1) {
+        if (owner >= 0 && RathPreyOwner != owner)
+            return;
+
+        RathPreyOwner = -1;
+        RathPreyTime = 0;
+        RathRendStacks = 0;
+    }
+
     public void ApplySnareOhCurse(int owner, int stacks, int time) {
         if (SnareOhCurseOwner != owner) {
             SnareOhCurseOwner = owner;
@@ -651,10 +720,19 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     }
 
     public override void AI(NPC npc) {
+        if (GhostFreakHauntTime == 1)
+            TriggerGhostFreakHauntDetonation(npc);
+
         TickStatuses();
 
         if (FrankenstrikeOverchargedTime > 0)
             HandleFrankenstrikeOvercharged(npc);
+
+        if (GhostFreakFearTime > 0)
+            ApplyGhostFreakFearControl(npc);
+
+        if (GhostFreakHauntTime > 0)
+            npc.velocity *= npc.boss ? 0.985f : 0.92f;
 
         if (WhampireHypnosisTime > 0) {
             float dampening = npc.boss ? 0.92f : 0.55f;
@@ -784,6 +862,49 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         }
     }
 
+    private void ApplyGhostFreakFearControl(NPC npc) {
+        if (GhostFreakFearOwner < 0 || GhostFreakFearOwner >= Main.maxPlayers)
+            return;
+
+        Player owner = Main.player[GhostFreakFearOwner];
+        if (!owner.active || owner.dead)
+            return;
+
+        float fearRatio = MathHelper.Clamp(GhostFreakFearStacks / 5f, 0f, 1f);
+        if (npc.boss) {
+            npc.velocity *= MathHelper.Lerp(0.99f, 0.965f, fearRatio);
+            return;
+        }
+
+        Vector2 away = (npc.Center - owner.Center).SafeNormalize(Vector2.Zero);
+        if (away == Vector2.Zero)
+            away = new Vector2(npc.direction == 0 ? 1f : npc.direction, 0f);
+
+        Vector2 panicVelocity = npc.velocity + away * MathHelper.Lerp(0.18f, 0.68f, fearRatio);
+        npc.velocity = Vector2.Lerp(npc.velocity, panicVelocity, MathHelper.Lerp(0.08f, 0.18f, fearRatio));
+        npc.velocity *= MathHelper.Lerp(0.98f, 0.92f, fearRatio);
+        npc.velocity.X = MathHelper.Clamp(npc.velocity.X, -8f, 8f);
+        npc.velocity.Y = MathHelper.Clamp(npc.velocity.Y, -6f, 6f);
+    }
+
+    private void TriggerGhostFreakHauntDetonation(NPC npc) {
+        if (Main.netMode == NetmodeID.MultiplayerClient || GhostFreakHauntOwner < 0 || GhostFreakHauntOwner >= Main.maxPlayers)
+            return;
+
+        Player owner = Main.player[GhostFreakHauntOwner];
+        if (!owner.active || owner.dead)
+            return;
+
+        int fearStacks = GetGhostFreakFearStacks(owner.whoAmI);
+        float baseDamage = npc.boss ? 34f : 48f;
+        int damage = System.Math.Max(1,
+            (int)System.Math.Round(owner.GetDamage<HeroDamage>().ApplyTo(baseDamage + fearStacks * 7f)));
+        int hitDirection = npc.Center.X >= owner.Center.X ? 1 : -1;
+        npc.SimpleStrikeNPC(damage, hitDirection, false, 0f, ModContent.GetInstance<HeroDamage>());
+        npc.AddBuff(BuffID.Confused, npc.boss ? 90 : 210);
+        npc.netUpdate = true;
+    }
+
     public override void DrawEffects(NPC npc, ref Color drawColor) {
         if (npc.HasBuff(ModContent.BuffType<AlienXSupernovaBurn>()))
             drawColor = Color.Lerp(drawColor, new Color(255, 188, 118), 0.34f);
@@ -827,6 +948,11 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (WaterHazardSoakTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(120, 215, 255), 0.08f + 0.18f * (WaterHazardSoak / 100f));
+
+        if (GhostFreakHauntTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(150, 95, 210), 0.35f);
+        else if (GhostFreakFearTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(92, 72, 130), 0.16f + GhostFreakFearStacks * 0.035f);
 
         if (JetrayLockTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(100, 255, 225), 0.24f);
@@ -874,6 +1000,9 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (WhampirePreyTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(170, 45, 60), 0.3f);
+
+        if (RathPreyTime > 0)
+            drawColor = Color.Lerp(drawColor, new Color(255, 96, 66), 0.16f + RathRendStacks * 0.04f);
 
         if (WhampireHypnosisTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(255, 170, 185), 0.36f);
@@ -987,6 +1116,23 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
             WaterHazardSoak = 0;
         }
 
+        if (GhostFreakFearTime > 0) {
+            GhostFreakFearTime--;
+            if (GhostFreakFearTime % 55 == 0)
+                GhostFreakFearStacks = System.Math.Max(0, GhostFreakFearStacks - 1);
+        }
+        else {
+            GhostFreakFearOwner = -1;
+            GhostFreakFearStacks = 0;
+        }
+
+        if (GhostFreakHauntTime > 0) {
+            GhostFreakHauntTime--;
+        }
+        else {
+            GhostFreakHauntOwner = -1;
+        }
+
         if (JetrayLockTime > 0) {
             JetrayLockTime--;
         }
@@ -1051,6 +1197,13 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
 
         if (WhampireHypnosisTime > 0)
             WhampireHypnosisTime--;
+
+        if (RathPreyTime > 0) {
+            RathPreyTime--;
+        }
+        else {
+            ClearRathPrey();
+        }
 
         if (SnareOhCurseTime > 0) {
             SnareOhCurseTime--;

@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Transformations.AmpFibian;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -30,30 +31,35 @@ public class AmpFibianBarrierProjectile : ModProjectile {
         }
 
         OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
-        if (omp.currentTransformationId != "Ben10Mod:AmpFibian" || !omp.IsUltimateAbilityActive) {
+        if (omp.currentTransformationId != AmpFibianTransformation.TransformationId || !omp.IsUltimateAbilityActive) {
             Projectile.Kill();
             return;
         }
 
+        AmpFibianPhaseShiftPlayer state = owner.GetModPlayer<AmpFibianPhaseShiftPlayer>();
         Projectile.Center = owner.Center;
         Projectile.timeLeft = 2;
-        Projectile.rotation += 0.09f;
-        Lighting.AddLight(Projectile.Center, new Vector3(0.12f, 0.3f, 0.62f));
-        SpawnBarrierDust();
+        Projectile.rotation += 0.09f + state.BarrierChargeRatio * 0.045f;
+        Lighting.AddLight(Projectile.Center, new Vector3(0.12f + state.BarrierChargeRatio * 0.12f,
+            0.3f + state.BarrierChargeRatio * 0.14f, 0.62f + state.BarrierChargeRatio * 0.16f));
+        SpawnBarrierDust(state.BarrierChargeRatio);
     }
 
-    private void SpawnBarrierDust() {
+    private void SpawnBarrierDust(float chargeRatio) {
         if (Main.dedServ)
             return;
 
-        float radius = 44f;
-        for (int i = 0; i < 6; i++) {
+        float radius = 44f + chargeRatio * 16f;
+        int dustCount = 6 + (int)(chargeRatio * 6f);
+        for (int i = 0; i < dustCount; i++) {
             float angle = Projectile.rotation + MathHelper.TwoPi * Main.rand.NextFloat();
             Vector2 offset = angle.ToRotationVector2() * radius;
-            Vector2 tangentialVelocity = offset.SafeNormalize(Vector2.UnitX).RotatedBy(MathHelper.PiOver2) * 0.35f;
+            Vector2 tangentialVelocity = offset.SafeNormalize(Vector2.UnitX).RotatedBy(MathHelper.PiOver2) *
+                (0.35f + chargeRatio * 0.25f);
 
             Dust outer = Dust.NewDustPerfect(Projectile.Center + offset, DustID.Electric, tangentialVelocity, 95,
-                new Color(100, 205, 255), Main.rand.NextFloat(1.05f, 1.35f));
+                Color.Lerp(new Color(100, 205, 255), new Color(190, 245, 255), chargeRatio),
+                Main.rand.NextFloat(1.05f, 1.35f + chargeRatio * 0.22f));
             outer.noGravity = true;
 
             Dust inner = Dust.NewDustPerfect(Projectile.Center + offset * 0.78f, DustID.BlueTorch,

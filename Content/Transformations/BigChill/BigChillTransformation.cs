@@ -50,13 +50,13 @@ public class BigChillTransformation : Transformation {
     public override Transformation ChildTransformation => ModContent.GetInstance<UltimateBigChillTransformation>();
 
     public override string Description =>
-        "A spectral Necrofriggian skirmisher who paints targets with Hoarfrost, phases through danger and enemies, then cashes that mark out into explosive Shiverbursts while staying airborne.";
+        "An airborne frost assassin who phases in, paints targets with Hoarfrost, shatters them with Shiverburst, then fades back out before direct pressure catches him.";
 
     public override List<string> Abilities => new() {
-        "Direct hits apply short Hoarfrost, slowing normal enemies, shaving defense, and priming a burst window.",
-        "Coldfire Breath is the rapid marking stream you hold while circling above the fight.",
+        "Direct hits apply Hoarfrost, slowing normal enemies, shaving defense, and priming a Shiverburst window.",
+        "Coldfire Breath is the low-direct-damage marking stream you hold while circling above the fight.",
         "Black Ice Barrage pops Hoarfrost into Shiverburst, splinter damage, and a brief frost patch.",
-        "Spectral Phase dashes intangible through enemies and projectiles, leaving a freezing trail behind.",
+        "Spectral Phase dashes intangible through enemies and projectiles, leaving a freezing trail and opening the burst window.",
         "Wailing Wake leaves drifting frost clouds behind your movement and lightly slows hostile projectiles.",
         "Predator from the Veil boosts damage right after phasing and refunds OE when you trigger Shiverburst well.",
         "Dead Winter overclocks flight, auto-enables Wailing Wake, and lets Shiverburst spread Hoarfrost back through the arena."
@@ -318,20 +318,20 @@ public class BigChillTransformation : Transformation {
 
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => state.AbsoluteZeroActive
-                ? compact ? "Wide Hoarfrost" : "Longer, wider breath that keeps Hoarfrost painted on targets"
+                ? compact ? "Wide Hoarfrost" : "Longer, wider breath that keeps Hoarfrost painted on targets; direct damage stays modest"
                 : state.PhaseDriftEmpowered
-                    ? compact ? "Phase damage +" : "Marking breath with bonus post-phase pressure"
-                    : compact ? "Apply Hoarfrost" : "Rapid breath that marks targets with Hoarfrost",
+                    ? compact ? "Phase mark +" : "Post-phase marking breath; use it to set up Shiverburst, not raw DPS"
+                    : compact ? "Apply Hoarfrost" : "Rapid low-direct-damage breath that marks targets with Hoarfrost",
             OmnitrixPlayer.AttackSelection.Secondary => state.PhaseDriftEmpowered
-                ? compact ? "Burst +" : "Tighter barrage with a stronger Shiverburst window"
-                : compact ? "Pop Hoarfrost" : "Consume Hoarfrost into Shiverburst",
+                ? compact ? "Shatter +" : "Tighter barrage with a stronger Hoarfrost Shiverburst window"
+                : compact ? "Pop Hoarfrost" : "Consume Hoarfrost into Shiverburst; weak if you skip the mark",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => omp.IsPrimaryAbilityActive
                 ? compact
                     ? $"Phase {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)}"
                     : $"Spectral Phase active • {OmnitrixPlayer.FormatCooldownTicks(state.PhaseDriftTicksRemaining)} left"
                 : compact
                     ? $"{GetPrimaryAbilityCost(omp)} OE"
-                    : $"Dash intangible, phase through pressure, and open a damage window • {GetPrimaryAbilityCost(omp)} OE",
+                    : $"Phase in intangible, pass through pressure, and open the mark-shatter window • {GetPrimaryAbilityCost(omp)} OE",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => state.WailingWakeActive
                 ? compact
                     ? $"Wake {OmnitrixPlayer.FormatCooldownTicks(state.WailingWakeTicksRemaining)}"

@@ -42,7 +42,8 @@ public class WaterHazardSnareProjectile : ModProjectile {
         float lifetimeProgress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
         float fadeOut = Utils.GetLerpValue(0f, 30f, Projectile.timeLeft, true);
         float pulse = 0.82f + 0.18f * (1f + MathF.Sin(Main.GlobalTimeWrappedHourly * 6f)) * 0.5f;
-        CurrentRadius = (MaxRadius + 32f * PressureRatio) * (0.45f + 0.55f * fadeOut) * pulse;
+        float maxRadius = MathHelper.Lerp(52f, MaxRadius + 32f, PressureRatio);
+        CurrentRadius = maxRadius * (0.45f + 0.55f * fadeOut) * pulse;
 
         Lighting.AddLight(Projectile.Center, new Vector3(0.08f, 0.28f, 0.45f));
         PullNearbyEnemies();

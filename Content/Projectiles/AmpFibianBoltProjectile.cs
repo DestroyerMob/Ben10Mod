@@ -18,15 +18,17 @@ public class AmpFibianBoltProjectile : ModProjectile {
     public override bool ShouldUpdatePosition() => false;
 
     public override void SetDefaults() {
-        Projectile.width = 18;
-        Projectile.height = 18;
+        Projectile.width = 14;
+        Projectile.height = 14;
         Projectile.friendly = true;
         Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
-        Projectile.penetrate = 3;
-        Projectile.timeLeft = 48;
+        Projectile.penetrate = 5;
+        Projectile.timeLeft = 54;
         Projectile.tileCollide = true;
         Projectile.ignoreWater = true;
         Projectile.extraUpdates = 1;
+        Projectile.usesLocalNPCImmunity = true;
+        Projectile.localNPCHitCooldown = 12;
     }
 
     public override void AI() {
@@ -38,11 +40,11 @@ public class AmpFibianBoltProjectile : ModProjectile {
                 _baseVelocity = new Vector2(Projectile.direction, 0f) * 18f;
         }
 
-        float elapsed = (48 - Projectile.timeLeft) * (Projectile.extraUpdates + 1);
+        float elapsed = (54 - Projectile.timeLeft) * (Projectile.extraUpdates + 1);
         Vector2 forward = _baseVelocity.SafeNormalize(Vector2.UnitX);
         Vector2 perpendicular = forward.RotatedBy(MathHelper.PiOver2);
         Vector2 previousCenter = Projectile.Center;
-        Projectile.Center = _startPosition + _baseVelocity * elapsed + perpendicular * System.MathF.Sin(elapsed * 0.32f) * 10f;
+        Projectile.Center = _startPosition + _baseVelocity * elapsed + perpendicular * System.MathF.Sin(elapsed * 0.26f) * 8f;
 
         Vector2 travel = Projectile.Center - previousCenter;
         if (travel.LengthSquared() > 0.001f)
@@ -57,9 +59,27 @@ public class AmpFibianBoltProjectile : ModProjectile {
         return true;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        modifiers.ArmorPenetration += 4;
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.AddBuff(BuffID.Electrified, 180);
+        target.AddBuff(BuffID.Electrified, 150);
         SpawnImpactDust();
+    }
+
+    public override bool PreDraw(ref Color lightColor) {
+        Texture2D pixel = TextureAssets.MagicPixel.Value;
+        Vector2 forward = Projectile.rotation.ToRotationVector2();
+        Vector2 center = Projectile.Center - Main.screenPosition;
+        float pulse = 0.85f + System.MathF.Sin(Main.GlobalTimeWrappedHourly * 18f + Projectile.identity) * 0.12f;
+
+        Main.EntitySpriteDraw(pixel, center, null, new Color(90, 200, 255, 170), Projectile.rotation,
+            Vector2.One * 0.5f, new Vector2(34f, 4.4f) * pulse, SpriteEffects.None, 0);
+        Main.EntitySpriteDraw(pixel, center + forward.RotatedBy(MathHelper.PiOver2) * 3.5f, null,
+            new Color(210, 248, 255, 205), Projectile.rotation, Vector2.One * 0.5f,
+            new Vector2(20f, 2.2f) * pulse, SpriteEffects.None, 0);
+        return false;
     }
 
     private void SpawnBoltDust() {

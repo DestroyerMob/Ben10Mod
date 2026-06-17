@@ -26,6 +26,8 @@ public class HumungousaurTransformation : Transformation {
     private const float SecondaryDamageMultiplier = 1.16f;
     private const float RampageShockwaveSpeed = 15f;
     private const int RampagePulseInterval = 3;
+    private const int BracedRampagePulseInterval = 34;
+    private const float BracedRampagePulseDamageMultiplier = 0.34f;
 
     public override string FullID => TransformationId;
     public override string TransformationName => "Humungousaur";
@@ -37,10 +39,11 @@ public class HumungousaurTransformation : Transformation {
         "A towering Vaxasaurian bruiser that grows stronger mid-battle, then enters Titanic Rampage to trade blows with bosses and smash the ground apart.";
 
     public override List<string> Abilities => new() {
-        "Close-range power punch",
-        "Armored crushing charge that closes distance and shakes the ground on impact",
-        "Growth surge that boosts strength and toughness",
-        "Titanic Rampage rewards melee pressure with guard, punch shockwaves, and Crater Stomp",
+        "Close-range power punch that gains reach and ground shockwaves at larger sizes",
+        "Armored crushing charge that trades speed for heavier impacts while grown",
+        "Growth Surge increases size, range, power, and toughness while clearly reducing agility",
+        "Hold down while grown to brace for boss trades",
+        "Titanic Rampage becomes controlled kaiju mode with braced pulses, punch shockwaves, and Crater Stomp",
         "Ultimate evolution"
     };
 
@@ -70,8 +73,11 @@ public class HumungousaurTransformation : Transformation {
         bool rampageActive = IsTitanicRampageActive(omp);
         float growthScale = GetActiveGrowthScale(omp);
         float growthBonusMultiplier = GetGrowthBonusMultiplier(growthScale);
+        float growthMobilityRatio = GetGrowthMobilityRatio(growthScale);
         bool growthActive = growthBonusMultiplier > 0f;
+        HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
 
+        combat.UpdateBraceState(growthScale, rampageActive);
         omp.SetTransformationScale(growthScale, GrowthRampDuration, 1f, growthScale);
         player.statDefense += 14;
         player.GetDamage<HeroDamage>() += 0.12f;
@@ -83,7 +89,21 @@ public class HumungousaurTransformation : Transformation {
             player.GetDamage<HeroDamage>() += 0.2f * growthBonusMultiplier;
             player.GetKnockback<HeroDamage>() += 0.5f * growthBonusMultiplier;
             player.endurance += 0.08f * growthBonusMultiplier;
-            player.moveSpeed *= Math.Max(0.65f, 1f - 0.1f * growthBonusMultiplier);
+            player.moveSpeed *= MathHelper.Lerp(1f, 0.68f, growthMobilityRatio);
+            player.maxRunSpeed *= MathHelper.Lerp(1f, 0.82f, growthMobilityRatio);
+            player.runAcceleration *= MathHelper.Lerp(1f, 0.58f, growthMobilityRatio);
+            player.jumpSpeedBoost -= 0.95f * growthMobilityRatio;
+            player.maxFallSpeed += 1.4f * growthMobilityRatio;
+            player.noKnockback = true;
+        }
+
+        if (combat.BraceActive) {
+            float braceRatio = combat.BraceRatio;
+            player.statDefense += 8 + (int)Math.Round(12f * braceRatio);
+            player.GetDamage<HeroDamage>() += 0.05f * braceRatio;
+            player.GetKnockback<HeroDamage>() += 0.32f * braceRatio;
+            player.GetArmorPenetration<HeroDamage>() += (int)Math.Round(6f * braceRatio);
+            player.endurance += 0.05f + 0.07f * braceRatio;
             player.noKnockback = true;
         }
 
@@ -92,13 +112,13 @@ public class HumungousaurTransformation : Transformation {
 
         player.statDefense += 10;
         player.GetDamage<HeroDamage>() += 0.14f;
-        player.GetAttackSpeed<HeroDamage>() += 0.16f;
+        player.GetAttackSpeed<HeroDamage>() += 0.12f;
         player.GetKnockback<HeroDamage>() += 0.35f;
         player.GetArmorPenetration<HeroDamage>() += 10;
         player.endurance += 0.08f;
-        player.moveSpeed += 0.08f;
-        player.maxRunSpeed += 0.6f;
-        player.runAcceleration *= 1.12f;
+        player.moveSpeed *= 0.82f;
+        player.maxRunSpeed *= 0.88f;
+        player.runAcceleration *= 0.74f;
         player.noKnockback = true;
         player.armorEffectDrawShadow = true;
     }
@@ -114,6 +134,35 @@ public class HumungousaurTransformation : Transformation {
         player.statDefense += 8 + (int)Math.Round(guardStrength * 52f);
         player.endurance += 0.04f + guardStrength * 0.18f;
         player.noKnockback = true;
+    }
+
+    public override void PreUpdateMovement(Player player, OmnitrixPlayer omp) {
+        HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
+        if (!combat.BraceActive)
+            return;
+
+        float braceRatio = combat.BraceRatio;
+        player.velocity.X *= MathHelper.Lerp(0.82f, 0.58f, braceRatio);
+        player.maxRunSpeed *= MathHelper.Lerp(0.86f, 0.58f, braceRatio);
+        player.runAcceleration *= MathHelper.Lerp(0.8f, 0.42f, braceRatio);
+        player.noKnockback = true;
+    }
+
+    public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        if (!IsTitanicRampageActive(omp))
+            return;
+
+        HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
+        if (!combat.ConsumeBracePulse(BracedRampagePulseInterval) || player.whoAmI != Main.myPlayer)
+            return;
+
+        int pulseDamage = ResolveHeroDamage(player, BracedRampagePulseDamageMultiplier);
+        float pulseScale = GetCurrentCombatScale(omp) * MathHelper.Lerp(0.95f, 1.12f, combat.BraceRatio);
+        SpawnRampageShockwaveBurst(player, player.GetSource_FromThis(), player.Bottom + new Vector2(0f, -8f),
+            pulseDamage, 6.5f, pulseScale, 1, 2f);
+
+        if (!Main.dedServ)
+            SoundEngine.PlaySound(SoundID.Item14 with { Pitch = -0.35f, Volume = 0.44f }, player.Bottom);
     }
 
     public override void ModifyHurt(Player player, OmnitrixPlayer omp, ref Player.HurtModifiers modifiers) {
@@ -197,6 +246,8 @@ public class HumungousaurTransformation : Transformation {
         Vector2 horizontalDirection = ResolveHorizontalDirection(player, direction);
         HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
         bool rampageActive = IsTitanicRampageActive(omp);
+        bool braced = combat.BraceActive;
+        float braceRatio = combat.BraceRatio;
 
         if (omp.altAttack) {
             if (rampageActive) {
@@ -205,23 +256,26 @@ public class HumungousaurTransformation : Transformation {
             }
 
             Vector2 chargeSpawn = player.MountedCenter + horizontalDirection * (18f + 4f * Math.Min(growthScale, GrownScale));
-            combat.RegisterAttackGuard(24, 0.14f + GetGrowthBonusMultiplier(growthScale) * 0.07f);
+            combat.RegisterAttackGuard(24 + (braced ? 10 : 0),
+                0.14f + GetGrowthBonusMultiplier(growthScale) * 0.07f + braceRatio * 0.07f);
             Projectile.NewProjectile(source, chargeSpawn, horizontalDirection * SecondaryShootSpeed,
-                SecondaryAttack, ScaleDamage(damage, SecondaryAttackModifier * attackScale),
-                knockback + 1.3f + (growthScale - 1f) * 0.65f, player.whoAmI, growthScale);
+                SecondaryAttack, ScaleDamage(damage, SecondaryAttackModifier * attackScale * (braced ? 1.12f : 1f)),
+                knockback + 1.3f + (growthScale - 1f) * 0.65f + braceRatio * 0.8f, player.whoAmI, growthScale,
+                braced ? 1f : 0f);
             return false;
         }
 
         Vector2 punchSpawn = player.MountedCenter + direction * (18f + 4f * Math.Min(growthScale, GrownScale));
         combat.RegisterAttackGuard(rampageActive ? 22 : 16,
-            0.12f + GetGrowthBonusMultiplier(growthScale) * 0.07f + (rampageActive ? 0.06f : 0f));
+            0.12f + GetGrowthBonusMultiplier(growthScale) * 0.07f + (rampageActive ? 0.06f : 0f) + braceRatio * 0.06f);
         Projectile.NewProjectile(source, punchSpawn, direction * Math.Max(PrimaryShootSpeed, 10), PrimaryAttack,
-            ScaleDamage(damage, PrimaryAttackModifier * attackScale * (rampageActive ? 1.12f : 1f)),
-            knockback + 0.5f + (growthScale - 1f) * 0.45f + (rampageActive ? 0.8f : 0f),
-            player.whoAmI, growthScale, rampageActive ? 1f : 0f);
+            ScaleDamage(damage, PrimaryAttackModifier * attackScale * (rampageActive ? 1.12f : 1f) * (braced ? 1.08f : 1f)),
+            knockback + 0.5f + (growthScale - 1f) * 0.45f + (rampageActive ? 0.8f : 0f) + braceRatio * 0.55f,
+            player.whoAmI, growthScale, rampageActive ? 1f : 0f, braced ? 1f : 0f);
 
-        if (rampageActive && combat.RegisterRampagePunch(RampagePulseInterval)) {
-            SpawnForwardRampageShockwave(player, source, horizontalDirection, damage, knockback, growthScale, attackScale);
+        if (rampageActive && combat.RegisterRampagePunch(braced ? 2 : RampagePulseInterval)) {
+            SpawnForwardRampageShockwave(player, source, horizontalDirection, damage, knockback, growthScale, attackScale,
+                braced);
         }
 
         return false;
@@ -235,7 +289,44 @@ public class HumungousaurTransformation : Transformation {
         bool shockwave = projectile.type == ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>();
         float growthScale = projectile.ai[0] == 0f ? GetCurrentCombatScale(omp) : Math.Abs(projectile.ai[0]);
         player.GetModPlayer<HumungousaurCombatPlayer>().RegisterImpactGuard(target, growthScale, shockwave,
-            projectile.ai[1] > 0f || projectile.type == ModContent.ProjectileType<HumungousaurCrushingChargeProjectile>());
+            projectile.ai[1] > 0f ||
+            (projectile.type == PrimaryAttack && projectile.ai[2] > 0f) ||
+            projectile.type == ModContent.ProjectileType<HumungousaurCrushingChargeProjectile>());
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Ultimate)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        float growthScale = GetCurrentCombatScale(omp);
+        HumungousaurCombatPlayer combat = omp.Player.GetModPlayer<HumungousaurCombatPlayer>();
+        string tierText = GetGrowthTier(growthScale) switch {
+            >= 2 => "Titanic",
+            1 => "Grown",
+            _ => "Base"
+        };
+        string braceText = combat.BraceActive
+            ? compact ? "Braced" : "Braced for trades"
+            : compact ? "Brace: Down" : "Hold down to brace while grown";
+        string rampageText = IsTitanicRampageActive(omp) ? compact ? "Rampage" : "Titanic Rampage" : tierText;
+        int rampageCost = GetUltimateAbilityCost(omp);
+
+        return resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"{rampageText} • {braceText}"
+                : $"{tierText} reach/power • {braceText}",
+            OmnitrixPlayer.AttackSelection.Secondary => IsTitanicRampageActive(omp)
+                ? compact ? $"Crater • {braceText}" : $"Crater Stomp shockwaves • {braceText}"
+                : compact ? $"{tierText} charge • {braceText}" : $"{tierText} charge impact • {braceText}",
+            OmnitrixPlayer.AttackSelection.Ultimate => IsTitanicRampageActive(omp)
+                ? compact ? $"Rampage • {braceText}" : $"Rampage active • {braceText}"
+                : compact ? $"{rampageCost} OE • Kaiju" : $"Titanic Rampage kaiju mode • {rampageCost} OE",
+            _ => tierText
+        };
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -269,7 +360,8 @@ public class HumungousaurTransformation : Transformation {
     }
 
     private static float GetGrowthAttackMultiplier(float growthScale) {
-        return 1f + Math.Max(0f, growthScale - 1f) * 0.75f;
+        int growthTier = GetGrowthTier(growthScale);
+        return 1f + Math.Max(0f, growthScale - 1f) * 0.75f + growthTier * 0.035f;
     }
 
     private static float GetGrowthBonusMultiplier(float growthScale) {
@@ -277,6 +369,17 @@ public class HumungousaurTransformation : Transformation {
             return 0f;
 
         return (growthScale - 1f) / (GrownScale - 1f);
+    }
+
+    public static int GetGrowthTier(float growthScale) {
+        if (growthScale >= RampageScale - 0.04f)
+            return 2;
+
+        return growthScale >= GrownScale - 0.08f ? 1 : 0;
+    }
+
+    private static float GetGrowthMobilityRatio(float growthScale) {
+        return MathHelper.Clamp((growthScale - 1f) / (RampageScale - 1f), 0f, 1f);
     }
 
     private static int ScaleDamage(int baseDamage, float multiplier) {
@@ -339,11 +442,12 @@ public class HumungousaurTransformation : Transformation {
     private static void TriggerCraterStomp(Player player, IEntitySource source, int damage, float knockback, float growthScale) {
         HumungousaurCombatPlayer combat = player.GetModPlayer<HumungousaurCombatPlayer>();
         float attackScale = GetGrowthAttackMultiplier(growthScale);
-        int stompDamage = ScaleDamage(damage, SecondaryDamageMultiplier * attackScale * 1.26f);
+        bool braced = combat.BraceActive;
+        int stompDamage = ScaleDamage(damage, SecondaryDamageMultiplier * attackScale * (braced ? 1.42f : 1.26f));
 
-        combat.RegisterAttackGuard(36, 0.24f);
+        combat.RegisterAttackGuard(braced ? 48 : 36, braced ? 0.31f : 0.24f);
         SpawnRampageShockwaveBurst(player, source, player.Bottom + new Vector2(0f, -8f), stompDamage, knockback + 2.1f,
-            growthScale * 1.08f, 2, 2f);
+            growthScale * (braced ? 1.18f : 1.08f), braced ? 3 : 2, 2f);
 
         player.velocity.Y = Math.Min(player.velocity.Y, -3.2f);
         player.fallStart = (int)(player.position.Y / 16f);
@@ -362,14 +466,14 @@ public class HumungousaurTransformation : Transformation {
     }
 
     private static void SpawnForwardRampageShockwave(Player player, IEntitySource source, Vector2 horizontalDirection,
-        int damage, float knockback, float growthScale, float attackScale) {
+        int damage, float knockback, float growthScale, float attackScale, bool braced) {
         Vector2 spawnPosition = player.Bottom + new Vector2(horizontalDirection.X * (20f + 5f * growthScale), -8f * growthScale);
         Vector2 shockwaveVelocity = horizontalDirection * (RampageShockwaveSpeed + (growthScale - 1f) * 1.4f);
-        int shockwaveDamage = ScaleDamage(damage, SecondaryDamageMultiplier * attackScale * 0.48f);
+        int shockwaveDamage = ScaleDamage(damage, SecondaryDamageMultiplier * attackScale * (braced ? 0.58f : 0.48f));
 
         Projectile.NewProjectile(source, spawnPosition, shockwaveVelocity,
             ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>(), shockwaveDamage, knockback + 0.9f,
-            player.whoAmI, growthScale * 0.92f, 1f);
+            player.whoAmI, growthScale * (braced ? 1.02f : 0.92f), braced ? 2f : 1f);
     }
 
     private static void SpawnRampageShockwaveBurst(Player player, IEntitySource source, Vector2 origin, int damage,

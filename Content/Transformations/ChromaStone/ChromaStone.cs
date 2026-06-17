@@ -7,16 +7,16 @@ namespace Ben10Mod.Content.Transformations.ChromaStone;
 
 public class ChromaStone : ModItem {
     public static string TransformationDescription =>
-        "A durable counter-caster who absorbs punishment into Radiance, stores extra energy in Prism Facets, and spends Omnitrix Energy to blast it back harder.";
+        "An absorption battery and beam artillery form. Chromastone takes or absorbs punishment into Radiance, stores setup power as Prism Facets, then commits that charge to lances and Full Spectrum Discharge.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Crystal Volley is the reliable left-click stream: fast crystal bolts pierce once, split after impact, and every fourth shot upgrades into a heavier Prism Bolt.",
-        "Spectrum Beam is the Omnitrix Energy spender: a sustained piercing beam that stays clean and focused while scaling up as your Radiance climbs.",
-        "Absorption Guard braces Chromastone behind a crystal shield, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and feeds both Facets and Radiance.",
-        "Prismatic Lance cashes out your stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting rainbow spear with a delayed echo hit at full power.",
-        "Resonance Facets orbit visibly around Chromastone, feed bonus side-shards into Prism Bolts, strengthen the beam and lance, and can intercept one very weak projectile each.",
-        "Radiance climbs when Chromastone takes hits, boosts all of his damage, and makes the prismatic disco aura on his body flare brighter and wilder at higher percentages.",
-        "Full Spectrum Discharge is a true ultimate attack: once Radiance reaches 90%, swap to the ultimate slot and fire a massive channeled beam that drains Omnitrix Energy and burns down its stored discharge power while you sustain it."
+        "Radiance is the main battery: it rises when Chromastone takes damage, absorbs hostile projectiles, or guards through pressure, then boosts all Hero damage.",
+        "Crystal Volley builds Facets through repeated hits. Every fourth volley shot becomes a Prism Bolt, and stored Facets add extra shards to those Prism Bolts.",
+        "Spectrum Beam is a committed OE channel. It scales with Radiance and Facets, but holding it spends stored Facets over time for stronger beam pressure.",
+        "Absorption Guard roots Chromastone in place, absorbs weaker hostile projectiles outright, softens stronger ones, refunds a little OE, and rapidly builds Radiance and Facets.",
+        "Prismatic Lance cashes out stored Facets in one piercing shot, scaling from a clean punish tool into a shard-bursting spear with a delayed echo hit at full power.",
+        "Resonance Facets orbit visibly around Chromastone, strengthen beam and lance output, add Prism Bolt side-shards, and can intercept one very weak projectile each.",
+        "Full Spectrum Discharge becomes ready at 90% Radiance. Firing it spends Radiance and Facets into a massive channeled beam that drains OE while sustained."
     };
 
     public override void Load() {

@@ -32,8 +32,11 @@ public class RathPounceProjectile : ModProjectile {
     protected virtual int SecondaryImpactDustType => DustID.Smoke;
     protected virtual Color ImpactDustColor => RageVariant ? new Color(255, 152, 100) : new Color(255, 185, 120);
     protected virtual bool UsesRathPounceImpact => true;
+    protected virtual bool UsesRathPreyGuidance => UsesRathPounceImpact;
+    protected virtual float PreyGuidanceStrength => RageVariant ? 0.38f : 0.28f;
 
     private bool RageVariant => Projectile.ai[0] >= 0.5f;
+    private int PreyTargetIndex => (int)Math.Round(Projectile.ai[1]) - 1;
 
     public static float GetDashSpeed(bool raging) => raging ? RageDashSpeed : BaseDashSpeed;
 
@@ -64,6 +67,13 @@ public class RathPounceProjectile : ModProjectile {
         owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
+        NPC preyTarget = ResolvePreyTarget(owner);
+        if (preyTarget != null) {
+            Vector2 preyDirection = owner.DirectionTo(preyTarget.Center);
+            if (preyDirection != Vector2.Zero)
+                direction = Vector2.Lerp(direction, preyDirection, PreyGuidanceStrength).SafeNormalize(direction);
+        }
+
         float dashSpeed = DashSpeed;
         Projectile.velocity = direction * dashSpeed;
         Projectile.rotation = direction.ToRotation();
@@ -101,7 +111,7 @@ public class RathPounceProjectile : ModProjectile {
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        if (UsesRathPounceImpact && target.HasBuff(BuffID.Bleeding))
+        if (UsesRathPounceImpact && (target.HasBuff(BuffID.Bleeding) || IsPreyTarget(target)))
             Projectile.localAI[1] = 1f;
 
         if (HitDebuffType > 0 && HitDebuffDuration > 0)
@@ -145,5 +155,23 @@ public class RathPounceProjectile : ModProjectile {
         Projectile.width = width;
         Projectile.height = height;
         Projectile.Center = center;
+    }
+
+    private NPC ResolvePreyTarget(Player owner) {
+        if (!UsesRathPreyGuidance || PreyTargetIndex < 0 || PreyTargetIndex >= Main.maxNPCs)
+            return null;
+
+        NPC target = Main.npc[PreyTargetIndex];
+        if (!target.CanBeChasedBy())
+            return null;
+
+        if (Vector2.DistanceSquared(target.Center, owner.Center) > 640f * 640f)
+            return null;
+
+        return target;
+    }
+
+    private bool IsPreyTarget(NPC target) {
+        return UsesRathPreyGuidance && PreyTargetIndex == target.whoAmI;
     }
 }

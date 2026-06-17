@@ -14,7 +14,9 @@ public class JetrayDiveProjectile : ModProjectile {
 
     private bool IsUltimate => Projectile.ai[0] >= VariantUltimate;
     private bool StrafeLock => Projectile.ai[1] >= 0.5f;
-    private float DashSpeed => IsUltimate ? 36f : 28f;
+    private float PathQuality => MathHelper.Clamp(Projectile.ai[2], 0f, 1f);
+    private bool ConsumedLock => Projectile.localAI[1] > 0f;
+    private float DashSpeed => (IsUltimate ? 36f : 28f) + PathQuality * (StrafeLock ? 5f : 2.5f);
     private int LifetimeTicks => IsUltimate ? 40 : 28;
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.PhantasmalBolt}";
@@ -76,13 +78,15 @@ public class JetrayDiveProjectile : ModProjectile {
 
         Projectile.Center = owner.Center + direction * (IsUltimate ? 24f : 18f);
         Projectile.rotation = direction.ToRotation() + MathHelper.PiOver2;
-        Lighting.AddLight(Projectile.Center, IsUltimate ? new Vector3(0.2f, 1f, 0.88f) : new Vector3(0.1f, 0.78f, 0.68f));
+        Lighting.AddLight(Projectile.Center,
+            (IsUltimate ? new Vector3(0.2f, 1f, 0.88f) : new Vector3(0.1f, 0.78f, 0.68f)) * (1f + PathQuality * 0.18f));
 
         if (Main.rand.NextBool(IsUltimate ? 1 : 2)) {
             int dustType = IsUltimate && Main.rand.NextBool(3) ? DustID.Electric : DustID.BlueCrystalShard;
             Dust dust = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height, dustType,
                 -direction.X * Main.rand.NextFloat(1.2f, 2.4f), -direction.Y * Main.rand.NextFloat(1.2f, 2.4f), 100,
-                IsUltimate ? new Color(160, 255, 240) : Color.SpringGreen, Main.rand.NextFloat(1f, 1.28f));
+                ConsumedLock ? new Color(235, 255, 170) : IsUltimate ? new Color(160, 255, 240) : Color.SpringGreen,
+                Main.rand.NextFloat(1f, 1.28f + PathQuality * 0.16f));
             dust.noGravity = true;
         }
     }
@@ -91,12 +95,30 @@ public class JetrayDiveProjectile : ModProjectile {
         return false;
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        bool locked = target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner);
+        if (locked) {
+            float cashoutScale = IsUltimate ? 1.2f + PathQuality * 0.14f : 1.7f + PathQuality * 0.32f;
+            modifiers.SourceDamage *= cashoutScale;
+            modifiers.ArmorPenetration += IsUltimate ? 10 : 16;
+        }
+        else {
+            modifiers.SourceDamage *= IsUltimate ? 0.92f : 0.76f;
+        }
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        if (identity.IsJetrayLockedFor(Projectile.owner))
+        if (identity.IsJetrayLockedFor(Projectile.owner)) {
             identity.JetrayLockTime = 0;
-        else
+            identity.JetrayLockOwner = -1;
+            Projectile.localAI[1] = 1f;
+            SpawnDiveCashout(target);
+        }
+        else {
             identity.ApplyJetrayLock(Projectile.owner, 180);
+        }
+
         target.AddBuff(BuffID.Electrified, IsUltimate ? 240 : 150);
     }
 
@@ -128,14 +150,32 @@ public class JetrayDiveProjectile : ModProjectile {
         if (Main.dedServ)
             return;
 
-        int dustCount = IsUltimate ? 22 : 14;
+        int dustCount = (IsUltimate ? 22 : 14) + (ConsumedLock ? 12 : 0);
         for (int i = 0; i < dustCount; i++) {
-            int dustType = IsUltimate && i % 3 == 0 ? DustID.Electric : DustID.BlueCrystalShard;
-            Vector2 velocity = Main.rand.NextVector2Circular(IsUltimate ? 4.6f : 3f, IsUltimate ? 4.6f : 3f);
+            int dustType = (ConsumedLock || IsUltimate) && i % 3 == 0 ? DustID.Electric : DustID.BlueCrystalShard;
+            Vector2 velocity = Main.rand.NextVector2Circular((IsUltimate ? 4.6f : 3f) + PathQuality * 1.2f,
+                (IsUltimate ? 4.6f : 3f) + PathQuality * 1.2f);
             Dust dust = Dust.NewDustPerfect(Projectile.Center, dustType, velocity, 100,
-                IsUltimate ? new Color(170, 255, 245) : new Color(135, 255, 215),
+                ConsumedLock ? new Color(238, 255, 180) : IsUltimate ? new Color(170, 255, 245) : new Color(135, 255, 215),
                 Main.rand.NextFloat(1f, IsUltimate ? 1.55f : 1.3f));
             dust.noGravity = true;
+        }
+    }
+
+    private void SpawnDiveCashout(NPC target) {
+        if (Projectile.owner != Main.myPlayer)
+            return;
+
+        int boltDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (IsUltimate ? 0.32f : 0.38f)));
+        int boltCount = IsUltimate ? 4 : 3;
+        for (int i = 0; i < boltCount; i++) {
+            float angle = MathHelper.TwoPi * i / boltCount + Projectile.rotation;
+            Vector2 spawn = target.Center + angle.ToRotationVector2() * 42f;
+            Vector2 velocity = (target.Center - spawn).SafeNormalize(Projectile.velocity.SafeNormalize(Vector2.UnitX)) *
+                (13f + PathQuality * 4f);
+            Projectile.NewProjectile(Projectile.GetSource_FromThis(), spawn, velocity,
+                ModContent.ProjectileType<JetrayBoltProjectile>(), boltDamage, Projectile.knockBack, Projectile.owner,
+                1f, target.whoAmI + 1, PathQuality);
         }
     }
 
@@ -146,7 +186,8 @@ public class JetrayDiveProjectile : ModProjectile {
         for (int i = 0; i < boltCount; i++) {
             Vector2 velocity = (MathHelper.TwoPi * i / boltCount).ToRotationVector2() * 15f;
             Projectile.NewProjectile(Projectile.GetSource_FromThis(), Projectile.Center, velocity,
-                ModContent.ProjectileType<JetrayBoltProjectile>(), boltDamage, Projectile.knockBack, Projectile.owner);
+                ModContent.ProjectileType<JetrayBoltProjectile>(), boltDamage, Projectile.knockBack, Projectile.owner,
+                1f, 0f, PathQuality);
         }
     }
 

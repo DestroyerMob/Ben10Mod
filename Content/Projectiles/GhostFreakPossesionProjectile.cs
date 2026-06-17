@@ -1,14 +1,18 @@
-using System;
-using Ben10Mod.Content.Buffs.Debuffs;
+using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.Audio;
 using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class GhostFreakPossesionProjectile : ModProjectile {
+    private const int BasePossessionDuration = 320;
+    private const int HauntedPossessionBonus = 120;
+    private const int FearStackPossessionBonus = 28;
+    private const int MaxPossessionDuration = 600;
+
     public override void SetDefaults() {
         Projectile.width   = 26;
         Projectile.height  = 44;
@@ -19,9 +23,22 @@ public class GhostFreakPossesionProjectile : ModProjectile {
         Projectile.timeLeft    = 64;
         Projectile.tileCollide = false;
             
-        Projectile.DamageType = DamageClass.MeleeNoSpeed;
+        Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int fearStacks = state.GetGhostFreakFearStacks(Projectile.owner);
+        if (fearStacks > 0) {
+            modifiers.SourceDamage *= 1f + fearStacks * 0.12f;
+            modifiers.ArmorPenetration += fearStacks * 2;
+        }
+
+        if (state.IsGhostFreakHauntedFor(Projectile.owner)) {
+            modifiers.SourceDamage *= 1.35f;
+            modifiers.ArmorPenetration += 10;
+        }
+    }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         Player player = Main.player[Projectile.owner];
@@ -29,11 +46,16 @@ public class GhostFreakPossesionProjectile : ModProjectile {
         if (omp.inPossessionMode)
             return;
 
+        int possessionDuration = ResolvePossessionDuration(target, Projectile.owner);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ConsumeGhostFreakHaunt(Projectile.owner);
+        if (!target.boss)
+            target.AddBuff(BuffID.Confused, 180);
+
         if (Main.netMode == NetmodeID.MultiplayerClient) {
             if (Projectile.owner != Main.myPlayer)
                 return;
 
-            omp.BeginPossession(target.whoAmI, player.position, shouldSync: false);
+            omp.BeginPossession(target.whoAmI, player.position, possessionDuration, shouldSync: false);
 
             ModPacket packet = ModContent.GetInstance<global::Ben10Mod.Ben10Mod>().GetPacket();
             packet.Write((byte)global::Ben10Mod.Ben10Mod.MessageType.RequestGhostFreakPossession);
@@ -42,7 +64,17 @@ public class GhostFreakPossesionProjectile : ModProjectile {
             return;
         }
 
-        omp.BeginPossession(target.whoAmI, player.position);
+        omp.BeginPossession(target.whoAmI, player.position, possessionDuration);
+    }
+
+    public static int ResolvePossessionDuration(NPC target, int owner) {
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int fearStacks = state.GetGhostFreakFearStacks(owner);
+        int duration = BasePossessionDuration + fearStacks * FearStackPossessionBonus;
+        if (state.IsGhostFreakHauntedFor(owner))
+            duration += HauntedPossessionBonus;
+
+        return Utils.Clamp(duration, BasePossessionDuration, MaxPossessionDuration);
     }
 
     public override bool PreDraw(ref Color lightColor) {

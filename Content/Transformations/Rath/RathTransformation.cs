@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -13,6 +14,9 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.Rath;
 
 public class RathTransformation : Transformation {
+    public const int RendMaxStacks = 5;
+    public const int RendDurationTicks = 9 * 60;
+
     private const float PrimaryDamageMultiplier = 0.96f;
     private const float SecondClawDamageMultiplier = 1.06f;
     private const float FinisherDamageMultiplier = 1.28f;
@@ -22,6 +26,9 @@ public class RathTransformation : Transformation {
     private const float RageClawSpawnOffset = 116f;
     private const float BasePounceRange = 300f;
     private const float RagePounceRange = 390f;
+    private const int BaseRendDurationTicks = 7 * 60;
+    private const int RageRendDurationTicks = RendDurationTicks;
+    private const float PreyPounceRangeBonus = 110f;
 
     public override string FullID => RathStatePlayer.TransformationId;
     public override string TransformationName => "Rath";
@@ -29,12 +36,12 @@ public class RathTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Rath_Buff>();
 
     public override string Description =>
-        "An Appoplexian duelist who tears enemies open with savage claw strings, then pounces through danger to cash out bleeding prey.";
+        "An Appoplexian duelist predator who marks one prey target, builds Rend stacks with claw strings, then pounces in to cash them out.";
 
     public override List<string> Abilities => new() {
-        "Savage 3-hit claw combo with a rending finisher",
-        "Pounce closes distance, grants brief guard, and punishes bleeding targets",
-        "Battle Rage widens claws, speeds attacks, and strengthens close-range guard"
+        "Savage 3-hit claw combo marks one prey target and builds Rend",
+        "Pounce chases marked prey, grants brief guard, and cashes out Rend",
+        "Battle Rage widens claws, speeds attacks, and sharpens single-target pressure"
     };
 
     public override string PrimaryAttackName => "Savage Combo";
@@ -87,7 +94,6 @@ public class RathTransformation : Transformation {
         player.GetArmorPenetration<HeroDamage>() += 6;
         player.moveSpeed += 0.18f;
         player.runAcceleration *= 1.18f;
-        player.endurance += 0.05f;
         player.noKnockback = true;
         player.blackBelt = true;
         player.armorEffectDrawShadow = true;
@@ -105,6 +111,16 @@ public class RathTransformation : Transformation {
             float useMultiplier = state.RageActive ? 0.82f : 0.92f;
             item.useTime = item.useAnimation = Math.Max(24, (int)Math.Round(item.useTime * useMultiplier));
         }
+        else {
+            return;
+        }
+
+        NPC prey = FindMarkedPrey(omp.Player, (state.RageActive ? RagePounceRange : BasePounceRange) + PreyPounceRangeBonus);
+        if (prey == null)
+            return;
+
+        float preyPressureMultiplier = omp.setAttack == OmnitrixPlayer.AttackSelection.Secondary ? 0.9f : 0.94f;
+        item.useTime = item.useAnimation = Math.Max(8, (int)Math.Round(item.useTime * preyPressureMultiplier));
     }
 
     public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
@@ -115,9 +131,6 @@ public class RathTransformation : Transformation {
     public override void ModifyHurt(Player player, OmnitrixPlayer omp, ref Player.HurtModifiers modifiers) {
         RathStatePlayer state = player.GetModPlayer<RathStatePlayer>();
         modifiers.Knockback *= 0.72f;
-
-        if (state.RageActive)
-            modifiers.FinalDamage *= 0.94f;
 
         if (!state.GuardActive)
             return;
@@ -133,7 +146,12 @@ public class RathTransformation : Transformation {
         bool rage = state.RageActive;
 
         if (omp.altAttack) {
-            Vector2 pounceOffset = ResolvePounceOffset(player, direction, rage ? RagePounceRange : BasePounceRange);
+            float maxPounceRange = rage ? RagePounceRange : BasePounceRange;
+            NPC preyTarget = FindMarkedPrey(player, maxPounceRange + PreyPounceRangeBonus);
+            if (preyTarget != null)
+                maxPounceRange += PreyPounceRangeBonus;
+
+            Vector2 pounceOffset = ResolvePounceOffset(player, direction, maxPounceRange, preyTarget);
             float requestedDistance = pounceOffset.Length();
             Vector2 pounceDirection = pounceOffset.SafeNormalize(new Vector2(player.direction, 0f));
             float pounceSpeed = RathPounceProjectile.GetDashSpeed(rage);
@@ -144,7 +162,7 @@ public class RathTransformation : Transformation {
             state.RegisterRathGuard(22, rage ? 0.17f : 0.13f);
             int projectileIndex = Projectile.NewProjectile(source, player.Center + pounceDirection * 18f,
                 pounceDirection * pounceSpeed, SecondaryAttack, pounceDamage, knockback + 1.8f, player.whoAmI,
-                rage ? 1f : 0f);
+                rage ? 1f : 0f, preyTarget == null ? 0f : preyTarget.whoAmI + 1f);
             if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
                 Projectile projectile = Main.projectile[projectileIndex];
                 projectile.timeLeft = pounceFrames;
@@ -181,6 +199,22 @@ public class RathTransformation : Transformation {
         bool bleeding = target.HasBuff(BuffID.Bleeding);
         bool pounce = projectile.type == SecondaryAttack;
         bool finisher = projectile.type == PrimaryAttack && projectile.ai[0] >= 2f;
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool markedPrey = identity.IsRathPreyFor(player.whoAmI);
+        int rendStacks = identity.GetRathRendStacks(player.whoAmI);
+
+        if (markedPrey) {
+            modifiers.ArmorPenetration += pounce ? 6 + rendStacks * 2 : 3 + rendStacks;
+            float preyMultiplier = pounce
+                ? 1.04f + rendStacks * 0.035f
+                : 1.03f + rendStacks * 0.018f;
+            if (finisher)
+                preyMultiplier += 0.03f;
+
+            modifiers.FinalDamage *= preyMultiplier;
+            if (pounce)
+                projectile.localAI[1] = 1f;
+        }
 
         if (bleeding) {
             modifiers.ArmorPenetration += pounce ? 12 : 8;
@@ -193,8 +227,8 @@ public class RathTransformation : Transformation {
             return;
 
         modifiers.ArmorPenetration += 6;
-        if (pounce && bleeding)
-            modifiers.FinalDamage *= 1.1f;
+        if (pounce && (bleeding || markedPrey))
+            modifiers.FinalDamage *= markedPrey ? 1.08f : 1.1f;
     }
 
     public override void OnHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
@@ -205,10 +239,45 @@ public class RathTransformation : Transformation {
         RathStatePlayer state = player.GetModPlayer<RathStatePlayer>();
         bool pounce = projectile.type == SecondaryAttack;
         bool finisher = projectile.type == PrimaryAttack && projectile.ai[0] >= 2f;
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        bool markedPrey = identity.IsRathPreyFor(player.whoAmI);
+        int rendStacks = identity.GetRathRendStacks(player.whoAmI);
         state.RegisterRathImpact(target, pounce, finisher);
 
-        if (pounce && projectile.localAI[1] > 0f)
-            SpawnRendingCashout(player, target, projectile, state.RageActive);
+        if (!pounce) {
+            MarkRathPrey(player, target, 1 + (finisher ? 1 : 0) + (state.RageActive ? 1 : 0), state.RageActive);
+            return;
+        }
+
+        if (markedPrey)
+            rendStacks = identity.ConsumeRathRend(player.whoAmI);
+
+        if (markedPrey || projectile.localAI[1] > 0f)
+            SpawnRendingCashout(player, target, projectile, state.RageActive, rendStacks, markedPrey);
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        NPC prey = FindMarkedPrey(omp.Player);
+        int rendStacks = prey?.GetGlobalNPC<AlienIdentityGlobalNPC>().GetRathRendStacks(omp.Player.whoAmI) ?? 0;
+        string preyText = prey == null
+            ? compact ? "No prey" : "No prey marked"
+            : compact ? $"Rend {rendStacks}/{RendMaxStacks}" : $"Prey Rend {rendStacks}/{RendMaxStacks}";
+
+        return resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"Build Rend • {preyText}"
+                : $"Mark prey and build Rend • {preyText}",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"Cashout • {preyText}"
+                : $"Pounce to prey and cash out Rend • {preyText}",
+            _ => preyText
+        };
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -244,9 +313,12 @@ public class RathTransformation : Transformation {
         return origin + direction * Math.Min(distanceToMouse, maxRange);
     }
 
-    private static Vector2 ResolvePounceOffset(Player player, Vector2 fallbackDirection, float maxRange) {
+    private static Vector2 ResolvePounceOffset(Player player, Vector2 fallbackDirection, float maxRange, NPC preyTarget = null) {
         Vector2 offset = fallbackDirection * maxRange;
-        if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
+        if (preyTarget != null && preyTarget.active) {
+            offset = preyTarget.Center - player.Center;
+        }
+        else if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
             Vector2 mouseOffset = Main.MouseWorld - player.Center;
             if (mouseOffset != Vector2.Zero)
                 offset = mouseOffset;
@@ -259,9 +331,65 @@ public class RathTransformation : Transformation {
         return offset / distance * maxRange;
     }
 
-    private static void SpawnRendingCashout(Player player, NPC target, Projectile projectile, bool rage) {
+    private static void MarkRathPrey(Player player, NPC target, int stacks, bool rage) {
+        ClearOtherRathPrey(player, target);
+
+        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        identity.ApplyRathPrey(player.whoAmI, stacks, rage ? RageRendDurationTicks : BaseRendDurationTicks);
+
+        if (Main.dedServ)
+            return;
+
+        int dustCount = 6 + stacks * 3;
+        for (int i = 0; i < dustCount; i++) {
+            Dust dust = Dust.NewDustPerfect(target.Center + Main.rand.NextVector2Circular(12f, 12f),
+                i % 3 == 0 ? DustID.Smoke : DustID.Blood,
+                Main.rand.NextVector2Circular(2.6f, 2.6f), 95, new Color(255, 118, 86),
+                Main.rand.NextFloat(0.9f, rage ? 1.28f : 1.12f));
+            dust.noGravity = true;
+        }
+    }
+
+    private static void ClearOtherRathPrey(Player player, NPC target) {
+        foreach (NPC npc in Main.ActiveNPCs) {
+            if (npc.whoAmI == target.whoAmI)
+                continue;
+
+            npc.GetGlobalNPC<AlienIdentityGlobalNPC>().ClearRathPrey(player.whoAmI);
+        }
+    }
+
+    private static NPC FindMarkedPrey(Player player, float maxRange = float.MaxValue) {
+        NPC bestTarget = null;
+        float maxRangeSq = maxRange * maxRange;
+        float bestDistanceSq = float.MaxValue;
+
+        foreach (NPC npc in Main.ActiveNPCs) {
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            if (!identity.IsRathPreyFor(player.whoAmI))
+                continue;
+
+            float distanceSq = Vector2.DistanceSquared(player.Center, npc.Center);
+            if (distanceSq > maxRangeSq || distanceSq >= bestDistanceSq)
+                continue;
+
+            bestDistanceSq = distanceSq;
+            bestTarget = npc;
+        }
+
+        return bestTarget;
+    }
+
+    private static void SpawnRendingCashout(Player player, NPC target, Projectile projectile, bool rage, int rendStacks,
+        bool markedPrey) {
+        int consumedStacks = Utils.Clamp(rendStacks, 0, RendMaxStacks);
         if (Main.netMode != NetmodeID.MultiplayerClient && target.active) {
-            int bonusDamage = ScaleDamage(projectile.damage, rage ? 0.48f : 0.34f);
+            float bonusMultiplier = rage ? 0.34f : 0.26f;
+            bonusMultiplier += markedPrey ? 0.08f + consumedStacks * 0.045f : 0.06f;
+            int bonusDamage = ScaleDamage(projectile.damage, bonusMultiplier);
             int hitDirection = target.Center.X >= player.Center.X ? 1 : -1;
             target.SimpleStrikeNPC(bonusDamage, hitDirection, false, projectile.knockBack * 0.45f,
                 ModContent.GetInstance<HeroDamage>());
@@ -270,8 +398,11 @@ public class RathTransformation : Transformation {
         if (Main.dedServ)
             return;
 
-        SoundEngine.PlaySound(SoundID.Item71 with { Pitch = rage ? -0.12f : 0f, Volume = 0.56f }, target.Center);
-        int dustCount = rage ? 24 : 16;
+        SoundEngine.PlaySound(SoundID.Item71 with {
+            Pitch = (rage ? -0.12f : 0f) - consumedStacks * 0.015f,
+            Volume = 0.56f
+        }, target.Center);
+        int dustCount = (rage ? 22 : 15) + consumedStacks * 3 + (markedPrey ? 4 : 0);
         for (int i = 0; i < dustCount; i++) {
             Dust dust = Dust.NewDustPerfect(target.Center + Main.rand.NextVector2Circular(14f, 14f),
                 i % 3 == 0 ? DustID.Smoke : DustID.Blood,

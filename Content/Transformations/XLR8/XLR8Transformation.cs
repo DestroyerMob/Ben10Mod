@@ -14,6 +14,8 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.XLR8;
 
 public class XLR8Transformation : Transformation {
+    public const string TransformationId = "Ben10Mod:XLR8";
+
     private const int VectorDashEnergyCost = 18;
     private const int VectorDashCooldown = 14 * 60;
     private const float BaseAttackUseTimeMultiplier = 0.88f;
@@ -41,20 +43,20 @@ public class XLR8Transformation : Transformation {
     private const int PotisUltimateAbilityDuration = 5 * 60;
     private const int PotisUltimateAbilityCooldown = 52 * 60;
 
-    public override string FullID                  => "Ben10Mod:XLR8";
+    public override string FullID                  => TransformationId;
     public override string TransformationName      => "XLR8";
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override string Description =>
-        "A Kineceleran speedster built to blur across the battlefield, hammer enemies with light-speed jabs, carve through crowds with dashes, and distort the pace of combat.";
+        "A Kineceleran momentum assassin built around ground-speed execution, direction-change strike windows, precision dashes, and timebreak pass-throughs.";
 
     public override List<string> Abilities => new() {
-        "Rapid light-strikes fired at close range",
-        "Velocity dash that tears through a line",
-        "Extreme speed overdrive",
-        "Vector Dash to the cursor",
+        "Speed Strike hits harder shortly after reversing direction",
+        "Velocity Dash damage scales with recent ground speed",
+        "Overdrive opens stronger speed windows",
+        "Vector Dash to the cursor, scaling with distance and momentum",
         "Water running at speed",
-        "Time-slowing field that freezes the battlefield"
+        "Temporal Distortion rewards passing through enemies and projectiles"
     };
 
     public override string PrimaryAttackName       => "Speed Strike";
@@ -93,7 +95,7 @@ public class XLR8Transformation : Transformation {
         if (!HasPotisAltiare(omp?.Player))
             return Description;
 
-        return $"{Description} Potis Altiare turns XLR8 into a slipstream duelist with denser afterimages, safer piercing dashes, longer cursor vectors, and a brighter timebreak field.";
+        return $"{Description} Potis Altiare turns XLR8 into a slipstream duelist with denser reversal flurries, safer piercing dashes, longer cursor vectors, and a brighter timebreak field.";
     }
 
     public override List<string> GetAbilities(OmnitrixPlayer omp) {
@@ -101,12 +103,12 @@ public class XLR8Transformation : Transformation {
             return base.GetAbilities(omp);
 
         return new List<string> {
-            "Afterimage Flurry releases denser Potis speed-strikes with brighter, easier-to-read lanes.",
-            "Slipstream Cut is a longer, safer piercing dash for staying inside bosses without eating every contact hit.",
-            "Slipstream Overdrive makes XLR8 faster, sharper, and slightly tougher while keeping his attack tempo readable.",
-            "Chrono Vector reaches farther, costs less Omnitrix energy, and leaves a stronger time trail.",
+            "Afterimage Flurry releases denser Potis speed-strikes that spike after a clean direction change.",
+            "Slipstream Cut is a longer, safer piercing dash whose payoff rises with speed.",
+            "Slipstream Overdrive makes XLR8 faster, sharper, and better at chaining reversal windows.",
+            "Chrono Vector reaches farther, costs less Omnitrix energy, and rewards long cursor vectors.",
             "Water running at speed.",
-            "Timebreak Field extends the battlefield freeze and gives XLR8 a short survivability window while it is active."
+            "Timebreak Field extends the battlefield freeze and builds flow when XLR8 passes through threats."
         };
     }
 
@@ -193,6 +195,7 @@ public class XLR8Transformation : Transformation {
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
+        XLR8MomentumPlayer momentum = player.GetModPlayer<XLR8MomentumPlayer>();
         bool potis = HasPotisAltiare(player);
         bool overdrive = omp.PrimaryAbilityEnabled;
         player.moveSpeed *= overdrive ? potis ? 5.65f : 5.2f : potis ? 3.05f : 2.7f;
@@ -205,6 +208,28 @@ public class XLR8Transformation : Transformation {
         player.tileSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         player.wallSpeed *= omp.PrimaryAbilityEnabled ? 0.45f : 0.65f;
         player.jumpSpeedBoost += overdrive ? potis ? 3.35f : 3f : potis ? 1.9f : 1.6f;
+
+        if (!momentum.MovingRecently) {
+            player.GetDamage<HeroDamage>() -= 0.08f;
+            player.GetAttackSpeed<HeroDamage>() -= 0.1f;
+        }
+        else {
+            player.GetCritChance<HeroDamage>() += 3f + momentum.MomentumRatio * 5f;
+        }
+
+        if (momentum.ReversalReady) {
+            player.GetAttackSpeed<HeroDamage>() += potis ? 0.12f : 0.08f;
+            player.GetArmorPenetration<HeroDamage>() += potis ? 5 : 3;
+        }
+
+        if (momentum.TimebreakStacks > 0) {
+            float flowRatio = momentum.TimebreakFlowRatio;
+            player.GetDamage<HeroDamage>() += flowRatio * (potis ? 0.16f : 0.12f);
+            player.GetAttackSpeed<HeroDamage>() += flowRatio * (potis ? 0.2f : 0.15f);
+            player.moveSpeed += flowRatio * 0.24f;
+            Lighting.AddLight(player.Center, new Vector3(0.06f, 0.42f, 0.72f) * flowRatio);
+        }
+
         if (potis) {
             player.GetDamage<HeroDamage>() += 0.05f;
             player.GetAttackSpeed<HeroDamage>() += 0.08f;
@@ -252,6 +277,7 @@ public class XLR8Transformation : Transformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         bool potis = HasPotisAltiare(player);
+        XLR8MomentumPlayer momentum = player.GetModPlayer<XLR8MomentumPlayer>();
         if (!omp.altAttack && !omp.IsSecondaryAbilityAttackLoaded) {
             if (HasActiveOwnedProjectile(player, ModContent.ProjectileType<XLR8StarlightProjectile>()))
                 return false;
@@ -260,6 +286,9 @@ public class XLR8Transformation : Transformation {
             float strikeMode = potis
                 ? omp.PrimaryAbilityEnabled ? 3f : 2f
                 : omp.PrimaryAbilityEnabled ? 1f : 0f;
+            if (momentum.ReversalReady)
+                strikeMode += 4f;
+
             int burstCount = potis ? PotisPrimaryStrikeBurstCount : PrimaryStrikeBurstCount;
             int strikeSpacing = potis ? PotisPrimaryStrikeSpacing : PrimaryStrikeSpacing;
             int shootSpeed = potis ? PotisPrimaryShootSpeed : PrimaryShootSpeed;
@@ -288,22 +317,22 @@ public class XLR8Transformation : Transformation {
         }
 
         if (!omp.IsSecondaryAbilityAttackLoaded) {
-            if (!potis)
-                return base.Shoot(player, omp, source, position, velocity, damage, knockback);
-
             Vector2 dashDirection = ResolveAimDirection(player, velocity);
-            int slipstreamDamage = Math.Max(1, (int)Math.Round(damage * PotisSecondaryDamageMultiplier));
-            int slipstreamProjectileIndex = Projectile.NewProjectile(source,
+            float dashPower = momentum.ResolveVelocityDashPower(player);
+            int velocityDashDamage = potis ? Math.Max(1, (int)Math.Round(damage * PotisSecondaryDamageMultiplier)) : damage;
+            int shootSpeed = potis ? PotisSecondaryShootSpeed : SecondaryShootSpeed;
+            int dashProjectileIndex = Projectile.NewProjectile(source,
                 player.MountedCenter + dashDirection * 18f,
-                dashDirection * PotisSecondaryShootSpeed,
+                dashDirection * shootSpeed,
                 SecondaryAttack,
-                slipstreamDamage,
-                knockback + 0.8f,
+                velocityDashDamage,
+                knockback + (potis ? 0.8f : 0.3f),
                 player.whoAmI,
-                1f);
+                potis ? 1f : 0f,
+                dashPower);
 
-            if (slipstreamProjectileIndex >= 0 && slipstreamProjectileIndex < Main.maxProjectiles)
-                Main.projectile[slipstreamProjectileIndex].netUpdate = true;
+            if (dashProjectileIndex >= 0 && dashProjectileIndex < Main.maxProjectiles)
+                Main.projectile[dashProjectileIndex].netUpdate = true;
 
             return false;
         }
@@ -327,12 +356,13 @@ public class XLR8Transformation : Transformation {
         int maxDashFrames = potis ? XLR8VectorDashProjectile.PotisMaxDashFrames : XLR8VectorDashProjectile.MaxDashFrames;
         int dashFrames = Utils.Clamp((int)Math.Ceiling(requestedDistance / dashSpeed),
             XLR8VectorDashProjectile.MinDashFrames, maxDashFrames);
+        float vectorDashPower = momentum.ResolveVectorDashPower(requestedDistance, maxRange);
         float damageMultiplier = potis ? PotisVectorDashDamageMultiplier : SecondaryAbilityAttackModifier;
-        int dashDamage = Math.Max(1, (int)Math.Round(damage * damageMultiplier));
+        int vectorDashDamage = Math.Max(1, (int)Math.Round(damage * damageMultiplier));
 
         int projectileIndex = Projectile.NewProjectile(source, player.MountedCenter + direction * 18f, direction * dashSpeed,
-            SecondaryAbilityAttack, dashDamage, knockback + (potis ? 1.35f : 1f), player.whoAmI,
-            empowered ? 1f : 0f, potis ? 1f : 0f);
+            SecondaryAbilityAttack, vectorDashDamage, knockback + (potis ? 1.35f : 1f), player.whoAmI,
+            empowered ? 1f : 0f, potis ? 1f : 0f, vectorDashPower);
         if (projectileIndex >= 0 && projectileIndex < Main.maxProjectiles) {
             Projectile projectile = Main.projectile[projectileIndex];
             projectile.timeLeft = dashFrames;
@@ -356,22 +386,112 @@ public class XLR8Transformation : Transformation {
         return false;
     }
 
+    public override bool? CanBeHitByNPC(Player player, OmnitrixPlayer omp, NPC npc, ref int cooldownSlot) {
+        if (omp.IsUltimateAbilityActive) {
+            player.GetModPlayer<XLR8MomentumPlayer>().RegisterTimebreakEnemyPass(player, npc);
+            return false;
+        }
+
+        return base.CanBeHitByNPC(player, omp, npc, ref cooldownSlot);
+    }
+
+    public override bool? CanBeHitByProjectile(Player player, OmnitrixPlayer omp, Projectile projectile) {
+        if (omp.IsUltimateAbilityActive && projectile.hostile) {
+            player.GetModPlayer<XLR8MomentumPlayer>().RegisterTimebreakProjectilePass(player, projectile);
+            return false;
+        }
+
+        return base.CanBeHitByProjectile(player, omp, projectile);
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (projectile.type != PrimaryAttack &&
+            projectile.type != SecondaryAttack &&
+            projectile.type != SecondaryAbilityAttack)
+            return;
+
+        XLR8MomentumPlayer momentum = player.GetModPlayer<XLR8MomentumPlayer>();
+
+        if (projectile.type == PrimaryAttack) {
+            modifiers.FinalDamage *= momentum.StationaryDamageScale;
+            if (XLR8MomentumPlayer.IsReversalStrike(projectile)) {
+                float reversalScale = 1.22f + Math.Max(momentum.MomentumRatio, 0.55f) * 0.18f;
+                modifiers.FinalDamage *= reversalScale;
+                modifiers.ArmorPenetration += HasPotisAltiare(player) ? 8 : 5;
+            }
+        }
+        else {
+            float dashPower = projectile.type == SecondaryAbilityAttack
+                ? MathHelper.Clamp(projectile.ai[2], 0f, 1f)
+                : MathHelper.Clamp(projectile.ai[1], 0f, 1f);
+            modifiers.FinalDamage *= 0.84f + dashPower * 0.56f;
+            modifiers.ArmorPenetration += (int)Math.Round(dashPower * (HasPotisAltiare(player) ? 9f : 6f));
+        }
+
+        if (momentum.TimebreakStacks > 0)
+            modifiers.FinalDamage *= momentum.TimebreakDamageScale;
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.SecondaryAbility &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Ultimate)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        XLR8MomentumPlayer momentum = omp.Player.GetModPlayer<XLR8MomentumPlayer>();
+        string momentumText = compact ? $"Mom {momentum.MomentumPercent}%" : $"Momentum {momentum.MomentumPercent}%";
+        string reversalText = momentum.ReversalReady
+            ? compact ? "Reverse ready" : "Direction-change strike ready"
+            : compact ? "No reverse" : "Reverse direction to spike Speed Strike";
+        string flowText = compact
+            ? $"Flow {momentum.TimebreakStacks}/{XLR8MomentumPlayer.MaxTimebreakStacks}"
+            : $"Timebreak Flow {momentum.TimebreakStacks}/{XLR8MomentumPlayer.MaxTimebreakStacks}";
+
+        string identityText = resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"{momentumText} • {reversalText}"
+                : $"{momentumText} • {reversalText} • stationary DPS is weaker",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"{momentumText} • Speed scales"
+                : $"{momentumText} • dash damage scales with recent ground speed",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                ? $"{momentumText} • Distance scales"
+                : $"{momentumText} • Vector Dash damage scales with cursor distance and momentum",
+            OmnitrixPlayer.AttackSelection.Ultimate => compact
+                ? flowText
+                : $"{flowText} • pass through enemies and hostile projectiles to build speed payoff",
+            _ => momentumText
+        };
+
+        string baseText = base.GetAttackResourceSummary(selection, omp, compact);
+        return string.IsNullOrWhiteSpace(baseText) ? identityText : $"{baseText} • {identityText}";
+    }
+
     public override void PostUpdate(Player player, OmnitrixPlayer omp) {
+        XLR8MomentumPlayer momentum = player.GetModPlayer<XLR8MomentumPlayer>();
+        momentum.UpdateMomentum(player, omp);
+
         bool potis = HasPotisAltiare(player);
-        if ((!potis && !omp.IsUltimateAbilityActive) || Main.dedServ)
+        if ((!potis && !omp.IsUltimateAbilityActive && !momentum.ReversalReady && momentum.TimebreakStacks <= 0) || Main.dedServ)
             return;
 
         float speed = player.velocity.Length();
-        if (speed < 3f)
+        if (speed < 3f && momentum.TimebreakStacks <= 0)
             return;
 
-        int interval = omp.IsUltimateAbilityActive ? 1 : 2;
+        int interval = omp.IsUltimateAbilityActive || momentum.TimebreakStacks > 0 ? 1 : 2;
         if (Main.GameUpdateCount % interval != 0)
             return;
 
-        Color trailColor = potis ? new Color(132, 248, 255) : new Color(96, 184, 255);
+        Color trailColor = momentum.TimebreakStacks > 0
+            ? new Color(150, 238, 255)
+            : potis ? new Color(132, 248, 255) : new Color(96, 184, 255);
         Dust dust = Dust.NewDustPerfect(player.Center + Main.rand.NextVector2Circular(12f, 18f),
-            potis && Main.rand.NextBool(3) ? DustID.WhiteTorch : DustID.BlueCrystalShard,
+            (potis || momentum.TimebreakStacks > 0) && Main.rand.NextBool(3) ? DustID.WhiteTorch : DustID.BlueCrystalShard,
             -player.velocity.SafeNormalize(Vector2.UnitX) * Main.rand.NextFloat(0.9f, potis ? 3.2f : 2.2f),
             115, trailColor, Main.rand.NextFloat(0.9f, potis ? 1.45f : 1.15f));
         dust.noGravity = true;

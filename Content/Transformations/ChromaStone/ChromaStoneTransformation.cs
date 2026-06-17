@@ -407,32 +407,52 @@ public class ChromaStoneTransformation : Transformation {
         bool compact = false) {
         ChromaStoneStatePlayer state = omp.Player.GetModPlayer<ChromaStoneStatePlayer>();
         OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
-        string radianceText = $"Radiance {(int)Math.Round(state.RadianceRatio * 100f)}%";
-        string prismBoltText = state.NextVolleyIsPrismBolt ? "Prism Bolt next" : $"Prism {state.PrismBoltVolleyCount}/3";
-        string compactPrismBoltText = state.NextVolleyIsPrismBolt ? "Prism next" : $"Prism {state.PrismBoltVolleyCount}/3";
+        int radiancePercent = (int)Math.Round(state.RadianceRatio * 100f);
+        int nextFacetPercent = (int)Math.Round(state.NextFacetProgressRatio * 100f);
+        int neededRadiance = Math.Max(0, (int)Math.Ceiling(
+            (ChromaStoneStatePlayer.DischargeActivationThresholdRatio - state.RadianceRatio) * 100f));
         int dischargePowerPercent = (int)Math.Round(state.ActiveDischargeRadianceRatio * 100f);
+        int guardStoredPercent = (int)Math.Round(state.GuardStoredRatio * 100f);
+        string radianceText = $"Radiance {radiancePercent}%";
+        string facetText = compact
+            ? $"Facets {state.VisibleFacetCount}/3"
+            : $"Facets {state.VisibleFacetCount}/3, next {nextFacetPercent}%";
+        string prismBoltText = state.NextVolleyIsPrismBolt
+            ? compact ? "Prism next" : "Prism Bolt next"
+            : $"Prism {state.PrismBoltVolleyCount}/3";
+        string guardText = state.Guarding
+            ? compact ? $"Guard stored {guardStoredPercent}%" : $"Guarding, stored burst {guardStoredPercent}%"
+            : compact ? "Guard builds Rad+Facets" : "Guard absorbs projectiles for Radiance, Facets, and OE";
 
-        return resolvedSelection switch {
+        string identityText = resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? $"{compactPrismBoltText} • Facets {state.VisibleFacetCount}/3 • {radianceText}"
-                : $"Volley + shards • {prismBoltText} • Facets {state.VisibleFacetCount}/3 • {radianceText}",
+                ? $"{prismBoltText} • {facetText} • {radianceText}"
+                : $"Build Facets with hits • {prismBoltText} • {facetText} • {radianceText}",
             OmnitrixPlayer.AttackSelection.Secondary => compact
-                ? $"{state.VisibleFacetCount}/3 Facets • {radianceText}"
-                : $"Beam focus {state.VisibleFacetCount}/3 • {radianceText}",
+                ? $"{facetText} • {radianceText}"
+                : $"Committed beam • spends Facets over time • {facetText} • {radianceText}",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
-                ? $"Guard • {radianceText}"
-                : $"Absorb projectiles • {radianceText}",
+                ? $"{guardText} • {radianceText}"
+                : $"{guardText} • rooted setup risk • {radianceText}",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
-                ? $"Spend Facets • {radianceText}"
-                : $"Consumes stored Facets • {radianceText}",
+                ? $"Spend {state.VisibleFacetCount}/3 Facets • {radianceText}"
+                : $"Prismatic Lance spends all stored Facets • {facetText} • {radianceText}",
             OmnitrixPlayer.AttackSelection.Ultimate => state.DischargeActive
-                ? compact ? $"Discharge {dischargePowerPercent}%"
-                    : $"Full Spectrum Discharge active • Reservoir {dischargePowerPercent}%"
+                ? compact
+                    ? $"Discharge {dischargePowerPercent}%"
+                    : $"Full Spectrum Discharge active • reservoir {dischargePowerPercent}% • committed channel"
                 : state.HasDischargeThreshold
-                    ? compact ? "90% Radiance ready" : $"Ready • {radianceText}"
-                    : compact ? $"Need 90% • {radianceText}" : $"Needs 90% Radiance • {radianceText}",
+                    ? compact
+                        ? "Discharge ready"
+                        : $"Ready at {radianceText} • spends 90% Radiance plus Facets"
+                    : compact
+                        ? $"Need {neededRadiance}% • {radianceText}"
+                        : $"Needs {neededRadiance}% more Radiance to ready Discharge • {radianceText}",
             _ => radianceText
         };
+
+        string baseText = base.GetAttackResourceSummary(selection, omp, compact);
+        return string.IsNullOrWhiteSpace(baseText) ? identityText : $"{baseText} • {identityText}";
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {

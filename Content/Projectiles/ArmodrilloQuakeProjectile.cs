@@ -8,6 +8,11 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Projectiles;
 
 public class ArmodrilloQuakeProjectile : ModProjectile {
+    public const int GroundedWaveFlag = 1;
+    public const int SiegeWaveFlag = 2;
+    public const int FaultLineWaveFlag = 4;
+
+    private const int MaxChargeStacks = 3;
     private const float MaxVisibleRange = 28f * 16f;
     private const float ShockwaveSpeed = 16.5f;
     private const float WaveLength = 56f;
@@ -40,41 +45,96 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
         }
 
         Projectile.velocity = new Vector2(ShockwaveDirection * ShockwaveSpeed, 0f);
+        Projectile.velocity *= GetSpeedScale();
         Projectile.rotation = 0f;
         Projectile.spriteDirection = ShockwaveDirection > 0f ? 1 : -1;
 
         float progress = GetTravelProgress();
         GetWaveShape(progress, out float waveLength, out _, out _);
-        Projectile.scale = MathHelper.Lerp(0.85f, 1.65f, progress);
+        Projectile.scale = MathHelper.Lerp(GroundedWave ? 0.85f : 0.58f, GroundedWave ? 1.65f : 0.95f, progress) *
+                           (1f + ChargeStacks * 0.07f + (SiegeWave ? 0.08f : 0f) + (FaultLineWave ? 0.14f : 0f));
 
-        Lighting.AddLight(Projectile.Center, new Vector3(0.46f, 0.46f, 0.46f) * (0.25f + 0.2f * progress));
+        Lighting.AddLight(Projectile.Center, new Vector3(0.46f, 0.46f, 0.46f) *
+                                              (0.18f + 0.24f * progress + (FaultLineWave ? 0.12f : 0f)));
         SpawnShockwaveDust(progress);
 
-        if (GetTravelDistance() + waveLength >= MaxVisibleRange)
+        if (GetTravelDistance() + waveLength >= EffectiveMaxRange)
             Projectile.Kill();
     }
 
     private float ShockwaveDirection => Projectile.ai[0] == 0f ? 1f : MathF.Sign(Projectile.ai[0]);
 
+    private int WaveFlags => (int)MathF.Round(Projectile.ai[1]);
+
+    private bool GroundedWave => (WaveFlags & GroundedWaveFlag) != 0;
+
+    private bool SiegeWave => (WaveFlags & SiegeWaveFlag) != 0;
+
+    private bool FaultLineWave => (WaveFlags & FaultLineWaveFlag) != 0;
+
+    private int ChargeStacks => Math.Clamp((int)MathF.Round(Projectile.ai[2]), 0, MaxChargeStacks);
+
+    private float EffectiveMaxRange {
+        get {
+            float range = MaxVisibleRange * (GroundedWave ? 1f : 0.52f);
+            range *= 1f + ChargeStacks * 0.12f;
+            if (GroundedWave && SiegeWave)
+                range *= 1.16f;
+            if (FaultLineWave)
+                range *= 1.45f;
+
+            return range;
+        }
+    }
+
     private float GetTravelDistance() => MathF.Abs(Projectile.Center.X - Projectile.localAI[1]);
 
-    private float GetTravelProgress() => MathHelper.Clamp(GetTravelDistance() / MaxVisibleRange, 0f, 1f);
+    private float GetTravelProgress() => MathHelper.Clamp(GetTravelDistance() / EffectiveMaxRange, 0f, 1f);
 
     private Vector2 GetGroundOrigin() => Projectile.Bottom + new Vector2(0f, -4f);
 
     private void GetWaveShape(float progress, out float waveLength, out float waveHeight, out float collisionWidth) {
-        waveLength = WaveLength;
-        waveHeight = MathHelper.Lerp(StartWaveHeight, EndWaveHeight, progress);
-        collisionWidth = MathHelper.Lerp(StartCollisionWidth, EndCollisionWidth, progress);
+        float connectionScale = GroundedWave ? 1f : 0.54f;
+        float setupScale = 1f + ChargeStacks * 0.1f;
+        if (GroundedWave && SiegeWave)
+            setupScale += 0.18f;
+        if (FaultLineWave)
+            setupScale += 0.36f;
+
+        waveLength = WaveLength * connectionScale * setupScale;
+        waveHeight = MathHelper.Lerp(StartWaveHeight, EndWaveHeight, progress) *
+                     (GroundedWave ? 1f : 0.56f) *
+                     (1f + ChargeStacks * 0.06f + (FaultLineWave ? 0.18f : 0f));
+        collisionWidth = MathHelper.Lerp(StartCollisionWidth, EndCollisionWidth, progress) *
+                         (GroundedWave ? 1f : 0.58f) *
+                         (1f + ChargeStacks * 0.05f + (GroundedWave && SiegeWave ? 0.12f : 0f) +
+                          (FaultLineWave ? 0.18f : 0f));
+    }
+
+    private float GetSpeedScale() {
+        float speedScale = GroundedWave ? 1f : 0.72f;
+        if (FaultLineWave)
+            speedScale *= 0.9f;
+        if (ChargeStacks > 0)
+            speedScale *= 1f + ChargeStacks * 0.035f;
+
+        return speedScale;
     }
 
     private void SpawnLaunchBurst() {
         Vector2 groundOrigin = GetGroundOrigin();
+        int dustCount = GroundedWave ? 14 : 7;
+        if (FaultLineWave)
+            dustCount += 10;
+        dustCount += ChargeStacks * 3;
 
-        for (int i = 0; i < 14; i++) {
-            Vector2 burstVelocity = new Vector2(ShockwaveDirection * Main.rand.NextFloat(1.5f, 4f), Main.rand.NextFloat(-2.6f, -0.5f));
+        for (int i = 0; i < dustCount; i++) {
+            Vector2 burstVelocity = new Vector2(ShockwaveDirection * Main.rand.NextFloat(1.5f, FaultLineWave ? 5.4f : 4f),
+                Main.rand.NextFloat(FaultLineWave ? -3.4f : -2.6f, -0.5f));
             Dust dust = Dust.NewDustPerfect(groundOrigin + Main.rand.NextVector2Circular(10f, 4f),
-                i % 3 == 0 ? DustID.GemDiamond : DustID.Smoke, burstVelocity, 110, Color.White, Main.rand.NextFloat(1.1f, 1.55f));
+                i % 3 == 0 ? DustID.GemDiamond : DustID.Smoke, burstVelocity, 110,
+                FaultLineWave ? new Color(235, 225, 185) : Color.White,
+                Main.rand.NextFloat(1.1f, FaultLineWave ? 1.85f : 1.55f));
             dust.noGravity = true;
         }
     }
@@ -83,19 +143,23 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
         GetWaveShape(progress, out float waveLength, out float waveHeight, out _);
 
         Vector2 groundOrigin = GetGroundOrigin();
-        int pointCount = 11 + (int)MathF.Round(progress * 7f);
+        int pointCount = (GroundedWave ? 11 : 7) + ChargeStacks + (int)MathF.Round(progress * (FaultLineWave ? 11f : 7f));
         float frameWave = Projectile.timeLeft * 0.22f;
 
         for (int layer = 0; layer < 2; layer++) {
+            if (!GroundedWave && layer == 1)
+                continue;
+
             float layerLength = waveLength * (layer == 0 ? 1f : 0.72f);
             float layerHeight = waveHeight * (layer == 0 ? 1f : 0.68f);
-            float layerScale = layer == 0 ? 1.12f : 0.9f;
+            float layerScale = (layer == 0 ? 1.12f : 0.9f) + ChargeStacks * 0.04f + (FaultLineWave ? 0.18f : 0f);
 
             for (int i = 0; i < pointCount; i++) {
                 float t = pointCount == 1 ? 0f : i / (pointCount - 1f);
                 float forward = MathHelper.Lerp(0f, layerLength, t);
                 float arcHeight = MathF.Sin(t * MathHelper.Pi) * layerHeight;
-                float rippleOffset = MathF.Sin(frameWave + t * MathHelper.TwoPi * 2.2f + layer * 0.9f) * (1.6f + 3.2f * progress);
+                float rippleOffset = MathF.Sin(frameWave + t * MathHelper.TwoPi * 2.2f + layer * 0.9f) *
+                                     (1.2f + 3.2f * progress + ChargeStacks * 0.45f);
                 Vector2 dustPosition = groundOrigin + new Vector2(ShockwaveDirection * forward, -arcHeight + rippleOffset);
                 Vector2 dustVelocity = new Vector2(
                     ShockwaveDirection * MathHelper.Lerp(1.2f, 4.2f, t),
@@ -103,7 +167,9 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
                     + Main.rand.NextVector2Circular(0.22f, 0.22f);
 
                 int dustType = (i + layer) % 3 == 0 ? DustID.GemDiamond : DustID.Smoke;
-                Color dustColor = Color.Lerp(new Color(190, 190, 190), Color.White, 0.45f + 0.55f * t);
+                Color dustColor = FaultLineWave
+                    ? Color.Lerp(new Color(170, 150, 95), new Color(245, 235, 190), 0.45f + 0.55f * t)
+                    : Color.Lerp(new Color(190, 190, 190), Color.White, 0.45f + 0.55f * t);
                 Dust dust = Dust.NewDustPerfect(dustPosition, dustType, dustVelocity, 115, dustColor, layerScale + progress * 0.35f);
                 dust.noGravity = true;
             }
@@ -116,6 +182,23 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
                 130, new Color(220, 220, 220), Main.rand.NextFloat(1f, 1.35f));
             baseDust.noGravity = true;
         }
+    }
+
+    public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
+        if (!GroundedWave) {
+            target.velocity.X += ShockwaveDirection * 0.9f;
+            return;
+        }
+
+        int fractureTime = 100 + ChargeStacks * 35 + (SiegeWave ? 55 : 0) + (FaultLineWave ? 90 : 0);
+        target.AddBuff(BuffID.BrokenArmor, fractureTime);
+        if (SiegeWave || FaultLineWave)
+            target.AddBuff(BuffID.Slow, Math.Max(50, fractureTime / 2));
+
+        target.velocity.X += ShockwaveDirection *
+                             (2.4f + ChargeStacks * 0.5f + (SiegeWave ? 0.9f : 0f) + (FaultLineWave ? 1.2f : 0f));
+        if (!target.noGravity)
+            target.velocity.Y -= 1.4f + ChargeStacks * 0.25f + (FaultLineWave ? 0.7f : 0f);
     }
 
     public override bool? Colliding(Rectangle projHitbox, Rectangle targetHitbox) {
@@ -137,11 +220,16 @@ public class ArmodrilloQuakeProjectile : ModProjectile {
 
     public override void OnKill(int timeLeft) {
         Vector2 groundOrigin = GetGroundOrigin();
+        int dustCount = GroundedWave ? 12 : 6;
+        if (FaultLineWave)
+            dustCount += 10;
+        dustCount += ChargeStacks * 2;
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < dustCount; i++) {
             Vector2 burstVelocity = new Vector2(ShockwaveDirection * Main.rand.NextFloat(0.8f, 3.2f), Main.rand.NextFloat(-2.1f, -0.35f));
             Dust dust = Dust.NewDustPerfect(groundOrigin + Main.rand.NextVector2Circular(12f, 6f),
-                i % 2 == 0 ? DustID.GemDiamond : DustID.Smoke, burstVelocity, 120, Color.White, Main.rand.NextFloat(1f, 1.4f));
+                i % 2 == 0 ? DustID.GemDiamond : DustID.Smoke, burstVelocity, 120,
+                FaultLineWave ? new Color(235, 225, 185) : Color.White, Main.rand.NextFloat(1f, FaultLineWave ? 1.75f : 1.4f));
             dust.noGravity = true;
         }
     }

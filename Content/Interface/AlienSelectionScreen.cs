@@ -941,6 +941,17 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(npcState.WaterHazardSoak / 100f, 0f, 1f), new Color(120, 220, 255)));
             }
 
+            if (npcState.IsGhostFreakFearedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Fear", $"{npcState.GetGhostFreakFearStacks(player.whoAmI)}/5",
+                    MathHelper.Clamp(npcState.GetGhostFreakFearStacks(player.whoAmI) / 5f, 0f, 1f),
+                    new Color(162, 118, 220)));
+            }
+
+            if (npcState.IsGhostFreakHauntedFor(player.whoAmI)) {
+                entries.Add(new HeroTrackerEntry("Haunt", FormatTrackerSeconds(npcState.GhostFreakHauntTime),
+                    MathHelper.Clamp(npcState.GhostFreakHauntTime / 270f, 0f, 1f), new Color(210, 205, 245)));
+            }
+
             if (npcState.IsJetrayLockedFor(player.whoAmI)) {
                 entries.Add(new HeroTrackerEntry("Lock", FormatTrackerSeconds(npcState.JetrayLockTime),
                     MathHelper.Clamp(npcState.JetrayLockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
@@ -1050,6 +1061,8 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.IsHumungousaurShatteredFor(owner)
                 || npcState.HasLodestarPolarityFor(owner)
                 || npcState.IsWaterHazardSoakedFor(owner)
+                || npcState.IsGhostFreakFearedFor(owner)
+                || npcState.IsGhostFreakHauntedFor(owner)
                 || npcState.IsJetrayLockedFor(owner)
                 || npcState.HasBigChillFrostbiteFor(owner)
                 || npcState.IsBigChillDeepFrozenFor(owner)

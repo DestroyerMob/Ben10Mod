@@ -1,3 +1,4 @@
+using Ben10Mod.Content.Transformations.Armodrillo;
 using Microsoft.Xna.Framework;
 using System;
 using Terraria;
@@ -113,13 +114,29 @@ public class ArmodrilloUltimateSlamProjectile : ModProjectile {
     private void SpawnShockwaves(Player owner) {
         Vector2 quakeOrigin = owner.Bottom + new Vector2(0f, -8f);
         var source = Projectile.GetSource_FromThis();
+        int charge = Math.Clamp((int)MathF.Round(Projectile.ai[2]), 0, ArmodrilloSeismicPlayer.MaxGroundCharge);
+        int waveFlags = ArmodrilloQuakeProjectile.GroundedWaveFlag | ArmodrilloQuakeProjectile.FaultLineWaveFlag;
+        if (Projectile.ai[1] > 0.5f)
+            waveFlags |= ArmodrilloQuakeProjectile.SiegeWaveFlag;
 
         Projectile.NewProjectile(source, quakeOrigin + new Vector2(10f, 0f), Vector2.Zero,
             ModContent.ProjectileType<ArmodrilloQuakeProjectile>(), Projectile.damage, Projectile.knockBack,
-            owner.whoAmI, 1f);
+            owner.whoAmI, 1f, waveFlags, charge);
         Projectile.NewProjectile(source, quakeOrigin + new Vector2(-10f, 0f), Vector2.Zero,
             ModContent.ProjectileType<ArmodrilloQuakeProjectile>(), Projectile.damage, Projectile.knockBack,
-            owner.whoAmI, -1f);
+            owner.whoAmI, -1f, waveFlags, charge);
+
+        if (charge < 2)
+            return;
+
+        int branchDamage = Math.Max(1, (int)Math.Round(Projectile.damage * 0.72f));
+        int branchCharge = Math.Max(1, charge - 1);
+        Projectile.NewProjectile(source, quakeOrigin + new Vector2(44f, -2f), Vector2.Zero,
+            ModContent.ProjectileType<ArmodrilloQuakeProjectile>(), branchDamage, Projectile.knockBack + 0.6f,
+            owner.whoAmI, 1f, waveFlags, branchCharge);
+        Projectile.NewProjectile(source, quakeOrigin + new Vector2(-44f, -2f), Vector2.Zero,
+            ModContent.ProjectileType<ArmodrilloQuakeProjectile>(), branchDamage, Projectile.knockBack + 0.6f,
+            owner.whoAmI, -1f, waveFlags, branchCharge);
     }
 
     private static void EmitLaunchDust(Player owner) {

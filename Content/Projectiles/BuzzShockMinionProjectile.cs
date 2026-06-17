@@ -15,10 +15,10 @@ namespace Ben10Mod.Content.Projectiles {
         private const float IdleInertia = 40f;
         private const float IdleSpeed = 10f;
 
-        private const float ChargeSpeed = 22f;
+        private const float ChargeSpeed = 24f;
         private const float ChargeInertia = 8f;
         private const float ChargeOvershoot = 110f;
-        private const float MaxTargetRange = 700f;
+        private const float MaxTargetRange = 840f;
         private const float LostTargetRange = 950f;
 
         private const float RecoverSpeed = 12f;
@@ -44,7 +44,7 @@ namespace Ben10Mod.Content.Projectiles {
             Projectile.friendly = true;
             Projectile.minion = true;
             Projectile.DamageType = ModContent.GetInstance<HeroDamage>();
-            Projectile.minionSlots = 1f;
+            Projectile.minionSlots = 0.5f;
             Projectile.penetrate = -1;
             Projectile.tileCollide = false;
             Projectile.ignoreWater = true;
@@ -99,9 +99,11 @@ namespace Ben10Mod.Content.Projectiles {
         }
 
         public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-            target.AddBuff(ModContent.BuffType<BuzzShockTagBuff>(), 240);
+            bool wasTagged = BuzzShockTargeting.IsTagged(target);
+            target.AddBuff(ModContent.BuffType<BuzzShockTagBuff>(), wasTagged ? 360 : 300);
+            target.AddBuff(BuffID.Electrified, wasTagged ? 120 : 60);
             State = State_Recover;
-            Timer = RecoverTime;
+            Timer = wasTagged ? 10 : RecoverTime;
 
             Vector2 away = Projectile.Center - target.Center;
             if (away == Vector2.Zero)
@@ -234,18 +236,7 @@ namespace Ben10Mod.Content.Projectiles {
                 }
             }
 
-            for (int k = 0; k < Main.maxNPCs; k++) {
-                NPC npc = Main.npc[k];
-                if (!npc.CanBeChasedBy(this))
-                    continue;
-
-                float sqrDistanceToTarget = Vector2.DistanceSquared(npc.Center, Projectile.Center);
-                if (sqrDistanceToTarget < sqrMaxDetectDistance) {
-                    sqrMaxDetectDistance = sqrDistanceToTarget;
-                    selectedTarget = npc;
-                }
-            }
-
+            selectedTarget = BuzzShockTargeting.FindTarget(Projectile.Center, maxDetectDistance, preferTagged: true);
             return selectedTarget;
         }
     }

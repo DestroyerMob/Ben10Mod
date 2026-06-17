@@ -33,14 +33,14 @@ public class RipJawsTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<RipJaws_Buff>();
 
     public override string Description =>
-        "An aquatic predator that dominates in water, suffers on land, and lunges with devastating bites.";
+        "An aquatic predator that dominates in water, suffers on land, and fights to keep breath pressure under control.";
 
     public override List<string> Abilities => new() {
-        "Aquatic rush",
-        "Heavy bite lunge",
-        "Hydro Rush for a land-combat power spike",
-        "Water mobility",
-        "Amphibious survival pressure"
+        "Aquatic predator power in water",
+        "Land hits recover small amounts of breath",
+        "Rain grants a smaller aquatic power window",
+        "Hydro Rush carries aquatic pressure onto land",
+        "Heavy bite lunge"
     };
 
     public override string PrimaryAttackName => "Razor Bite";
@@ -62,12 +62,24 @@ public class RipJawsTransformation : Transformation {
     public override int PrimaryAbilityCooldown => HydroRushCooldown;
     public override int PrimaryAbilityCost => HydroRushCost;
 
+    public static bool IsRainPressureWindow(Player player) {
+        return Main.raining && player.ZoneRain && !player.wet;
+    }
+
+    public static bool IsHydroRushActive(OmnitrixPlayer omp) {
+        return omp.PrimaryAbilityEnabled && omp.CurrentTransformation?.FullID == "Ben10Mod:RipJaws";
+    }
+
+    public static bool IsAquaticPressureWindow(Player player, OmnitrixPlayer omp) {
+        return player.wet || IsHydroRushActive(omp);
+    }
+
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
         base.UpdateEffects(player, omp);
 
         bool inWater = player.wet;
-        bool inRain = Main.raining && player.ZoneRain && !inWater;
-        bool hydroRush = omp.PrimaryAbilityEnabled;
+        bool inRain = IsRainPressureWindow(player);
+        bool hydroRush = IsHydroRushActive(omp);
         bool inUnderworld = player.ZoneUnderworldHeight;
 
         player.GetDamage<HeroDamage>() += 0.12f;
@@ -125,7 +137,7 @@ public class RipJawsTransformation : Transformation {
         if (projectile.type != PrimaryAttack && projectile.type != SecondaryAttack)
             return;
 
-        bool pressureWindow = player.wet || omp.PrimaryAbilityEnabled;
+        bool pressureWindow = IsAquaticPressureWindow(player, omp);
         if (pressureWindow)
             modifiers.ArmorPenetration += 8;
 
@@ -155,6 +167,36 @@ public class RipJawsTransformation : Transformation {
         player.breath = System.Math.Min(player.breathMax, player.breath + (projectile.type == SecondaryAttack ? 4 : 2));
     }
 
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.PrimaryAbility)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        Player player = omp.Player;
+        string environmentText = GetEnvironmentSummary(player, omp, compact);
+        string breathText = compact
+            ? $"Breath {GetBreathPercent(player)}%"
+            : $"Breath {player.breath}/{player.breathMax}";
+        string identityText = resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"{environmentText} • {breathText}"
+                : $"{environmentText} • {breathText} • dry-land hits recover small breath",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"{environmentText} • Bite dash"
+                : $"{environmentText} • Bite Dash is fastest in water or Hydro Rush",
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
+                ? "Carry water"
+                : "Carries aquatic pressure onto land for short boss windows",
+            _ => environmentText
+        };
+
+        string baseText = base.GetAttackResourceSummary(selection, omp, compact);
+        return string.IsNullOrWhiteSpace(baseText) ? identityText : $"{baseText} • {identityText}";
+    }
+
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
         var costume = ModContent.GetInstance<RipJaws>();
         player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
@@ -167,5 +209,22 @@ public class RipJawsTransformation : Transformation {
 
         player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
         player.waist = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Waist);
+    }
+
+    private static string GetEnvironmentSummary(Player player, OmnitrixPlayer omp, bool compact) {
+        if (player.wet)
+            return compact ? "Water" : "Water: full predator power";
+        if (IsHydroRushActive(omp))
+            return compact ? "Hydro" : "Hydro Rush: aquatic pressure on land";
+        if (IsRainPressureWindow(player))
+            return compact ? "Rain" : "Rain: mini-power window";
+        return compact ? "Dry" : "Dry land: breath drains";
+    }
+
+    private static int GetBreathPercent(Player player) {
+        if (player.breathMax <= 0)
+            return 0;
+
+        return (int)MathHelper.Clamp(player.breath / (float)player.breathMax * 100f, 0f, 100f);
     }
 }

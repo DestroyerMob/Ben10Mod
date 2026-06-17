@@ -12,16 +12,16 @@ namespace Ben10Mod.Content.Transformations.XLR8
 {
     public class XLR8 : ModItem {
         public static string TransformationDescription =>
-            "A Kineceleran speedster that turns movement into offense, hammering enemies with light-speed jabs, targeted dashes, and a time-bending finishing field.";
+            "A Kineceleran momentum assassin that turns ground speed, sharp reversals, targeted dashes, and timebreak pass-throughs into burst damage.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Rapid light-strikes aimed toward the cursor.",
-            "Velocity dash that slices through a line of enemies.",
-            "Speed overdrive that pushes movement and attack speed even higher.",
-            "Vector Dash for targeted repositioning.",
+            "Speed Strike hits harder shortly after reversing direction.",
+            "Velocity Dash slices through enemies and scales with recent ground speed.",
+            "Speed overdrive opens stronger momentum and reversal windows.",
+            "Vector Dash for targeted repositioning, scaling with cursor distance.",
             "Extreme movement speed, boosted jumping, and water running at full pace.",
             "Horizontal dash by double tapping left or right.",
-            "A time-bending ultimate field that slows the whole fight to a crawl."
+            "Temporal Distortion freezes the fight and builds flow when XLR8 passes through threats."
         };
 
         public override void Load() {

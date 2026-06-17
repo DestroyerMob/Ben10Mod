@@ -1,3 +1,4 @@
+using System;
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
@@ -11,6 +12,8 @@ public class JetrayBoltProjectile : ModProjectile {
     private const float HomingRange = 620f;
     private const float HomingStrength = 0.12f;
     private bool StrafeLock => Projectile.ai[0] >= 0.5f;
+    private int FocusTargetIndex => (int)Math.Round(Projectile.ai[1]) - 1;
+    private float PathQuality => MathHelper.Clamp(Projectile.ai[2], 0f, 1f);
 
     public override string Texture => $"Terraria/Images/Projectile_{ProjectileID.MartianTurretBolt}";
 
@@ -31,7 +34,7 @@ public class JetrayBoltProjectile : ModProjectile {
     public override void AI() {
         HomeTowardTarget();
         Projectile.rotation = Projectile.velocity.ToRotation() + MathHelper.PiOver2;
-        Lighting.AddLight(Projectile.Center, 0.18f, 0.92f, 1f);
+        Lighting.AddLight(Projectile.Center, 0.18f + PathQuality * 0.06f, 0.92f, 1f);
 
         if (Main.rand.NextBool(3)) {
             Dust dust = Dust.NewDustDirect(Projectile.position, Projectile.width, Projectile.height,
@@ -41,9 +44,23 @@ public class JetrayBoltProjectile : ModProjectile {
         }
     }
 
+    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        bool locked = target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner);
+        if (locked) {
+            modifiers.SourceDamage *= 1.04f + PathQuality * 0.18f;
+            modifiers.ArmorPenetration += 5 + (int)Math.Round(PathQuality * 5f);
+        }
+        else {
+            modifiers.SourceDamage *= StrafeLock ? 0.66f + PathQuality * 0.1f : 0.72f;
+        }
+    }
+
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, StrafeLock ? 300 : 220);
-        target.AddBuff(BuffID.Electrified, 180);
+        int lockTime = StrafeLock
+            ? 240 + (int)MathHelper.Lerp(0f, 100f, PathQuality)
+            : 190;
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, lockTime);
+        target.AddBuff(BuffID.Electrified, 160 + (int)MathHelper.Lerp(0f, 50f, PathQuality));
     }
 
     public override void OnKill(int timeLeft) {
@@ -67,11 +84,18 @@ public class JetrayBoltProjectile : ModProjectile {
             speed = 18f;
 
         Vector2 desiredVelocity = Projectile.DirectionTo(target.Center) * speed;
-        Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, HomingStrength)
+        float homingStrength = HomingStrength + (target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner)
+            ? 0.08f + PathQuality * 0.05f
+            : 0f);
+        Projectile.velocity = Vector2.Lerp(Projectile.velocity, desiredVelocity, homingStrength)
             .SafeNormalize(desiredVelocity.SafeNormalize(Vector2.UnitX)) * speed;
     }
 
     private NPC FindClosestTarget() {
+        NPC focusedTarget = ResolveFocusedTarget();
+        if (focusedTarget != null)
+            return focusedTarget;
+
         NPC closestTarget = null;
         float closestDistance = HomingRange;
         bool foundLockedTarget = false;
@@ -105,5 +129,22 @@ public class JetrayBoltProjectile : ModProjectile {
         }
 
         return closestTarget;
+    }
+
+    private NPC ResolveFocusedTarget() {
+        if (FocusTargetIndex < 0 || FocusTargetIndex >= Main.maxNPCs)
+            return null;
+
+        NPC target = Main.npc[FocusTargetIndex];
+        if (!target.CanBeChasedBy(Projectile))
+            return null;
+
+        if (!target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner))
+            return null;
+
+        if (Vector2.DistanceSquared(Projectile.Center, target.Center) > HomingRange * HomingRange * 4f)
+            return null;
+
+        return target;
     }
 }

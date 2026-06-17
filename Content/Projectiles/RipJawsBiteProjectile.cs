@@ -3,11 +3,13 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Transformations.RipJaws;
 
 namespace Ben10Mod.Content.Projectiles;
 
 public class RipJawsBiteProjectile : ModProjectile {
     private const float LandDashSpeed = 20f;
+    private const float RainDashSpeed = 23f;
     private const float WaterDashSpeed = 26f;
     private const float DashDecay = 0.95f;
     private const float ForwardOffset = 30f;
@@ -38,10 +40,13 @@ public class RipJawsBiteProjectile : ModProjectile {
             return;
         }
 
-        owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        omp.RegisterActiveLunge();
+        bool aquaticPressure = RipJawsTransformation.IsAquaticPressureWindow(owner, omp);
+        bool rainPressure = !aquaticPressure && RipJawsTransformation.IsRainPressureWindow(owner);
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        float dashSpeed = owner.wet ? WaterDashSpeed : LandDashSpeed;
+        float dashSpeed = aquaticPressure ? WaterDashSpeed : rainPressure ? RainDashSpeed : LandDashSpeed;
 
         owner.direction = direction.X >= 0f ? 1 : -1;
         owner.velocity = direction * dashSpeed + new Vector2(0f, owner.velocity.Y > 0f ? DownwardPull : 0f);
@@ -58,10 +63,11 @@ public class RipJawsBiteProjectile : ModProjectile {
         Projectile.velocity *= DashDecay;
 
         if (Main.rand.NextBool(2)) {
-            int dustType = owner.wet ? DustID.Water : DustID.Blood;
-            Color dustColor = owner.wet ? new Color(110, 190, 255) : new Color(220, 75, 60);
+            bool waterCharged = aquaticPressure || rainPressure;
+            int dustType = waterCharged ? DustID.Water : DustID.Blood;
+            Color dustColor = waterCharged ? new Color(110, 190, 255) : new Color(220, 75, 60);
             Dust dust = Dust.NewDustPerfect(Projectile.Center + Main.rand.NextVector2Circular(10f, 10f),
-                dustType, -direction * Main.rand.NextFloat(0.6f, 2.4f), 120, dustColor, owner.wet ? 1.1f : 0.95f);
+                dustType, -direction * Main.rand.NextFloat(0.6f, 2.4f), 120, dustColor, waterCharged ? 1.1f : 0.95f);
             dust.noGravity = true;
         }
     }

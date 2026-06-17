@@ -22,6 +22,9 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     private const int GroundSlamCooldownTicks = 5 * 60;
     private const int BossImpactGuardTicks = 50;
     private const int NormalImpactGuardTicks = 28;
+    private const int MaxBrawlerTempoStacks = 3;
+    private const int BrawlerTempoDurationTicks = 72;
+    private const int HeavyBrawlerTempoDurationTicks = 96;
     private const float GroundSlamDamageMultiplier = 1.12f;
     private const float BerserkGroundSlamDamageMultiplier = 1.34f;
     private const float BaseGroundSlamKnockback = 7.5f;
@@ -35,6 +38,8 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     private int haymakerArmorTime;
     private int groundSlamStateTime;
     private int brawlerGuardTime;
+    private int brawlerTempoStacks;
+    private int brawlerTempoTime;
     private float brawlerGuardStrength;
     private float haymakerChargeRatio;
 
@@ -46,6 +51,9 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
     public bool GroundSlamActive => groundSlamStateTime > 0;
     public bool BrawlerGuardActive => brawlerGuardTime > 0;
     public float BrawlerGuardStrength => BrawlerGuardActive ? brawlerGuardStrength : 0f;
+    public int BrawlerTempoStacks => brawlerTempoTime > 0 ? brawlerTempoStacks : 0;
+    public float BrawlerTempoRatio => MathHelper.Clamp(BrawlerTempoStacks / (float)MaxBrawlerTempoStacks, 0f, 1f);
+    public bool HasBrawlerTempo => BrawlerTempoStacks > 0;
     public float HaymakerChargeRatio => haymakerChargeRatio;
     public bool FinisherReady => comboResetTimer > 0 && comboStep >= 2;
     public int NextComboHit => FinisherReady ? 3 : comboResetTimer > 0 ? comboStep + 1 : 1;
@@ -89,6 +97,8 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
             Rage = Math.Max(0f, Rage - OutOfFormRageDecay);
             comboStep = 0;
             comboResetTimer = 0;
+            brawlerTempoStacks = 0;
+            brawlerTempoTime = 0;
             return;
         }
 
@@ -161,6 +171,18 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         RegisterBrawlerGuard(bossHit ? BossImpactGuardTicks : NormalImpactGuardTicks, strength);
     }
 
+    public void RegisterClosePressure(float closePressure, bool heavyHit) {
+        if (!fourArmsActive || closePressure <= 0.32f)
+            return;
+
+        int stacksToAdd = heavyHit || closePressure >= 0.84f ? 2 : 1;
+        brawlerTempoStacks = Math.Min(MaxBrawlerTempoStacks, Math.Max(0, brawlerTempoStacks) + stacksToAdd);
+
+        int baseDuration = heavyHit ? HeavyBrawlerTempoDurationTicks : BrawlerTempoDurationTicks;
+        int scaledDuration = Math.Max(24, (int)Math.Round(baseDuration * MathHelper.Lerp(0.72f, 1.16f, closePressure)));
+        brawlerTempoTime = Math.Max(brawlerTempoTime, scaledDuration);
+    }
+
     public bool TryStartGroundSlam() {
         if (Player.whoAmI != Main.myPlayer || !CanStartGroundSlam())
             return false;
@@ -213,12 +235,22 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
 
         if (brawlerGuardTime <= 0) {
             brawlerGuardStrength = 0f;
+        }
+        else {
+            brawlerGuardTime--;
+        }
+
+        if (brawlerGuardTime <= 0)
+            brawlerGuardStrength = 0f;
+
+        if (brawlerTempoTime <= 0) {
+            brawlerTempoStacks = 0;
             return;
         }
 
-        brawlerGuardTime--;
-        if (brawlerGuardTime <= 0)
-            brawlerGuardStrength = 0f;
+        brawlerTempoTime--;
+        if (brawlerTempoTime <= 0)
+            brawlerTempoStacks = 0;
     }
 
     private void UpdateRageDecay() {
@@ -228,7 +260,7 @@ public class FourArmsGroundSlamPlayer : ModPlayer {
         }
 
         float decay = InFormRageDecay;
-        if (comboResetTimer > 0 || HaymakerCharging || GroundSlamActive || BrawlerGuardActive)
+        if (comboResetTimer > 0 || HaymakerCharging || GroundSlamActive || BrawlerGuardActive || HasBrawlerTempo)
             decay *= 0.5f;
 
         Rage = Math.Max(0f, Rage - decay);

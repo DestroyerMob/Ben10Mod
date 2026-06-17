@@ -14,20 +14,26 @@ namespace Ben10Mod.Content.Transformations.WaterHazard;
 public class WaterHazardTransformation : Transformation {
     private const int TidalSnareEnergyCost = 30;
     private const int TidalSnareCooldown = 18 * 60;
+    private const float PrimaryPressureGain = 4f;
+    private const float VentPrimaryPressureGain = 6f;
+    private const float SaturatedPrimaryPressureBonus = 2f;
+    private const float RiptidePressureSpend = 18f;
+    private const float TidalSnarePressureSpend = 34f;
+    private const float MonsoonBreakPressureSpend = 72f;
 
     public override string FullID => "Ben10Mod:WaterHazard";
     public override string TransformationName => "Water Hazard";
     public override int TransformationBuffId => ModContent.BuffType<WaterHazard_Buff>();
 
     public override string Description =>
-        "An armored Orishan who builds reservoir pressure, drenches enemies, and turns that stored force into bursts, whirlpools, and tidal detonations.";
+        "A pressure-resource artillery form that builds reservoir pressure, drenches enemies, and spends that stored force on bursts, snares, and Monsoon Break.";
 
     public override List<string> Abilities => new() {
-        "Pressure jets that drench enemies",
-        "Riptide burst that pops soaked targets",
-        "Reservoir Vent to build pressure and keep firing",
-        "Tidal Snare that traps enemies in a whirlpool",
-        "Monsoon Break that spends stored pressure in a huge blast"
+        "Pressure Jet builds reservoir pressure",
+        "Riptide Burst spends pressure to pop soaked targets",
+        "Reservoir Vent builds pressure faster",
+        "Tidal Snare spends heavier pressure for control",
+        "Monsoon Break spends the biggest pressure charge for payoff"
     };
 
     public override string PrimaryAttackName => "Pressure Jet";
@@ -82,7 +88,7 @@ public class WaterHazardTransformation : Transformation {
         player.gills = true;
         player.noFallDmg = true;
 
-        if (player.wet || (Main.raining && player.ZoneRain)) {
+        if (IsSaturated(player)) {
             player.GetDamage<HeroDamage>() += 0.08f;
             player.GetAttackSpeed<HeroDamage>() += 0.1f;
             player.moveSpeed += 0.14f;
@@ -99,34 +105,39 @@ public class WaterHazardTransformation : Transformation {
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         AlienIdentityPlayer identityPlayer = player.GetModPlayer<AlienIdentityPlayer>();
-        float pressureRatio = identityPlayer.WaterHazardPressureRatio;
+        float reservoirRatio = identityPlayer.WaterHazardPressureRatio;
         Vector2 direction = ResolveAimDirection(player, velocity);
 
         if (omp.ultimateAttack) {
+            float pressureRatio = GetPressureSpendRatio(identityPlayer, MonsoonBreakPressureSpend);
             int finalDamage = System.Math.Max(1,
-                (int)System.Math.Round(damage * UltimateAttackModifier * (1f + pressureRatio * 0.28f)));
+                (int)System.Math.Round(damage * UltimateAttackModifier * MathHelper.Lerp(0.55f, 1.36f, pressureRatio)));
             Projectile.NewProjectile(source, player.Center + direction * 30f, direction,
                 ModContent.ProjectileType<WaterHazardUltimateProjectile>(), finalDamage, knockback + 2f, player.whoAmI,
                 pressureRatio);
-            identityPlayer.ConsumeWaterHazardPressure(60f);
+            identityPlayer.ConsumeWaterHazardPressure(MonsoonBreakPressureSpend);
             return false;
         }
 
         if (omp.IsSecondaryAbilityAttackLoaded) {
+            float pressureRatio = GetPressureSpendRatio(identityPlayer, TidalSnarePressureSpend);
+            int snareDamage = System.Math.Max(1,
+                (int)System.Math.Round(damage * MathHelper.Lerp(0.58f, 1.18f, pressureRatio)));
             Vector2 trapCenter = player.Center + direction * 108f;
             Projectile.NewProjectile(source, trapCenter, Vector2.Zero, ModContent.ProjectileType<WaterHazardSnareProjectile>(),
-                damage, knockback, player.whoAmI, pressureRatio);
-            identityPlayer.ConsumeWaterHazardPressure(22f);
+                snareDamage, knockback, player.whoAmI, pressureRatio);
+            identityPlayer.ConsumeWaterHazardPressure(TidalSnarePressureSpend);
             return false;
         }
 
         if (omp.altAttack) {
+            float pressureRatio = GetPressureSpendRatio(identityPlayer, RiptidePressureSpend);
             int burstDamage = System.Math.Max(1,
-                (int)System.Math.Round(damage * SecondaryAttackModifier * (1f + pressureRatio * 0.18f)));
+                (int)System.Math.Round(damage * SecondaryAttackModifier * MathHelper.Lerp(0.6f, 1.28f, pressureRatio)));
             Projectile.NewProjectile(source, player.Center + direction * 16f, Vector2.Zero,
                 ModContent.ProjectileType<WaterHazardBurstProjectile>(), burstDamage, knockback + 1.5f, player.whoAmI,
                 pressureRatio);
-            identityPlayer.ConsumeWaterHazardPressure(14f);
+            identityPlayer.ConsumeWaterHazardPressure(RiptidePressureSpend);
             return false;
         }
 
@@ -145,11 +156,48 @@ public class WaterHazardTransformation : Transformation {
                 PrimaryShootSpeed;
             Projectile.NewProjectile(source, player.Center + spawnOffset, shotVelocity,
                 ModContent.ProjectileType<WaterHazardPressureProjectile>(), damage, knockback, player.whoAmI,
-                pressureRatio, omp.PrimaryAbilityEnabled ? 1f : 0f);
+                reservoirRatio, omp.PrimaryAbilityEnabled ? 1f : 0f);
         }
 
-        identityPlayer.AddWaterHazardPressure(omp.PrimaryAbilityEnabled ? 6f : 4f);
+        identityPlayer.AddWaterHazardPressure(GetPrimaryPressureGain(player, omp.PrimaryAbilityEnabled));
         return false;
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.PrimaryAbility &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.SecondaryAbility &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Ultimate)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        AlienIdentityPlayer identityPlayer = omp.Player.GetModPlayer<AlienIdentityPlayer>();
+        string pressureText = compact
+            ? $"Press {GetPressurePercent(identityPlayer)}%"
+            : $"Reservoir pressure {GetPressurePercent(identityPlayer)}%";
+        string identityText = resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"{pressureText} • Build"
+                : $"{pressureText} • Pressure Jet builds pressure; wet/rain builds faster",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"{pressureText} • Spend {RiptidePressureSpend:0}"
+                : $"{pressureText} • spends {RiptidePressureSpend:0} pressure; weak if starved",
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
+                ? $"{pressureText} • Vent build"
+                : $"{pressureText} • Reservoir Vent triples jets and builds pressure faster",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                ? $"{pressureText} • Spend {TidalSnarePressureSpend:0}"
+                : $"{pressureText} • spends {TidalSnarePressureSpend:0} pressure for whirlpool control",
+            OmnitrixPlayer.AttackSelection.Ultimate => compact
+                ? $"{pressureText} • Spend {MonsoonBreakPressureSpend:0}"
+                : $"{pressureText} • spends {MonsoonBreakPressureSpend:0} pressure for Monsoon Break payoff",
+            _ => pressureText
+        };
+
+        string baseText = base.GetAttackResourceSummary(selection, omp, compact);
+        return string.IsNullOrWhiteSpace(baseText) ? identityText : $"{baseText} • {identityText}";
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
@@ -168,5 +216,28 @@ public class WaterHazardTransformation : Transformation {
         }
 
         return direction;
+    }
+
+    public static bool IsSaturated(Player player) {
+        return player.wet || (Main.raining && player.ZoneRain);
+    }
+
+    public static float GetPrimaryPressureGain(Player player, bool venting) {
+        float gain = venting ? VentPrimaryPressureGain : PrimaryPressureGain;
+        if (IsSaturated(player))
+            gain += SaturatedPrimaryPressureBonus;
+
+        return gain;
+    }
+
+    private static float GetPressureSpendRatio(AlienIdentityPlayer identityPlayer, float pressureSpend) {
+        if (pressureSpend <= 0f)
+            return 1f;
+
+        return MathHelper.Clamp(identityPlayer.WaterHazardPressure / pressureSpend, 0f, 1f);
+    }
+
+    private static int GetPressurePercent(AlienIdentityPlayer identityPlayer) {
+        return (int)MathHelper.Clamp(identityPlayer.WaterHazardPressureRatio * 100f, 0f, 100f);
     }
 }

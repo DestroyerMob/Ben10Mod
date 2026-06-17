@@ -10,6 +10,7 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class JetrayLaserProjectile : ModProjectile {
     private bool StrafeLock => Projectile.ai[0] >= 0.5f;
+    private float PathQuality => MathHelper.Clamp(Projectile.ai[1], 0f, 1f);
 
     public override string Texture => "Ben10Mod/Content/Projectiles/EyeGuyLaserbeam";
 
@@ -58,13 +59,19 @@ public class JetrayLaserProjectile : ModProjectile {
     }
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
+        if (StrafeLock)
+            modifiers.SourceDamage *= 0.92f + PathQuality * 0.18f;
+
         if (target.GetGlobalNPC<AlienIdentityGlobalNPC>().IsJetrayLockedFor(Projectile.owner))
-            modifiers.SourceDamage *= StrafeLock ? 1.16f : 1.08f;
+            modifiers.SourceDamage *= StrafeLock ? 1.12f + PathQuality * 0.1f : 1.08f;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, StrafeLock ? 300 : 220);
-        target.AddBuff(BuffID.Electrified, 90);
+        int lockTime = StrafeLock
+            ? 260 + (int)MathHelper.Lerp(0f, 120f, PathQuality)
+            : 220;
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyJetrayLock(Projectile.owner, lockTime);
+        target.AddBuff(BuffID.Electrified, StrafeLock ? 90 + (int)MathHelper.Lerp(0f, 45f, PathQuality) : 90);
     }
 
     public override void OnKill(int timeLeft) {

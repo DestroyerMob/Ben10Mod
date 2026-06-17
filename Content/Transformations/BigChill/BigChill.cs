@@ -11,13 +11,13 @@ namespace Ben10Mod.Content.Transformations.BigChill
 {
     public class BigChill : ModItem {
         public static string TransformationDescription =>
-            "A spectral aerial skirmisher built around Hoarfrost marks, phasing through danger, and bursting targets while staying in motion.";
+            "An airborne frost assassin built around phasing in, marking prey with Hoarfrost, shattering the mark, and fading out before direct pressure catches him.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Direct hits apply Hoarfrost, slowing enemies and opening a burst window.",
-            "Coldfire Breath is the rapid airborne marking tool.",
+            "Direct hits apply Hoarfrost, slowing enemies and opening a Shiverburst window.",
+            "Coldfire Breath is the rapid airborne marking tool, not a raw DPS beam.",
             "Black Ice Barrage cashes Hoarfrost out into Shiverburst and splinters.",
-            "Spectral Phase dashes intangible and turns movement into offense.",
+            "Spectral Phase dashes intangible through danger and turns movement into offense.",
             "Wailing Wake leaves drifting frost clouds behind your movement.",
             "Dead Winter amplifies the whole loop and ends with a freezing pulse.",
             "Ultimate form available through the Ultimatrix branch."

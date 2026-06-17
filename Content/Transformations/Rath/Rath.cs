@@ -9,12 +9,12 @@ public class Rath : ModItem {
     private const string CostumeTexturePath = "Ben10Mod/Content/Transformations/Rath/Rath";
 
     public static string TransformationDescription =>
-        "An Appoplexian bruiser-duelist who tears into enemies with claw strings, pounces through danger, and gets more dangerous while enraged.";
+        "An Appoplexian duelist predator who marks one prey target, builds Rend with claw strings, pounces in for the cash-out, and gets more dangerous while enraged.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
-        "Main attack: Savage Combo chains claw swipes into a rending finisher.",
-        "Alt attack: Pounce closes distance, pierces through enemies, and rewards bleeding targets.",
-        "Primary ability: Battle Rage widens claws, speeds attacks, and improves close-range guard."
+        "Main attack: Savage Combo marks prey and stacks Rend with a rending finisher.",
+        "Alt attack: Pounce chases marked prey and cashes out Rend or bleeding targets.",
+        "Primary ability: Battle Rage widens claws, speeds attacks, and builds Rend faster."
     };
 
     public override string Texture => $"Terraria/Images/Item_{ItemID.FeralClaws}";

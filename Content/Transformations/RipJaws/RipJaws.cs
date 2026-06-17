@@ -11,14 +11,15 @@ namespace Ben10Mod.Content.Transformations.RipJaws
 {
     public class RipJaws : ModItem {
         public static string TransformationDescription =>
-            "An aquatic hunter with a sharp split between land and water combat. Ripjaws becomes terrifying underwater, but struggles badly if you stay dry for too long.";
+            "An aquatic hunter with a sharp split between land and water combat. Ripjaws becomes terrifying underwater, but has to fight for breath when kept dry.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Main attack: aquatic projectile strike.",
-            "Alt attack: high-damage lunging bite.",
+            "Main attack: Razor Bite applies bleeding and restores small breath off-water.",
+            "Alt attack: Bite Dash lunges hardest in water or Hydro Rush.",
             "Passive in water: faster movement, full breathing, brighter vision, and much higher damage.",
-            "Passive on land: rapidly loses breath and life if kept dry.",
-            "Ultimate attack: empowered offensive burst through the badge attack system."
+            "Passive in rain: smaller aquatic power window for outdoor fights.",
+            "Passive on land: breath drains and exhaustion hurts if attacks do not connect.",
+            "Hydro Rush: short land boss window that carries aquatic pressure with you."
         };
 
         public override void Load() {

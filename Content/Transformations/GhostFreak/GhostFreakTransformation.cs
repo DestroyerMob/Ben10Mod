@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -11,40 +12,58 @@ using Terraria.ModLoader;
 namespace Ben10Mod.Content.Transformations.GhostFreak;
 
 public class GhostFreakTransformation : Transformation {
+    private const int HauntEnergyCost = 16;
+    private const int HauntCooldown = 11 * 60;
+
     public override string FullID => "Ben10Mod:GhostFreak";
     public override string TransformationName => "Ghostfreak";
     public override string IconPath => "Ben10Mod/Content/Interface/GhostFreakSelect";
     public override int TransformationBuffId => ModContent.BuffType<GhostFreak_Buff>();
 
     public override string Description =>
-        "An eerie Ectonurite that slips through space, turns semi-transparent, and can possess enemies outright.";
+        "A fear and possession controller who avoids direct fights, phases through danger, and manipulates enemies before taking over.";
 
     public override List<string> Abilities => new() {
-        "Ectoplasmic shots",
-        "Phasing movement",
-        "Intangibility",
-        "Enemy possession"
+        "Weak Fear Bolt that marks enemies",
+        "Curse Wave that spreads fear and panic",
+        "Intangibility and phasing movement",
+        "Haunt target for delayed damage and possession setup",
+        "Possession payoff against feared or haunted enemies"
     };
 
-    public override string PrimaryAttackName => "Ecto Blast";
-    public override string SecondaryAttackName => "Ecto Blast";
+    public override string PrimaryAttackName => "Fear Bolt";
+    public override string SecondaryAttackName => "Curse Wave";
     public override string PrimaryAbilityName => "Intangibility";
+    public override string SecondaryAbilityAttackName => "Haunt";
     public override string UltimateAttackName => "Possession";
     public override int PrimaryAttack => ModContent.ProjectileType<GhostFreakProjectile>();
-    public override int PrimaryAttackSpeed => 14;
-    public override int PrimaryShootSpeed => 12;
+    public override int PrimaryAttackSpeed => 18;
+    public override int PrimaryShootSpeed => 13;
+    public override float PrimaryAttackModifier => 0.58f;
 
-    public override int SecondaryAttack => ModContent.ProjectileType<GhostFreakProjectile>();
-    public override int SecondaryAttackSpeed => 14;
-    public override int SecondaryShootSpeed => 12;
+    public override int SecondaryAttack => ModContent.ProjectileType<GhostFreakFearWaveProjectile>();
+    public override int SecondaryAttackSpeed => 34;
+    public override int SecondaryShootSpeed => 0;
+    public override int SecondaryUseStyle => ItemUseStyleID.HoldUp;
+    public override float SecondaryAttackModifier => 0.72f;
 
     public override bool HasPrimaryAbility => true;
     public override int PrimaryAbilityDuration => 30 * 60;
     public override int PrimaryAbilityCooldown => 45 * 60;
 
+    public override int SecondaryAbilityAttack => ModContent.ProjectileType<GhostFreakHauntProjectile>();
+    public override int SecondaryAbilityAttackSpeed => 24;
+    public override int SecondaryAbilityAttackShootSpeed => 13;
+    public override int SecondaryAbilityAttackUseStyle => ItemUseStyleID.Shoot;
+    public override float SecondaryAbilityAttackModifier => 0.88f;
+    public override int SecondaryAbilityAttackEnergyCost => HauntEnergyCost;
+    public override int SecondaryAbilityCooldown => HauntCooldown;
+    public override bool SecondaryAbilityAttackSingleUse => true;
+
     public override int UltimateAttack => ModContent.ProjectileType<GhostFreakPossesionProjectile>();
-    public override int UltimateAttackSpeed => 14;
+    public override int UltimateAttackSpeed => 24;
     public override int UltimateShootSpeed => 12;
+    public override float UltimateAttackModifier => 0.9f;
     public override int UltimateEnergyCost => 50;
     public override int UltimateAbilityCooldown => 30 * 60;
 
@@ -57,6 +76,91 @@ public class GhostFreakTransformation : Transformation {
         player.aggro -= 400;
         player.nightVision = true;
         player.endurance += 0.04f;
+    }
+
+    public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
+        Vector2 velocity, int damage, float knockback) {
+        Vector2 direction = ResolveAimDirection(player, velocity);
+        Vector2 spawnPosition = player.MountedCenter + new Vector2(player.direction * 6f, -10f) + direction * 12f;
+        bool intangible = omp.PrimaryAbilityEnabled;
+
+        if (omp.ultimateAttack) {
+            int finalDamage = System.Math.Max(1, (int)System.Math.Round(damage * UltimateAttackModifier));
+            Projectile.NewProjectile(source, spawnPosition, direction * UltimateShootSpeed, UltimateAttack, finalDamage,
+                knockback + 0.4f, player.whoAmI, intangible ? 1f : 0f);
+            return false;
+        }
+
+        if (omp.IsSecondaryAbilityAttackLoaded) {
+            int finalDamage = System.Math.Max(1, (int)System.Math.Round(damage * SecondaryAbilityAttackModifier));
+            Projectile.NewProjectile(source, spawnPosition, direction * SecondaryAbilityAttackShootSpeed,
+                SecondaryAbilityAttack, finalDamage, knockback + 0.2f, player.whoAmI, intangible ? 1f : 0f);
+            return false;
+        }
+
+        if (omp.altAttack) {
+            int finalDamage = System.Math.Max(1, (int)System.Math.Round(damage * SecondaryAttackModifier));
+            Projectile.NewProjectile(source, player.Center + direction * 24f, Vector2.Zero, SecondaryAttack,
+                finalDamage, knockback + 0.1f, player.whoAmI, intangible ? 1f : 0f);
+            return false;
+        }
+
+        int primaryDamage = System.Math.Max(1, (int)System.Math.Round(damage * PrimaryAttackModifier));
+        Projectile.NewProjectile(source, spawnPosition, direction * PrimaryShootSpeed, PrimaryAttack, primaryDamage,
+            knockback, player.whoAmI, intangible ? 1f : 0f);
+        return false;
+    }
+
+    public override void ModifyHitNPCWithProjectile(Player player, OmnitrixPlayer omp, Projectile projectile, NPC target,
+        ref NPC.HitModifiers modifiers) {
+        if (!IsGhostFreakControlProjectile(projectile.type))
+            return;
+
+        AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
+        int fearStacks = state.GetGhostFreakFearStacks(player.whoAmI);
+        if (fearStacks > 0)
+            modifiers.FinalDamage *= 1f + fearStacks * 0.04f;
+
+        if (state.IsGhostFreakHauntedFor(player.whoAmI))
+            modifiers.FinalDamage *= projectile.type == UltimateAttack ? 1.22f : 1.12f;
+    }
+
+    public override string GetAttackResourceSummary(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp,
+        bool compact = false) {
+        OmnitrixPlayer.AttackSelection resolvedSelection = selection == OmnitrixPlayer.AttackSelection.PrimaryAbility &&
+                                                           HasPrimaryAbilityForState(omp)
+            ? OmnitrixPlayer.AttackSelection.PrimaryAbility
+            : ResolveAttackSelection(selection, omp);
+        if (resolvedSelection != OmnitrixPlayer.AttackSelection.Primary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Secondary &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.PrimaryAbility &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.SecondaryAbility &&
+            resolvedSelection != OmnitrixPlayer.AttackSelection.Ultimate)
+            return base.GetAttackResourceSummary(selection, omp, compact);
+
+        int fearedTargets = CountFearedTargets(omp.Player);
+        string fearText = compact ? $"Fear {fearedTargets}" : $"Feared targets {fearedTargets}";
+        string identityText = resolvedSelection switch {
+            OmnitrixPlayer.AttackSelection.Primary => compact
+                ? $"{fearText} • Tag"
+                : $"{fearText} • weak shot applies Fear",
+            OmnitrixPlayer.AttackSelection.Secondary => compact
+                ? $"{fearText} • Spread"
+                : $"{fearText} • spreads Fear and lowers aggression",
+            OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
+                ? "Phase"
+                : "Phase through danger; direct attacks are disabled while intangible",
+            OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
+                ? $"{fearText} • Haunt"
+                : $"{fearText} • Haunt adds delayed damage and possession setup",
+            OmnitrixPlayer.AttackSelection.Ultimate => compact
+                ? $"{fearText} • Cashout"
+                : $"{fearText} • possession lasts longer against feared or haunted targets",
+            _ => fearText
+        };
+
+        string baseText = base.GetAttackResourceSummary(selection, omp, compact);
+        return string.IsNullOrWhiteSpace(baseText) ? identityText : $"{baseText} • {identityText}";
     }
 
     public override void ModifyDrawInfo(Player player, OmnitrixPlayer omp, ref PlayerDrawSet drawInfo) {
@@ -115,6 +219,35 @@ public class GhostFreakTransformation : Transformation {
         }
 
         player.velocity = Vector2.Zero;
+    }
+
+    private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {
+        Vector2 direction = fallbackVelocity.SafeNormalize(new Vector2(player.direction, 0f));
+
+        if (Main.netMode == NetmodeID.SinglePlayer || player.whoAmI == Main.myPlayer) {
+            Vector2 mouseDirection = player.DirectionTo(Main.MouseWorld);
+            if (mouseDirection != Vector2.Zero)
+                direction = mouseDirection;
+        }
+
+        return direction;
+    }
+
+    private static bool IsGhostFreakControlProjectile(int projectileType) {
+        return projectileType == ModContent.ProjectileType<GhostFreakProjectile>() ||
+               projectileType == ModContent.ProjectileType<GhostFreakFearWaveProjectile>() ||
+               projectileType == ModContent.ProjectileType<GhostFreakHauntProjectile>() ||
+               projectileType == ModContent.ProjectileType<GhostFreakPossesionProjectile>();
+    }
+
+    private static int CountFearedTargets(Player player) {
+        int count = 0;
+        foreach (NPC npc in Main.ActiveNPCs) {
+            if (npc.GetGlobalNPC<AlienIdentityGlobalNPC>().IsGhostFreakFearedFor(player.whoAmI))
+                count++;
+        }
+
+        return count;
     }
     
     public override IReadOnlyList<TransformationPaletteChannel> PaletteChannels => [

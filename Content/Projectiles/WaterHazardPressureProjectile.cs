@@ -1,5 +1,7 @@
 using Ben10Mod.Content.DamageClasses;
 using Ben10Mod.Content.NPCs;
+using Ben10Mod.Content.Players;
+using Ben10Mod.Content.Transformations.WaterHazard;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -42,6 +44,7 @@ public class WaterHazardPressureProjectile : ModProjectile {
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
         int soak = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetWaterHazardSoak(Projectile.owner);
+        modifiers.SourceDamage *= 1f + PressureRatio * 0.06f;
         if (soak > 0)
             modifiers.SourceDamage *= 1f + 0.04f + soak / 220f;
     }
@@ -52,6 +55,13 @@ public class WaterHazardPressureProjectile : ModProjectile {
         identity.AddWaterHazardSoak(Projectile.owner, VentMode ? 18 : 12, 240);
         if (existingSoak >= 45)
             target.velocity = Vector2.Lerp(target.velocity, Projectile.velocity.SafeNormalize(Vector2.UnitX) * 7.5f, 0.48f);
+
+        Player owner = Main.player[Projectile.owner];
+        if (owner.active && !owner.dead &&
+            owner.GetModPlayer<OmnitrixPlayer>().currentTransformationId == AlienIdentityPlayer.WaterHazardTransformationId) {
+            owner.GetModPlayer<AlienIdentityPlayer>().AddWaterHazardPressure(
+                WaterHazardTransformation.GetPrimaryPressureGain(owner, VentMode) * 0.35f);
+        }
     }
 
     public override bool OnTileCollide(Vector2 oldVelocity) {

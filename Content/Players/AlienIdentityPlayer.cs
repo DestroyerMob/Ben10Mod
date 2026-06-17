@@ -17,6 +17,10 @@ public class AlienIdentityPlayer : ModPlayer {
     private const float FasttrackMaxMomentum = 100f;
     private const float AstrodactylMaxAirSupremacy = 100f;
     private const float WaterHazardMaxPressure = 100f;
+    private const float WaterHazardNaturalPressureDrain = 0.75f;
+    private const float WaterHazardVentPressureDrain = 0.22f;
+    private const float WaterHazardSaturatedPressureGain = 1.05f;
+    private const float WaterHazardVentSaturatedPressureGain = 1.65f;
 
     public float ChromaStoneRadiance { get; private set; }
     public float FasttrackMomentum { get; private set; }
@@ -169,9 +173,11 @@ public class AlienIdentityPlayer : ModPlayer {
 
         bool saturated = Player.wet || (Main.raining && Player.ZoneRain);
         if (saturated)
-            AddWaterHazardPressure(omp.PrimaryAbilityEnabled ? 1.5f : 0.9f);
+            AddWaterHazardPressure(omp.PrimaryAbilityEnabled
+                ? WaterHazardVentSaturatedPressureGain
+                : WaterHazardSaturatedPressureGain);
 
-        float naturalDrain = omp.PrimaryAbilityEnabled ? 0.22f : 0.75f;
+        float naturalDrain = omp.PrimaryAbilityEnabled ? WaterHazardVentPressureDrain : WaterHazardNaturalPressureDrain;
         WaterHazardPressure = Math.Max(0f, WaterHazardPressure - naturalDrain);
     }
 

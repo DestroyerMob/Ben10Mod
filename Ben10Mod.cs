@@ -557,7 +557,10 @@ namespace Ben10Mod {
 					if (!target.active || !target.CanBeChasedBy())
 						return;
 
-					omp.BeginPossession(targetIndex, player.position);
+					int possessionDuration = global::Ben10Mod.Content.Projectiles.GhostFreakPossesionProjectile
+						.ResolvePossessionDuration(target, whoAmI);
+					target.GetGlobalNPC<global::Ben10Mod.Content.NPCs.AlienIdentityGlobalNPC>().ConsumeGhostFreakHaunt(whoAmI);
+					omp.BeginPossession(targetIndex, player.position, possessionDuration);
 					break;
 				}
 				case MessageType.SyncGhostFreakPossessionState: {

@@ -14,6 +14,7 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
     private const float ForwardOffset = 26f;
 
     private float GrowthScale => Projectile.ai[0] <= 0f ? 1f : MathF.Abs(Projectile.ai[0]);
+    private bool BracedCharge => Projectile.ai[1] > 0.5f;
     private bool HitSomething => Projectile.localAI[1] > 0f;
 
     public override string Texture => "Terraria/Images/Projectile_0";
@@ -44,14 +45,14 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
         float growthRatio = GetGrowthRatio();
         if (Projectile.localAI[0] == 0f) {
             Projectile.localAI[0] = 1f;
-            Projectile.timeLeft = BaseChargeFrames + (int)MathF.Round(growthRatio * 5f);
+            Projectile.timeLeft = BaseChargeFrames + (int)MathF.Round(growthRatio * 5f) + (BracedCharge ? 4 : 0);
             SpawnLaunchDust(owner);
         }
 
         owner.GetModPlayer<OmnitrixPlayer>().RegisterActiveLunge();
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        float speed = BaseChargeSpeed + growthRatio * 4f;
+        float speed = BaseChargeSpeed + growthRatio * 2.6f - (BracedCharge ? 1.2f : 0f);
         Projectile.velocity = direction * speed;
         Projectile.rotation = direction.ToRotation();
         Projectile.scale = MathHelper.Clamp(GrowthScale, 0.9f, HumungousaurTransformation.RampageScale);
@@ -67,7 +68,8 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
         owner.noFallDmg = true;
         owner.fallStart = (int)(owner.position.Y / 16f);
         owner.armorEffectDrawShadow = true;
-        owner.GetModPlayer<HumungousaurCombatPlayer>().RegisterAttackGuard(3, 0.16f + growthRatio * 0.06f);
+        owner.GetModPlayer<HumungousaurCombatPlayer>().RegisterAttackGuard(3,
+            0.16f + growthRatio * 0.06f + (BracedCharge ? 0.06f : 0f));
 
         SpawnTrailDust(direction);
     }
@@ -78,12 +80,14 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         Projectile.localAI[1] = 1f;
-        target.AddBuff(BuffID.BrokenArmor, GrowthScale > 1.2f ? 180 : 120);
+        int growthTier = HumungousaurTransformation.GetGrowthTier(GrowthScale);
+        int brokenArmorDuration = growthTier >= 2 ? 300 : growthTier == 1 ? 220 : 120;
+        target.AddBuff(BuffID.BrokenArmor, brokenArmorDuration + (BracedCharge ? 60 : 0));
 
         Vector2 pushDirection = Projectile.velocity.SafeNormalize(Vector2.UnitX);
         target.velocity = new Vector2(
-            MathHelper.Clamp(target.velocity.X + pushDirection.X * (5.4f + GetGrowthRatio() * 2.2f), -16f, 16f),
-            MathHelper.Clamp(target.velocity.Y - (1.2f + GetGrowthRatio() * 0.9f), -9f, 10f));
+            MathHelper.Clamp(target.velocity.X + pushDirection.X * (5.4f + GetGrowthRatio() * 2.2f + (BracedCharge ? 1.8f : 0f)), -18f, 18f),
+            MathHelper.Clamp(target.velocity.Y - (1.2f + GetGrowthRatio() * 0.9f + (BracedCharge ? 0.35f : 0f)), -9f, 10f));
         target.netUpdate = true;
 
         Player owner = Main.player[Projectile.owner];
@@ -106,11 +110,13 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
             return;
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        int shockDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (HitSomething ? 0.58f : 0.38f)));
+        int shockDamage = Math.Max(1, (int)Math.Round(Projectile.damage *
+                                                       (HitSomething ? BracedCharge ? 0.72f : 0.58f : BracedCharge ? 0.48f : 0.38f)));
         Vector2 shockPosition = owner.Bottom + new Vector2(direction.X * 16f, -8f);
         Projectile.NewProjectile(Projectile.GetSource_FromThis(), shockPosition, direction * (12f + GetGrowthRatio() * 2f),
             ModContent.ProjectileType<HumungousaurShockwavePlayerProjectile>(), shockDamage, Projectile.knockBack + 0.6f,
-            Projectile.owner, GrowthScale * (HitSomething ? 0.92f : 0.82f), HitSomething ? 1f : 0f);
+            Projectile.owner, GrowthScale * (HitSomething ? BracedCharge ? 1.06f : 0.92f : BracedCharge ? 0.96f : 0.82f),
+            BracedCharge ? 2f : HitSomething ? 1f : 0f);
     }
 
     private float GetGrowthRatio() {
@@ -122,10 +128,12 @@ public class HumungousaurCrushingChargeProjectile : ModProjectile {
             return;
 
         Vector2 direction = Projectile.velocity.SafeNormalize(new Vector2(owner.direction, 0f));
-        for (int i = 0; i < 16; i++) {
+        int dustCount = BracedCharge ? 24 : 16;
+        for (int i = 0; i < dustCount; i++) {
             Dust dust = Dust.NewDustPerfect(owner.Center + Main.rand.NextVector2Circular(18f, 18f),
                 i % 3 == 0 ? DustID.Torch : DustID.Smoke,
-                direction * Main.rand.NextFloat(1.8f, 4.8f) + Main.rand.NextVector2Circular(1.3f, 1.3f),
+                direction * Main.rand.NextFloat(BracedCharge ? 1.1f : 1.8f, BracedCharge ? 3.6f : 4.8f) +
+                Main.rand.NextVector2Circular(1.3f, 1.3f),
                 105, new Color(255, 170, 105), Main.rand.NextFloat(1f, 1.45f));
             dust.noGravity = true;
         }
