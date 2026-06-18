@@ -27,7 +27,8 @@ public sealed class OmnitrixEnergyController {
 
     public float Regen {
         get => _regen;
-        set => _regen = Math.Max(0f, value);
+        // Signed net OE change per second. Negative values are used by sustained-energy Omnitrixes as transformed upkeep drain.
+        set => _regen = value;
     }
 
     public int MaxBonus { get; set; }
@@ -41,8 +42,10 @@ public sealed class OmnitrixEnergyController {
     }
 
     public void RegeneratePerTick() {
-        Current += Regen / 120f;
-        ClampToMax();
+        float nextCurrent = _current + Regen / 120f;
+        _current = Max > 0f
+            ? Math.Clamp(nextCurrent, 0f, Max)
+            : 0f;
     }
 
     public void ClampToMax() {
