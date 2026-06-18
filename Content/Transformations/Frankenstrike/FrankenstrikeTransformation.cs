@@ -124,12 +124,15 @@ public class FrankenstrikeTransformation : Transformation {
             return true;
         }
 
-        if (omp.omnitrixEnergy < GetUltimateAbilityCost(omp)) {
-            omp.ShowTransformFailureFeedback($"Need {GetUltimateAbilityCost(omp)} OE for {UltimateAbilityName}.");
+        int galvanicStormCost = GetUltimateAbilityCost(omp);
+        if (!omp.CanSpendOmnitrixEnergy(galvanicStormCost)) {
+            omp.ShowTransformFailureFeedback($"Need {galvanicStormCost} OE for {UltimateAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= GetUltimateAbilityCost(omp);
+        if (!omp.TrySpendOmnitrixEnergy(galvanicStormCost))
+            return true;
+
         omp.ultimateAbilityTransformationId = FullID;
         player.AddBuff(ModContent.BuffType<UltimateAbility>(), GetUltimateAbilityDuration(omp));
         player.AddBuff(ModContent.BuffType<UltimateAbilityCooldown>(), GetUltimateAbilityCooldown(omp));

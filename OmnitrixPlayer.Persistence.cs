@@ -173,12 +173,7 @@ namespace Ben10Mod {
                 }
             }
 
-            transformationPaletteOverrides.Clear();
-            omnitrixVisualPaletteOverrides.Clear();
-            paletteEnabledChannels.Clear();
-            selectedTransformationCostumes.Clear();
-            customTransformationNames.Clear();
-            palettePresets.Clear();
+            ClearAllCustomizationState();
             if (tag.TryGet("transformationPalette", out List<TagCompound> paletteEntries)) {
                 foreach (TagCompound paletteEntry in paletteEntries) {
                     string transformationId = paletteEntry.GetString("transformationId");
@@ -233,8 +228,7 @@ namespace Ben10Mod {
 
             if (tag.TryGet("paletteEnabledChannels", out string[] enabledPaletteArray)) {
                 for (int i = 0; i < enabledPaletteArray.Length; i++) {
-                    if (TryNormalizePaletteChannelKey(enabledPaletteArray[i], out string enabledChannelKey))
-                        paletteEnabledChannels.Add(enabledChannelKey);
+                    AddNormalizedPaletteEnabledChannelKey(enabledPaletteArray[i]);
                 }
             }
             else if (tag.TryGet("paletteDisabledChannels", out string[] disabledPaletteArray)) {
@@ -302,14 +296,8 @@ namespace Ben10Mod {
         }
 
         private void NormalizeStoredTransformationData() {
-            string[] normalizedUnlocks = NormalizeUnlockedTransformations(unlockedTransformations);
-            unlockedTransformations.Clear();
-            unlockedTransformations.AddRange(normalizedUnlocks);
-            NormalizeFavoriteTransformations();
-            NormalizeNewlyUnlockedTransformations();
+            Roster.Normalize(TransformationSlotCount);
             NormalizeSelectedTransformationCostumes();
-
-            transformationSlots = NormalizeTransformationSlots(transformationSlots, unlockedTransformations);
             NormalizeTransformationPaletteState();
             NormalizeOmnitrixVisualPaletteState();
             NormalizePalettePresets();

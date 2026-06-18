@@ -141,7 +141,7 @@ namespace Ben10Mod {
             if (projectile != null && projectile.GetGlobalProjectile<OmnitrixProjectile>().BlocksOmnitrixEnergyGain)
                 return true;
 
-            if (attackEnergyGainLockTime > 0)
+            if (AttackSelectionState.BlocksOmnitrixEnergyGain())
                 return true;
 
             Transformation transformation = CurrentTransformation;

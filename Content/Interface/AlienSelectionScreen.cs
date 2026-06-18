@@ -875,46 +875,54 @@ namespace Ben10Mod.Content.Interface {
             AlienIdentityGlobalNPC npcState = targetNpc.GetGlobalNPC<AlienIdentityGlobalNPC>();
 
             if (npcState.IsFasttrackComboActiveFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Combo", $"{npcState.FasttrackComboStacks}/6",
-                    MathHelper.Clamp(npcState.FasttrackComboStacks / 6f, 0f, 1f), new Color(255, 182, 102)));
+                int comboStacks = npcState.GetFasttrackComboStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Combo", $"{comboStacks}/6",
+                    MathHelper.Clamp(comboStacks / 6f, 0f, 1f), new Color(255, 182, 102)));
             }
 
             if (npcState.IsSkyMarkedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Sky Mark", FormatTrackerSeconds(npcState.AstrodactylSkyMarkTime),
-                    MathHelper.Clamp(npcState.AstrodactylSkyMarkTime / 360f, 0f, 1f), new Color(146, 255, 176)));
+                int skyMarkTime = npcState.GetSkyMarkTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Sky Mark", FormatTrackerSeconds(skyMarkTime),
+                    MathHelper.Clamp(skyMarkTime / 360f, 0f, 1f), new Color(146, 255, 176)));
             }
 
             if (npcState.IsBlitzwolferResonantFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Resonance", $"{npcState.BlitzwolferResonanceStacks}/8",
-                    MathHelper.Clamp(npcState.BlitzwolferResonanceStacks / 8f, 0f, 1f), new Color(126, 255, 154)));
+                int resonanceStacks = npcState.GetBlitzwolferResonanceStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Resonance", $"{resonanceStacks}/8",
+                    MathHelper.Clamp(resonanceStacks / 8f, 0f, 1f), new Color(126, 255, 154)));
             }
 
             if (npcState.IsEchoEchoResonantFor(player.whoAmI)) {
+                int echoStacks = npcState.GetEchoEchoResonanceStacks(player.whoAmI);
                 string echoResonanceValue = npcState.IsEchoEchoResonancePrimedFor(player.whoAmI)
                     ? "Pop Ready"
-                    : $"{npcState.EchoEchoResonanceStacks}/8";
+                    : $"{echoStacks}/8";
                 entries.Add(new HeroTrackerEntry("Resonance", echoResonanceValue,
-                    MathHelper.Clamp(npcState.EchoEchoResonanceStacks / 8f, 0f, 1f), new Color(166, 224, 255)));
+                    MathHelper.Clamp(echoStacks / 8f, 0f, 1f), new Color(166, 224, 255)));
             }
 
             if (npcState.IsEchoEchoFracturedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(npcState.EchoEchoFractureTime),
-                    MathHelper.Clamp(npcState.EchoEchoFractureTime / 180f, 0f, 1f), new Color(210, 238, 255)));
+                int fractureTime = npcState.GetEchoEchoFractureTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(fractureTime),
+                    MathHelper.Clamp(fractureTime / 180f, 0f, 1f), new Color(210, 238, 255)));
             }
 
             if (npcState.IsUltimateEchoEchoFocusedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Focused", FormatTrackerSeconds(npcState.UltimateEchoEchoFocusedTime),
-                    MathHelper.Clamp(npcState.UltimateEchoEchoFocusedTime / 150f, 0f, 1f), new Color(166, 228, 255)));
+                int focusTime = npcState.GetUltimateEchoEchoFocusTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Focused", FormatTrackerSeconds(focusTime),
+                    MathHelper.Clamp(focusTime / 150f, 0f, 1f), new Color(166, 228, 255)));
             }
 
             if (npcState.IsFrankenstrikeConductiveFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Conductive", $"{npcState.FrankenstrikeConductiveStacks}/6",
-                    MathHelper.Clamp(npcState.FrankenstrikeConductiveStacks / 6f, 0f, 1f), new Color(135, 175, 255)));
+                int conductiveStacks = npcState.GetFrankenstrikeConductiveStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Conductive", $"{conductiveStacks}/6",
+                    MathHelper.Clamp(conductiveStacks / 6f, 0f, 1f), new Color(135, 175, 255)));
             }
 
             if (npcState.IsFrankenstrikeOverchargedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Overcharged", FormatTrackerSeconds(npcState.FrankenstrikeOverchargedTime),
-                    MathHelper.Clamp(npcState.FrankenstrikeOverchargedTime / (float)FrankenstrikeStatePlayer.OverchargedDurationTicks, 0f, 1f),
+                int overchargedTime = npcState.GetFrankenstrikeOverchargedTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Overcharged", FormatTrackerSeconds(overchargedTime),
+                    MathHelper.Clamp(overchargedTime / (float)FrankenstrikeStatePlayer.OverchargedDurationTicks, 0f, 1f),
                     new Color(220, 242, 255)));
             }
 
@@ -926,19 +934,22 @@ namespace Ben10Mod.Content.Interface {
             }
 
             if (npcState.IsHumungousaurShatteredFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Shattered", FormatTrackerSeconds(npcState.HumungousaurShatteredTime),
-                    MathHelper.Clamp(npcState.HumungousaurShatteredTime / 240f, 0f, 1f), new Color(255, 226, 182)));
+                int shatteredTime = npcState.GetHumungousaurShatteredTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Shattered", FormatTrackerSeconds(shatteredTime),
+                    MathHelper.Clamp(shatteredTime / 240f, 0f, 1f), new Color(255, 226, 182)));
             }
 
             if (npcState.HasLodestarPolarityFor(player.whoAmI)) {
-                string polarity = npcState.LodestarPolarityDirection >= 0 ? "Pull" : "Push";
+                int polarityTime = npcState.GetLodestarPolarityTime(player.whoAmI);
+                string polarity = npcState.GetLodestarPolarityDirection(player.whoAmI) >= 0 ? "Pull" : "Push";
                 entries.Add(new HeroTrackerEntry("Polarity", polarity,
-                    MathHelper.Clamp(npcState.LodestarPolarityTime / 300f, 0f, 1f), new Color(212, 140, 255)));
+                    MathHelper.Clamp(polarityTime / 300f, 0f, 1f), new Color(212, 140, 255)));
             }
 
             if (npcState.IsWaterHazardSoakedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Soak", $"{npcState.WaterHazardSoak}/100",
-                    MathHelper.Clamp(npcState.WaterHazardSoak / 100f, 0f, 1f), new Color(120, 220, 255)));
+                int soak = npcState.GetWaterHazardSoak(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Soak", $"{soak}/100",
+                    MathHelper.Clamp(soak / 100f, 0f, 1f), new Color(120, 220, 255)));
             }
 
             if (npcState.IsGhostFreakFearedFor(player.whoAmI)) {
@@ -948,24 +959,28 @@ namespace Ben10Mod.Content.Interface {
             }
 
             if (npcState.IsGhostFreakHauntedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Haunt", FormatTrackerSeconds(npcState.GhostFreakHauntTime),
-                    MathHelper.Clamp(npcState.GhostFreakHauntTime / 270f, 0f, 1f), new Color(210, 205, 245)));
+                int hauntTime = npcState.GetGhostFreakHauntTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Haunt", FormatTrackerSeconds(hauntTime),
+                    MathHelper.Clamp(hauntTime / 270f, 0f, 1f), new Color(210, 205, 245)));
             }
 
             if (npcState.IsJetrayLockedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Lock", FormatTrackerSeconds(npcState.JetrayLockTime),
-                    MathHelper.Clamp(npcState.JetrayLockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
+                int lockTime = npcState.GetJetrayLockTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Lock", FormatTrackerSeconds(lockTime),
+                    MathHelper.Clamp(lockTime / 420f, 0f, 1f), new Color(118, 255, 224)));
             }
 
             if (npcState.HasBigChillFrostbiteFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Hoarfrost", FormatTrackerSeconds(npcState.BigChillFrostbiteTime),
-                    MathHelper.Clamp(npcState.BigChillFrostbiteTime / (float)BigChillTransformation.HoarfrostDurationTicks, 0f, 1f),
+                int frostbiteTime = npcState.GetBigChillFrostbiteTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Hoarfrost", FormatTrackerSeconds(frostbiteTime),
+                    MathHelper.Clamp(frostbiteTime / (float)BigChillTransformation.HoarfrostDurationTicks, 0f, 1f),
                     new Color(145, 215, 255)));
             }
 
             if (npcState.IsBigChillFrigidFracturedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(npcState.BigChillFrigidFractureTime),
-                    MathHelper.Clamp(npcState.BigChillFrigidFractureTime / 240f, 0f, 1f), new Color(225, 246, 255)));
+                int frigidFractureTime = npcState.GetBigChillFrigidFractureTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Fracture", FormatTrackerSeconds(frigidFractureTime),
+                    MathHelper.Clamp(frigidFractureTime / 240f, 0f, 1f), new Color(225, 246, 255)));
             }
 
             if (npcState.HasHeatBlastFlashpointFor(player.whoAmI)) {
@@ -975,23 +990,27 @@ namespace Ben10Mod.Content.Interface {
             }
 
             if (npcState.IsWhampirePreyFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(npcState.WhampirePreyTime),
-                    MathHelper.Clamp(npcState.WhampirePreyTime / 420f, 0f, 1f), new Color(255, 128, 144)));
+                int preyTime = npcState.GetWhampirePreyTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Prey", FormatTrackerSeconds(preyTime),
+                    MathHelper.Clamp(preyTime / 420f, 0f, 1f), new Color(255, 128, 144)));
             }
 
             if (npcState.IsSnareOhCursedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Curse", $"{npcState.SnareOhCurseStacks}/7",
-                    MathHelper.Clamp(npcState.SnareOhCurseStacks / 7f, 0f, 1f), new Color(216, 194, 115)));
+                int curseStacks = npcState.GetSnareOhCurseStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Curse", $"{curseStacks}/7",
+                    MathHelper.Clamp(curseStacks / 7f, 0f, 1f), new Color(216, 194, 115)));
             }
 
             if (npcState.IsAlienXJudgedFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Judgement", $"{npcState.AlienXJudgementStacks}/6",
-                    MathHelper.Clamp(npcState.AlienXJudgementStacks / 6f, 0f, 1f), new Color(215, 215, 255)));
+                int judgementStacks = npcState.GetAlienXJudgementStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Judgement", $"{judgementStacks}/6",
+                    MathHelper.Clamp(judgementStacks / 6f, 0f, 1f), new Color(215, 215, 255)));
             }
 
             if (npcState.IsDreamboundFor(player.whoAmI)) {
-                entries.Add(new HeroTrackerEntry("Dreambound", FormatTrackerSeconds(npcState.PeskyDustDreamTime),
-                    MathHelper.Clamp(npcState.PeskyDustDreamTime / 360f, 0f, 1f), new Color(255, 188, 244)));
+                int dreamTime = npcState.GetPeskyDustDreamTime(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Dreambound", FormatTrackerSeconds(dreamTime),
+                    MathHelper.Clamp(dreamTime / 360f, 0f, 1f), new Color(255, 188, 244)));
             }
 
             return new HeroTrackerPanel(entries.Count > 0 ? $"Target: {ShortenTrackerText(targetNpc.GivenOrTypeName, 18)}" : null,
@@ -1066,6 +1085,7 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.IsJetrayLockedFor(owner)
                 || npcState.HasBigChillFrostbiteFor(owner)
                 || npcState.IsBigChillDeepFrozenFor(owner)
+                || npcState.HasHeatBlastFlashpointFor(owner)
                 || npcState.IsWhampirePreyFor(owner)
                 || npcState.IsSnareOhCursedFor(owner)
                 || npcState.IsAlienXJudgedFor(owner)
@@ -1585,8 +1605,7 @@ namespace Ben10Mod.Content.Interface {
             if (string.IsNullOrEmpty(currentlySelectedId)) return;
 
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            if (player.unlockedTransformations.Contains(currentlySelectedId)) {
-                player.transformationSlots[slotIndex] = currentlySelectedId;
+            if (player.Roster.TryAssignSlot(slotIndex, currentlySelectedId, OmnitrixPlayer.TransformationSlotCount)) {
                 player.SyncTransformationStateToServer();
                 UpdateInfoPanelFromTransformationId(player.transformationSlots[slotIndex]);
                 currentlySelectedId = "";
@@ -1595,9 +1614,10 @@ namespace Ben10Mod.Content.Interface {
 
         private void ClearSlot(int slotIndex) {
             var player = Main.LocalPlayer.GetModPlayer<OmnitrixPlayer>();
-            player.transformationSlots[slotIndex] = "";
-            player.SyncTransformationStateToServer();
-            UpdateInfoPanelFromTransformationId(player.transformationSlots[slotIndex]);
+            if (player.Roster.TryAssignSlot(slotIndex, string.Empty, OmnitrixPlayer.TransformationSlotCount)) {
+                player.SyncTransformationStateToServer();
+                UpdateInfoPanelFromTransformationId(player.transformationSlots[slotIndex]);
+            }
         }
 
         public override void Update(GameTime gameTime) {
@@ -1787,7 +1807,11 @@ namespace Ben10Mod.Content.Interface {
                 return;
             }
 
-            player.transformationSlots[selectedSlotIndex] = transformationId;
+            if (!player.Roster.TryAssignSlot(selectedSlotIndex, transformationId, OmnitrixPlayer.TransformationSlotCount)) {
+                player.ShowTransformFailureFeedback("That transformation is not unlocked.");
+                return;
+            }
+
             activeOmnitrix.transformationSlots = player.transformationSlots;
             player.SyncTransformationStateToServer();
 

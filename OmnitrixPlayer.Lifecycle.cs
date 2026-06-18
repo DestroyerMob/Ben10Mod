@@ -256,12 +256,7 @@ namespace Ben10Mod {
             else if (completedOmnitrixSyncTime > 0)
                 completedOmnitrixSyncTime--;
 
-            if (attackSelectionPulseTime > 0)
-                attackSelectionPulseTime--;
-            if (attackEnergyGainLockTime > 0)
-                attackEnergyGainLockTime--;
-            if (markAttackProjectilesNoEnergyGainTime > 0)
-                markAttackProjectilesNoEnergyGainTime--;
+            AttackSelectionState.Tick();
             if (ultimateReadyCueTime > 0)
                 ultimateReadyCueTime--;
 
@@ -342,7 +337,7 @@ namespace Ben10Mod {
 
             // Drop out of ultimate attack mode immediately when the Omnitrix can no longer sustain it.
             if (isTransformed && ultimateAttack &&
-                omnitrixEnergy < (CurrentTransformation?.GetUltimateAbilityCost(this) ?? 50)) {
+                !CanSpendOmnitrixEnergy(CurrentTransformation?.GetUltimateAbilityCost(this) ?? 50)) {
                 for (int i = 0; i < 50; i++) {
                     Dust d = Dust.NewDustPerfect(Player.Center + Main.rand.NextVector2Circular(20f, 20f),
                         DustID.Firework_Yellow,

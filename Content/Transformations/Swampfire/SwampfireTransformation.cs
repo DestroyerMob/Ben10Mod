@@ -103,7 +103,7 @@ public class SwampfireTransformation : Transformation {
             return true;
 
         int cost = GetSecondaryAbilityCost(omp);
-        if (omp.omnitrixEnergy < cost) {
+        if (!omp.CanSpendOmnitrixEnergy(cost)) {
             omp.ShowTransformFailureFeedback($"Need {cost} OE for {SecondaryAbilityName}.");
             return true;
         }
@@ -132,7 +132,7 @@ public class SwampfireTransformation : Transformation {
             return true;
 
         int cost = GetUltimateAbilityCost(omp);
-        if (omp.omnitrixEnergy < cost) {
+        if (!omp.CanSpendOmnitrixEnergy(cost)) {
             omp.ShowTransformFailureFeedback($"Need {cost} OE for {UltimateAbilityName}.");
             return true;
         }
@@ -206,8 +206,7 @@ public class SwampfireTransformation : Transformation {
     }
 
     private static void ConsumeEnergyAndCooldown(Player player, OmnitrixPlayer omp, int cost, int cooldown, int cooldownBuffType) {
-        if (cost > 0)
-            omp.omnitrixEnergy -= cost;
+        omp.TrySpendOmnitrixEnergy(cost);
 
         if (cooldown > 0)
             player.AddBuff(cooldownBuffType, cooldown);

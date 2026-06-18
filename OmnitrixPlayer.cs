@@ -338,18 +338,8 @@ namespace Ben10Mod {
         private int omniCoreReactorPulseCooldown = 0;
         private int xlr8DashAccessoryVisualTime = 0;
 
-        private HashSet<int> participatedEvents => Progression.ParticipatedEvents;
-        private HashSet<int> activeEvents => Progression.ActiveEvents;
-        private Dictionary<string, Dictionary<string, TransformationPaletteChannelSettings>> transformationPaletteOverrides =>
-            Customization.TransformationPaletteOverrides;
-        private Dictionary<string, TransformationPaletteChannelSettings> omnitrixVisualPaletteOverrides =>
-            Customization.OmnitrixVisualPaletteOverrides;
-        private HashSet<string> paletteEnabledChannels => Customization.PaletteEnabledChannels;
-        private Dictionary<string, string> selectedTransformationCostumes => Customization.SelectedTransformationCostumes;
-        private Dictionary<string, string> customTransformationNames => Customization.CustomTransformationNames;
         private HashSet<string> favoriteTransformations => Roster.Favorites;
         private HashSet<string> newlyUnlockedTransformations => Roster.NewlyUnlocked;
-        private Dictionary<string, PalettePresetData[]> palettePresets => Customization.PalettePresets;
         private const int BaseTransformationWidth = 20;
         private const int BaseTransformationHeight = 42;
         private const float MinimumTransformationScale = 0.35f;
@@ -415,11 +405,11 @@ namespace Ben10Mod {
         public bool IsPrimaryAbilityAttackLoaded => setAttack == AttackSelection.PrimaryAbility;
         public bool IsSecondaryAbilityAttackLoaded => setAttack == AttackSelection.SecondaryAbility;
         public bool IsTertiaryAbilityAttackLoaded => setAttack == AttackSelection.TertiaryAbility;
-        public bool HasLoadedAbilityAttack => IsAbilityAttackSelection(setAttack);
-        public bool HasLoadedBadgeAttack => setAttack is not AttackSelection.Primary and not AttackSelection.Secondary;
+        public bool HasLoadedAbilityAttack => AttackSelectionState.HasLoadedAbilityAttack;
+        public bool HasLoadedBadgeAttack => AttackSelectionState.HasLoadedBadgeAttack;
         public bool CompletedOmnitrixSyncActive => completedOmnitrixEquipped && completedOmnitrixSyncTime > 0;
         public int CompletedOmnitrixSyncTicksRemaining => completedOmnitrixSyncTime;
-        public float AttackSelectionPulseProgress => attackSelectionPulseTime / (float)AttackSelectionPulseDuration;
+        public float AttackSelectionPulseProgress => AttackSelectionState.GetPulseProgress(AttackSelectionPulseDuration);
         public float UltimateReadyCueProgress => ultimateReadyCueTime / (float)UltimateReadyCueDuration;
         public float TransformationSpeedBoostScale => transformationSpeedBoostPercent / (float)TransformationSpeedBoostPercentMax;
         public int HeroConvergenceHitCount => heroConvergenceHitCount;

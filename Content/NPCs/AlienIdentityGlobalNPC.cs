@@ -1,14 +1,7 @@
 using Ben10Mod.Content.Buffs.Debuffs;
-using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.EyeGuy;
-using Ben10Mod.Content.Transformations.Frankenstrike;
-using Ben10Mod.Content.Transformations.HeatBlast;
-using Ben10Mod.Content.Transformations.Humungousaur;
-using Ben10Mod.Content.Transformations.Rath;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.NPCs;
@@ -16,779 +9,302 @@ namespace Ben10Mod.Content.NPCs;
 public class AlienIdentityGlobalNPC : GlobalNPC {
     public override bool InstancePerEntity => true;
 
-    public int FasttrackComboOwner = -1;
-    public int FasttrackComboStacks;
-    public int FasttrackComboTime;
+    public FasttrackNpcState Fasttrack;
+    public AstrodactylNpcState Astrodactyl;
+    public BlitzwolferNpcState Blitzwolfer;
+    public EchoEchoNpcState EchoEcho;
+    public FrankenstrikeNpcState Frankenstrike;
+    public HumungousaurNpcState Humungousaur;
+    public LodestarNpcState Lodestar;
+    public WaterHazardNpcState WaterHazard;
+    public GhostFreakNpcState GhostFreak;
+    public JetrayNpcState Jetray;
+    public BigChillNpcState BigChill;
+    public HeatBlastNpcState HeatBlast;
+    public EyeGuyNpcState EyeGuy;
+    public WhampireNpcState Whampire;
+    public RathNpcState Rath;
+    public SnareOhNpcState SnareOh;
+    public AlienXNpcState AlienX;
+    public PeskyDustNpcState PeskyDust;
 
-    public int AstrodactylSkyMarkOwner = -1;
-    public int AstrodactylSkyMarkTime;
+    public bool IsFasttrackComboActiveFor(int owner) => Fasttrack.IsComboActiveFor(owner);
+    public bool IsSkyMarkedFor(int owner) => Astrodactyl.IsSkyMarkedFor(owner);
+    public bool IsBlitzwolferResonantFor(int owner) => Blitzwolfer.IsResonantFor(owner);
+    public bool IsEchoEchoResonantFor(int owner) => EchoEcho.IsResonantFor(owner);
+    public bool IsEchoEchoResonancePrimedFor(int owner) => EchoEcho.IsResonancePrimedFor(owner);
+    public bool IsEchoEchoFracturedFor(int owner) => EchoEcho.IsFracturedFor(owner);
+    public bool IsUltimateEchoEchoFocusedFor(int owner) => EchoEcho.IsFocusedFor(owner);
+    public bool IsFrankenstrikeConductiveFor(int owner) => Frankenstrike.IsConductiveFor(owner);
+    public bool IsFrankenstrikeOverchargedFor(int owner) => Frankenstrike.IsOverchargedFor(owner);
+    public bool IsHumungousaurBreachedFor(int owner) => Humungousaur.IsBreachedFor(owner);
+    public bool IsHumungousaurShatteredFor(int owner) => Humungousaur.IsShatteredFor(owner);
+    public bool HasLodestarPolarityFor(int owner) => Lodestar.HasPolarityFor(owner);
+    public bool IsWaterHazardSoakedFor(int owner) => WaterHazard.IsSoakedFor(owner);
+    public bool IsGhostFreakFearedFor(int owner) => GhostFreak.IsFearedFor(owner);
+    public bool IsGhostFreakHauntedFor(int owner) => GhostFreak.IsHauntedFor(owner);
+    public bool IsJetrayLockedFor(int owner) => Jetray.IsLockedFor(owner);
+    public bool HasBigChillFrostbiteFor(int owner) => BigChill.HasFrostbiteFor(owner);
+    public bool IsBigChillDeepFrozenFor(int owner) => BigChill.IsDeepFrozenFor(owner);
+    public bool IsBigChillFrigidFracturedFor(int owner) => BigChill.IsFrigidFracturedFor(owner);
+    public bool HasHeatBlastFlashpointFor(int owner) => HeatBlast.HasFlashpointFor(owner);
+    public bool IsEyeGuyExposedFor(int owner) => EyeGuy.IsExposedFor(owner);
+    public bool IsWhampirePreyFor(int owner) => Whampire.IsPreyFor(owner);
+    public bool IsRathPreyFor(int owner) => Rath.IsPreyFor(owner);
+    public bool IsSnareOhCursedFor(int owner) => SnareOh.IsCursedFor(owner);
+    public bool IsAlienXJudgedFor(int owner) => AlienX.IsJudgedFor(owner);
+    public bool IsDreamboundFor(int owner) => PeskyDust.IsDreamboundFor(owner);
 
-    public int BlitzwolferResonanceOwner = -1;
-    public int BlitzwolferResonanceStacks;
-    public int BlitzwolferResonanceTime;
-
-    public int EchoEchoResonanceOwner = -1;
-    public int EchoEchoResonanceStacks;
-    public int EchoEchoResonanceTime;
-    public int EchoEchoResonanceLastSource = -1;
-    public bool EchoEchoResonancePrimed;
-    public int EchoEchoFractureOwner = -1;
-    public int EchoEchoFractureTime;
-    public int UltimateEchoEchoFocusedOwner = -1;
-    public int UltimateEchoEchoFocusedTime;
-
-    public int FrankenstrikeConductiveOwner = -1;
-    public int FrankenstrikeConductiveStacks;
-    public int FrankenstrikeConductiveTime;
-    public int FrankenstrikeOverchargedOwner = -1;
-    public int FrankenstrikeOverchargedTime;
-    public int FrankenstrikeOverchargedArcTimer;
-
-    public int HumungousaurBreachOwner = -1;
-    public int HumungousaurBreachStacks;
-    public int HumungousaurBreachTime;
-    public int HumungousaurShatteredOwner = -1;
-    public int HumungousaurShatteredTime;
-
-    public int LodestarPolarityOwner = -1;
-    public int LodestarPolarityTime;
-    public int LodestarPolarityDirection = -1;
-
-    public int WaterHazardSoakOwner = -1;
-    public int WaterHazardSoak;
-    public int WaterHazardSoakTime;
-
-    public int GhostFreakFearOwner = -1;
-    public int GhostFreakFearStacks;
-    public int GhostFreakFearTime;
-    public int GhostFreakHauntOwner = -1;
-    public int GhostFreakHauntTime;
-
-    public int JetrayLockOwner = -1;
-    public int JetrayLockTime;
-
-    public int BigChillOwner = -1;
-    public int BigChillFrostbiteStacks;
-    public int BigChillFrostbiteTime;
-    public int BigChillDeepFreezeTime;
-    public int BigChillDeepFreezePressure;
-    public int BigChillDeepFreezeArmorPenetration = 8;
-    public int BigChillShiverburstCooldown;
-    public int BigChillFrigidFractureOwner = -1;
-    public int BigChillFrigidFractureTime;
-
-    public int HeatBlastOwner = -1;
-    public int HeatBlastFlashpointStacks;
-    public int HeatBlastFlashpointProgress;
-    public int HeatBlastFlashpointTime;
-    public int HeatBlastFlarePopCooldown;
-
-    public int EyeGuyOwner = -1;
-    public int EyeGuyFireMarkTime;
-    public int EyeGuyFrostMarkTime;
-    public int EyeGuyShockMarkTime;
-    public int EyeGuyExposedTime;
-
-    public int WhampirePreyOwner = -1;
-    public int WhampirePreyTime;
-    public int WhampireHypnosisTime;
-
-    public int RathPreyOwner = -1;
-    public int RathPreyTime;
-    public int RathRendStacks;
-
-    public int SnareOhCurseOwner = -1;
-    public int SnareOhCurseStacks;
-    public int SnareOhCurseTime;
-
-    public int AlienXJudgementOwner = -1;
-    public int AlienXJudgementStacks;
-    public int AlienXJudgementTime;
-    public int AlienXStasisTime;
-
-    public int PeskyDustOwner = -1;
-    public int PeskyDustDrowsy;
-    public int PeskyDustDrowsyTime;
-    public int PeskyDustDreamTime;
-
-    public bool IsFasttrackComboActiveFor(int owner) => FasttrackComboOwner == owner && FasttrackComboTime > 0 && FasttrackComboStacks > 0;
-    public bool IsSkyMarkedFor(int owner) => AstrodactylSkyMarkOwner == owner && AstrodactylSkyMarkTime > 0;
-    public bool IsBlitzwolferResonantFor(int owner) => BlitzwolferResonanceOwner == owner && BlitzwolferResonanceTime > 0 && BlitzwolferResonanceStacks > 0;
-    public bool IsEchoEchoResonantFor(int owner) => EchoEchoResonanceOwner == owner && EchoEchoResonanceTime > 0 && EchoEchoResonanceStacks > 0;
-    public bool IsEchoEchoResonancePrimedFor(int owner) => IsEchoEchoResonantFor(owner) && EchoEchoResonancePrimed;
-    public bool IsEchoEchoFracturedFor(int owner) => EchoEchoFractureOwner == owner && EchoEchoFractureTime > 0;
-    public bool IsUltimateEchoEchoFocusedFor(int owner) => UltimateEchoEchoFocusedOwner == owner && UltimateEchoEchoFocusedTime > 0;
-    public bool IsFrankenstrikeConductiveFor(int owner) => FrankenstrikeConductiveOwner == owner && FrankenstrikeConductiveTime > 0 && FrankenstrikeConductiveStacks > 0;
-    public bool IsFrankenstrikeOverchargedFor(int owner) => FrankenstrikeOverchargedOwner == owner && FrankenstrikeOverchargedTime > 0;
-    public bool IsHumungousaurBreachedFor(int owner) => HumungousaurBreachOwner == owner && HumungousaurBreachTime > 0 && HumungousaurBreachStacks > 0;
-    public bool IsHumungousaurShatteredFor(int owner) => HumungousaurShatteredOwner == owner && HumungousaurShatteredTime > 0;
-    public bool HasLodestarPolarityFor(int owner) => LodestarPolarityOwner == owner && LodestarPolarityTime > 0;
-    public bool IsWaterHazardSoakedFor(int owner) => WaterHazardSoakOwner == owner && WaterHazardSoakTime > 0 && WaterHazardSoak > 0;
-    public bool IsGhostFreakFearedFor(int owner) => GhostFreakFearOwner == owner && GhostFreakFearTime > 0 && GhostFreakFearStacks > 0;
-    public bool IsGhostFreakHauntedFor(int owner) => GhostFreakHauntOwner == owner && GhostFreakHauntTime > 0;
-    public bool IsJetrayLockedFor(int owner) => JetrayLockOwner == owner && JetrayLockTime > 0;
-    public bool HasBigChillFrostbiteFor(int owner) => BigChillOwner == owner && BigChillFrostbiteTime > 0 && BigChillFrostbiteStacks > 0;
-    public bool IsBigChillDeepFrozenFor(int owner) => BigChillOwner == owner && BigChillDeepFreezeTime > 0;
-    public bool IsBigChillFrigidFracturedFor(int owner) => BigChillFrigidFractureOwner == owner && BigChillFrigidFractureTime > 0;
-    public bool HasHeatBlastFlashpointFor(int owner) => HeatBlastOwner == owner && HeatBlastFlashpointTime > 0 && HeatBlastFlashpointStacks > 0;
-    public bool IsEyeGuyExposedFor(int owner) => EyeGuyOwner == owner && EyeGuyExposedTime > 0;
-    public bool IsWhampirePreyFor(int owner) => WhampirePreyOwner == owner && WhampirePreyTime > 0;
-    public bool IsRathPreyFor(int owner) => RathPreyOwner == owner && RathPreyTime > 0 && RathRendStacks > 0;
-    public bool IsSnareOhCursedFor(int owner) => SnareOhCurseOwner == owner && SnareOhCurseTime > 0 && SnareOhCurseStacks > 0;
-    public bool IsAlienXJudgedFor(int owner) => AlienXJudgementOwner == owner && AlienXJudgementTime > 0 && AlienXJudgementStacks > 0;
-    public bool IsDreamboundFor(int owner) => PeskyDustOwner == owner && PeskyDustDreamTime > 0;
-
-    public int GetBlitzwolferResonanceStacks(int owner) => IsBlitzwolferResonantFor(owner) ? BlitzwolferResonanceStacks : 0;
-    public int GetEchoEchoResonanceStacks(int owner) => IsEchoEchoResonantFor(owner) ? EchoEchoResonanceStacks : 0;
-    public int GetFrankenstrikeConductiveStacks(int owner) => FrankenstrikeConductiveOwner == owner ? FrankenstrikeConductiveStacks : 0;
-    public int GetHumungousaurBreachStacks(int owner) => IsHumungousaurBreachedFor(owner) ? HumungousaurBreachStacks : 0;
-    public int GetWaterHazardSoak(int owner) => IsWaterHazardSoakedFor(owner) ? WaterHazardSoak : 0;
-    public int GetGhostFreakFearStacks(int owner) => IsGhostFreakFearedFor(owner) ? GhostFreakFearStacks : 0;
-    public int GetSnareOhCurseStacks(int owner) => IsSnareOhCursedFor(owner) ? SnareOhCurseStacks : 0;
-    public int GetAlienXJudgementStacks(int owner) => IsAlienXJudgedFor(owner) ? AlienXJudgementStacks : 0;
-    public int GetHeatBlastFlashpointStacks(int owner) => HasHeatBlastFlashpointFor(owner) ? HeatBlastFlashpointStacks : 0;
-    public int GetRathRendStacks(int owner) => IsRathPreyFor(owner) ? RathRendStacks : 0;
-    public int GetBigChillFrostbiteStacks(int owner) {
-        if (BigChillOwner != owner)
-            return 0;
-
-        return BigChillFrostbiteTime > 0 ? System.Math.Max(1, BigChillFrostbiteStacks) : 0;
-    }
+    public int GetFasttrackComboStacks(int owner) => Fasttrack.GetComboStacks(owner);
+    public int GetSkyMarkTime(int owner) => Astrodactyl.GetSkyMarkTime(owner);
+    public int GetBlitzwolferResonanceStacks(int owner) => Blitzwolfer.GetResonanceStacks(owner);
+    public int GetEchoEchoResonanceStacks(int owner) => EchoEcho.GetResonanceStacks(owner);
+    public int GetEchoEchoFractureTime(int owner) => EchoEcho.GetFractureTime(owner);
+    public int GetUltimateEchoEchoFocusTime(int owner) => EchoEcho.GetFocusTime(owner);
+    public int GetFrankenstrikeConductiveStacks(int owner) => Frankenstrike.GetConductiveStacks(owner);
+    public int GetFrankenstrikeOverchargedTime(int owner) => Frankenstrike.GetOverchargedTime(owner);
+    public int GetHumungousaurBreachStacks(int owner) => Humungousaur.GetBreachStacks(owner);
+    public int GetHumungousaurShatteredTime(int owner) => Humungousaur.GetShatteredTime(owner);
+    public int GetLodestarPolarityTime(int owner) => Lodestar.GetPolarityTime(owner);
+    public int GetLodestarPolarityDirection(int owner) => Lodestar.GetPolarityDirection(owner);
+    public int GetWaterHazardSoak(int owner) => WaterHazard.GetSoak(owner);
+    public int GetGhostFreakFearStacks(int owner) => GhostFreak.GetFearStacks(owner);
+    public int GetGhostFreakHauntTime(int owner) => GhostFreak.IsHauntedFor(owner) ? GhostFreak.HauntTime : 0;
+    public int GetJetrayLockTime(int owner) => Jetray.GetLockTime(owner);
+    public int GetBigChillFrostbiteStacks(int owner) => BigChill.GetFrostbiteStacks(owner);
+    public int GetBigChillFrostbiteTime(int owner) => BigChill.GetFrostbiteTime(owner);
+    public int GetBigChillFrigidFractureTime(int owner) => BigChill.GetFrigidFractureTime(owner);
+    public int GetHeatBlastFlashpointStacks(int owner) => HeatBlast.GetFlashpointStacks(owner);
+    public int GetRathRendStacks(int owner) => Rath.GetRendStacks(owner);
+    public int GetWhampirePreyTime(int owner) => Whampire.GetPreyTime(owner);
+    public int GetSnareOhCurseStacks(int owner) => SnareOh.GetCurseStacks(owner);
+    public int GetAlienXJudgementStacks(int owner) => AlienX.GetJudgementStacks(owner);
+    public int GetPeskyDustDreamTime(int owner) => PeskyDust.GetDreamTime(owner);
 
     public void ApplyBigChillHoarfrost(int owner, int time, int armorPenetrationBonus = 4) {
-        if (BigChillOwner != owner) {
-            ClearBigChillState();
-            BigChillOwner = owner;
-        }
-
-        BigChillFrostbiteStacks = 1;
-        BigChillFrostbiteTime = Utils.Clamp(System.Math.Max(BigChillFrostbiteTime, time), 1, 360);
-        BigChillDeepFreezeTime = 0;
-        BigChillDeepFreezePressure = 0;
-        BigChillDeepFreezeArmorPenetration = System.Math.Max(0, armorPenetrationBonus);
+        BigChill.ApplyHoarfrost(owner, time, armorPenetrationBonus);
     }
 
     public bool ConsumeBigChillHoarfrost(int owner) {
-        if (!HasBigChillFrostbiteFor(owner))
-            return false;
-
-        ClearBigChillState();
-        return true;
+        return BigChill.ConsumeHoarfrost(owner);
     }
 
     public bool CanTriggerBigChillShiverburst(int owner) {
-        return BigChillOwner == owner && BigChillShiverburstCooldown <= 0;
+        return BigChill.CanTriggerShiverburst(owner);
     }
 
     public void TriggerBigChillShiverburstCooldown(int cooldown = 6) {
-        BigChillShiverburstCooldown = Utils.Clamp(cooldown, 1, 60);
+        BigChill.TriggerShiverburstCooldown(cooldown);
     }
 
     public void ApplyFasttrackCombo(int owner, int stacks, int time) {
-        if (FasttrackComboOwner != owner) {
-            FasttrackComboOwner = owner;
-            FasttrackComboStacks = 0;
-        }
-
-        FasttrackComboStacks = Utils.Clamp(FasttrackComboStacks + stacks, 0, 6);
-        FasttrackComboTime = Utils.Clamp(time, 1, 240);
+        Fasttrack.ApplyCombo(owner, stacks, time);
     }
 
     public void ApplySkyMark(int owner, int time) {
-        AstrodactylSkyMarkOwner = owner;
-        AstrodactylSkyMarkTime = Utils.Clamp(time, 1, 360);
+        Astrodactyl.ApplySkyMark(owner, time);
     }
 
     public void ApplyBlitzwolferResonance(int owner, int stacks, int time) {
-        if (BlitzwolferResonanceOwner != owner) {
-            BlitzwolferResonanceOwner = owner;
-            BlitzwolferResonanceStacks = 0;
-        }
-
-        BlitzwolferResonanceStacks = Utils.Clamp(BlitzwolferResonanceStacks + stacks, 0, 8);
-        BlitzwolferResonanceTime = Utils.Clamp(time, 1, 360);
+        Blitzwolfer.ApplyResonance(owner, stacks, time);
     }
 
     public int ConsumeBlitzwolferResonance(int owner) {
-        int stacks = GetBlitzwolferResonanceStacks(owner);
-        if (stacks <= 0)
-            return 0;
-
-        BlitzwolferResonanceStacks = 0;
-        BlitzwolferResonanceTime = 0;
-        BlitzwolferResonanceOwner = -1;
-        return stacks;
+        return Blitzwolfer.ConsumeResonance(owner);
     }
 
     public void ApplyEchoEchoResonance(int owner, int sourceId, int stacks, int time) {
-        if (EchoEchoResonanceOwner != owner) {
-            EchoEchoResonanceOwner = owner;
-            EchoEchoResonanceStacks = 0;
-            EchoEchoResonancePrimed = false;
-            EchoEchoResonanceLastSource = -1;
-        }
-
-        int gain = Utils.Clamp(stacks, 1, 3);
-        if (EchoEchoResonanceLastSource >= 0 && EchoEchoResonanceLastSource != sourceId)
-            gain++;
-
-        EchoEchoResonanceStacks = Utils.Clamp(EchoEchoResonanceStacks + gain, 0, 8);
-        EchoEchoResonancePrimed = EchoEchoResonanceStacks >= 8;
-        EchoEchoResonanceLastSource = sourceId;
-        EchoEchoResonanceTime = Utils.Clamp(time, 1, 360);
+        EchoEcho.ApplyResonance(owner, sourceId, stacks, time);
     }
 
     public int ConsumeEchoEchoResonance(int owner) {
-        int stacks = GetEchoEchoResonanceStacks(owner);
-        if (stacks <= 0)
-            return 0;
-
-        EchoEchoResonanceOwner = -1;
-        EchoEchoResonanceStacks = 0;
-        EchoEchoResonanceTime = 0;
-        EchoEchoResonanceLastSource = -1;
-        EchoEchoResonancePrimed = false;
-        return stacks;
+        return EchoEcho.ConsumeResonance(owner);
     }
 
     public void ApplyEchoEchoFracture(int owner, int time) {
-        EchoEchoFractureOwner = owner;
-        EchoEchoFractureTime = Utils.Clamp(time, 1, 240);
+        EchoEcho.ApplyFracture(owner, time);
     }
 
     public void ApplyUltimateEchoEchoFocus(int owner, int time) {
-        UltimateEchoEchoFocusedOwner = owner;
-        UltimateEchoEchoFocusedTime = Utils.Clamp(System.Math.Max(UltimateEchoEchoFocusedTime, time), 1, 300);
+        EchoEcho.ApplyFocus(owner, time);
     }
 
     public void ApplyFrankenstrikeConductive(int owner, int stacks, int time) {
-        if (FrankenstrikeConductiveOwner != owner) {
-            ClearFrankenstrikeState();
-            FrankenstrikeConductiveOwner = owner;
-        }
-
-        FrankenstrikeConductiveStacks = Utils.Clamp(FrankenstrikeConductiveStacks + stacks, 0, FrankenstrikeStatePlayer.ConductiveMaxStacks);
-        FrankenstrikeConductiveTime = Utils.Clamp(time, 1, 300);
-        if (FrankenstrikeOverchargedOwner == owner)
-            FrankenstrikeOverchargedTime = System.Math.Max(FrankenstrikeOverchargedTime, Utils.Clamp(time, 1, 300));
-
-        if (FrankenstrikeConductiveStacks >= FrankenstrikeStatePlayer.ConductiveMaxStacks)
-            PromoteFrankenstrikeOvercharged(owner, FrankenstrikeStatePlayer.OverchargedDurationTicks);
+        Frankenstrike.ApplyConductive(owner, stacks, time);
     }
 
     public int ConsumeFrankenstrikeConductive(int owner, int amount) {
-        int available = GetFrankenstrikeConductiveStacks(owner);
-        if (available <= 0)
-            return 0;
-
-        int consumed = System.Math.Min(available, amount);
-        FrankenstrikeConductiveStacks -= consumed;
-        if (FrankenstrikeConductiveStacks <= 0) {
-            FrankenstrikeConductiveOwner = -1;
-            FrankenstrikeConductiveTime = 0;
-            FrankenstrikeOverchargedOwner = -1;
-            FrankenstrikeOverchargedTime = 0;
-            FrankenstrikeOverchargedArcTimer = 0;
-        }
-
-        return consumed;
+        return Frankenstrike.ConsumeConductive(owner, amount);
     }
 
     public int ConsumeFrankenstrikeOvercharged(int owner, int residualConductiveStacks = 0) {
-        if (!IsFrankenstrikeOverchargedFor(owner))
-            return 0;
-
-        int consumed = FrankenstrikeConductiveStacks;
-        FrankenstrikeOverchargedOwner = -1;
-        FrankenstrikeOverchargedTime = 0;
-        FrankenstrikeOverchargedArcTimer = 0;
-
-        if (residualConductiveStacks > 0) {
-            FrankenstrikeConductiveOwner = owner;
-            FrankenstrikeConductiveStacks = Utils.Clamp(residualConductiveStacks, 0, FrankenstrikeStatePlayer.ConductiveMaxStacks - 1);
-            FrankenstrikeConductiveTime = 180;
-        }
-        else {
-            FrankenstrikeConductiveOwner = -1;
-            FrankenstrikeConductiveStacks = 0;
-            FrankenstrikeConductiveTime = 0;
-        }
-
-        return consumed;
-    }
-
-    private void PromoteFrankenstrikeOvercharged(int owner, int time) {
-        FrankenstrikeConductiveOwner = owner;
-        FrankenstrikeConductiveStacks = FrankenstrikeStatePlayer.ConductiveMaxStacks;
-        FrankenstrikeConductiveTime = Utils.Clamp(time, 1, 300);
-        FrankenstrikeOverchargedOwner = owner;
-        FrankenstrikeOverchargedTime = Utils.Clamp(time, 1, 300);
-        FrankenstrikeOverchargedArcTimer = 10;
-    }
-
-    private void ClearFrankenstrikeState() {
-        FrankenstrikeConductiveOwner = -1;
-        FrankenstrikeConductiveStacks = 0;
-        FrankenstrikeConductiveTime = 0;
-        FrankenstrikeOverchargedOwner = -1;
-        FrankenstrikeOverchargedTime = 0;
-        FrankenstrikeOverchargedArcTimer = 0;
+        return Frankenstrike.ConsumeOvercharged(owner, residualConductiveStacks);
     }
 
     public void ApplyHumungousaurBreach(int owner, int stacks, int time, int shatteredTime) {
-        if (HumungousaurBreachOwner != owner && HumungousaurShatteredOwner != owner)
-            ClearHumungousaurState();
-
-        HumungousaurBreachOwner = owner;
-        HumungousaurBreachStacks = Utils.Clamp(HumungousaurBreachStacks + stacks, 0, UltimateHumungousaurStatePlayer.BreachMaxStacks);
-        HumungousaurBreachTime = Utils.Clamp(System.Math.Max(HumungousaurBreachTime, time), 1, 420);
-
-        if (HumungousaurShatteredOwner == owner && HumungousaurShatteredTime > 0)
-            HumungousaurShatteredTime = Utils.Clamp(System.Math.Max(HumungousaurShatteredTime, time), 1, 420);
-
-        if (HumungousaurBreachStacks >= UltimateHumungousaurStatePlayer.BreachMaxStacks)
-            PromoteHumungousaurShattered(owner, shatteredTime);
+        Humungousaur.ApplyBreach(owner, stacks, time, shatteredTime);
     }
 
     public int ConsumeHumungousaurShattered(int owner, int residualStacks = 0) {
-        if (!IsHumungousaurShatteredFor(owner))
-            return 0;
-
-        int consumed = HumungousaurBreachStacks;
-        HumungousaurShatteredOwner = -1;
-        HumungousaurShatteredTime = 0;
-
-        if (residualStacks > 0) {
-            HumungousaurBreachOwner = owner;
-            HumungousaurBreachStacks = Utils.Clamp(residualStacks, 0, UltimateHumungousaurStatePlayer.BreachMaxStacks - 1);
-            HumungousaurBreachTime = 180;
-        }
-        else {
-            HumungousaurBreachOwner = -1;
-            HumungousaurBreachStacks = 0;
-            HumungousaurBreachTime = 0;
-        }
-
-        return consumed;
-    }
-
-    private void PromoteHumungousaurShattered(int owner, int time) {
-        HumungousaurBreachOwner = owner;
-        HumungousaurBreachStacks = UltimateHumungousaurStatePlayer.BreachMaxStacks;
-        HumungousaurBreachTime = Utils.Clamp(time, 1, 420);
-        HumungousaurShatteredOwner = owner;
-        HumungousaurShatteredTime = Utils.Clamp(time, 1, 420);
+        return Humungousaur.ConsumeShattered(owner, residualStacks);
     }
 
     public void ApplyLodestarPolarity(int owner, int time, int direction) {
-        LodestarPolarityOwner = owner;
-        LodestarPolarityTime = Utils.Clamp(time, 1, 300);
-        LodestarPolarityDirection = direction >= 0 ? 1 : -1;
+        Lodestar.ApplyPolarity(owner, time, direction);
     }
 
     public void AddWaterHazardSoak(int owner, int amount, int refreshTime) {
-        WaterHazardSoakOwner = owner;
-        WaterHazardSoak = Utils.Clamp(WaterHazardSoak + amount, 0, 100);
-        WaterHazardSoakTime = Utils.Clamp(refreshTime, 1, 360);
+        WaterHazard.AddSoak(owner, amount, refreshTime);
     }
 
     public int ConsumeWaterHazardSoak(int owner, int amount) {
-        int soaked = GetWaterHazardSoak(owner);
-        if (soaked <= 0)
-            return 0;
-
-        int consumed = System.Math.Min(soaked, amount);
-        WaterHazardSoak -= consumed;
-        if (WaterHazardSoak <= 0) {
-            WaterHazardSoakOwner = -1;
-            WaterHazardSoakTime = 0;
-        }
-
-        return consumed;
+        return WaterHazard.ConsumeSoak(owner, amount);
     }
 
     public void ApplyGhostFreakFear(int owner, int stacks, int refreshTime) {
-        if (GhostFreakFearOwner != owner) {
-            GhostFreakFearOwner = owner;
-            GhostFreakFearStacks = 0;
-        }
-
-        GhostFreakFearStacks = Utils.Clamp(GhostFreakFearStacks + stacks, 0, 5);
-        GhostFreakFearTime = Utils.Clamp(System.Math.Max(GhostFreakFearTime, refreshTime), 1, 420);
+        GhostFreak.ApplyFear(owner, stacks, refreshTime);
     }
 
     public void ApplyGhostFreakHaunt(int owner, int time) {
-        GhostFreakHauntOwner = owner;
-        GhostFreakHauntTime = Utils.Clamp(time, 1, 420);
-        ApplyGhostFreakFear(owner, 2, time);
+        GhostFreak.ApplyHaunt(owner, time);
     }
 
     public bool ConsumeGhostFreakHaunt(int owner) {
-        if (!IsGhostFreakHauntedFor(owner))
-            return false;
-
-        GhostFreakHauntOwner = -1;
-        GhostFreakHauntTime = 0;
-        return true;
+        return GhostFreak.ConsumeHaunt(owner);
     }
 
     public void ApplyJetrayLock(int owner, int time) {
-        JetrayLockOwner = owner;
-        JetrayLockTime = Utils.Clamp(time, 1, 420);
+        Jetray.ApplyLock(owner, time);
+    }
+
+    public bool ConsumeJetrayLock(int owner) {
+        return Jetray.ConsumeLock(owner);
     }
 
     public bool ApplyBigChillFrostbite(int owner, int stacks, int refreshTime, int deepFreezeTime,
         int armorPenetrationBonus = 8) {
-        if (BigChillOwner != owner) {
-            ClearBigChillState();
-            BigChillOwner = owner;
-        }
-
-        BigChillFrostbiteTime = Utils.Clamp(System.Math.Max(BigChillFrostbiteTime, refreshTime), 1, 420);
-        if (BigChillDeepFreezeTime > 0)
-            return false;
-
-        BigChillFrostbiteStacks = Utils.Clamp(BigChillFrostbiteStacks + stacks, 0, BigChillTransformation.FrostbiteThreshold);
-        if (BigChillFrostbiteStacks < BigChillTransformation.FrostbiteThreshold)
-            return false;
-
-        BigChillDeepFreezeTime = Utils.Clamp(deepFreezeTime, 1, 360);
-        BigChillFrostbiteTime = BigChillDeepFreezeTime;
-        BigChillDeepFreezePressure = 0;
-        BigChillDeepFreezeArmorPenetration = System.Math.Max(0, armorPenetrationBonus);
-        return true;
+        return BigChill.ApplyFrostbite(owner, stacks, refreshTime, deepFreezeTime, armorPenetrationBonus);
     }
 
     public bool RefreshBigChillDeepFreeze(int owner, int amount) {
-        if (!IsBigChillDeepFrozenFor(owner))
-            return false;
-
-        BigChillDeepFreezeTime = Utils.Clamp(BigChillDeepFreezeTime + System.Math.Max(1, amount), 1, 360);
-        BigChillFrostbiteTime = BigChillDeepFreezeTime;
-        return true;
+        return BigChill.RefreshDeepFreeze(owner, amount);
     }
 
     public bool AddBigChillDeepFreezePressure(int owner, int amount, int threshold) {
-        if (!IsBigChillDeepFrozenFor(owner))
-            return false;
-
-        BigChillDeepFreezePressure = Utils.Clamp(BigChillDeepFreezePressure + amount, 0, System.Math.Max(1, threshold));
-        return BigChillDeepFreezePressure >= threshold;
+        return BigChill.AddDeepFreezePressure(owner, amount, threshold);
     }
 
     public bool ConsumeBigChillDeepFreeze(int owner) {
-        if (!IsBigChillDeepFrozenFor(owner))
-            return false;
-
-        ClearBigChillState();
-        return true;
+        return BigChill.ConsumeDeepFreeze(owner);
     }
 
     public void ApplyBigChillFrigidFracture(int owner, int time) {
-        BigChillFrigidFractureOwner = owner;
-        BigChillFrigidFractureTime = Utils.Clamp(time, 1, 420);
+        BigChill.ApplyFrigidFracture(owner, time);
     }
 
     public int AddHeatBlastFlashpointProgress(int owner, int progress, int refreshTime, int threshold = 3, int maxStacks = 5) {
-        if (HeatBlastOwner != owner) {
-            ClearHeatBlastState();
-            HeatBlastOwner = owner;
-        }
-
-        HeatBlastFlashpointTime = Utils.Clamp(System.Math.Max(HeatBlastFlashpointTime, refreshTime), 1, 420);
-        if (HeatBlastFlashpointStacks >= maxStacks)
-            return 0;
-
-        HeatBlastFlashpointProgress += System.Math.Max(1, progress);
-        int gained = 0;
-        int clampedThreshold = System.Math.Max(1, threshold);
-        while (HeatBlastFlashpointProgress >= clampedThreshold && HeatBlastFlashpointStacks < maxStacks) {
-            HeatBlastFlashpointProgress -= clampedThreshold;
-            HeatBlastFlashpointStacks++;
-            gained++;
-        }
-
-        if (HeatBlastFlashpointStacks >= maxStacks)
-            HeatBlastFlashpointProgress = 0;
-
-        return gained;
+        return HeatBlast.AddFlashpointProgress(owner, progress, refreshTime, threshold, maxStacks);
     }
 
     public int ConsumeHeatBlastFlashpoint(int owner) {
-        if (HeatBlastOwner != owner || HeatBlastFlashpointStacks <= 0 || HeatBlastFlashpointTime <= 0)
-            return 0;
-
-        int consumed = HeatBlastFlashpointStacks;
-        ClearHeatBlastState();
-        return consumed;
+        return HeatBlast.ConsumeFlashpoint(owner);
     }
 
     public bool TryTriggerHeatBlastFlarePop(int owner, int cooldown) {
-        if (!HasHeatBlastFlashpointFor(owner) || HeatBlastFlashpointStacks < 5 || HeatBlastFlarePopCooldown > 0)
-            return false;
-
-        HeatBlastFlarePopCooldown = Utils.Clamp(cooldown, 1, 180);
-        return true;
+        return HeatBlast.TryTriggerFlarePop(owner, cooldown);
     }
 
     public bool HasEyeGuyMark(int owner, EyeGuyElement element) {
-        if (EyeGuyOwner != owner)
-            return false;
-
-        return element switch {
-            EyeGuyElement.Fire => EyeGuyFireMarkTime > 0,
-            EyeGuyElement.Frost => EyeGuyFrostMarkTime > 0,
-            _ => EyeGuyShockMarkTime > 0
-        };
+        return EyeGuy.HasMark(owner, element);
     }
 
     public int GetEyeGuyMarkCount(int owner) {
-        if (EyeGuyOwner != owner)
-            return 0;
-
-        int count = 0;
-        if (EyeGuyFireMarkTime > 0)
-            count++;
-        if (EyeGuyFrostMarkTime > 0)
-            count++;
-        if (EyeGuyShockMarkTime > 0)
-            count++;
-        return count;
+        return EyeGuy.GetMarkCount(owner);
     }
 
     public EyeGuyElement GetPreferredEyeGuyMark(int owner, EyeGuyElement fallback) {
-        if (EyeGuyOwner != owner || EyeGuyExposedTime > 0)
-            return fallback;
-
-        if (EyeGuyFireMarkTime <= 0)
-            return EyeGuyElement.Fire;
-        if (EyeGuyFrostMarkTime <= 0)
-            return EyeGuyElement.Frost;
-        if (EyeGuyShockMarkTime <= 0)
-            return EyeGuyElement.Shock;
-
-        return fallback;
+        return EyeGuy.GetPreferredMark(owner, fallback);
     }
 
     public bool ApplyEyeGuyMark(int owner, EyeGuyElement element, int time, int exposedTime) {
-        if (EyeGuyOwner != owner) {
-            ClearEyeGuyState();
-            EyeGuyOwner = owner;
-        }
-
-        if (EyeGuyExposedTime > 0)
-            return false;
-
-        int clampedTime = Utils.Clamp(time, 1, 420);
-        switch (element) {
-            case EyeGuyElement.Fire:
-                EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime, clampedTime);
-                break;
-            case EyeGuyElement.Frost:
-                EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime, clampedTime);
-                break;
-            default:
-                EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime, clampedTime);
-                break;
-        }
-
-        if (EyeGuyFireMarkTime <= 0 || EyeGuyFrostMarkTime <= 0 || EyeGuyShockMarkTime <= 0)
-            return false;
-
-        EyeGuyExposedTime = Utils.Clamp(exposedTime, 1, 600);
-        EyeGuyFireMarkTime = EyeGuyExposedTime;
-        EyeGuyFrostMarkTime = EyeGuyExposedTime;
-        EyeGuyShockMarkTime = EyeGuyExposedTime;
-        return true;
+        return EyeGuy.ApplyMark(owner, element, time, exposedTime);
     }
 
     public bool ConsumeEyeGuyExposed(int owner) {
-        if (!IsEyeGuyExposedFor(owner))
-            return false;
-
-        ClearEyeGuyState();
-        return true;
+        return EyeGuy.ConsumeExposed(owner);
     }
 
     public void ApplyWhampirePrey(int owner, int time) {
-        WhampirePreyOwner = owner;
-        WhampirePreyTime = Utils.Clamp(time, 1, 420);
+        Whampire.ApplyPrey(owner, time);
     }
 
     public void ApplyWhampireHypnosis(int time) {
-        WhampireHypnosisTime = Utils.Clamp(time, 1, 240);
+        Whampire.ApplyHypnosis(time);
     }
 
     public void ApplyRathPrey(int owner, int stacks, int time) {
-        if (RathPreyOwner != owner) {
-            RathPreyOwner = owner;
-            RathRendStacks = 0;
-        }
-
-        RathRendStacks = Utils.Clamp(RathRendStacks + System.Math.Max(0, stacks), 1, RathTransformation.RendMaxStacks);
-        RathPreyTime = Utils.Clamp(System.Math.Max(RathPreyTime, time), 1, RathTransformation.RendDurationTicks);
+        Rath.ApplyPrey(owner, stacks, time);
     }
 
     public int ConsumeRathRend(int owner) {
-        int stacks = GetRathRendStacks(owner);
-        if (stacks <= 0)
-            return 0;
-
-        ClearRathPrey(owner);
-        return stacks;
+        return Rath.ConsumeRend(owner);
     }
 
     public void ClearRathPrey(int owner = -1) {
-        if (owner >= 0 && RathPreyOwner != owner)
-            return;
-
-        RathPreyOwner = -1;
-        RathPreyTime = 0;
-        RathRendStacks = 0;
+        Rath.ClearPrey(owner);
     }
 
     public void ApplySnareOhCurse(int owner, int stacks, int time) {
-        if (SnareOhCurseOwner != owner) {
-            SnareOhCurseOwner = owner;
-            SnareOhCurseStacks = 0;
-        }
-
-        SnareOhCurseStacks = Utils.Clamp(SnareOhCurseStacks + stacks, 0, 7);
-        SnareOhCurseTime = Utils.Clamp(time, 1, 360);
+        SnareOh.ApplyCurse(owner, stacks, time);
     }
 
     public int ConsumeSnareOhCurse(int owner, int amount) {
-        int available = GetSnareOhCurseStacks(owner);
-        if (available <= 0)
-            return 0;
-
-        int consumed = System.Math.Min(available, amount);
-        SnareOhCurseStacks -= consumed;
-        if (SnareOhCurseStacks <= 0) {
-            SnareOhCurseOwner = -1;
-            SnareOhCurseTime = 0;
-        }
-
-        return consumed;
+        return SnareOh.ConsumeCurse(owner, amount);
     }
 
     public void ApplyAlienXJudgement(int owner, int stacks, int time) {
-        if (AlienXJudgementOwner != owner) {
-            AlienXJudgementOwner = owner;
-            AlienXJudgementStacks = 0;
-        }
-
-        AlienXJudgementStacks = Utils.Clamp(AlienXJudgementStacks + stacks, 0, 6);
-        AlienXJudgementTime = Utils.Clamp(time, 1, 420);
+        AlienX.ApplyJudgement(owner, stacks, time);
     }
 
     public int ConsumeAlienXJudgement(int owner, int amount = 99) {
-        int available = GetAlienXJudgementStacks(owner);
-        if (available <= 0)
-            return 0;
-
-        int consumed = System.Math.Min(available, amount);
-        AlienXJudgementStacks -= consumed;
-        if (AlienXJudgementStacks <= 0) {
-            AlienXJudgementOwner = -1;
-            AlienXJudgementTime = 0;
-        }
-
-        return consumed;
+        return AlienX.ConsumeJudgement(owner, amount);
     }
 
     public void ApplyAlienXStasis(int owner, int time, int judgementStacks = 0) {
-        AlienXStasisTime = Utils.Clamp(time, 1, 180);
-        if (judgementStacks > 0)
-            ApplyAlienXJudgement(owner, judgementStacks, time + 90);
+        AlienX.ApplyStasis(owner, time, judgementStacks);
     }
 
     public void AddPeskyDrowsy(int owner, int amount, int refreshTime, int dreamThreshold, int dreamTime) {
-        PeskyDustOwner = owner;
-        PeskyDustDrowsy = Utils.Clamp(PeskyDustDrowsy + amount, 0, dreamThreshold);
-        PeskyDustDrowsyTime = Utils.Clamp(refreshTime, 1, 300);
-
-        if (PeskyDustDrowsy >= dreamThreshold)
-            ApplyDreambound(owner, dreamTime, dreamThreshold / 3);
+        PeskyDust.AddDrowsy(owner, amount, refreshTime, dreamThreshold, dreamTime);
     }
 
     public void ApplyDreambound(int owner, int dreamTime, int residualDrowsy = 0) {
-        PeskyDustOwner = owner;
-        PeskyDustDreamTime = Utils.Clamp(dreamTime, 1, 360);
-        PeskyDustDrowsy = Utils.Clamp(residualDrowsy, 0, 99);
-        PeskyDustDrowsyTime = Utils.Clamp(dreamTime / 2, 1, 180);
+        PeskyDust.ApplyDreambound(owner, dreamTime, residualDrowsy);
     }
 
     public override void AI(NPC npc) {
-        if (GhostFreakHauntTime == 1)
-            TriggerGhostFreakHauntDetonation(npc);
+        GhostFreak.BeforeStatusTick(npc);
 
         TickStatuses();
 
-        if (FrankenstrikeOverchargedTime > 0)
-            HandleFrankenstrikeOvercharged(npc);
-
-        if (GhostFreakFearTime > 0)
-            ApplyGhostFreakFearControl(npc);
-
-        if (GhostFreakHauntTime > 0)
-            npc.velocity *= npc.boss ? 0.985f : 0.92f;
-
-        if (WhampireHypnosisTime > 0) {
-            float dampening = npc.boss ? 0.92f : 0.55f;
-            npc.velocity *= dampening;
-            if (!npc.boss)
-                npc.velocity.Y = MathHelper.Clamp(npc.velocity.Y, -0.8f, 0.8f);
-        }
-
-        if (AlienXStasisTime > 0) {
-            float dampening = npc.boss ? 0.88f : 0.22f;
-            npc.velocity *= dampening;
-            if (!npc.boss)
-                npc.velocity = Vector2.Clamp(npc.velocity, new Vector2(-0.45f, -0.45f), new Vector2(0.45f, 0.45f));
-        }
-
-        if (BigChillDeepFreezeTime > 0) {
-            float dampening = npc.boss ? 0.94f : 0.72f;
-            npc.velocity *= dampening;
-            if (!npc.boss)
-                npc.velocity = Vector2.Clamp(npc.velocity, new Vector2(-2.1f, -2.1f), new Vector2(2.1f, 2.1f));
-        }
-        else if (BigChillFrostbiteTime > 0) {
-            float dampening = npc.boss ? 0.97f : 0.84f;
-            npc.velocity *= dampening;
-        }
-
-        if (HumungousaurShatteredTime > 0) {
-            float dampening = npc.boss ? 0.95f : 0.78f;
-            npc.velocity *= dampening;
-            if (!npc.boss)
-                npc.velocity = Vector2.Clamp(npc.velocity, new Vector2(-3.2f, -3.2f), new Vector2(3.2f, 3.2f));
-        }
-        else if (HumungousaurBreachTime > 0) {
-            float dampening = npc.boss ? 0.985f : 0.92f;
-            npc.velocity *= dampening;
-        }
-
-        if (PeskyDustDreamTime > 0) {
-            float driftDampening = npc.boss ? 0.96f : 0.78f;
-            npc.velocity *= driftDampening;
-            if (!npc.boss)
-                npc.velocity.Y = MathHelper.Clamp(npc.velocity.Y - 0.05f, -1.6f, 1.2f);
-        }
+        Frankenstrike.HandleOverchargedArcs(npc);
+        GhostFreak.ApplyAI(npc);
+        Whampire.ApplyAI(npc);
+        AlienX.ApplyAI(npc);
+        BigChill.ApplyAI(npc);
+        Humungousaur.ApplyAI(npc);
+        PeskyDust.ApplyAI(npc);
     }
 
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers) {
-        if (BigChillFrostbiteTime > 0 && player.whoAmI == BigChillOwner)
-            modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
+        modifiers.ArmorPenetration += BigChill.GetArmorPenetration(player.whoAmI);
 
         if (IsFrankenstrikeOverchargedFor(player.whoAmI))
             modifiers.ArmorPenetration += 8;
     }
 
     public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers) {
-        if (BigChillFrostbiteTime > 0 && projectile.owner == BigChillOwner)
-            modifiers.ArmorPenetration += BigChillDeepFreezeArmorPenetration;
+        modifiers.ArmorPenetration += BigChill.GetArmorPenetration(projectile.owner);
 
         if (IsFrankenstrikeOverchargedFor(projectile.owner))
             modifiers.ArmorPenetration += 8;
@@ -805,472 +321,59 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     }
 
     public override void OnKill(NPC npc) {
-        if (EyeGuyExposedTime <= 0 || EyeGuyOwner < 0 || EyeGuyOwner >= Main.maxPlayers)
+        int eyeGuyOwner = EyeGuy.GetExposedOwner();
+        if (eyeGuyOwner < 0 || eyeGuyOwner >= Main.maxPlayers)
             return;
 
-        Player owner = Main.player[EyeGuyOwner];
+        Player owner = Main.player[eyeGuyOwner];
         if (!owner.active)
             return;
 
         owner.GetModPlayer<OmnitrixPlayer>().RestoreOmnitrixEnergy(npc.boss ? 1.5f : 3f);
     }
 
-    private void HandleFrankenstrikeOvercharged(NPC npc) {
-        if (Main.netMode == NetmodeID.MultiplayerClient)
-            return;
-
-        if (FrankenstrikeOverchargedArcTimer > 0) {
-            FrankenstrikeOverchargedArcTimer--;
-            return;
-        }
-
-        if (FrankenstrikeOverchargedOwner < 0 || FrankenstrikeOverchargedOwner >= Main.maxPlayers)
-            return;
-
-        Player owner = Main.player[FrankenstrikeOverchargedOwner];
-        if (!owner.active || owner.dead)
-            return;
-
-        FrankenstrikeOverchargedArcTimer = npc.boss ? 34 : 24;
-        int remainingTargets = npc.boss ? 1 : 2;
-        int arcDamage = FrankenstrikeTransformation.ResolveHeroDamage(owner, npc.boss ? 0.18f : 0.24f);
-
-        foreach (NPC other in Main.ActiveNPCs) {
-            if (remainingTargets <= 0 || other.whoAmI == npc.whoAmI || !other.CanBeChasedBy())
-                continue;
-
-            if (other.Center.Distance(npc.Center) > 176f)
-                continue;
-
-            other.SimpleStrikeNPC(arcDamage, owner.direction, false, 0f, ModContent.GetInstance<HeroDamage>());
-            other.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyFrankenstrikeConductive(owner.whoAmI, 1 + (other.wet ? 1 : 0), 150);
-            other.AddBuff(BuffID.Electrified, 120);
-            other.netUpdate = true;
-            remainingTargets--;
-
-            if (Main.dedServ)
-                continue;
-
-            Vector2 arcDirection = (other.Center - npc.Center).SafeNormalize(Vector2.UnitX);
-            for (int i = 0; i < 8; i++) {
-                float progress = i / 7f;
-                Dust dust = Dust.NewDustPerfect(Vector2.Lerp(npc.Center, other.Center, progress), DustID.Electric,
-                    arcDirection.RotatedByRandom(0.42f) * Main.rand.NextFloat(0.15f, 0.85f), 105,
-                    new Color(185, 228, 255), Main.rand.NextFloat(0.88f, 1.1f));
-                dust.noGravity = true;
-            }
-        }
-    }
-
-    private void ApplyGhostFreakFearControl(NPC npc) {
-        if (GhostFreakFearOwner < 0 || GhostFreakFearOwner >= Main.maxPlayers)
-            return;
-
-        Player owner = Main.player[GhostFreakFearOwner];
-        if (!owner.active || owner.dead)
-            return;
-
-        float fearRatio = MathHelper.Clamp(GhostFreakFearStacks / 5f, 0f, 1f);
-        if (npc.boss) {
-            npc.velocity *= MathHelper.Lerp(0.99f, 0.965f, fearRatio);
-            return;
-        }
-
-        Vector2 away = (npc.Center - owner.Center).SafeNormalize(Vector2.Zero);
-        if (away == Vector2.Zero)
-            away = new Vector2(npc.direction == 0 ? 1f : npc.direction, 0f);
-
-        Vector2 panicVelocity = npc.velocity + away * MathHelper.Lerp(0.18f, 0.68f, fearRatio);
-        npc.velocity = Vector2.Lerp(npc.velocity, panicVelocity, MathHelper.Lerp(0.08f, 0.18f, fearRatio));
-        npc.velocity *= MathHelper.Lerp(0.98f, 0.92f, fearRatio);
-        npc.velocity.X = MathHelper.Clamp(npc.velocity.X, -8f, 8f);
-        npc.velocity.Y = MathHelper.Clamp(npc.velocity.Y, -6f, 6f);
-    }
-
-    private void TriggerGhostFreakHauntDetonation(NPC npc) {
-        if (Main.netMode == NetmodeID.MultiplayerClient || GhostFreakHauntOwner < 0 || GhostFreakHauntOwner >= Main.maxPlayers)
-            return;
-
-        Player owner = Main.player[GhostFreakHauntOwner];
-        if (!owner.active || owner.dead)
-            return;
-
-        int fearStacks = GetGhostFreakFearStacks(owner.whoAmI);
-        float baseDamage = npc.boss ? 34f : 48f;
-        int damage = System.Math.Max(1,
-            (int)System.Math.Round(owner.GetDamage<HeroDamage>().ApplyTo(baseDamage + fearStacks * 7f)));
-        int hitDirection = npc.Center.X >= owner.Center.X ? 1 : -1;
-        npc.SimpleStrikeNPC(damage, hitDirection, false, 0f, ModContent.GetInstance<HeroDamage>());
-        npc.AddBuff(BuffID.Confused, npc.boss ? 90 : 210);
-        npc.netUpdate = true;
-    }
-
     public override void DrawEffects(NPC npc, ref Color drawColor) {
         if (npc.HasBuff(ModContent.BuffType<AlienXSupernovaBurn>()))
             drawColor = Color.Lerp(drawColor, new Color(255, 188, 118), 0.34f);
 
-        if (FasttrackComboTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(110, 255, 210), 0.2f + FasttrackComboStacks * 0.04f);
-
-        if (AstrodactylSkyMarkTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(140, 255, 210), 0.28f);
-
-        if (BlitzwolferResonanceTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(115, 255, 145), 0.16f + BlitzwolferResonanceStacks * 0.03f);
-
-        if (EchoEchoResonanceTime > 0)
-            drawColor = Color.Lerp(drawColor, EchoEchoResonancePrimed ? new Color(178, 238, 255) : new Color(150, 205, 255),
-                0.12f + EchoEchoResonanceStacks * 0.025f);
-
-        if (EchoEchoFractureTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(205, 235, 255), 0.18f);
-
-        if (UltimateEchoEchoFocusedTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(165, 228, 255), 0.28f);
-
-        if (FrankenstrikeConductiveTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(120, 205, 255), 0.18f + FrankenstrikeConductiveStacks * 0.04f);
-
-        if (FrankenstrikeOverchargedTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(225, 242, 255), 0.24f);
-
-        if (HumungousaurBreachTime > 0) {
-            float breachRatio = HumungousaurBreachStacks / (float)UltimateHumungousaurStatePlayer.BreachMaxStacks;
-            Color breachColor = Color.Lerp(new Color(208, 112, 72), new Color(255, 208, 148), breachRatio);
-            drawColor = Color.Lerp(drawColor, breachColor, 0.14f + breachRatio * 0.18f);
-        }
-
-        if (HumungousaurShatteredTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(255, 232, 188), 0.24f);
-
-        if (LodestarPolarityTime > 0)
-            drawColor = Color.Lerp(drawColor, LodestarPolarityDirection >= 0 ? new Color(255, 120, 95) : new Color(125, 180, 255), 0.2f);
-
-        if (WaterHazardSoakTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(120, 215, 255), 0.08f + 0.18f * (WaterHazardSoak / 100f));
-
-        if (GhostFreakHauntTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(150, 95, 210), 0.35f);
-        else if (GhostFreakFearTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(92, 72, 130), 0.16f + GhostFreakFearStacks * 0.035f);
-
-        if (JetrayLockTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(100, 255, 225), 0.24f);
-
-        if (BigChillFrostbiteTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(178, 232, 255), 0.22f);
-
-        if (BigChillFrigidFractureTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(236, 248, 255), 0.16f);
-
-        if (HeatBlastFlashpointTime > 0) {
-            float flashpointRatio = HeatBlastFlashpointStacks / 5f;
-            Color flashpointColor = Color.Lerp(new Color(255, 138, 62), new Color(255, 242, 210), flashpointRatio);
-            drawColor = Color.Lerp(drawColor, flashpointColor, 0.12f + flashpointRatio * 0.22f);
-        }
-
-        if (EyeGuyExposedTime > 0) {
-            drawColor = Color.Lerp(drawColor, new Color(255, 228, 170), 0.36f);
-        }
-        else if (EyeGuyFireMarkTime > 0 || EyeGuyFrostMarkTime > 0 || EyeGuyShockMarkTime > 0) {
-            int red = 180;
-            int green = 180;
-            int blue = 180;
-            int markCount = 0;
-            if (EyeGuyFireMarkTime > 0) {
-                red += 75;
-                green += 10;
-                markCount++;
-            }
-            if (EyeGuyFrostMarkTime > 0) {
-                green += 55;
-                blue += 75;
-                markCount++;
-            }
-            if (EyeGuyShockMarkTime > 0) {
-                green += 20;
-                blue += 75;
-                markCount++;
-            }
-
-            Color markColor = new Color((byte)Utils.Clamp(red, 0, 255), (byte)Utils.Clamp(green, 0, 255),
-                (byte)Utils.Clamp(blue, 0, 255));
-            drawColor = Color.Lerp(drawColor, markColor, 0.12f + markCount * 0.06f);
-        }
-
-        if (WhampirePreyTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(170, 45, 60), 0.3f);
-
-        if (RathPreyTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(255, 96, 66), 0.16f + RathRendStacks * 0.04f);
-
-        if (WhampireHypnosisTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(255, 170, 185), 0.36f);
-
-        if (SnareOhCurseTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(220, 190, 120), 0.14f + SnareOhCurseStacks * 0.03f);
-
-        if (AlienXJudgementTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(190, 200, 255), 0.16f + AlienXJudgementStacks * 0.04f);
-
-        if (AlienXStasisTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(240, 245, 255), 0.28f);
-
-        if (PeskyDustDreamTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(255, 228, 180), 0.34f);
-        else if (PeskyDustDrowsy > 0)
-            drawColor = Color.Lerp(drawColor, new Color(255, 210, 235), 0.12f + 0.18f * (PeskyDustDrowsy / 100f));
+        Fasttrack.ApplyDrawEffects(ref drawColor);
+        Astrodactyl.ApplyDrawEffects(ref drawColor);
+        Blitzwolfer.ApplyDrawEffects(ref drawColor);
+        EchoEcho.ApplyDrawEffects(ref drawColor);
+        Frankenstrike.ApplyDrawEffects(ref drawColor);
+        Humungousaur.ApplyDrawEffects(ref drawColor);
+        Lodestar.ApplyDrawEffects(ref drawColor);
+        WaterHazard.ApplyDrawEffects(ref drawColor);
+        GhostFreak.ApplyDrawEffects(ref drawColor);
+        Jetray.ApplyDrawEffects(ref drawColor);
+        BigChill.ApplyDrawEffects(ref drawColor);
+        HeatBlast.ApplyDrawEffects(ref drawColor);
+        EyeGuy.ApplyDrawEffects(ref drawColor);
+        Rath.ApplyDrawEffects(ref drawColor);
+        Whampire.ApplyDrawEffects(ref drawColor);
+        SnareOh.ApplyDrawEffects(ref drawColor);
+        AlienX.ApplyDrawEffects(ref drawColor);
+        PeskyDust.ApplyDrawEffects(ref drawColor);
     }
 
     private void TickStatuses() {
-        if (FasttrackComboTime > 0) {
-            FasttrackComboTime--;
-        }
-        else {
-            FasttrackComboOwner = -1;
-            FasttrackComboStacks = 0;
-        }
-
-        if (AstrodactylSkyMarkTime > 0) {
-            AstrodactylSkyMarkTime--;
-        }
-        else {
-            AstrodactylSkyMarkOwner = -1;
-        }
-
-        if (BlitzwolferResonanceTime > 0) {
-            BlitzwolferResonanceTime--;
-        }
-        else {
-            BlitzwolferResonanceOwner = -1;
-            BlitzwolferResonanceStacks = 0;
-        }
-
-        if (EchoEchoResonanceTime > 0) {
-            EchoEchoResonanceTime--;
-        }
-        else {
-            EchoEchoResonanceOwner = -1;
-            EchoEchoResonanceStacks = 0;
-            EchoEchoResonanceLastSource = -1;
-            EchoEchoResonancePrimed = false;
-        }
-
-        if (EchoEchoFractureTime > 0) {
-            EchoEchoFractureTime--;
-        }
-        else {
-            EchoEchoFractureOwner = -1;
-        }
-
-        if (UltimateEchoEchoFocusedTime > 0) {
-            UltimateEchoEchoFocusedTime--;
-        }
-        else {
-            UltimateEchoEchoFocusedOwner = -1;
-        }
-
-        if (FrankenstrikeOverchargedTime > 0) {
-            FrankenstrikeOverchargedTime--;
-            FrankenstrikeConductiveTime = System.Math.Max(FrankenstrikeConductiveTime - 1, 0);
-            if (FrankenstrikeOverchargedTime <= 0)
-                ClearFrankenstrikeState();
-        }
-        else if (FrankenstrikeConductiveTime > 0) {
-            FrankenstrikeConductiveTime--;
-        }
-        else {
-            ClearFrankenstrikeState();
-        }
-
-        if (HumungousaurShatteredTime > 0) {
-            HumungousaurShatteredTime--;
-            HumungousaurBreachTime = System.Math.Max(HumungousaurBreachTime - 1, 0);
-            if (HumungousaurShatteredTime <= 0)
-                ClearHumungousaurState();
-        }
-        else if (HumungousaurBreachTime > 0) {
-            HumungousaurBreachTime--;
-            if (HumungousaurBreachTime <= 0 || HumungousaurBreachStacks <= 0)
-                ClearHumungousaurState();
-        }
-        else {
-            ClearHumungousaurState();
-        }
-
-        if (LodestarPolarityTime > 0) {
-            LodestarPolarityTime--;
-        }
-        else {
-            LodestarPolarityOwner = -1;
-            LodestarPolarityDirection = -1;
-        }
-
-        if (WaterHazardSoakTime > 0) {
-            WaterHazardSoakTime--;
-            if (WaterHazardSoakTime % 45 == 0)
-                WaterHazardSoak = System.Math.Max(0, WaterHazardSoak - 6);
-        }
-        else {
-            WaterHazardSoakOwner = -1;
-            WaterHazardSoak = 0;
-        }
-
-        if (GhostFreakFearTime > 0) {
-            GhostFreakFearTime--;
-            if (GhostFreakFearTime % 55 == 0)
-                GhostFreakFearStacks = System.Math.Max(0, GhostFreakFearStacks - 1);
-        }
-        else {
-            GhostFreakFearOwner = -1;
-            GhostFreakFearStacks = 0;
-        }
-
-        if (GhostFreakHauntTime > 0) {
-            GhostFreakHauntTime--;
-        }
-        else {
-            GhostFreakHauntOwner = -1;
-        }
-
-        if (JetrayLockTime > 0) {
-            JetrayLockTime--;
-        }
-        else {
-            JetrayLockOwner = -1;
-        }
-
-        if (BigChillOwner != -1) {
-            BigChillFrostbiteTime = System.Math.Max(BigChillFrostbiteTime - 1, 0);
-            BigChillDeepFreezeTime = 0;
-            BigChillDeepFreezePressure = 0;
-            if (BigChillFrostbiteTime <= 0 || BigChillFrostbiteStacks <= 0)
-                ClearBigChillState();
-        }
-
-        if (BigChillShiverburstCooldown > 0)
-            BigChillShiverburstCooldown--;
-
-        if (BigChillFrigidFractureTime > 0) {
-            BigChillFrigidFractureTime--;
-        }
-        else {
-            BigChillFrigidFractureOwner = -1;
-        }
-
-        if (HeatBlastFlashpointTime > 0) {
-            HeatBlastFlashpointTime--;
-            if (HeatBlastFlashpointTime <= 0)
-                ClearHeatBlastState();
-        }
-        else {
-            HeatBlastOwner = -1;
-            HeatBlastFlashpointStacks = 0;
-            HeatBlastFlashpointProgress = 0;
-        }
-
-        if (HeatBlastFlarePopCooldown > 0)
-            HeatBlastFlarePopCooldown--;
-
-        if (EyeGuyExposedTime > 0) {
-            EyeGuyExposedTime--;
-            EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
-            EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime - 1, 0);
-            EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime - 1, 0);
-            if (EyeGuyExposedTime <= 0)
-                ClearEyeGuyState();
-        }
-        else if (EyeGuyOwner != -1) {
-            EyeGuyFireMarkTime = System.Math.Max(EyeGuyFireMarkTime - 1, 0);
-            EyeGuyFrostMarkTime = System.Math.Max(EyeGuyFrostMarkTime - 1, 0);
-            EyeGuyShockMarkTime = System.Math.Max(EyeGuyShockMarkTime - 1, 0);
-            if (EyeGuyFireMarkTime <= 0 && EyeGuyFrostMarkTime <= 0 && EyeGuyShockMarkTime <= 0)
-                ClearEyeGuyState();
-        }
-
-        if (WhampirePreyTime > 0) {
-            WhampirePreyTime--;
-        }
-        else {
-            WhampirePreyOwner = -1;
-        }
-
-        if (WhampireHypnosisTime > 0)
-            WhampireHypnosisTime--;
-
-        if (RathPreyTime > 0) {
-            RathPreyTime--;
-        }
-        else {
-            ClearRathPrey();
-        }
-
-        if (SnareOhCurseTime > 0) {
-            SnareOhCurseTime--;
-        }
-        else {
-            SnareOhCurseOwner = -1;
-            SnareOhCurseStacks = 0;
-        }
-
-        if (AlienXJudgementTime > 0) {
-            AlienXJudgementTime--;
-        }
-        else {
-            AlienXJudgementOwner = -1;
-            AlienXJudgementStacks = 0;
-        }
-
-        if (AlienXStasisTime > 0)
-            AlienXStasisTime--;
-
-        if (PeskyDustDrowsyTime > 0) {
-            PeskyDustDrowsyTime--;
-            if (PeskyDustDrowsyTime % 40 == 0 && PeskyDustDreamTime <= 0)
-                PeskyDustDrowsy = System.Math.Max(0, PeskyDustDrowsy - 8);
-        }
-        else {
-            PeskyDustDrowsy = System.Math.Max(0, PeskyDustDrowsy - 12);
-        }
-
-        if (PeskyDustDreamTime > 0) {
-            PeskyDustDreamTime--;
-        }
-        else if (PeskyDustOwner != -1 && PeskyDustDrowsy <= 0) {
-            PeskyDustOwner = -1;
-        }
-    }
-
-    private void ClearEyeGuyState() {
-        EyeGuyOwner = -1;
-        EyeGuyFireMarkTime = 0;
-        EyeGuyFrostMarkTime = 0;
-        EyeGuyShockMarkTime = 0;
-        EyeGuyExposedTime = 0;
-    }
-
-    private void ClearBigChillState() {
-        BigChillOwner = -1;
-        BigChillFrostbiteStacks = 0;
-        BigChillFrostbiteTime = 0;
-        BigChillDeepFreezeTime = 0;
-        BigChillDeepFreezePressure = 0;
-        BigChillDeepFreezeArmorPenetration = 8;
-        BigChillShiverburstCooldown = 0;
-    }
-
-    private void ClearHeatBlastState() {
-        HeatBlastOwner = -1;
-        HeatBlastFlashpointStacks = 0;
-        HeatBlastFlashpointProgress = 0;
-        HeatBlastFlashpointTime = 0;
-    }
-
-    private void ClearHumungousaurState() {
-        HumungousaurBreachOwner = -1;
-        HumungousaurBreachStacks = 0;
-        HumungousaurBreachTime = 0;
-        HumungousaurShatteredOwner = -1;
-        HumungousaurShatteredTime = 0;
+        Fasttrack.Tick();
+        Astrodactyl.Tick();
+        Blitzwolfer.Tick();
+        EchoEcho.Tick();
+        Frankenstrike.Tick();
+        Humungousaur.Tick();
+        Lodestar.Tick();
+        WaterHazard.Tick();
+        GhostFreak.Tick();
+        Jetray.Tick();
+        BigChill.Tick();
+        HeatBlast.Tick();
+        EyeGuy.Tick();
+        Whampire.Tick();
+        Rath.Tick();
+        SnareOh.Tick();
+        AlienX.Tick();
+        PeskyDust.Tick();
     }
 }

@@ -223,12 +223,15 @@ public class BigChillTransformation : Transformation {
         if (player.HasBuff<PrimaryAbilityCooldown>() || player.HasBuff<PrimaryAbility>() || player.dead || player.CCed)
             return true;
 
-        if (omp.omnitrixEnergy < GetPrimaryAbilityCost(omp)) {
-            omp.ShowTransformFailureFeedback($"Need {GetPrimaryAbilityCost(omp)} OE for {PrimaryAbilityName}.");
+        int phaseDriftCost = GetPrimaryAbilityCost(omp);
+        if (!omp.CanSpendOmnitrixEnergy(phaseDriftCost)) {
+            omp.ShowTransformFailureFeedback($"Need {phaseDriftCost} OE for {PrimaryAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= GetPrimaryAbilityCost(omp);
+        if (!omp.TrySpendOmnitrixEnergy(phaseDriftCost))
+            return true;
+
         omp.primaryAbilityTransformationId = omp.currentTransformationId;
         player.AddBuff(ModContent.BuffType<PrimaryAbility>(), GetPrimaryAbilityDuration(omp));
         player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GetPrimaryAbilityCooldown(omp));
@@ -241,12 +244,15 @@ public class BigChillTransformation : Transformation {
             player.GetModPlayer<BigChillStatePlayer>().AbsoluteZeroActive || player.dead || player.CCed)
             return true;
 
-        if (omp.omnitrixEnergy < GetSecondaryAbilityCost(omp)) {
-            omp.ShowTransformFailureFeedback($"Need {GetSecondaryAbilityCost(omp)} OE for {SecondaryAbilityName}.");
+        int wailingWakeCost = GetSecondaryAbilityCost(omp);
+        if (!omp.CanSpendOmnitrixEnergy(wailingWakeCost)) {
+            omp.ShowTransformFailureFeedback($"Need {wailingWakeCost} OE for {SecondaryAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= GetSecondaryAbilityCost(omp);
+        if (!omp.TrySpendOmnitrixEnergy(wailingWakeCost))
+            return true;
+
         omp.secondaryAbilityTransformationId = omp.currentTransformationId;
         player.AddBuff(ModContent.BuffType<SecondaryAbility>(), GetSecondaryAbilityDuration(omp));
         player.AddBuff(ModContent.BuffType<SecondaryAbilityCooldown>(), GetSecondaryAbilityCooldown(omp));

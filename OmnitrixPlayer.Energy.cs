@@ -36,6 +36,14 @@ namespace Ben10Mod {
             return Energy.CanRestore(amount);
         }
 
+        public bool CanSpendOmnitrixEnergy(float amount) {
+            return Energy.CanSpend(amount);
+        }
+
+        public bool TrySpendOmnitrixEnergy(float amount) {
+            return Energy.TrySpend(amount);
+        }
+
         public float RestoreOmnitrixEnergy(float amount) {
             return Energy.Restore(amount);
         }

@@ -220,8 +220,9 @@ public class FasttrackTransformation : Transformation {
         if (!state.IsFasttrackComboActiveFor(player.whoAmI))
             return;
 
-        modifiers.FinalDamage *= 1f + 0.05f * Math.Min(state.FasttrackComboStacks, 4);
-        if (projectile.type == SecondaryAbilityAttack && state.FasttrackComboStacks >= 4)
+        int comboStacks = state.GetFasttrackComboStacks(player.whoAmI);
+        modifiers.FinalDamage *= 1f + 0.05f * Math.Min(comboStacks, 4);
+        if (projectile.type == SecondaryAbilityAttack && comboStacks >= 4)
             modifiers.FinalDamage *= 1.14f;
     }
 
@@ -231,7 +232,7 @@ public class FasttrackTransformation : Transformation {
             return;
 
         AlienIdentityGlobalNPC state = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        int existingStacks = state.IsFasttrackComboActiveFor(player.whoAmI) ? state.FasttrackComboStacks : 0;
+        int existingStacks = state.GetFasttrackComboStacks(player.whoAmI);
         int stacksToAdd = projectile.type switch {
             _ when projectile.type == PrimaryAttack => 1,
             _ when projectile.type == SecondaryAttack => 2,

@@ -10,25 +10,22 @@ It is intended for:
 
 ## Core Runtime Model
 
-Ben10Mod is built around a player-centric state model.
+Ben10Mod is still player-centric, but `OmnitrixPlayer` is no longer intended to be the owner of every rule and every raw field.
 
-`OmnitrixPlayer` is the main runtime state container. It tracks:
+The current model is:
 
-- whether the player has an Omnitrix equipped
-- which transformation is active
-- which transformations are unlocked
-- which transformations are assigned to the active five-slot roster
-- Omnitrix energy, regen, drain, and cooldown state
-- timed ability state and cooldowns
-- current badge attack selection
-- growth and visual state used by certain forms
-- progression participation for bosses and events
+- `OmnitrixPlayer` coordinates the active form and Terraria player hooks.
+- Focused controller/state classes own major Omnitrix subsystems.
+- Transformations define alien kits and route alien-specific behavior through the shared hooks.
+- NPC-side alien statuses live behind `AlienIdentityGlobalNPC`, with newer mechanics moving into focused state objects.
 
-Most gameplay systems either:
+Most gameplay systems should now either:
 
-- mutate `OmnitrixPlayer`
-- read `OmnitrixPlayer`
-- or expose alien-specific behavior through hooks that `OmnitrixPlayer` calls
+- ask `OmnitrixPlayer` for the active transformation or exposed runtime facade
+- use the relevant controller/state object for subsystem policy
+- implement alien-specific behavior inside a transformation, projectile, `ModPlayer`, or focused NPC state helper
+
+Avoid adding new unrelated state directly to `OmnitrixPlayer` unless it is genuinely coordination state.
 
 ## Main Runtime Pieces
 
@@ -40,25 +37,47 @@ Responsibilities:
 
 - load shaders and filters
 - define packet types
-- route multiplayer packets
+- delegate multiplayer packet handling to `Common/Networking/OmnitrixPacketHandler`
 - initialize shared content registries
+
+`HandlePacket` now only delegates to `OmnitrixPacketHandler`. Packet serialization helpers remain in `OmnitrixPacketRouter`, while packet behavior is split by feature family:
+
+- `OmnitrixStatePacketHandler`: transformation unlocks, roster sync, palette sync, speed settings, event participation, Omnitrix evolution sync
+- `MaterialAbsorptionPacketHandler`: Osmosian material absorption request/feedback/sync
+- `TransformationAbilityPacketHandler`: server-authoritative cursor or movement ability execution
+- `GhostFreakPacketHandler`: Ghostfreak possession request/state sync
+- `OmnitrixAccessoryPacketHandler`: armor dodge visuals and completed Omnitrix revival sync
 
 ### `OmnitrixPlayer`
 
-`OmnitrixPlayer.cs` is the main runtime coordinator.
+`OmnitrixPlayer.cs` is the main runtime coordinator, split across partial files while the architecture continues to move responsibility into focused owners.
 
 Responsibilities:
 
-- persist unlock and roster data
 - track the active transformation
 - route lifecycle hooks into the current transformation
-- drive timed abilities and cooldown expiration
-- manage the badge attack state machine
-- expose HUD-friendly current-attack data
-- manage Omnitrix energy-facing state
-- track progression participation and unlocks
+- bridge Terraria `ModPlayer` hooks to the current transformation
+- expose HUD-friendly current-attack and resource data
+- coordinate controller/state objects that own Omnitrix subsystems
+- preserve compatibility accessors used by older code during the refactor
 
-If you are unsure where a gameplay rule lives, start here first.
+If you are unsure where a gameplay rule lives, start here to identify the active subsystem, then move to the controller/state class that owns that rule.
+
+### Omnitrix Controllers And State
+
+Runtime Omnitrix state is split across focused classes:
+
+- `OmnitrixEnergyController`: current/max energy, regen, drain, bonus capacity, spending, restoring, clamping
+- `TransformationRosterState`: five-slot roster, unlocked transformations, favourites, newly unlocked entries, slot/unlock normalization
+- `AbilityController`: F/G/H/U timed ability flags, loaded ability state, originating transformation IDs
+- `AttackSelectionController`: badge attack selection, base selection, loaded attack usage, attack pulse/serial state, energy-gain locks
+- `TransformationCustomizationStore`: transformation palette, costume, custom-name, preset, normalization, and customization sync state policy
+- `TransformationProgressionSystem`: boss/event progression, unlock eligibility, codex unlock text, and event participation
+- `PossessionController`: Ghostfreak possession runtime state
+- `OmnitrixInputController`: UI open/close input policy
+- `MaterialAbsorptionPlayer`: Osmosian/anodite material absorption state and effects
+
+New code should prefer adding policy methods to these owners instead of mutating their raw fields from elsewhere. `OmnitrixPlayer` should act as a facade for UI, save/load, and Terraria hook compatibility when older call sites still expect player methods.
 
 ### `Transformation`
 
@@ -237,6 +256,41 @@ It owns reusable NPC effects such as:
 
 Transformation-specific NPC logic should not accumulate here unless it truly is reusable or cross-cutting.
 
+### `AlienIdentityGlobalNPC`
+
+`Content/NPCs/AlienIdentityGlobalNPC.cs` is the shared bridge for alien-specific NPC status effects that need per-NPC state.
+
+It is useful because projectiles and transformations can use one consistent lookup:
+
+```csharp
+target.GetGlobalNPC<AlienIdentityGlobalNPC>()
+```
+
+But it should not become the permanent home for every alien mechanic. New or heavily reworked alien status systems should prefer focused state helpers, for example:
+
+```text
+Content/NPCs/States/GhostFreakNpcState.cs
+Content/NPCs/States/WaterHazardNpcState.cs
+Content/NPCs/States/JetrayNpcState.cs
+Content/NPCs/States/HeatBlastNpcState.cs
+Content/NPCs/States/RathNpcState.cs
+Content/NPCs/States/SnareOhNpcState.cs
+Content/NPCs/States/AlienXNpcState.cs
+Content/NPCs/States/WhampireNpcState.cs
+Content/NPCs/States/PeskyDustNpcState.cs
+Content/NPCs/States/FasttrackNpcState.cs
+Content/NPCs/States/AstrodactylNpcState.cs
+Content/NPCs/States/BlitzwolferNpcState.cs
+Content/NPCs/States/EchoEchoNpcState.cs
+Content/NPCs/States/FrankenstrikeNpcState.cs
+Content/NPCs/States/HumungousaurNpcState.cs
+Content/NPCs/States/LodestarNpcState.cs
+Content/NPCs/States/BigChillNpcState.cs
+Content/NPCs/States/EyeGuyNpcState.cs
+```
+
+The global NPC can expose compatibility methods such as `ApplyGhostFreakFear(...)`, `AddWaterHazardSoak(...)`, or `ApplyJetrayLock(...)`, but the actual rule logic should live in the focused state object.
+
 ### Armor Runtime
 
 The custom Hero armor behavior lives primarily in:
@@ -347,7 +401,8 @@ That HUD is driven from `OmnitrixPlayer` plus transformation-supplied attack nam
 Progression is driven primarily through:
 
 - `bossTrackerNPC.cs`
-- player participation state in `OmnitrixPlayer.cs`
+- `TransformationProgressionSystem`
+- thin facade methods in `OmnitrixPlayer.Progression.cs`
 
 The important pattern is that unlocks are usually data-driven against boss and event completion, not hand-waved through item acquisition alone.
 

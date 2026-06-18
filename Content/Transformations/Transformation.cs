@@ -523,18 +523,11 @@ namespace Ben10Mod.Content.Transformations {
         }
         public virtual bool CanAffordCurrentAttack(OmnitrixPlayer omp) {
             int energyCost = GetEnergyCost(omp);
-            return energyCost <= 0 || omp.omnitrixEnergy >= energyCost;
+            return omp.CanSpendOmnitrixEnergy(energyCost);
         }
         public virtual bool TryConsumeCurrentAttackCost(OmnitrixPlayer omp) {
             int energyCost = GetEnergyCost(omp);
-            if (energyCost <= 0)
-                return true;
-
-            if (omp.omnitrixEnergy < energyCost)
-                return false;
-
-            omp.omnitrixEnergy -= energyCost;
-            return true;
+            return omp.TrySpendOmnitrixEnergy(energyCost);
         }
         public virtual int GetAttackSustainEnergyCost(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
             return GetRawAttackProfile(selection, omp)?.SustainEnergyCost ?? 0;
@@ -544,14 +537,7 @@ namespace Ben10Mod.Content.Transformations {
         }
         public virtual bool TryConsumeAttackSustainCost(OmnitrixPlayer.AttackSelection selection, OmnitrixPlayer omp) {
             int energyCost = GetAttackSustainEnergyCost(selection, omp);
-            if (energyCost <= 0)
-                return true;
-
-            if (omp.omnitrixEnergy < energyCost)
-                return false;
-
-            omp.omnitrixEnergy -= energyCost;
-            return true;
+            return omp.TrySpendOmnitrixEnergy(energyCost);
         }
         public virtual void FrameEffects(Player player, OmnitrixPlayer omp) { }
 
@@ -695,15 +681,15 @@ namespace Ben10Mod.Content.Transformations {
 
                 int energyCost = GetChildTransformationEnergyCost(player, omp, omnitrix, childTransformation,
                     selectedTransformationId);
-                if (energyCost > 0 && omp.omnitrixEnergy < energyCost) {
+                if (!omp.CanSpendOmnitrixEnergy(energyCost)) {
                     if (ShouldDetransformWhenChildTransformationFails(player, omp, omnitrix, childTransformation,
                             selectedTransformationId))
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
                     return true;
                 }
 
-                if (energyCost > 0)
-                    omp.omnitrixEnergy -= energyCost;
+                if (!omp.TrySpendOmnitrixEnergy(energyCost))
+                    return true;
 
                 int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
                 TransformInto(player, omp, childTransformation, branchDuration);
@@ -718,14 +704,14 @@ namespace Ben10Mod.Content.Transformations {
                     continue;
 
                 int energyCost = registeredBranch.ResolveEnergyCost(player, omp, omnitrix, selectedTransformation);
-                if (energyCost > 0 && omp.omnitrixEnergy < energyCost) {
+                if (!omp.CanSpendOmnitrixEnergy(energyCost)) {
                     if (registeredBranch.ShouldDetransform(player, omp, omnitrix, selectedTransformation))
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
                     return true;
                 }
 
-                if (energyCost > 0)
-                    omp.omnitrixEnergy -= energyCost;
+                if (!omp.TrySpendOmnitrixEnergy(energyCost))
+                    return true;
 
                 int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
                 TransformInto(player, omp, childTransformation, branchDuration);

@@ -173,12 +173,14 @@ public class EyeGuyTransformation : Transformation {
         if (player.HasBuff<PrimaryAbilityCooldown>() || player.HasBuff<PrimaryAbility>() || player.dead || player.CCed)
             return true;
 
-        if (omp.omnitrixEnergy < OmniGazeCost) {
+        if (!omp.CanSpendOmnitrixEnergy(OmniGazeCost)) {
             omp.ShowTransformFailureFeedback($"Need {OmniGazeCost} OE for {PrimaryAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= OmniGazeCost;
+        if (!omp.TrySpendOmnitrixEnergy(OmniGazeCost))
+            return true;
+
         player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GetPrimaryAbilityCooldown(omp));
         FireOmniGaze(player, player.GetSource_FromThis(), ResolveHeroDamage(player, 1f), 1.8f,
             finalPulse: false, allEyesOpen: player.GetModPlayer<EyeGuyStatePlayer>().AllEyesOpenActive);

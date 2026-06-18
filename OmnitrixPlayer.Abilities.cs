@@ -48,14 +48,12 @@ namespace Ben10Mod {
                     return false;
 
                 int ultimateAbilityCost = trans.GetUltimateAbilityCost(this);
-                if (omnitrixEnergy >= ultimateAbilityCost) {
-                    Player.AddBuff(ModContent.BuffType<UltimateAbility>(), trans.GetUltimateAbilityDuration(this));
-                    ultimateAbilityTransformationId = currentTransformationId;
-                    omnitrixEnergy -= ultimateAbilityCost;
-                    return true;
-                }
+                if (!TrySpendOmnitrixEnergy(ultimateAbilityCost))
+                    return false;
 
-                return false;
+                Player.AddBuff(ModContent.BuffType<UltimateAbility>(), trans.GetUltimateAbilityDuration(this));
+                ultimateAbilityTransformationId = currentTransformationId;
+                return true;
             }
 
             if (!hasUltimateAttack || Player.HasBuff<UltimateAbility>() || Player.HasBuff<UltimateAbilityCooldown>() ||
@@ -63,7 +61,7 @@ namespace Ben10Mod {
                 return false;
 
             int ultimateAttackCost = trans.GetUltimateAbilityCost(this);
-            if (omnitrixEnergy >= ultimateAttackCost && !ultimateAttack) {
+            if (CanSpendOmnitrixEnergy(ultimateAttackCost) && !ultimateAttack) {
                 if (HasLoadedAbilityAttack)
                     ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
 
@@ -171,14 +169,13 @@ namespace Ben10Mod {
             if (energyCost <= 0 && sustainEnergyCost <= 0)
                 return;
 
-            attackEnergyGainLockTime = Math.Max(attackEnergyGainLockTime, Math.Max(8, attackLockFrames));
-            markAttackProjectilesNoEnergyGainTime = Math.Max(markAttackProjectilesNoEnergyGainTime, 3);
+            AttackSelectionState.NotifyAttackSpentEnergy(energyCost, sustainEnergyCost, attackLockFrames);
             AccumulateOmniCoreReactorCharge(energyCost, sustainEnergyCost);
             TryTriggerChronoAccelerator(energyCost, sustainEnergyCost);
         }
 
         internal bool ShouldMarkSpawnedAttackProjectilesAsNoEnergyGain() {
-            return markAttackProjectilesNoEnergyGainTime > 0;
+            return AttackSelectionState.ShouldMarkSpawnedAttackProjectilesAsNoEnergyGain();
         }
 
         public string GetAbilityDisplayName(AttackSelection selection) {
@@ -356,11 +353,11 @@ namespace Ben10Mod {
                 if (Player.HasBuff(cooldownBuffType) || Player.HasBuff(activeBuffType))
                     return false;
 
-                if (omnitrixEnergy < activationCost)
+                if (!CanSpendOmnitrixEnergy(activationCost))
                     return false;
 
-                if (activationCost > 0)
-                    omnitrixEnergy -= activationCost;
+                if (!TrySpendOmnitrixEnergy(activationCost))
+                    return false;
 
                 Player.AddBuff(activeBuffType, duration);
                 Abilities.SetTransformationId(slot, currentTransformationId);
@@ -378,16 +375,16 @@ namespace Ben10Mod {
                 return true;
             }
 
-            if (omnitrixEnergy < activationCost)
+            if (!CanSpendOmnitrixEnergy(activationCost))
                 return false;
 
             ClearLoadedAbilityAttack(addCooldownIfUsed: loadedAbilityAttackUsed);
 
-            if (activationCost > 0)
-                omnitrixEnergy -= activationCost;
+            if (!TrySpendOmnitrixEnergy(activationCost))
+                return false;
 
             SetAttackSelection(slot);
-            loadedAbilityAttackUsed = false;
+            AttackSelectionState.ClearLoadedAbilityAttackUsed();
             return true;
         }
 
@@ -395,7 +392,7 @@ namespace Ben10Mod {
             if (!HasLoadedAbilityAttack)
                 return;
 
-            loadedAbilityAttackUsed = true;
+            AttackSelectionState.MarkLoadedAbilityAttackUsed();
 
             var trans = CurrentTransformation;
             bool singleUse = trans != null && setAttack switch {
@@ -417,15 +414,15 @@ namespace Ben10Mod {
 
         public void ClearLoadedAbilityAttack(bool addCooldownIfUsed = false) {
             if (!HasLoadedAbilityAttack) {
-                loadedAbilityAttackUsed = false;
+                AttackSelectionState.ClearLoadedAbilityAttackUsed();
                 return;
             }
 
-            if (addCooldownIfUsed && loadedAbilityAttackUsed)
+            if (AttackSelectionState.ShouldApplyLoadedAttackCooldown(addCooldownIfUsed))
                 ApplyLoadedAbilityAttackCooldown();
 
             ResetAttackToBaseSelection();
-            loadedAbilityAttackUsed = false;
+            AttackSelectionState.ClearLoadedAbilityAttackUsed();
         }
 
         private void ApplyLoadedAbilityAttackCooldown() {
@@ -486,10 +483,7 @@ namespace Ben10Mod {
             if (setAttack is not AttackSelection.Primary and not AttackSelection.Secondary)
                 return;
 
-            baseAttackSelection = baseAttackSelection == AttackSelection.Primary
-                ? AttackSelection.Secondary
-                : AttackSelection.Primary;
-            SetAttackSelection(baseAttackSelection);
+            AttackSelectionState.ToggleBaseSelection(AttackSelectionPulseDuration);
         }
 
         private bool CanHandleBadgeRightClickSelection() {
@@ -507,22 +501,16 @@ namespace Ben10Mod {
         }
 
         private void SetAttackSelection(AttackSelection selection) {
-            bool changed = setAttack != selection;
-            setAttack = selection;
-            if (selection is AttackSelection.Primary or AttackSelection.Secondary)
-                baseAttackSelection = selection;
-
-            if (changed)
-                TriggerAttackSelectionPulse();
+            AttackSelectionState.Select(selection, AttackSelectionPulseDuration);
         }
 
         public void ResetAttackToBaseSelection() {
-            SetAttackSelection(baseAttackSelection);
+            AttackSelectionState.ResetToBase(AttackSelectionPulseDuration);
         }
 
         private void NormalizeAttackSelectionForCurrentTransformation(Transformation trans) {
             if (trans == null) {
-                loadedAbilityAttackUsed = false;
+                AttackSelectionState.ClearLoadedAbilityAttackUsed();
                 if (setAttack is not AttackSelection.Primary and not AttackSelection.Secondary)
                     ResetAttackToBaseSelection();
                 return;
@@ -535,7 +523,7 @@ namespace Ben10Mod {
             if (!invalidUltimateSelection && !invalidLoadedSelection)
                 return;
 
-            loadedAbilityAttackUsed = false;
+            AttackSelectionState.ClearLoadedAbilityAttackUsed();
             ResetAttackToBaseSelection();
         }
 
@@ -589,7 +577,7 @@ namespace Ben10Mod {
         }
 
         private void TriggerAttackSelectionPulse() {
-            attackSelectionPulseTime = AttackSelectionPulseDuration;
+            AttackSelectionState.TriggerPulse(AttackSelectionPulseDuration);
         }
 
         public override bool CanUseItem(Item item) {

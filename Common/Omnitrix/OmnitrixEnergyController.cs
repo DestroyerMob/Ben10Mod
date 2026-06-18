@@ -3,9 +3,33 @@ using System;
 namespace Ben10Mod.Common.Omnitrix;
 
 public sealed class OmnitrixEnergyController {
-    public float Current { get; set; }
-    public float Max { get; set; }
-    public float Regen { get; set; }
+    private float _current;
+    private float _max;
+    private float _regen;
+
+    public float Current {
+        get => _current;
+        set {
+            _current = Math.Max(0f, value);
+            if (Max > 0f)
+                ClampToMax();
+        }
+    }
+
+    public float Max {
+        get => _max;
+        set {
+            _max = Math.Max(0f, value);
+            if (Max > 0f)
+                ClampToMax();
+        }
+    }
+
+    public float Regen {
+        get => _regen;
+        set => _regen = Math.Max(0f, value);
+    }
+
     public int MaxBonus { get; set; }
     public int RegenBonus { get; set; }
 

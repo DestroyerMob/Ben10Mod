@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
@@ -78,6 +79,28 @@ public class GhostFreakTransformation : Transformation {
         player.endurance += 0.04f;
     }
 
+    public override bool? CanUseItem(Player player, OmnitrixPlayer omp, Item item) {
+        if (!omp.PrimaryAbilityEnabled)
+            return base.CanUseItem(player, omp, item);
+
+        if (item?.ModItem is not PlumbersBadge)
+            return false;
+
+        OmnitrixPlayer.AttackSelection selectedAttack = ResolveAttackSelection(omp.setAttack, omp);
+        if (selectedAttack == OmnitrixPlayer.AttackSelection.Primary)
+            return false;
+
+        return CanStartCurrentAttack(player, omp);
+    }
+
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        OmnitrixPlayer.AttackSelection selectedAttack = ResolveAttackSelection(omp.setAttack, omp);
+        if (omp.PrimaryAbilityEnabled && selectedAttack == OmnitrixPlayer.AttackSelection.Primary)
+            return false;
+
+        return base.CanStartCurrentAttack(player, omp);
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = ResolveAimDirection(player, velocity);
@@ -149,7 +172,7 @@ public class GhostFreakTransformation : Transformation {
                 : $"{fearText} • spreads Fear and lowers aggression",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? "Phase"
-                : "Phase through danger; direct attacks are disabled while intangible",
+                : "Phase through danger; control attacks stay available while intangible",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
                 ? $"{fearText} • Haunt"
                 : $"{fearText} • Haunt adds delayed damage and possession setup",

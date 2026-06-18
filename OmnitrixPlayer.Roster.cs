@@ -90,8 +90,8 @@ namespace Ben10Mod {
         }
 
         public bool IsFavoriteTransformation(string transformationId) {
-            Transformation transformation = TransformationLoader.Resolve(transformationId);
-            return transformation != null && favoriteTransformations.Contains(transformation.FullID);
+            string canonicalTransformationId = TransformationRosterState.ResolveTransformationId(transformationId);
+            return canonicalTransformationId.Length > 0 && favoriteTransformations.Contains(canonicalTransformationId);
         }
 
         public bool IsFavoriteTransformation(Transformation transformation) {
@@ -99,23 +99,16 @@ namespace Ben10Mod {
         }
 
         public bool SetFavoriteTransformation(string transformationId, bool isFavorite) {
-            Transformation transformation = TransformationLoader.Resolve(transformationId);
-            if (transformation == null)
-                return false;
-
-            if (isFavorite)
-                return favoriteTransformations.Add(transformation.FullID);
-
-            return favoriteTransformations.Remove(transformation.FullID);
+            return Roster.SetFavorite(transformationId, isFavorite);
         }
 
         public bool ToggleFavoriteTransformation(string transformationId) {
-            return SetFavoriteTransformation(transformationId, !IsFavoriteTransformation(transformationId));
+            return Roster.ToggleFavorite(transformationId);
         }
 
         public bool IsNewlyUnlockedTransformation(string transformationId) {
-            Transformation transformation = TransformationLoader.Resolve(transformationId);
-            return transformation != null && newlyUnlockedTransformations.Contains(transformation.FullID);
+            string canonicalTransformationId = TransformationRosterState.ResolveTransformationId(transformationId);
+            return canonicalTransformationId.Length > 0 && newlyUnlockedTransformations.Contains(canonicalTransformationId);
         }
 
         public bool IsNewlyUnlockedTransformation(Transformation transformation) {
@@ -123,15 +116,13 @@ namespace Ben10Mod {
         }
 
         public bool MarkTransformationAsSeen(string transformationId) {
-            Transformation transformation = TransformationLoader.Resolve(transformationId);
-            return transformation != null && newlyUnlockedTransformations.Remove(transformation.FullID);
+            return Roster.MarkSeen(transformationId);
         }
 
         public bool HasAnyNewlyUnlockedTransformations() => newlyUnlockedTransformations.Count > 0;
 
         public bool IsTransformationUnlocked(string transformationId) {
-            Transformation transformation = TransformationLoader.Resolve(transformationId);
-            return transformation != null && unlockedTransformations.Contains(transformation.FullID);
+            return Roster.IsUnlocked(transformationId);
         }
 
         public bool IsTransformationUnlocked(Transformation transformation) {
@@ -172,11 +163,9 @@ namespace Ben10Mod {
                 return false;
 
             string canonicalTransformationId = transformation.FullID;
-            if (unlockedTransformations.Contains(canonicalTransformationId))
+            if (!Roster.TryUnlock(canonicalTransformationId))
                 return false;
 
-            unlockedTransformations.Add(canonicalTransformationId);
-            newlyUnlockedTransformations.Add(canonicalTransformationId);
             NormalizeStoredTransformationData();
 
             if (showEffects)
@@ -218,13 +207,7 @@ namespace Ben10Mod {
                 return false;
 
             bool shouldDetransform = currentTransformationId == canonicalTransformationId;
-            unlockedTransformations.Remove(canonicalTransformationId);
-            newlyUnlockedTransformations.Remove(canonicalTransformationId);
-
-            for (int i = 0; i < transformationSlots.Length; i++) {
-                if (transformationSlots[i] == canonicalTransformationId)
-                    transformationSlots[i] = "";
-            }
+            Roster.Remove(canonicalTransformationId);
 
             if (shouldDetransform)
                 TransformationHandler.Detransform(Player, 0, showParticles: showEffects, addCooldown: false, playSound: showEffects);
@@ -249,45 +232,11 @@ namespace Ben10Mod {
         }
 
         private static string[] NormalizeUnlockedTransformations(IEnumerable<string> unlocked) {
-            List<string> normalizedUnlocks = new();
-
-            if (unlocked != null) {
-                foreach (string unlockedId in unlocked) {
-                    Transformation transformation = TransformationLoader.Resolve(unlockedId);
-                    if (transformation == null || normalizedUnlocks.Contains(transformation.FullID))
-                        continue;
-
-                    normalizedUnlocks.Add(transformation.FullID);
-                }
-            }
-
-            if (TransformationLoader.Resolve("Ben10Mod:HeatBlast") != null &&
-                !normalizedUnlocks.Contains("Ben10Mod:HeatBlast"))
-                normalizedUnlocks.Insert(0, "Ben10Mod:HeatBlast");
-
-            return normalizedUnlocks.ToArray();
+            return TransformationRosterState.NormalizeUnlockedTransformations(unlocked);
         }
 
         private static string[] NormalizeTransformationSlots(string[] slots, IList<string> unlocked) {
-            string[] normalizedSlots = new string[TransformationSlotCount];
-            for (int i = 0; i < normalizedSlots.Length; i++)
-                normalizedSlots[i] = string.Empty;
-
-            if (slots == null)
-                return normalizedSlots;
-
-            for (int i = 0; i < normalizedSlots.Length && i < slots.Length; i++) {
-                Transformation transformation = TransformationLoader.Resolve(slots[i]);
-                if (transformation == null)
-                    continue;
-
-                if (unlocked != null && !unlocked.Contains(transformation.FullID))
-                    continue;
-
-                normalizedSlots[i] = transformation.FullID;
-            }
-
-            return normalizedSlots;
+            return TransformationRosterState.NormalizeTransformationSlots(slots, unlocked, TransformationSlotCount);
         }
 
         private void NormalizeFavoriteTransformations() {

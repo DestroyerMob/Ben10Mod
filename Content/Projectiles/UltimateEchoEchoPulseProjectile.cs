@@ -90,7 +90,7 @@ public class UltimateEchoEchoPulseProjectile : ModProjectile {
 
         if (target.boss && Mode != ModeRelayPulse) {
             int fractureTime = identity.IsEchoEchoFracturedFor(Projectile.owner)
-                ? Math.Max(identity.EchoEchoFractureTime, 240)
+                ? Math.Max(identity.GetEchoEchoFractureTime(Projectile.owner), 240)
                 : 150;
             identity.ApplyEchoEchoFracture(Projectile.owner, fractureTime);
         }

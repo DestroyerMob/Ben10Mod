@@ -160,12 +160,15 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
         if (player.HasBuff<SecondaryAbilityCooldown>() || player.dead || player.CCed)
             return true;
 
-        if (omp.omnitrixEnergy < GetSecondaryAbilityCost(omp)) {
-            omp.ShowTransformFailureFeedback($"Need {GetSecondaryAbilityCost(omp)} OE for {SecondaryAbilityAttackName}.");
+        int feedbackCost = GetSecondaryAbilityCost(omp);
+        if (!omp.CanSpendOmnitrixEnergy(feedbackCost)) {
+            omp.ShowTransformFailureFeedback($"Need {feedbackCost} OE for {SecondaryAbilityAttackName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= GetSecondaryAbilityCost(omp);
+        if (!omp.TrySpendOmnitrixEnergy(feedbackCost))
+            return true;
+
         omp.secondaryAbilityTransformationId = omp.currentTransformationId;
         player.AddBuff(ModContent.BuffType<SecondaryAbilityCooldown>(), GetSecondaryAbilityCooldown(omp));
         FireFeedbackPulse(player);
@@ -181,12 +184,14 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
             return true;
 
         int relayCost = GetTertiaryAbilityCost(omp);
-        if (omp.omnitrixEnergy < relayCost) {
+        if (!omp.CanSpendOmnitrixEnergy(relayCost)) {
             omp.ShowTransformFailureFeedback($"Need {relayCost} OE for {TertiaryAbilityAttackName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= relayCost;
+        if (!omp.TrySpendOmnitrixEnergy(relayCost))
+            return true;
+
         omp.tertiaryAbilityTransformationId = omp.currentTransformationId;
         player.AddBuff(ModContent.BuffType<TertiaryAbilityCooldown>(), GetTertiaryAbilityCooldown(omp));
 

@@ -109,9 +109,7 @@ public class JetrayDiveProjectile : ModProjectile {
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        if (identity.IsJetrayLockedFor(Projectile.owner)) {
-            identity.JetrayLockTime = 0;
-            identity.JetrayLockOwner = -1;
+        if (identity.ConsumeJetrayLock(Projectile.owner)) {
             Projectile.localAI[1] = 1f;
             SpawnDiveCashout(target);
         }

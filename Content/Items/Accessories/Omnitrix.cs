@@ -353,13 +353,15 @@ namespace Ben10Mod.Content.Items.Accessories
                 }
 
                 int swapCost = GetEffectiveTransformationSwapCost(omp);
-                if (!omp.HasMasterControlAccess && UseEnergyForTransformation && omp.omnitrixEnergy < swapCost) {
+                if (!omp.HasMasterControlAccess && UseEnergyForTransformation &&
+                    !omp.CanSpendOmnitrixEnergy(swapCost)) {
                     omp.ShowTransformFailureFeedback($"Need {swapCost} OE to swap forms.");
                     return false;
                 }
 
-                if (!omp.HasMasterControlAccess && UseEnergyForTransformation)
-                    omp.omnitrixEnergy -= swapCost;
+                if (!omp.HasMasterControlAccess && UseEnergyForTransformation &&
+                    !omp.TrySpendOmnitrixEnergy(swapCost))
+                    return false;
 
                 int nextDuration = UseEnergyForTransformation
                     ? GetTransformationDuration(omp)

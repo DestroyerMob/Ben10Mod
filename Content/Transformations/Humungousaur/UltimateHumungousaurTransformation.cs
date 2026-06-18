@@ -147,7 +147,7 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         }
 
         int chargeCost = GetPrimaryAbilityCost(omp);
-        if (omp.omnitrixEnergy < chargeCost) {
+        if (!omp.CanSpendOmnitrixEnergy(chargeCost)) {
             omp.ShowTransformFailureFeedback($"Need {chargeCost} OE for {PrimaryAbilityName}.");
             return true;
         }
@@ -157,7 +157,9 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
         Vector2 chargeDirection = ResolveHorizontalDirection(player, aimDirection);
         int chargeDamage = ResolveHeroDamage(player, state.CataclysmActive ? 1.24f : 1.05f);
 
-        omp.omnitrixEnergy -= chargeCost;
+        if (!omp.TrySpendOmnitrixEnergy(chargeCost))
+            return true;
+
         omp.primaryAbilityTransformationId = FullID;
         player.AddBuff(ModContent.BuffType<PrimaryAbility>(), GetPrimaryAbilityDuration(omp));
         player.AddBuff(ModContent.BuffType<PrimaryAbilityCooldown>(), GetPrimaryAbilityCooldown(omp));

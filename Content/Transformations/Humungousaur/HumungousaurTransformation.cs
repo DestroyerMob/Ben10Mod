@@ -224,12 +224,14 @@ public class HumungousaurTransformation : Transformation {
         }
 
         int rampageCost = GetUltimateAbilityCost(omp);
-        if (omp.omnitrixEnergy < rampageCost) {
+        if (!omp.CanSpendOmnitrixEnergy(rampageCost)) {
             omp.ShowTransformFailureFeedback($"Need {rampageCost} OE for {UltimateAbilityName}.");
             return true;
         }
 
-        omp.omnitrixEnergy -= rampageCost;
+        if (!omp.TrySpendOmnitrixEnergy(rampageCost))
+            return true;
+
         omp.ultimateAbilityTransformationId = FullID;
         player.AddBuff(ModContent.BuffType<UltimateAbility>(), GetUltimateAbilityDuration(omp));
         player.GetModPlayer<HumungousaurCombatPlayer>().RegisterAttackGuard(60, 0.24f);

@@ -121,10 +121,7 @@ namespace Ben10Mod {
             IReadOnlyList<string> enabledChannelKeys = null,
             IReadOnlyList<KeyValuePair<string, string>> selectedCostumeEntries = null,
             IReadOnlyList<OmnitrixVisualPaletteColorEntry> visualPaletteEntries = null) {
-            transformationPaletteOverrides.Clear();
-            omnitrixVisualPaletteOverrides.Clear();
-            paletteEnabledChannels.Clear();
-            selectedTransformationCostumes.Clear();
+            ClearTransformationPaletteSyncState();
 
             if (entries != null) {
                 for (int i = 0; i < entries.Count; i++)
@@ -133,8 +130,7 @@ namespace Ben10Mod {
 
             if (enabledChannelKeys != null) {
                 for (int i = 0; i < enabledChannelKeys.Count; i++) {
-                    if (TryNormalizePaletteChannelKey(enabledChannelKeys[i], out string normalizedKey))
-                        paletteEnabledChannels.Add(normalizedKey);
+                    AddNormalizedPaletteEnabledChannelKey(enabledChannelKeys[i]);
                 }
             }
 

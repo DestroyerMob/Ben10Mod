@@ -173,7 +173,7 @@ public class ChromaStoneTransformation : Transformation {
         }
 
         int readyCost = GetUltimateAbilityCost(omp);
-        if (omp.omnitrixEnergy < readyCost) {
+        if (!omp.CanSpendOmnitrixEnergy(readyCost)) {
             omp.ShowTransformFailureFeedback($"Need {readyCost} OE to ready {UltimateAbilityName}.");
             return true;
         }
