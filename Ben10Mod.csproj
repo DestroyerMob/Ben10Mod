@@ -46,34 +46,6 @@
     <None Remove="Content\Transformations\RipJaws\RipJaws.png" />
     <None Remove="Content\Transformations\StinkFly\StinkFly.png" />
     <None Remove="Content\Transformations\WildVine\WildVine.png" />
-    <None Remove="Content\Transformations\WildVine\WIldVine_Body.png" />
-    <None Remove="Content\Transformations\WildVine\WIldVine_Head.png" />
-    <None Remove="Content\Transformations\WildVine\WIldVine_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (2)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (3)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (4)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (5)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (6)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Body.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Head.png" />
-    <None Remove="Content\Transformations\XLR8 - Copy (7)\XLR8_Legs.png" />
-    <None Remove="Content\Transformations\XLR8\XLR8 - Copy.png" />
     <None Remove="Content\Transformations\XLR8\XLR8.png" />
   </ItemGroup>
   <ItemGroup>

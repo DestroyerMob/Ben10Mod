@@ -10,7 +10,6 @@ namespace Ben10Mod {
         public override void SaveData(TagCompound tag) {
             NormalizeStoredTransformationData();
             tag["masterControl"] = masterControl;
-            tag["currentTransformationId"] = currentTransformationId;
             tag["omnitrixEnergy"] = omnitrixEnergy;
             tag["completedOmnitrixRevivalCooldown"] = completedOmnitrixRevivalCooldown;
             tag["absorbedMaterialItemType"] = absorbedMaterialItemType;
@@ -99,10 +98,12 @@ namespace Ben10Mod {
                 ? NormalizeTransformationSpeedBoostPercent(savedTransformationSpeedBoostPercent)
                 : DefaultTransformationSpeedBoostPercent;
 
-            tag.TryGet("currentTransformationId", out currentTransformationId);
+            currentTransformationId = string.Empty;
+            isTransformed = false;
+            wasTransformed = false;
+
             int[] oldUnlockedRoster;
             int[] oldTransformationRoster;
-            int oldCurrentTransformation;
 
             if (tag.TryGet("transformationRoster", out string[] rosterArray))
                 transformationSlots = rosterArray;
@@ -115,15 +116,6 @@ namespace Ben10Mod {
                 transformationSlots = new string[oldTransformationRoster.Length];
                 for (int i = 0; i < oldTransformationRoster.Length; i++)
                     transformationSlots[i] = MapOldTransformationId((TransformationEnumOld)oldTransformationRoster[i]);
-            }
-
-            if (string.IsNullOrEmpty(currentTransformationId) &&
-                tag.TryGet("currentTransformation", out oldCurrentTransformation)) {
-                currentTransformationId = MapOldTransformationId((TransformationEnumOld)oldCurrentTransformation);
-            }
-            else if (string.IsNullOrEmpty(currentTransformationId) &&
-                     tag.TryGet("currTransformation", out oldCurrentTransformation)) {
-                currentTransformationId = MapOldTransformationId((TransformationEnumOld)oldCurrentTransformation);
             }
 
             unlockedTransformations.Clear();

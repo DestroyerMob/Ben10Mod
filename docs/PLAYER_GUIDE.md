@@ -79,12 +79,14 @@ Current recipe:
 Default keybinds:
 
 - `P`: transform or detransform
+- `Q`: hold to open the transform wheel
 - `L`: open or close the alien roster
 - `O`: open or close the transformation codex
 - `F`: primary action slot
 - `G`: secondary action slot
 - `H`: tertiary action slot
 - `U`: ultimate action slot
+- `Y`: cycle the transformation speed boost setting
 - `K`: absorb material
 - `NumPad 1-5`: select a specific roster slot
 - `Left / Right Arrow`: cycle roster slots

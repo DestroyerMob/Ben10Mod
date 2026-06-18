@@ -1,15 +1,26 @@
 using System.Collections.Generic;
 using System;
 using Ben10Mod.Common.Systems;
+using Terraria.ModLoader;
 
 namespace Ben10Mod.Content.Transformations
 {
     public static class TransformationLoader
     {
-        private static readonly Dictionary<string, Transformation> _transformations = new();
+        private static readonly Dictionary<string, Transformation> _transformations =
+            new(StringComparer.OrdinalIgnoreCase);
 
         internal static void Register(Transformation transformation)
         {
+            if (transformation == null || string.IsNullOrWhiteSpace(transformation.FullID))
+                return;
+
+            if (_transformations.TryGetValue(transformation.FullID, out Transformation existing) &&
+                !ReferenceEquals(existing, transformation)) {
+                ModContent.GetInstance<global::Ben10Mod.Ben10Mod>().Logger.Warn(
+                    $"Duplicate transformation ID registered: {transformation.FullID}");
+            }
+
             _transformations[transformation.FullID] = transformation;
         }
 
@@ -29,16 +40,10 @@ namespace Ben10Mod.Content.Transformations
             if (string.IsNullOrWhiteSpace(fullID))
                 return null;
 
-            if (_transformations.TryGetValue(fullID, out var trans))
-                return Ben10FeatureBlacklistRegistry.IsTransformationBlacklisted(trans) ? null : trans;
-
-            foreach (var pair in _transformations) {
-                if (string.Equals(pair.Key, fullID, StringComparison.OrdinalIgnoreCase) &&
-                    !Ben10FeatureBlacklistRegistry.IsTransformationBlacklisted(pair.Value))
-                    return pair.Value;
-            }
-
-            return null;
+            return _transformations.TryGetValue(fullID, out var trans) &&
+                   !Ben10FeatureBlacklistRegistry.IsTransformationBlacklisted(trans)
+                ? trans
+                : null;
         }
 
         public static IEnumerable<Transformation> All {

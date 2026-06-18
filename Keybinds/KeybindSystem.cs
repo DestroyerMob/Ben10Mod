@@ -10,7 +10,6 @@ namespace Ben10Mod.Keybinds {
         public static ModKeybind PrimaryAbility { get; private set; }
         public static ModKeybind SecondaryAbility { get; private set; }
         public static ModKeybind TertiaryAbility { get; private set; }
-        public static ModKeybind QuaternaryAbility { get; private set; }
         public static ModKeybind UltimateAbility { get; private set; }
         public static ModKeybind TransformationKeybind { get; private set; }
         public static ModKeybind TransformWheel { get; private set; }
@@ -30,7 +29,6 @@ namespace Ben10Mod.Keybinds {
             PrimaryAbility = KeybindLoader.RegisterKeybind(Mod, "Primary Ability", "F");
             SecondaryAbility = KeybindLoader.RegisterKeybind(Mod, "Secondary Ability", "G");
             TertiaryAbility = KeybindLoader.RegisterKeybind(Mod, "Tertiary Ability", "H");
-            QuaternaryAbility = KeybindLoader.RegisterKeybind(Mod, "Quaternary Ability", "J");
             UltimateAbility = KeybindLoader.RegisterKeybind(Mod, "Ultimate Ability", "U");
             TransformationKeybind = KeybindLoader.RegisterKeybind(Mod, "Transform", "P");
             TransformWheel = KeybindLoader.RegisterKeybind(Mod, "Transform Wheel", "Q");
@@ -51,7 +49,6 @@ namespace Ben10Mod.Keybinds {
             PrimaryAbility = null;
             SecondaryAbility = null;
             TertiaryAbility = null;
-            QuaternaryAbility = null;
             UltimateAbility = null;
             TransformationKeybind = null;
             TransformWheel = null;

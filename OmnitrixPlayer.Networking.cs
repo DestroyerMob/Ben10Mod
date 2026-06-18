@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Transformations;
 using Ben10Mod.Content.Interface;
 
@@ -12,8 +13,7 @@ namespace Ben10Mod {
         public override void OnEnterWorld() {
             ModContent.GetInstance<UISystem>().HideMyUI();
             ResetAirborneLungeState();
-            if (!isTransformed)
-                currentTransformationId = "";
+            ClearPersistedActiveTransformationState();
 
             if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer) {
                 SyncTransformationStateToServer();
@@ -22,6 +22,35 @@ namespace Ben10Mod {
             }
 
             CurrentTransformation?.OnEnterWorld(Player, this);
+        }
+
+        private void ClearPersistedActiveTransformationState() {
+            foreach (Transformation transformation in TransformationLoader.All) {
+                if (transformation?.TransformationBuffId > 0)
+                    Player.ClearBuff(transformation.TransformationBuffId);
+            }
+
+            Player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
+            Player.ClearBuff(ModContent.BuffType<SecondaryAbility>());
+            Player.ClearBuff(ModContent.BuffType<TertiaryAbility>());
+            Player.ClearBuff(ModContent.BuffType<UltimateAbility>());
+            Player.ClearBuff(ModContent.BuffType<PrimaryAbilityCooldown>());
+            Player.ClearBuff(ModContent.BuffType<SecondaryAbilityCooldown>());
+            Player.ClearBuff(ModContent.BuffType<TertiaryAbilityCooldown>());
+            Player.ClearBuff(ModContent.BuffType<UltimateAbilityCooldown>());
+
+            currentTransformationId = string.Empty;
+            isTransformed = false;
+            wasTransformed = false;
+            pendingEvolutionStepDownTime = 0;
+            pendingEvolutionStepDownTransformationId = string.Empty;
+            primaryAbilityTransformationId = string.Empty;
+            secondaryAbilityTransformationId = string.Empty;
+            tertiaryAbilityTransformationId = string.Empty;
+            ultimateAbilityTransformationId = string.Empty;
+            Abilities.ResetActiveFlags();
+            AttackSelectionState.ClearLoadedAbilityAttackUsed();
+            ResetAttackToBaseSelection();
         }
 
         public void SyncTransformationStateToServer() {
