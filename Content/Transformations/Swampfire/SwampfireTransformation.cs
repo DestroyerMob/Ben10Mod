@@ -263,8 +263,9 @@ public class SwampfireTransformation : Transformation {
     }
 
     public override void FrameEffects(Player player, OmnitrixPlayer omp) {
-        player.head = ArmorIDs.Head.JungleHat;
-        player.body = ArmorIDs.Body.JungleShirt;
-        player.legs = ArmorIDs.Legs.JunglePants;
+        var costume = ModContent.GetInstance<Swampfire>();
+        player.head = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Head);
+        player.body = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Body);
+        player.legs = EquipLoader.GetEquipSlot(Mod, costume.Name, EquipType.Legs);
     }
 }

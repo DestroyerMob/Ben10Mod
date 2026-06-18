@@ -27,7 +27,7 @@ public sealed class OmnitrixEnergyController {
 
     public float Regen {
         get => _regen;
-        // Signed net OE change per second. Negative values are used by sustained-energy Omnitrixes as transformed upkeep drain.
+        // Signed net OE change using the legacy /120 tick rate. Negative values are used by sustained-energy Omnitrixes as transformed upkeep drain.
         set => _regen = value;
     }
 
