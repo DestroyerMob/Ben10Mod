@@ -710,6 +710,11 @@ Items: {
 		DisplayName: Kineceleran Dash
 		Tooltip: ""
 	}
+
+	Rath: {
+		DisplayName: Rath
+		Tooltip: ""
+	}
 }
 
 Keybinds: {
@@ -1057,6 +1062,21 @@ Buffs: {
 		DisplayName: Gray Matter_ Buff
 		Description: Mods.Ben10Mod.Buffs.GrayMatter_Buff.Description
 	}
+
+	FuelVapour: {
+		DisplayName: Fuel Vapour
+		Description: Mods.Ben10Mod.Buffs.FuelVapour.Description
+	}
+
+	GoopDissolved: {
+		DisplayName: Goop Dissolved
+		Description: Mods.Ben10Mod.Buffs.GoopDissolved.Description
+	}
+
+	WildVineTethered: {
+		DisplayName: Wild Vine Tethered
+		Description: Mods.Ben10Mod.Buffs.WildVineTethered.Description
+	}
 }
 
 Projectiles: {
@@ -1263,6 +1283,14 @@ Projectiles: {
 	HeatBlastInfernoPatchProjectile.DisplayName: Heat Blast Inferno Patch Projectile
 	UltimateEchoEchoPulseProjectile.DisplayName: Ultimate Echo Echo Pulse Projectile
 	UltimateEchoEchoSonicBlastProjectile.DisplayName: Ultimate Echo Echo Sonic Blast Projectile
+	AmpFibianArcProjectile.DisplayName: Amp Fibian Arc Projectile
+	BuzzShockAfterimageProjectile.DisplayName: Buzz Shock Afterimage Projectile
+	GhostFreakFearWaveProjectile.DisplayName: Ghost Freak Fear Wave Projectile
+	GhostFreakHauntProjectile.DisplayName: Ghost Freak Haunt Projectile
+	GoopPuddleDetonationProjectile.DisplayName: Goop Puddle Detonation Projectile
+	StinkFlyToxicTrailProjectile.DisplayName: Stink Fly Toxic Trail Projectile
+	SwampfireIgnitionBurstProjectile.DisplayName: Swampfire Ignition Burst Projectile
+	WildVineAnchorProjectile.DisplayName: Wild Vine Anchor Projectile
 }
 
 Tiles: {
