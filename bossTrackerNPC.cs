@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Ben10Mod.Content;
 using Ben10Mod.Content.Buffs.Abilities;
 using Ben10Mod.Content.Items.Accessories;
+using Ben10Mod.Content.Items.Consumable;
 using Ben10Mod.Content.NPCs.Bosses;
 using Terraria;
 using Terraria.ID;
@@ -11,10 +11,17 @@ namespace Ben10Mod {
     public class bossTrackerNPC : GlobalNPC {
         public override bool InstancePerEntity => true;
 
-        // Tracks per-player contribution on each boss instance so unlock rewards only go to participants.
+        // Tracks per-player contribution on each boss instance so evolution rewards only go to participants.
         private readonly int[] _damageByPlayer = new int[Main.maxPlayers];
         private static readonly Dictionary<string, int[]> EncounterDamageByPlayer = new();
         private static readonly Dictionary<string, bool[]> EncounterParticipantsByPlayer = new();
+
+        private const float EventSoulDropChance = 0.1f;
+        private const float PillarSoulDropChance = 0.1f;
+        private const int CachedPumpkinMoonInvasionGroup = -4;
+        private const int CachedFrostMoonInvasionGroup = -5;
+        private const int CachedSolarEclipseInvasionGroup = -6;
+        private const int CachedBloodMoonInvasionGroup = -10;
 
         private static bool CountsAsBoss(NPC npc) {
             return npc.boss || NPCID.Sets.ShouldBeCountedAsBoss[npc.type];
@@ -59,9 +66,6 @@ namespace Ben10Mod {
 
 
         public override void OnHitByItem(NPC npc, Player player, Item item, NPC.HitInfo hit, int damageDone) {
-            if (damageDone > 0)
-                player.GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
-
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
             if (!CountsAsTrackedEncounter(npc)) return;
@@ -74,8 +78,6 @@ namespace Ben10Mod {
 
             int owner = projectile.owner;
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
-                Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
-
                 if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
                 if (!CountsAsTrackedEncounter(npc)) return;
@@ -86,6 +88,10 @@ namespace Ben10Mod {
 
         public override void OnKill(NPC npc) {
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
+
+            TryDropPillarSoul(npc);
+            TryDropEventSoul(npc);
+
             if (!CountsAsTrackedEncounter(npc)) return;
 
             CaptureEncounterParticipants(npc);
@@ -96,6 +102,10 @@ namespace Ben10Mod {
             string transformationId = GetTransformationIdForBoss(npc.type);
             bool[] participatingPlayers = GetParticipatingPlayers(npc);
 
+            if (!string.IsNullOrEmpty(transformationId))
+                SoulOfTransformation.Spawn(npc.GetSource_Death(), npc.Center, transformationId,
+                    SoulOfTransformationSource.Boss);
+
             for (int i = 0; i < Main.maxPlayers; i++) {
                 if (!participatingPlayers[i]) continue;
 
@@ -104,15 +114,171 @@ namespace Ben10Mod {
 
                 var omp = player.GetModPlayer<OmnitrixPlayer>();
 
-                if (!string.IsNullOrEmpty(transformationId))
-                    TransformationHandler.AddTransformation(player, transformationId);
-
                 Omnitrix activeOmnitrix = omp.GetActiveOmnitrix();
                 if (activeOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)
                     activeOmnitrix.StartEvolution(player, omp);
             }
 
             ClearEncounterContribution(npc);
+        }
+
+        private static void TryDropPillarSoul(NPC npc) {
+            if (!IsLunarPillar(npc.type))
+                return;
+
+            if (Main.rand.NextFloat() >= PillarSoulDropChance)
+                return;
+
+            SoulOfTransformation.Spawn(npc.GetSource_Death(), npc.Center, "Ben10Mod:WayBig",
+                SoulOfTransformationSource.Boss);
+        }
+
+        private static void TryDropEventSoul(NPC npc) {
+            if (!TryGetEventSoulTransformationId(npc, out string transformationId))
+                return;
+
+            if (Main.rand.NextFloat() >= EventSoulDropChance)
+                return;
+
+            SoulOfTransformation.Spawn(npc.GetSource_Death(), npc.Center, transformationId,
+                SoulOfTransformationSource.Event);
+        }
+
+        private static bool TryGetEventSoulTransformationId(NPC npc, out string transformationId) {
+            transformationId = string.Empty;
+            if (npc == null || npc.friendly || npc.townNPC || npc.CountsAsACritter)
+                return false;
+
+            if (Main.slimeRain && npc.type != NPCID.KingSlime && npc.aiStyle == NPCAIStyleID.Slime) {
+                transformationId = "Ben10Mod:Goop";
+                return true;
+            }
+
+            int invasionGroup = NPC.GetNPCInvasionGroup(npc.type);
+            switch (invasionGroup) {
+                case InvasionID.GoblinArmy when Main.invasionType == InvasionID.GoblinArmy:
+                    transformationId = "Ben10Mod:RipJaws";
+                    return true;
+                case InvasionID.SnowLegion when Main.invasionType == InvasionID.SnowLegion:
+                    transformationId = "Ben10Mod:Fasttrack";
+                    return true;
+                case InvasionID.PirateInvasion when Main.invasionType == InvasionID.PirateInvasion:
+                    transformationId = "Ben10Mod:WaterHazard";
+                    return true;
+                case InvasionID.MartianMadness when Main.invasionType == InvasionID.MartianMadness:
+                    transformationId = "Ben10Mod:Astrodactyl";
+                    return true;
+                case CachedBloodMoonInvasionGroup when Main.bloodMoon:
+                    transformationId = "Ben10Mod:GhostFreak";
+                    return true;
+                case CachedSolarEclipseInvasionGroup when Main.eclipse:
+                    transformationId = "Ben10Mod:Frankenstrike";
+                    return true;
+                case CachedPumpkinMoonInvasionGroup when Main.pumpkinMoon:
+                    transformationId = "Ben10Mod:Whampire";
+                    return true;
+                case CachedFrostMoonInvasionGroup when Main.snowMoon:
+                    transformationId = "Ben10Mod:Lodestar";
+                    return true;
+            }
+
+            if (Main.bloodMoon && IsBloodMoonEventNpc(npc.type)) {
+                transformationId = "Ben10Mod:GhostFreak";
+                return true;
+            }
+
+            if (Main.eclipse && IsSolarEclipseNpc(npc.type)) {
+                transformationId = "Ben10Mod:Frankenstrike";
+                return true;
+            }
+
+            if (Main.pumpkinMoon && IsPumpkinMoonNpc(npc.type)) {
+                transformationId = "Ben10Mod:Whampire";
+                return true;
+            }
+
+            if (Main.snowMoon && IsFrostMoonNpc(npc.type)) {
+                transformationId = "Ben10Mod:Lodestar";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsLunarPillar(int npcType) {
+            return npcType is NPCID.LunarTowerSolar
+                or NPCID.LunarTowerVortex
+                or NPCID.LunarTowerNebula
+                or NPCID.LunarTowerStardust;
+        }
+
+        private static bool IsBloodMoonEventNpc(int npcType) {
+            return npcType is NPCID.BloodZombie
+                or NPCID.Drippler
+                or NPCID.ZombieMerman
+                or NPCID.BloodEelHead
+                or NPCID.BloodEelBody
+                or NPCID.BloodEelTail
+                or NPCID.BloodNautilus;
+        }
+
+        private static bool IsSolarEclipseNpc(int npcType) {
+            return npcType is NPCID.Frankenstein
+                or NPCID.SwampThing
+                or NPCID.Vampire
+                or NPCID.VampireBat
+                or NPCID.Reaper
+                or NPCID.Eyezor
+                or NPCID.Mothron
+                or NPCID.MothronEgg
+                or NPCID.MothronSpawn
+                or NPCID.Butcher
+                or NPCID.CreatureFromTheDeep
+                or NPCID.Fritz
+                or NPCID.Nailhead
+                or NPCID.Psycho
+                or NPCID.DeadlySphere
+                or NPCID.DrManFly
+                or NPCID.ThePossessed;
+        }
+
+        private static bool IsPumpkinMoonNpc(int npcType) {
+            return npcType is NPCID.Scarecrow1
+                or NPCID.Scarecrow2
+                or NPCID.Scarecrow3
+                or NPCID.Scarecrow4
+                or NPCID.Scarecrow5
+                or NPCID.Scarecrow6
+                or NPCID.Scarecrow7
+                or NPCID.Scarecrow8
+                or NPCID.Scarecrow9
+                or NPCID.Scarecrow10
+                or NPCID.Splinterling
+                or NPCID.Hellhound
+                or NPCID.Poltergeist
+                or NPCID.HeadlessHorseman
+                or NPCID.MourningWood
+                or NPCID.Pumpking;
+        }
+
+        private static bool IsFrostMoonNpc(int npcType) {
+            return npcType is NPCID.ZombieXmas
+                or NPCID.ZombieSweater
+                or NPCID.ZombieElf
+                or NPCID.ZombieElfBeard
+                or NPCID.ZombieElfGirl
+                or NPCID.GingerbreadMan
+                or NPCID.Yeti
+                or NPCID.Nutcracker
+                or NPCID.NutcrackerSpinning
+                or NPCID.ElfArcher
+                or NPCID.Krampus
+                or NPCID.Flocko
+                or NPCID.ElfCopter
+                or NPCID.PresentMimic
+                or NPCID.Everscream
+                or NPCID.SantaNK1
+                or NPCID.IceQueen;
         }
 
         private static string GetEncounterContributionKey(NPC npc) {
@@ -290,7 +456,7 @@ namespace Ben10Mod {
                 case NPCID.MoonLordHead:
                 case NPCID.MoonLordHand:
                 case NPCID.MoonLordFreeEye:
-                    return "Ben10Mod:WayBig";
+                    return "Ben10Mod:AlienX";
 
                 // Old One's Army bosses / minibosses
                 case NPCID.DD2DarkMageT1:

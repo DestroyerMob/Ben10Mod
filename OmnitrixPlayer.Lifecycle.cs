@@ -126,28 +126,14 @@ namespace Ben10Mod {
         }
 
         public override void PostUpdateBuffs() {
-            var abilitySlot = ModContent.GetInstance<AbilitySlot>();
-            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
             var trans = CurrentTransformation;
 
-            if (wasTransformed && !isTransformed) {
-                if (!skipAutomaticForcedDetransformHandling) {
-                    var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-                    if (customSlot != null) {
-                        var activeOmnitrix = GetActiveOmnitrix();
-                        if (HasMasterControlAccess) {
-                            TransformationHandler.Detransform(Player, 0, true, false);
-                        }
-                        else {
-                            if (activeOmnitrix != null)
-                                activeOmnitrix.HandleForcedDetransform(Player, this);
-                            else if (!string.IsNullOrEmpty(currentTransformationId))
-                                TransformationHandler.Detransform(Player, 0, showParticles: true, addCooldown: false);
-                        }
-                    }
-                }
-
-                skipAutomaticForcedDetransformHandling = false;
+            bool transformationBuffMissing = !string.IsNullOrEmpty(currentTransformationId) &&
+                                             trans?.TransformationBuffId > 0 &&
+                                             !Player.HasBuff(trans.TransformationBuffId);
+            if ((wasTransformed && !isTransformed) || transformationBuffMissing) {
+                HandleAutomaticForcedDetransform();
+                trans = CurrentTransformation;
             }
             wasTransformed = isTransformed;
 
@@ -184,6 +170,26 @@ namespace Ben10Mod {
                 ApplyTransformationMovementBoostScale(baseMoveSpeed, baseMaxRunSpeed, baseAccRunSpeed, baseRunAcceleration);
             }
             trans?.UpdateActiveAbilityVisuals(Player, this);
+        }
+
+        private void HandleAutomaticForcedDetransform() {
+            if (skipAutomaticForcedDetransformHandling) {
+                skipAutomaticForcedDetransformHandling = false;
+                return;
+            }
+
+            var activeOmnitrix = GetActiveOmnitrix();
+            if (HasMasterControlAccess) {
+                TransformationHandler.Detransform(Player, 0, true, false);
+            }
+            else if (activeOmnitrix != null) {
+                activeOmnitrix.HandleForcedDetransform(Player, this);
+            }
+            else if (!string.IsNullOrEmpty(currentTransformationId)) {
+                TransformationHandler.Detransform(Player, cooldownTime, showParticles: true, addCooldown: true);
+            }
+
+            skipAutomaticForcedDetransformHandling = false;
         }
 
         public override void PostUpdate() {

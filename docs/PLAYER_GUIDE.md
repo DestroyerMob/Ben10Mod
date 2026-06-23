@@ -201,7 +201,8 @@ Hardmode unlocks:
 - `Jetray`: `Duke Fishron`
 - `AmpFibian`: `Empress of Light`
 - `Terraspin`: `Lunatic Cultist`
-- `Way Big`: `Moon Lord`
+- `Way Big`: `Celestial Pillars` Soul of Transformation drop
+- `Alien X`: `Moon Lord` Soul of Transformation drop
 - `Pesky Dust`: `Dark Mage`
 - `Cannonbolt`: `Ogre`
 - `Clockwork`: `Betsy`
@@ -225,10 +226,6 @@ Event unlocks:
 - `Astrodactyl`: complete the `Old One's Army` after participating
 
 For event unlocks, you need to actually fight during the event. Just being present is not enough.
-
-Special postgame unlock:
-
-- `Alien X`: craft and use a `Celestialsapien DNA Sample` after `Moon Lord`
 
 ## Building A Hero Character
 

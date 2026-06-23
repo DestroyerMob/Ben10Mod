@@ -251,6 +251,11 @@ Items: {
 		DisplayName: Hero Fragment
 	}
 
+	SoulOfTransformation: {
+		Tooltip: A dormant echo of alien DNA
+		DisplayName: Soul of Transformation
+	}
+
 	DiscoDye: {
 		DisplayName: Disco Dye
 		Tooltip: ""
@@ -583,11 +588,6 @@ Items: {
 
 	DnaPaletteKit: {
 		DisplayName: Dna Palette Kit
-		Tooltip: ""
-	}
-
-	CelestialsapienDnaSample: {
-		DisplayName: Celestialsapien Dna Sample
 		Tooltip: ""
 	}
 

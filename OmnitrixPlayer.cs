@@ -344,12 +344,6 @@ namespace Ben10Mod {
         private bool airborneLungeConsumed = false;
         private int activeLungeTime = 0;
 
-        private const int EventBloodMoon = -1;
-        private const int EventSolarEclipse = -2;
-        private const int EventSlimeRain = -3;
-        private const int EventPumpkinMoon = -4;
-        private const int EventFrostMoon = -5;
-        private const int EventOldOnesArmy = -6;
         private const int ChronoAcceleratorProcCooldownMax = 78;
         private const int HeroConvergenceHitsRequired = 6;
         private const int HeroConvergenceProcCooldownMax = 24;

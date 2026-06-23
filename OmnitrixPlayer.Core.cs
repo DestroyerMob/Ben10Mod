@@ -5,6 +5,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Ben10Mod.Content;
+using Ben10Mod.Content.Interface;
 using Ben10Mod.Content.Items.Accessories;
 
 namespace Ben10Mod {
@@ -14,6 +15,12 @@ namespace Ben10Mod {
                 !equippedOmnitrixItem.IsAir &&
                 equippedOmnitrixItem.ModItem is Omnitrix)
                 return equippedOmnitrixItem;
+
+            var omnitrixSlot = ModContent.GetInstance<OmnitrixSlot>();
+            if (omnitrixSlot?.FunctionalItem != null &&
+                !omnitrixSlot.FunctionalItem.IsAir &&
+                omnitrixSlot.FunctionalItem.ModItem is Omnitrix)
+                return omnitrixSlot.FunctionalItem;
 
             return null;
         }

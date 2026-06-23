@@ -28,6 +28,7 @@ namespace Ben10Mod.Content.Items.Accessories
         public virtual bool BuiltInTransformationFailsafe => false;
         public virtual int  TransformationSwapCost     => 50;
         public virtual int  TimeoutDuration            => 120;
+        public virtual int  EnergyDepletionCooldownDuration => 15;
         public virtual int  TransformationDuration     => 300;
         public virtual bool EvolutionFeature           => false;
         public virtual int  EvolutionCost              => 150;
@@ -314,7 +315,7 @@ namespace Ben10Mod.Content.Items.Accessories
             }
 
             if (!UseEnergyForTransformation && !omp.HasMasterControlAccess) {
-                omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
+                omp.ShowTransformFailureFeedback("Manual detransform requires Master Control on this Omnitrix.");
                 return false;
             }
 
@@ -408,7 +409,8 @@ namespace Ben10Mod.Content.Items.Accessories
                 }
 
                 if (!omp.HasMasterControlAccess && !UseEnergyForTransformation) {
-                    omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to switch forms.");
+                    omp.ShowTransformFailureFeedback(
+                        "This Omnitrix cannot switch forms manually. Wait for the transformation to time out or unlock Master Control.");
                     return false;
                 }
 
@@ -454,6 +456,10 @@ namespace Ben10Mod.Content.Items.Accessories
             return ApplyCooldownDurationModifiers(baseDuration, omp);
         }
 
+        public virtual int GetEnergyDepletionCooldownDuration(OmnitrixPlayer omp) {
+            return ApplyCooldownDurationModifiers(EnergyDepletionCooldownDuration, omp);
+        }
+
         public virtual int GetBranchTransformationDuration(OmnitrixPlayer omp) {
             return UseEnergyForTransformation
                 ? GetTransformationDuration(omp)
@@ -475,7 +481,7 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public virtual void DetransformFromEnergyDepletion(Player player, OmnitrixPlayer omp) {
-            TransformationHandler.Detransform(player, GetDetransformCooldownDuration(omp));
+            TransformationHandler.Detransform(player, GetEnergyDepletionCooldownDuration(omp));
         }
 
         public virtual int GetEnergyGainFromDamage(int damageDone) {
