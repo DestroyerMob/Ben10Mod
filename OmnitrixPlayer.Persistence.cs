@@ -16,10 +16,10 @@ namespace Ben10Mod {
             tag["absorbedMaterialTime"] = absorbedMaterialTime;
             tag["transformationSpeedBoostPercent"] = (int)transformationSpeedBoostPercent;
 
-            tag["transformationRoster"] = transformationSlots;
-            tag["unlockedTransformationRoster"] = unlockedTransformations.ToArray();
-            tag["favoriteTransformationRoster"] = BuildNormalizedFavoriteTransformations().ToArray();
-            tag["newlyUnlockedTransformationRoster"] = BuildNormalizedNewlyUnlockedTransformations().ToArray();
+            tag["transformationRoster"] = transformationSlots.ToList();
+            tag["unlockedTransformationRoster"] = unlockedTransformations.ToList();
+            tag["favoriteTransformationRoster"] = BuildNormalizedFavoriteTransformations().ToList();
+            tag["newlyUnlockedTransformationRoster"] = BuildNormalizedNewlyUnlockedTransformations().ToList();
 
             List<TagCompound> paletteEntries = new();
             foreach (TransformationPaletteColorEntry entry in BuildNormalizedTransformationPaletteEntries()) {
@@ -36,7 +36,7 @@ namespace Ben10Mod {
             }
 
             tag["transformationPalette"] = paletteEntries;
-            tag["paletteEnabledChannels"] = BuildNormalizedPaletteEnabledChannelKeys().ToArray();
+            tag["paletteEnabledChannels"] = BuildNormalizedPaletteEnabledChannelKeys();
 
             List<TagCompound> visualPaletteEntries = new();
             foreach (OmnitrixVisualPaletteColorEntry entry in BuildNormalizedOmnitrixVisualPaletteEntries()) {
@@ -105,7 +105,7 @@ namespace Ben10Mod {
             int[] oldUnlockedRoster;
             int[] oldTransformationRoster;
 
-            if (tag.TryGet("transformationRoster", out string[] rosterArray))
+            if (TryGetStringArray(tag, "transformationRoster", out string[] rosterArray))
                 transformationSlots = rosterArray;
             else if (tag.TryGet("transformationRoster", out oldTransformationRoster)) {
                 transformationSlots = new string[oldTransformationRoster.Length];
@@ -119,11 +119,11 @@ namespace Ben10Mod {
             }
 
             unlockedTransformations.Clear();
-            if (tag.TryGet("unlockedTransformationRoster", out string[] unlockedArray))
+            if (TryGetStringArray(tag, "unlockedTransformationRoster", out string[] unlockedArray))
                 unlockedTransformations.AddRange(unlockedArray);
 
             favoriteTransformations.Clear();
-            if (tag.TryGet("favoriteTransformationRoster", out string[] favoriteArray)) {
+            if (TryGetStringArray(tag, "favoriteTransformationRoster", out string[] favoriteArray)) {
                 for (int i = 0; i < favoriteArray.Length; i++) {
                     Transformation favoriteTransformation = TransformationLoader.Resolve(favoriteArray[i]);
                     if (favoriteTransformation != null)
@@ -132,7 +132,7 @@ namespace Ben10Mod {
             }
 
             newlyUnlockedTransformations.Clear();
-            if (tag.TryGet("newlyUnlockedTransformationRoster", out string[] newArray)) {
+            if (TryGetStringArray(tag, "newlyUnlockedTransformationRoster", out string[] newArray)) {
                 for (int i = 0; i < newArray.Length; i++) {
                     Transformation newTransformation = TransformationLoader.Resolve(newArray[i]);
                     if (newTransformation != null)
@@ -193,16 +193,16 @@ namespace Ben10Mod {
                 }
             }
 
-            if (tag.TryGet("paletteEnabledChannels", out string[] enabledPaletteArray)) {
+            if (TryGetStringArray(tag, "paletteEnabledChannels", out string[] enabledPaletteArray)) {
                 for (int i = 0; i < enabledPaletteArray.Length; i++) {
                     AddNormalizedPaletteEnabledChannelKey(enabledPaletteArray[i]);
                 }
             }
-            else if (tag.TryGet("paletteDisabledChannels", out string[] disabledPaletteArray)) {
+            else if (TryGetStringArray(tag, "paletteDisabledChannels", out string[] disabledPaletteArray)) {
                 LoadLegacyPaletteDisabledChannels(disabledPaletteArray);
             }
 
-            if (tag.TryGet("paletteDisabledTransformations", out string[] disabledTransformationArray)) {
+            if (TryGetStringArray(tag, "paletteDisabledTransformations", out string[] disabledTransformationArray)) {
                 for (int i = 0; i < disabledTransformationArray.Length; i++)
                     SetAllPaletteChannelsEnabled(disabledTransformationArray[i], false);
             }
@@ -275,6 +275,21 @@ namespace Ben10Mod {
                                       unlockedTransformations.Contains(currentTransformation.FullID)
                 ? currentTransformation.FullID
                 : string.Empty;
+        }
+
+        private static bool TryGetStringArray(TagCompound tag, string key, out string[] values) {
+            if (tag.TryGet(key, out string[] array)) {
+                values = array;
+                return true;
+            }
+
+            if (tag.TryGet(key, out List<string> list)) {
+                values = list.ToArray();
+                return true;
+            }
+
+            values = Array.Empty<string>();
+            return false;
         }
     }
 }

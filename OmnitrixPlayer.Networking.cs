@@ -100,6 +100,20 @@ namespace Ben10Mod {
             NormalizeStoredTransformationData();
         }
 
+        public void ApplyClientTransformationStateSync(string[] slots, string[] unlocked) {
+            if (unlocked != null) {
+                for (int i = 0; i < unlocked.Length; i++) {
+                    Transformation transformation = TransformationLoader.Resolve(unlocked[i]);
+                    if (transformation != null)
+                        Roster.TryUnlock(transformation.FullID, markNew: false);
+                }
+            }
+
+            NormalizeStoredTransformationData();
+            transformationSlots = NormalizeTransformationSlots(slots, unlockedTransformations);
+            NormalizeStoredTransformationData();
+        }
+
         public void ApplyClientTransformationSlotSync(string[] slots) {
             NormalizeStoredTransformationData();
             transformationSlots = NormalizeTransformationSlots(slots, unlockedTransformations);

@@ -78,7 +78,9 @@ Current recipe:
 
 Default keybinds:
 
-- `P`: transform or detransform
+- `P`: transform, and by default handles form switching, detransforming, and Ultimate evolution when available
+- Unbound by default: dedicated detransform
+- Unbound by default: dedicated Go Ultimate
 - `Q`: hold to open the transform wheel
 - `L`: open or close the alien roster
 - `O`: open or close the transformation codex

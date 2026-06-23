@@ -161,11 +161,12 @@ public static class OmnitrixStatePacketHandler {
         }
 
         int unlockedCount = reader.ReadUInt16();
+        string[] unlocked = new string[unlockedCount];
         for (int i = 0; i < unlockedCount; i++)
-            reader.ReadString();
+            unlocked[i] = reader.ReadString();
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        omp.ApplyClientTransformationSlotSync(slots);
+        omp.ApplyClientTransformationStateSync(slots, unlocked);
         omp.SyncTransformationState(toWho: whoAmI);
     }
 

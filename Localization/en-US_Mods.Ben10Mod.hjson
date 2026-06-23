@@ -726,6 +726,8 @@ Keybinds: {
 	"Alien Two.DisplayName": Alien  Two
 	"Alien One.DisplayName": Alien  One
 	Transform.DisplayName: Transform
+	Detransform.DisplayName: Detransform
+	"Go Ultimate.DisplayName": Go Ultimate
 	"Transform Wheel.DisplayName": Transform Wheel
 	"Absorb Material.DisplayName": Absorb Material
 	"Primary Ability.DisplayName": Primary Ability
@@ -1354,6 +1356,11 @@ Configs: {
 		EnableTransformationRandomizer: {
 			Tooltip: Makes Omnitrix transformations mistransform into a random unlocked alien whenever possible.
 			Label: Enable Transformation Randomizer
+		}
+
+		TransformKeyStartsTransformOnly: {
+			Tooltip: When enabled, the Transform key only starts transformations while human. Use the dedicated Detransform and Go Ultimate keybinds while transformed.
+			Label: Limit Transform Key to Transforming
 		}
 
 		ShowHeroInterface: {

@@ -216,10 +216,19 @@ namespace Ben10Mod.Content.Items.Accessories
 
         private void HandleTransformationKey(OmnitrixPlayer omp)
         {
-            if (!KeybindSystem.TransformationKeybind.JustPressed)
+            if (KeybindSystem.TransformationKeybind.JustPressed) {
+                bool transformOnly = ModContent.GetInstance<Ben10ClientConfig>().TransformKeyStartsTransformOnly;
+                TryTransformSelectedSlot(player, omp, transformOnly);
                 return;
+            }
 
-            TryTransformSelectedSlot(player, omp);
+            if (KeybindSystem.DetransformKeybind.JustPressed) {
+                TryManualDetransform(player, omp);
+                return;
+            }
+
+            if (KeybindSystem.UltimateTransformKeybind.JustPressed)
+                TryActivateUltimateTransformation(player, omp);
         }
 
         private string GetRosterSlotDisplayName(Player player, int slotIndex) {
@@ -276,6 +285,10 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public bool TryTransformSelectedSlot(Player player, OmnitrixPlayer omp) {
+            return TryTransformSelectedSlot(player, omp, transformOnly: false);
+        }
+
+        private bool TryTransformSelectedSlot(Player player, OmnitrixPlayer omp, bool transformOnly) {
             if (player == null || omp == null)
                 return false;
 
@@ -288,10 +301,51 @@ namespace Ben10Mod.Content.Items.Accessories
                 return false;
             }
 
-            return TryTransformToTransformation(player, omp, desiredId);
+            return TryTransformToTransformation(player, omp, desiredId, transformOnly);
         }
 
-        private bool TryTransformToTransformation(Player player, OmnitrixPlayer omp, string desiredId) {
+        public bool TryManualDetransform(Player player, OmnitrixPlayer omp) {
+            if (player == null || omp == null)
+                return false;
+
+            if (!omp.isTransformed) {
+                omp.ShowTransformFailureFeedback("You are not transformed.");
+                return false;
+            }
+
+            if (!UseEnergyForTransformation && !omp.HasMasterControlAccess) {
+                omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
+                return false;
+            }
+
+            TransformationHandler.Detransform(player, 0, addCooldown: false);
+            return true;
+        }
+
+        public bool TryActivateUltimateTransformation(Player player, OmnitrixPlayer omp) {
+            if (player == null || omp == null)
+                return false;
+
+            if (!omp.isTransformed) {
+                omp.ShowTransformFailureFeedback("Transform before trying to go Ultimate.");
+                return false;
+            }
+
+            Transformation activeTransformation = omp.CurrentTransformation;
+            if (activeTransformation == null) {
+                omp.ShowTransformFailureFeedback("Current transformation is unavailable.");
+                return false;
+            }
+
+            if (activeTransformation.TryHandleUltimateTransformKey(player, omp, this))
+                return true;
+
+            omp.ShowTransformFailureFeedback("No Ultimate form is available right now.");
+            return false;
+        }
+
+        private bool TryTransformToTransformation(Player player, OmnitrixPlayer omp, string desiredId,
+            bool transformOnly = false) {
             if (player == null || omp == null)
                 return false;
 
@@ -330,6 +384,12 @@ namespace Ben10Mod.Content.Items.Accessories
                     transformationNum = i;
                     break;
                 }
+            }
+
+            if (transformOnly && omp.isTransformed) {
+                omp.ShowTransformFailureFeedback(
+                    "Transform key is set to transform only. Use the dedicated Detransform or Go Ultimate key while transformed.");
+                return false;
             }
 
             if (!omp.isTransformed) {
@@ -381,13 +441,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 return true;
             }
 
-            if (!UseEnergyForTransformation && !omp.HasMasterControlAccess) {
-                omp.ShowTransformFailureFeedback("Detransform first or unlock Master Control to cancel the active form.");
-                return false;
-            }
-
-            TransformationHandler.Detransform(player, 0, addCooldown: false);
-            return true;
+            return TryManualDetransform(player, omp);
         }
 
         public virtual int GetTransformationDuration(OmnitrixPlayer omp) {

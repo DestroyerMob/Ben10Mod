@@ -12,6 +12,8 @@ namespace Ben10Mod.Keybinds {
         public static ModKeybind TertiaryAbility { get; private set; }
         public static ModKeybind UltimateAbility { get; private set; }
         public static ModKeybind TransformationKeybind { get; private set; }
+        public static ModKeybind DetransformKeybind { get; private set; }
+        public static ModKeybind UltimateTransformKeybind { get; private set; }
         public static ModKeybind TransformWheel { get; private set; }
         public static ModKeybind AbsorbMaterial { get; private set; }
         public static ModKeybind OpenTransformationScreen { get; private set; }
@@ -31,6 +33,8 @@ namespace Ben10Mod.Keybinds {
             TertiaryAbility = KeybindLoader.RegisterKeybind(Mod, "Tertiary Ability", "H");
             UltimateAbility = KeybindLoader.RegisterKeybind(Mod, "Ultimate Ability", "U");
             TransformationKeybind = KeybindLoader.RegisterKeybind(Mod, "Transform", "P");
+            DetransformKeybind = KeybindLoader.RegisterKeybind(Mod, "Detransform", "None");
+            UltimateTransformKeybind = KeybindLoader.RegisterKeybind(Mod, "Go Ultimate", "None");
             TransformWheel = KeybindLoader.RegisterKeybind(Mod, "Transform Wheel", "Q");
             AbsorbMaterial = KeybindLoader.RegisterKeybind(Mod, "Absorb Material", "K");
             OpenTransformationScreen = KeybindLoader.RegisterKeybind(Mod, "Open Menu", "L");
@@ -51,6 +55,8 @@ namespace Ben10Mod.Keybinds {
             TertiaryAbility = null;
             UltimateAbility = null;
             TransformationKeybind = null;
+            DetransformKeybind = null;
+            UltimateTransformKeybind = null;
             TransformWheel = null;
             AbsorbMaterial = null;
             OpenTransformationScreen = null;

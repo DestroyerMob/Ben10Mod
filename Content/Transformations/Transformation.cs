@@ -246,6 +246,15 @@ namespace Ben10Mod.Content.Transformations {
             return false;
         }
 
+        public virtual bool TryHandleUltimateTransformKey(Player player, OmnitrixPlayer omp, Omnitrix omnitrix) {
+            if (omp.pendingEvolutionStepDownTime > 0 &&
+                omp.pendingEvolutionStepDownTransformationId == FullID)
+                return true;
+
+            return TryActivateChildTransformation(player, omp, omnitrix, FullID,
+                allowDetransformOnFailure: false);
+        }
+
         public virtual string GetDisplayName(OmnitrixPlayer omp) => omp?.GetTransformationBaseName(this) ?? TransformationName;
         public virtual string GetDescription(OmnitrixPlayer omp) => Description;
         public virtual bool IsStarterTransformation(OmnitrixPlayer omp) => false;
@@ -673,6 +682,12 @@ namespace Ben10Mod.Content.Transformations {
 
         protected virtual bool TryActivateChildTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
             string selectedTransformationId) {
+            return TryActivateChildTransformation(player, omp, omnitrix, selectedTransformationId,
+                allowDetransformOnFailure: true);
+        }
+
+        private bool TryActivateChildTransformation(Player player, OmnitrixPlayer omp, Omnitrix omnitrix,
+            string selectedTransformationId, bool allowDetransformOnFailure) {
             Transformation selectedTransformation = TransformationLoader.Get(selectedTransformationId);
 
             foreach (Transformation childTransformation in EnumerateChildTransformations()) {
@@ -682,14 +697,20 @@ namespace Ben10Mod.Content.Transformations {
                 int energyCost = GetChildTransformationEnergyCost(player, omp, omnitrix, childTransformation,
                     selectedTransformationId);
                 if (!omp.CanSpendOmnitrixEnergy(energyCost)) {
-                    if (ShouldDetransformWhenChildTransformationFails(player, omp, omnitrix, childTransformation,
+                    if (allowDetransformOnFailure &&
+                        ShouldDetransformWhenChildTransformationFails(player, omp, omnitrix, childTransformation,
                             selectedTransformationId))
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
+                    else if (!allowDetransformOnFailure && energyCost > 0)
+                        omp.ShowTransformFailureFeedback($"Need {energyCost} OE to go Ultimate.");
                     return true;
                 }
 
-                if (!omp.TrySpendOmnitrixEnergy(energyCost))
+                if (!omp.TrySpendOmnitrixEnergy(energyCost)) {
+                    if (!allowDetransformOnFailure && energyCost > 0)
+                        omp.ShowTransformFailureFeedback($"Need {energyCost} OE to go Ultimate.");
                     return true;
+                }
 
                 int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
                 TransformInto(player, omp, childTransformation, branchDuration);
@@ -705,13 +726,19 @@ namespace Ben10Mod.Content.Transformations {
 
                 int energyCost = registeredBranch.ResolveEnergyCost(player, omp, omnitrix, selectedTransformation);
                 if (!omp.CanSpendOmnitrixEnergy(energyCost)) {
-                    if (registeredBranch.ShouldDetransform(player, omp, omnitrix, selectedTransformation))
+                    if (allowDetransformOnFailure &&
+                        registeredBranch.ShouldDetransform(player, omp, omnitrix, selectedTransformation))
                         TransformationHandler.Detransform(player, 0, addCooldown: false);
+                    else if (!allowDetransformOnFailure && energyCost > 0)
+                        omp.ShowTransformFailureFeedback($"Need {energyCost} OE to go Ultimate.");
                     return true;
                 }
 
-                if (!omp.TrySpendOmnitrixEnergy(energyCost))
+                if (!omp.TrySpendOmnitrixEnergy(energyCost)) {
+                    if (!allowDetransformOnFailure && energyCost > 0)
+                        omp.ShowTransformFailureFeedback($"Need {energyCost} OE to go Ultimate.");
                     return true;
+                }
 
                 int branchDuration = omnitrix.GetBranchTransformationDuration(omp);
                 TransformInto(player, omp, childTransformation, branchDuration);
