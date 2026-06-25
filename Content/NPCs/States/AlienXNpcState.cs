@@ -4,6 +4,8 @@ using Terraria;
 namespace Ben10Mod.Content.NPCs;
 
 public struct AlienXNpcState {
+    private const int MaxJudgementStacks = 100;
+
     public int JudgementOwner;
     public int JudgementStacks;
     public int JudgementTime;
@@ -19,7 +21,7 @@ public struct AlienXNpcState {
             JudgementStacks = 0;
         }
 
-        JudgementStacks = Utils.Clamp(JudgementStacks + stacks, 0, 6);
+        JudgementStacks = Utils.Clamp(JudgementStacks + stacks, 0, MaxJudgementStacks);
         JudgementTime = Utils.Clamp(time, 1, 420);
     }
 
@@ -56,7 +58,8 @@ public struct AlienXNpcState {
 
     public void ApplyDrawEffects(ref Color drawColor) {
         if (JudgementTime > 0)
-            drawColor = Color.Lerp(drawColor, new Color(190, 200, 255), 0.16f + JudgementStacks * 0.04f);
+            drawColor = Color.Lerp(drawColor, new Color(190, 200, 255),
+                MathHelper.Clamp(0.16f + JudgementStacks / (float)MaxJudgementStacks * 0.28f, 0f, 0.48f));
 
         if (StasisTime > 0)
             drawColor = Color.Lerp(drawColor, new Color(240, 245, 255), 0.28f);

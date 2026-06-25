@@ -17,9 +17,9 @@ namespace Ben10Mod.Content.Transformations.RipJaws
             "Main attack: Razor Bite applies bleeding and restores small breath off-water.",
             "Alt attack: Bite Dash lunges hardest in water or Hydro Rush.",
             "Passive in water: faster movement, full breathing, brighter vision, and much higher damage.",
-            "Passive in rain: smaller aquatic power window for outdoor fights.",
+            "Passive in rain: smaller aquatic boost for outdoor fights.",
             "Passive on land: breath drains and exhaustion hurts if attacks do not connect.",
-            "Hydro Rush: short land boss window that carries aquatic pressure with you."
+            "Hydro Rush: briefly carries water-combat bonuses onto land."
         };
 
         public override void Load() {

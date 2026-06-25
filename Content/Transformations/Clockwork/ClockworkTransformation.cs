@@ -24,11 +24,11 @@ public class ClockworkTransformation : Transformation {
         "A Chronosapien who manipulates time with scrambling bolts, suspended traps, bursts of temporal acceleration, and paradox dodges.";
 
     public override List<string> Abilities => new() {
-        "Chrono bolts that scramble enemies",
-        "Time Snares that suspend targets in place",
-        "Accelerate to speed yourself up",
-        "Paradox for short-range temporal dodges",
-        "Chrono Lock to pin enemies in frozen time"
+        "Chrono Bolt is a steady ranged shot that scrambles enemies and keeps time effects active.",
+        "Time Snare places a delayed trap that suspends targets, giving Clockwork time to line up follow-up shots.",
+        "Accelerate briefly speeds up Clockwork's movement and attack tempo.",
+        "Paradox is a short-range temporal dodge for slipping out of danger.",
+        "Chrono Lock pins enemies in frozen time so you can focus them down."
     };
 
     public override string PrimaryAttackName => "Chrono Bolt";

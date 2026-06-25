@@ -33,7 +33,7 @@ public class EchoEchoTransformation : Transformation {
     public override Transformation ChildTransformation => ModContent.GetInstance<UltimateEchoEchoTransformation>();
 
     public override string Description =>
-        "A slippery sonic splitter that fights through independent duplicates. Echo Echo sets up sentient clones, layers Resonance from multiple sources, and cashes that pressure out in Chorus Overload.";
+        "A slippery sonic splitter who fights through independent duplicates. More active Echoes means more Resonance, more shockwaves, and a stronger Chorus Overload.";
 
     public override List<string> Abilities => new() {
         "Sonic Pulse uses the older sweeping wave visual and builds Resonance from the player directly.",
@@ -41,7 +41,7 @@ public class EchoEchoTransformation : Transformation {
         "Duplicate creates independent Echo clones that move, pick targets, and attack on their own.",
         "Echo Shift swaps with the nearest Echo or performs a short backstep if you do not have one out.",
         "Resonance stacks faster when hits come from different sources, then pops for bonus area damage and OE refund.",
-        "Chorus Overload briefly raises the Echo cap to three and supercharges the whole setup loop."
+        "Chorus Overload briefly raises the Echo cap to three and strengthens the whole sonic swarm."
     };
 
     public override string PrimaryAttackName => "Sonic Pulse";

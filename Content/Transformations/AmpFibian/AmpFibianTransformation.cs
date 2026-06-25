@@ -43,10 +43,10 @@ public class AmpFibianTransformation : Transformation {
         "A ghostly phase conductor who slips through danger, stores charge in a defensive barrier, and punishes close enemies with controlled electrical discharges.";
 
     public override List<string> Abilities => new() {
-        "Precise piercing sine-wave lightning",
-        "Close-range discharge spikes after Phase Shift",
-        "Phase Shift passes through attacks and charges the next burst",
-        "Electrical Barrier absorbs projectiles and stores retaliatory arcs"
+        "Lightning Bolt pierces in a straight line, making it strong when enemies line up.",
+        "Electrical Burst shocks everything nearby and hits harder after Phase Shift.",
+        "Phase Shift slips through attacks and charges the next Electrical Burst.",
+        "Electrical Barrier absorbs projectiles, stores charge, and zaps nearby enemies in return."
     };
 
     public override string PrimaryAttackName => "Lightning Bolt";

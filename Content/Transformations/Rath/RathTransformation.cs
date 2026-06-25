@@ -36,12 +36,12 @@ public class RathTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Rath_Buff>();
 
     public override string Description =>
-        "An Appoplexian duelist predator who marks one prey target, builds Rend stacks with claw strings, then pounces in to cash them out.";
+        "An Appoplexian duelist who marks one prey target, tears Rend stacks into them, then pounces before they can escape.";
 
     public override List<string> Abilities => new() {
-        "Savage 3-hit claw combo marks one prey target and builds Rend",
-        "Pounce chases marked prey, grants brief guard, and cashes out Rend",
-        "Battle Rage widens claws, speeds attacks, and sharpens single-target pressure"
+        "Savage Combo marks one prey target and builds Rend through a 3-hit claw string.",
+        "Pounce chases marked prey, grants brief guard, and hits harder with Rend.",
+        "Battle Rage widens claws, speeds attacks, and makes Rath deadlier against one target."
     };
 
     public override string PrimaryAttackName => "Savage Combo";
@@ -274,8 +274,8 @@ public class RathTransformation : Transformation {
                 ? $"Build Rend • {preyText}"
                 : $"Mark prey and build Rend • {preyText}",
             OmnitrixPlayer.AttackSelection.Secondary => compact
-                ? $"Cashout • {preyText}"
-                : $"Pounce to prey and cash out Rend • {preyText}",
+                ? $"Pounce • {preyText}"
+                : $"Pounce to prey and hit harder with Rend • {preyText}",
             _ => preyText
         };
     }

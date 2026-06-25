@@ -32,15 +32,15 @@ public class AstrodactylTransformation : Transformation {
     public override string TransformationName => "Astrodactyl";
     public override int TransformationBuffId => ModContent.BuffType<Astrodactyl_Buff>();
     public override string Description =>
-        "A sky-dominating hunter who gets deadlier the longer he stays airborne, marking prey from above before diving through them and calling down comets.";
+        "A sky hunter who gets deadlier while airborne, marks prey from above, then dives through them or calls down comets.";
 
     public override List<string> Abilities => new() {
-        "Rapid plasma bolts from the air",
-        "Starburst orb that breaks open on impact",
-        "Natural flight",
-        "Hyperflight that rewards staying airborne",
-        "Jet Dive that spears marked targets",
-        "Cosmic Barrage that rains comets onto exposed prey"
+        "Plasma Bolt tags enemies while Astrodactyl circles above the fight.",
+        "Starburst breaks open on impact and helps expose prey for Jet Dive.",
+        "Natural flight keeps Astrodactyl above danger and in a good firing angle.",
+        "Hyperflight makes clean airborne movement hit harder.",
+        "Jet Dive spears exposed targets, so use it after Plasma Bolt or Starburst.",
+        "Cosmic Barrage rains comets onto exposed prey."
     };
 
     public override string PrimaryAttackName => "Plasma Bolt";

@@ -7,7 +7,7 @@ namespace Ben10Mod.Content.Transformations.FourArms;
 
 public class FourArms : ModItem {
     public static string TransformationDescription =>
-        "A Tetramand melee bruiser built around gauntlet-range punches, shockwave claps, slams, and brutally strong melee weapon swings. Four Arms snowballs through Rage, then cashes it out in Berserker mode.";
+        "A Tetramand melee bruiser who thrives up close with gauntlet punches, shockwave claps, slams, and Rage-fuelled Berserker mode.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Main attack: Titan Combo chains fast fists and ends in a wide cleaving third hit.",

@@ -63,6 +63,10 @@ namespace Ben10Mod {
             omnitrixEquipped = false;
             equippedOmnitrix = null;
             equippedOmnitrixItem = null;
+            activeOmnitrixVisualsHidden = false;
+            activeTransformationHeadSlot = -1;
+            activeTransformationBodySlot = -1;
+            activeTransformationLegsSlot = -1;
 
             omnitrixUpdating = false;
 

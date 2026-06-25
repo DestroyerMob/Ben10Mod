@@ -10,7 +10,7 @@ namespace Ben10Mod.Content.Transformations.DiamondHead
             "A durable Petrosapien built to anchor fights with piercing crystal fire, fortified bulk, and punishing prism strikes.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
-            "Piercing crystal shards for precise ranged pressure.",
+            "Piercing crystal shards for precise ranged hits.",
             "Crystal blooms that burst from the ground.",
             "Crystalline Bulwark for heavier armor and retaliation.",
             "Prism Pincer that crushes a point from both sides.",

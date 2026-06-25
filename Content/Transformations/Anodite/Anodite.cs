@@ -20,7 +20,7 @@ namespace Ben10Mod.Content.Transformations.Anodite
             "Mana Barrier for protection and battlefield control.",
             "Hex Circle to trap enemies in place.",
             "Ascendant Halo to surround yourself with living magic.",
-            "Strong air movement and mana-focused pressure while transformed."
+            "Strong air movement and mana-focused attacks while transformed."
         };
 
         public override void Load() {

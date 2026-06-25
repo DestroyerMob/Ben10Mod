@@ -34,14 +34,14 @@ public class UltimateHumungousaurTransformation : HumungousaurTransformation {
     public override bool HasPrimaryAbility => true;
 
     public override string Description =>
-        "A siege-bred Vaxasaurian juggernaut that batters enemies with breach-building combos, crushes them with stomps, and cashes that setup out in explosive cataclysm bursts.";
+        "A siege-bred Vaxasaurian juggernaut that batters enemies with heavy combos, breaks them open with Breach, and finishes fights with explosive cataclysm bursts.";
 
     public override List<string> Abilities => new() {
-        "Siege Combo builds Breach with heavy rocket-assisted punches",
-        "Bunker Rockets cashes out broken targets with explosive follow-up shockwaves",
-        "Titan Charge armors through enemies as a forward siege rush",
-        "Meteor Stomp launches into a real slam before cracking the ground open",
-        "Cataclysm Drive overloads every attack pattern and ends in a massive shutdown pulse"
+        "Siege Combo builds Breach with heavy rocket-assisted punches.",
+        "Bunker Rockets punish Breached targets with explosive follow-up shockwaves.",
+        "Titan Charge armors through enemies as a forward siege rush.",
+        "Meteor Stomp launches Ultimate Humungousaur up, then slams down hard enough to crack the ground.",
+        "Cataclysm Drive overloads every attack pattern and ends in a massive shutdown pulse."
     };
 
     public override string PrimaryAttackName => "Siege Combo";

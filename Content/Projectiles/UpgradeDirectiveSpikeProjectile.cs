@@ -49,6 +49,9 @@ public class UpgradeDirectiveSpikeProjectile : ModProjectile {
         target.AddBuff(ModContent.BuffType<EnemySlow>(), FullyIntegrated ? 165 : 120);
         if (Overclocked || Variant != UpgradeAttackVariant.Primary)
             target.AddBuff(BuffID.Electrified, 90);
+
+        UpgradeTransformation.ApplyUpgradeTechHit(Projectile, target, UpgradeTechProfile.Summon, Variant, Overclocked, FullyIntegrated,
+            damageDone);
     }
 
     public override void OnKill(int timeLeft) {

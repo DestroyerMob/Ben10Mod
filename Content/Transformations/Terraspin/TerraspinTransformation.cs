@@ -21,14 +21,14 @@ public class TerraspinTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Terraspin_Buff>();
 
     public override string Description =>
-        "A Geochelone Aerio who hovers on turbine winds, spins his shell into crushing gales, and controls fights with layered air pressure.";
+        "A Geochelone Aerio who hovers on turbine winds, spins his shell into crushing gales, and traps enemies in layered air currents.";
 
     public override List<string> Abilities => new() {
-        "Lift-off wind cannon",
-        "Shell-spin gale",
-        "Shell turbine hover",
-        "Cyclone pocket",
-        "Tempest Spiral that fills the area with storm winds"
+        "Wind Cannon fires lifting gusts from range.",
+        "Gale Spin turns Terraspin's shell into close-range wind damage when enemies push in.",
+        "Shell Turbine is the hover tool, letting Terraspin hold space above the fight and reposition safely.",
+        "Cyclone Pocket drops a wind field that keeps enemies trapped inside.",
+        "Tempest Spiral fills the fight with storm winds after you have shaped the battlefield."
     };
 
     public override string PrimaryAttackName => "Wind Cannon";

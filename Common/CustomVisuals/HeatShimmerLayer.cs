@@ -15,7 +15,8 @@ public class HeatShimmerLayer : PlayerDrawLayer {
         Player player = drawInfo.drawPlayer;
         var    omp    = player.GetModPlayer<OmnitrixPlayer>();
 
-        return omp.currentTransformationId == "Ben10Mod:HeatBlast";
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == "Ben10Mod:HeatBlast";
     }
 
     // Position after armor/body
@@ -52,6 +53,8 @@ public class HeatShimmerLayer : PlayerDrawLayer {
             for (int i = 0; i < originalCount; i++)
             {
                 var src = drawInfo.DrawDataCache[i];
+                if (src.texture == null || src.color.A == 0)
+                    continue;
 
                 for (int p = 0; p < offsets.Length; p++)
                 {

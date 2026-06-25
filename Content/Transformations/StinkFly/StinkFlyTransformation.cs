@@ -36,14 +36,14 @@ public class StinkFlyTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<StinkFly_Buff>();
 
     public override string Description =>
-        "An airborne skirmisher that scales venom pressure by staying fast, evasive, and off the ground.";
+        "An airborne skirmisher who gets the most out of venom by staying fast, evasive, and off the ground.";
 
     public override List<string> Abilities => new() {
-        "Slime Shot is weak on the ground but sharper while airborne",
-        "Poison Spit chains only from slimed targets",
-        "Passive flight",
-        "Toxic Slipstream echoes attacks and leaves trails while flying fast",
-        "Corrosive Barrage rains more toxic droplets from higher flight speed"
+        "Slime Shot is the aerial poke; it is weaker on the ground and sharper while Stinkfly stays airborne.",
+        "Poison Spit chains only from slimed targets, so land Slime Shot first.",
+        "Passive flight keeps Stinkfly evasive and strengthens speed-based venom attacks.",
+        "Toxic Slipstream echoes attacks and leaves trails while flying fast, turning movement into damage.",
+        "Corrosive Barrage rains more toxic droplets when Stinkfly enters fast."
     };
 
     public override string PrimaryAttackName => "Slime Shot";

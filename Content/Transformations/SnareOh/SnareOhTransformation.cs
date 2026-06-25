@@ -22,11 +22,11 @@ public class SnareOhTransformation : Transformation {
         "A Thep Khufan who mummifies enemies in burial curses, then unseals his core to turn those bindings into crushing follow-up damage.";
 
     public override List<string> Abilities => new() {
-        "Bandage lashes that wrap enemies in burial curses",
-        "Constricting wraps that tighten the curse",
-        "Expose Core to trade defense for harsher payoffs",
-        "Burial Bind that seals enemies inside a tomb",
-        "Irradiated Core that punishes cursed targets nearby"
+        "Bandage Lash wraps enemies in burial curses.",
+        "Constricting Wrap tightens existing curses and punishes targets trying to leave.",
+        "Expose Core lowers Snare-Oh's defense but makes curses much harsher.",
+        "Burial Bind seals enemies inside a tomb field, holding cursed targets still for follow-up damage.",
+        "Irradiated Core surrounds Snare-Oh with a punishing aura for nearby cursed targets."
     };
 
     public override string PrimaryAttackName => "Bandage Lash";

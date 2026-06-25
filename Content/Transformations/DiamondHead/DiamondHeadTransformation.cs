@@ -31,14 +31,14 @@ public class DiamondHeadTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<DiamondHead_Buff>();
 
     public override string Description =>
-        "A durable Petrosapien that controls the lane with piercing shard fire, ground-burst crystal blooms, fortified crystal plating, and crushing prism strikes from any angle.";
+        "A durable Petrosapien who controls lanes with piercing shards, crystal blooms, fortified plating, and prism strikes from any angle.";
 
     public override List<string> Abilities => new() {
-        "Piercing crystal shards for precise ranged pressure",
-        "Crystal blooms that burst from the ground",
-        "Crystalline Bulwark for heavier armor and retaliation",
-        "Prism Pincer that crushes a point from both sides",
-        "Diamond Drop that calls a massive crystal down from above"
+        "Crystal Shard pierces enemies in a clean line from range.",
+        "Crystal Bloom bursts from the ground, punishing enemies that stay on predictable paths.",
+        "Crystalline Bulwark gives Diamondhead heavier armor and retaliation while he holds ground.",
+        "Prism Pincer crushes a chosen point from both sides, hitting hardest when enemies are lined up.",
+        "Diamond Drop calls a massive crystal from above for a heavy committed hit."
     };
 
     public override string PrimaryAttackName => "Crystal Shard";

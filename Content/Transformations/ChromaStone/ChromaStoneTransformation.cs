@@ -433,7 +433,7 @@ public class ChromaStoneTransformation : Transformation {
                 : $"Committed beam • spends Facets over time • {facetText} • {radianceText}",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"{guardText} • {radianceText}"
-                : $"{guardText} • rooted setup risk • {radianceText}",
+                : $"{guardText} • rooted while guarding • {radianceText}",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
                 ? $"Spend {state.VisibleFacetCount}/3 Facets • {radianceText}"
                 : $"Prismatic Lance spends all stored Facets • {facetText} • {radianceText}",

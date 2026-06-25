@@ -30,11 +30,11 @@ public class LodestarTransformation : Transformation {
         "A magnetic controller who flips whole encounters between pull and repel, reshaping every bolt, field, anchor, and vortex around his current polarity.";
 
     public override List<string> Abilities => new() {
-        "Polarized bolts that shift with your current polarity",
-        "Magnetic field orb that pulls or shoves enemies",
-        "Mag-Lev that flips your polarity and lets you hover",
-        "Magnetic Anchor that pins down a point in space",
-        "Polar Vortex that implodes or erupts based on polarity"
+        "Polarized Bolt is your steady ranged poke; pull polarity drags enemies inward while repel polarity shoves them away.",
+        "Magnetic Drag fires a slower field orb for crowd control, grouping enemies in pull mode or creating breathing room in repel mode.",
+        "Mag-Lev flips polarity and gives hover control, changing every magnetic attack between pull and repel.",
+        "Magnetic Anchor places a fixed control point that keeps enemies moving around your chosen polarity zone.",
+        "Polar Vortex follows your polarity: pull mode implodes enemies inward, while repel mode erupts outward."
     };
 
     public override string PrimaryAttackName => "Polarized Bolt";

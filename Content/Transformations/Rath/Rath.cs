@@ -9,11 +9,11 @@ public class Rath : ModItem {
     private const string CostumeTexturePath = "Ben10Mod/Content/Transformations/Rath/Rath";
 
     public static string TransformationDescription =>
-        "An Appoplexian duelist predator who marks one prey target, builds Rend with claw strings, pounces in for the cash-out, and gets more dangerous while enraged.";
+        "An Appoplexian duelist predator who marks one prey target, tears Rend into them with claw strings, and gets more dangerous while enraged.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Main attack: Savage Combo marks prey and stacks Rend with a rending finisher.",
-        "Alt attack: Pounce chases marked prey and cashes out Rend or bleeding targets.",
+        "Alt attack: Pounce chases marked prey and hits harder against Rend or bleeding targets.",
         "Primary ability: Battle Rage widens claws, speeds attacks, and builds Rend faster."
     };
 

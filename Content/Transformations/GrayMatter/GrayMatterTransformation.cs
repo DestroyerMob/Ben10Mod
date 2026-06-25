@@ -29,10 +29,10 @@ public class GrayMatterTransformation : Transformation {
         "A tiny Galvan prodigy who trades raw power for speed, precision, Omnitrix efficiency, and gadget-like neuro attacks.";
 
     public override List<string> Abilities => new() {
-        "Rapid neuro-darts that punish enemies with precise, high-penetration shots",
-        "Logic orbs that ricochet, home in, and scramble targets",
-        "Hyperfocus to boost OE recovery, mobility, and shot quality",
-        "Cerebral Cascade to flood the screen with guided darts"
+        "Neuro Dart is the rapid precision shot, using high armor penetration instead of raw size.",
+        "Logic Orb ricochets, homes in, and scrambles targets so Gray Matter can fight from strange angles.",
+        "Hyperfocus boosts OE recovery, mobility, and shot quality for a short burst.",
+        "Cerebral Cascade floods the screen with guided darts."
     };
 
     public override string PrimaryAttackName => "Neuro Dart";

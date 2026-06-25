@@ -33,14 +33,14 @@ public class RipJawsTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<RipJaws_Buff>();
 
     public override string Description =>
-        "An aquatic predator that dominates in water, suffers on land, and fights to keep breath pressure under control.";
+        "An aquatic predator that dominates in water but struggles on dry land. Keep Ripjaws wet, rainy, or rushing before breath runs out.";
 
     public override List<string> Abilities => new() {
-        "Aquatic predator power in water",
-        "Land hits recover small amounts of breath",
-        "Rain grants a smaller aquatic power window",
-        "Hydro Rush carries aquatic pressure onto land",
-        "Heavy bite lunge"
+        "Ripjaws is strongest while wet: water boosts movement and combat, but dry land steadily drains breath.",
+        "Razor Bite is the reliable attack, and landing hits on land restores small chunks of breath.",
+        "Rain gives Ripjaws a smaller water bonus above ground.",
+        "Hydro Rush temporarily carries water bonuses onto land, so trigger it before breath gets dangerous.",
+        "Bite Dash is the heavy lunge for closing distance or finishing a target once breath is stable."
     };
 
     public override string PrimaryAttackName => "Razor Bite";
@@ -189,7 +189,7 @@ public class RipJawsTransformation : Transformation {
                 : $"{environmentText} • Bite Dash is fastest in water or Hydro Rush",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? "Carry water"
-                : "Carries aquatic pressure onto land for short boss windows",
+                : "Carries water-combat bonuses onto land for a short time",
             _ => environmentText
         };
 
@@ -215,9 +215,9 @@ public class RipJawsTransformation : Transformation {
         if (player.wet)
             return compact ? "Water" : "Water: full predator power";
         if (IsHydroRushActive(omp))
-            return compact ? "Hydro" : "Hydro Rush: aquatic pressure on land";
+            return compact ? "Hydro" : "Hydro Rush: water-combat bonuses on land";
         if (IsRainPressureWindow(player))
-            return compact ? "Rain" : "Rain: mini-power window";
+            return compact ? "Rain" : "Rain: small aquatic boost";
         return compact ? "Dry" : "Dry land: breath drains";
     }
 

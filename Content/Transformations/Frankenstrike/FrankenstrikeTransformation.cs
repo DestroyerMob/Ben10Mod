@@ -31,15 +31,15 @@ public class FrankenstrikeTransformation : Transformation {
     public override string TransformationName => "Frankenstrike";
     public override int TransformationBuffId => ModContent.BuffType<Frankenstrike_Buff>();
     public override string Description =>
-        "A brutal Transylian bruiser who loads enemies with Conductive, turns them Overcharged, then detonates that setup with bolts, leaps, and a tesla field.";
+        "A brutal Transylian bruiser who loads enemies with Conductive, turns them Overcharged, then detonates them with bolts, leaps, and tesla fields.";
 
     public override List<string> Abilities => new() {
-        "Galvanic Fists builds Conductive through a 3-hit combo",
-        "Tesla Bolt cashes out Overcharged into a chaining Thunderburst",
-        "Thunder Leap crashes through targets and punishes Overcharged landings",
-        "Capacitor Spires lock lanes down and form a damaging lightning tether",
-        "Consuming Overcharged grants Galvanized speed, attack tempo, and OE sustain",
-        "Stormheart Reanimation overclocks your whole thunder network"
+        "Galvanic Fists build Conductive through a 3-hit combo.",
+        "Tesla Bolt detonates Overcharged enemies into chaining Thunderbursts.",
+        "Thunder Leap crashes through targets and hits harder when Overcharged enemies are nearby.",
+        "Capacitor Spires lock lanes down and form a damaging lightning tether.",
+        "Consuming Overcharged grants Galvanized speed, attack tempo, and OE sustain.",
+        "Stormheart Reanimation boosts every part of Frankenstrike's thunder attacks."
     };
 
     public override string PrimaryAttackName => "Galvanic Fists";

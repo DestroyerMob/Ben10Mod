@@ -23,13 +23,13 @@ public class UltimateBigChillTransformation : BigChillTransformation {
     public override Transformation ChildTransformation => null;
 
     public override string Description =>
-        "An evolved Necrofriggian air-superiority form that blankets the arena in coldfire, phases through pressure, and chains Hoarfrosted Shiverbursts through the fight.";
+        "An evolved Necrofriggian air-superiority form that blankets the arena in coldfire, phases through danger, and chains Hoarfrost Shiverbursts through the fight.";
 
     public override List<string> Abilities => new() {
         "Direct hits apply Hoarfrost and light coldfire, shaving defense while you stay airborne over the fight.",
         "Coldfire Stream is the long marking breath that blankets air lanes in front of you.",
-        "Absolute Barrage is the evolved black-ice cash-out that detonates Hoarfrost into larger Shiverbursts.",
-        "Spectral Phase dashes intangible, drives through marked enemies, and supercharges your next burst window.",
+        "Absolute Barrage detonates Hoarfrost into larger Shiverbursts.",
+        "Spectral Phase dashes intangible and drives through marked enemies.",
         "Permafrost Wake leaves empowered drifting storms behind your movement while you kite.",
         "Shiverbursts refund OE, launch frost wisps, fracture bosses, and Polar Cataclysm keeps the whole chain rolling."
     };

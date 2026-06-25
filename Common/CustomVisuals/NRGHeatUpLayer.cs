@@ -13,7 +13,8 @@ public class NRGHeatUpLayer : PlayerDrawLayer {
             return false;
 
         var omp = player.GetModPlayer<OmnitrixPlayer>();
-        return omp.currentTransformationId == "Ben10Mod:NRG" &&
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == "Ben10Mod:NRG" &&
                (omp.IsPrimaryAbilityAttackLoaded || omp.IsUltimateAbilityActive);
     }
 

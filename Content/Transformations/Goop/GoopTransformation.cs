@@ -21,7 +21,7 @@ public class GoopTransformation : Transformation {
     public override string TransformationName => "Goop";
     public override int TransformationBuffId => ModContent.BuffType<Goop_Buff>();
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
-    public override string Description => "A ground-control blob who turns the floor into a corrosive hazard map, then reshapes or detonates it.";
+    public override string Description => "A corrosive blob who turns the floor into slime hazards, then reshapes or detonates them.";
     public override List<string> Abilities => new() {
         "Corrosive globs become empowered when fired through puddles",
         "Slime puddles merge, grow, and dissolve enemies standing in them",

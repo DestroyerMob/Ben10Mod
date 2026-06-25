@@ -54,7 +54,7 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
     public override Transformation ChildTransformation => null;
 
     public override string Description =>
-        "An evolved sonic commander that trades clone trickery for detached speakers, focused artillery lines, and timed battlefield overclocks.";
+        "An evolved sonic commander that trades clone trickery for detached speakers, focused artillery lines, and timed battlefield boosts.";
 
     public override List<string> Abilities => new() {
         "Resonance Burst keeps the current 3-shot spread and marks its target as Focused for your speakers.",
@@ -62,7 +62,7 @@ public class UltimateEchoEchoTransformation : EchoEchoTransformation {
         "Overclock Array turns every active speaker into fast-response artillery for 6 seconds.",
         "Feedback Pulse detonates a peel burst from you and delayed follow-up pulses from every active speaker.",
         "Resonant Relay swaps through your speaker network or falls back to a short sonic dash.",
-        "Harmonic Cataclysm synchronizes the whole field: speaker echoes, pop follow-ups, cheaper relay, and a final discharge."
+        "Harmonic Cataclysm syncs every active speaker with echoes, pop follow-ups, cheaper relay, and a final discharge."
     };
 
     public override string PrimaryAttackName => "Resonance Burst";

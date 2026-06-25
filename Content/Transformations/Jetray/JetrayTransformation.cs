@@ -26,15 +26,15 @@ public class JetrayTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<Jetray_Buff>();
 
     public override string Description =>
-        "An aerial lock-on hunter who tags prey with neuro-lasers, holds clean strafe lines, and cashes marked targets out with diving neuroshock bursts.";
+        "An aerial lock-on hunter who tags prey with neuro-lasers, holds clean strafe lines, and dives through locked targets.";
 
     public override List<string> Abilities => new() {
-        "Neuro-lasers apply Lock",
-        "Neuroshock Bolt only reaches full value on locked targets",
-        "Natural flight",
-        "Strafe Lock rewards horizontal and diagonal flight paths while firing",
-        "Jetstream Dive consumes Lock for a huge burst",
-        "Neurostorm Circuit orbits and strikes locked targets"
+        "Neuro Laser tags quickly; repeated hits apply Lock so Jetray's other attacks can home in.",
+        "Neuroshock Bolt hits best against locked targets.",
+        "Natural flight lets Jetray fight from clean angles instead of trading on the ground.",
+        "Strafe Lock strengthens Jetray while you keep long horizontal or diagonal flight paths.",
+        "Jetstream Dive consumes Lock for a huge burst, so use it after tagging a priority target.",
+        "Neurostorm Circuit orbits Jetray and repeatedly strikes locked targets."
     };
 
     public override string PrimaryAttackName => "Neuro Laser";

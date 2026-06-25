@@ -15,9 +15,11 @@ using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Items.Weapons;
 using Ben10Mod.Content.Players;
 using Ben10Mod.Content.Transformations;
+using Ben10Mod.Content.Transformations.AlienX;
 using Ben10Mod.Content.Transformations.BigChill;
 using Ben10Mod.Content.Transformations.Frankenstrike;
 using Ben10Mod.Content.Transformations.Humungousaur;
+using Ben10Mod.Content.Transformations.Upgrade;
 
 namespace Ben10Mod.Content.Interface {
     public class FittedTransformationIcon : UIElement {
@@ -856,6 +858,26 @@ namespace Ben10Mod.Content.Interface {
                     entries.Add(new HeroTrackerEntry("Pressure", $"{(int)Math.Round(identityPlayer.WaterHazardPressureRatio * 100f)}%",
                         MathHelper.Clamp(identityPlayer.WaterHazardPressureRatio, 0f, 1f), new Color(120, 220, 255)));
                     break;
+                case "Ben10Mod:AlienX":
+                    AlienXJudgementPlayer alienXPlayer = player.GetModPlayer<AlienXJudgementPlayer>();
+                    Color judgementAccent = alienXPlayer.HasSingularityCascadeThreshold
+                        ? new Color(255, 238, 170)
+                        : new Color(215, 215, 255);
+                    entries.Add(new HeroTrackerEntry("Judgement", $"{alienXPlayer.Judgement}%",
+                        MathHelper.Clamp(alienXPlayer.JudgementRatio, 0f, 1f), judgementAccent));
+                    if (alienXPlayer.SingularityCascadeActive) {
+                        entries.Add(new HeroTrackerEntry("Cascade", $"{alienXPlayer.SingularityCascadeRemaining}",
+                            MathHelper.Clamp(alienXPlayer.SingularityCascadeRatio, 0f, 1f), new Color(255, 238, 170)));
+                    }
+                    break;
+                case "Ben10Mod:Upgrade":
+                    UpgradeTechPlayer upgradePlayer = player.GetModPlayer<UpgradeTechPlayer>();
+                    Color techMassAccent = upgradePlayer.TechMass >= 60
+                        ? new Color(210, 255, 185)
+                        : new Color(120, 255, 185);
+                    entries.Add(new HeroTrackerEntry("Tech Mass", $"{upgradePlayer.TechMass}/{UpgradeTechPlayer.MaxTechMass}",
+                        MathHelper.Clamp(upgradePlayer.TechMassRatio, 0f, 1f), techMassAccent));
+                    break;
             }
 
             if (armorPlayer.bulwarkSet && omp.IsTransformed) {
@@ -1001,16 +1023,17 @@ namespace Ben10Mod.Content.Interface {
                     MathHelper.Clamp(curseStacks / 7f, 0f, 1f), new Color(216, 194, 115)));
             }
 
-            if (npcState.IsAlienXJudgedFor(player.whoAmI)) {
-                int judgementStacks = npcState.GetAlienXJudgementStacks(player.whoAmI);
-                entries.Add(new HeroTrackerEntry("Judgement", $"{judgementStacks}/6",
-                    MathHelper.Clamp(judgementStacks / 6f, 0f, 1f), new Color(215, 215, 255)));
-            }
-
             if (npcState.IsDreamboundFor(player.whoAmI)) {
                 int dreamTime = npcState.GetPeskyDustDreamTime(player.whoAmI);
                 entries.Add(new HeroTrackerEntry("Dreambound", FormatTrackerSeconds(dreamTime),
                     MathHelper.Clamp(dreamTime / 360f, 0f, 1f), new Color(255, 188, 244)));
+            }
+
+            if (npcState.IsUpgradeInfectedFor(player.whoAmI)) {
+                int infectionStacks = npcState.GetUpgradeInfectionStacks(player.whoAmI);
+                entries.Add(new HeroTrackerEntry("Infected", $"{infectionStacks}/{UpgradeNpcState.MaxInfectionStacks}",
+                    MathHelper.Clamp(infectionStacks / (float)UpgradeNpcState.MaxInfectionStacks, 0f, 1f),
+                    new Color(120, 255, 185)));
             }
 
             return new HeroTrackerPanel(entries.Count > 0 ? $"Target: {ShortenTrackerText(targetNpc.GivenOrTypeName, 18)}" : null,
@@ -1088,7 +1111,7 @@ namespace Ben10Mod.Content.Interface {
                 || npcState.HasHeatBlastFlashpointFor(owner)
                 || npcState.IsWhampirePreyFor(owner)
                 || npcState.IsSnareOhCursedFor(owner)
-                || npcState.IsAlienXJudgedFor(owner)
+                || npcState.IsUpgradeInfectedFor(owner)
                 || npcState.IsDreamboundFor(owner);
         }
 
@@ -1266,6 +1289,18 @@ namespace Ben10Mod.Content.Interface {
             return string.IsNullOrWhiteSpace(description) ? "No description available." : description;
         }
 
+        internal static string GetSafeCodexTransformationDescription(Transformation trans, OmnitrixPlayer player) {
+            string description = null;
+
+            try {
+                description = trans?.GetDescription(player);
+            }
+            catch { }
+
+            description = NormalizeUiText(description);
+            return string.IsNullOrWhiteSpace(description) ? "No description available." : description;
+        }
+
         internal static IReadOnlyList<string>
             GetSafeTransformationAbilities(Transformation trans, OmnitrixPlayer player) {
             try {
@@ -1273,6 +1308,19 @@ namespace Ben10Mod.Content.Interface {
                 IReadOnlyList<string> compactAbilities = CompactTransformationAbilities(abilities);
                 if (compactAbilities.Count > 0)
                     return compactAbilities;
+            }
+            catch { }
+
+            return new[] { "No abilities listed." };
+        }
+
+        internal static IReadOnlyList<string>
+            GetSafeCodexTransformationAbilities(Transformation trans, OmnitrixPlayer player) {
+            try {
+                List<string> abilities = trans?.GetAbilities(player);
+                IReadOnlyList<string> codexAbilities = NormalizeCodexTransformationAbilities(abilities);
+                if (codexAbilities.Count > 0)
+                    return codexAbilities;
             }
             catch { }
 
@@ -1370,6 +1418,28 @@ namespace Ben10Mod.Content.Interface {
             return compactAbilities;
         }
 
+        private static IReadOnlyList<string> NormalizeCodexTransformationAbilities(IReadOnlyList<string> abilities) {
+            List<string> codexAbilities = new();
+            if (abilities == null)
+                return codexAbilities;
+
+            for (int i = 0; i < abilities.Count; i++) {
+                string ability = NormalizeUiText(abilities[i]);
+                if (string.IsNullOrWhiteSpace(ability) || ShouldHideUiAbilityLine(ability))
+                    continue;
+
+                if (ability.StartsWith("• ", StringComparison.Ordinal))
+                    ability = ability.Substring(2).Trim();
+
+                if (string.IsNullOrWhiteSpace(ability) || ContainsText(codexAbilities, ability))
+                    continue;
+
+                codexAbilities.Add(ability);
+            }
+
+            return codexAbilities;
+        }
+
         private static string ExtractPrimarySentence(string text) {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
@@ -1403,7 +1473,7 @@ namespace Ben10Mod.Content.Interface {
             return normalized.Substring(0, cutIndex).TrimEnd(' ', ',', ';', ':', '-') + "…";
         }
 
-        private static string NormalizeUiText(string text) {
+        internal static string NormalizeUiText(string text) {
             if (string.IsNullOrWhiteSpace(text))
                 return string.Empty;
 
@@ -1891,9 +1961,9 @@ namespace Ben10Mod.Content.Interface {
         private UIText unlockHeader;
         private UIText unlockConditionText;
         private UIText abilitiesHeader;
-        private UIList abilityList;
+        private UIText abilityText;
         private UIText combatHeader;
-        private UIList combatSlotList;
+        private UIText combatSlotText;
         private UIList detailSectionList;
         private string currentlySelectedId = string.Empty;
         private string codexListSignature = string.Empty;
@@ -1936,15 +2006,15 @@ namespace Ben10Mod.Content.Interface {
 
             codexList = new UIList();
             codexList.Width.Set(382f, 0f);
-            codexList.Height.Set(492f, 0f);
+            codexList.Height.Set(504f, 0f);
             codexList.Left.Set(40f, 0f);
             codexList.Top.Set(124f, 0f);
-            codexList.ListPadding = 12f;
+            codexList.ListPadding = 8f;
             codexList.ManualSortMethod = _ => { };
             mainPanel.Append(codexList);
 
             var listScrollbar = new UIScrollbar();
-            listScrollbar.Height.Set(492f, 0f);
+            listScrollbar.Height.Set(504f, 0f);
             listScrollbar.Left.Set(430f, 0f);
             listScrollbar.Top.Set(124f, 0f);
             mainPanel.Append(listScrollbar);
@@ -1961,9 +2031,9 @@ namespace Ben10Mod.Content.Interface {
 
             headerPanel = new UIPanel();
             headerPanel.Width.Set(590f, 0f);
-            headerPanel.Height.Set(152f, 0f);
+            headerPanel.Height.Set(132f, 0f);
             headerPanel.Left.Set(30f, 0f);
-            headerPanel.Top.Set(24f, 0f);
+            headerPanel.Top.Set(18f, 0f);
             headerPanel.BackgroundColor = new Color(24, 32, 46, 220);
             headerPanel.BorderColor = new Color(74, 92, 120);
             infoPanel.Append(headerPanel);
@@ -1973,106 +2043,107 @@ namespace Ben10Mod.Content.Interface {
                 () => false,
                 () => false,
                 showHoverOutline: false);
-            previewIcon.Width.Set(120f, 0f);
-            previewIcon.Height.Set(120f, 0f);
-            previewIcon.Left.Set(18f, 0f);
+            previewIcon.Width.Set(100f, 0f);
+            previewIcon.Height.Set(100f, 0f);
+            previewIcon.Left.Set(16f, 0f);
             previewIcon.Top.Set(16f, 0f);
             previewIcon.IgnoresMouseInteraction = true;
             headerPanel.Append(previewIcon);
 
             nameText = new UIText("Select a form", 1.3f);
-            nameText.Left.Set(160f, 0f);
-            nameText.Top.Set(22f, 0f);
+            nameText.Left.Set(136f, 0f);
+            nameText.Top.Set(18f, 0f);
+            nameText.Width.Set(424f, 0f);
             headerPanel.Append(nameText);
 
             statusText = new UIText("Choose a form to view its unlock or access details and kit breakdown.", 0.78f);
-            statusText.Left.Set(160f, 0f);
-            statusText.Top.Set(64f, 0f);
-            statusText.Width.Set(390f, 0f);
+            statusText.Left.Set(136f, 0f);
+            statusText.Top.Set(54f, 0f);
+            statusText.Width.Set(420f, 0f);
             statusText.IsWrapped = true;
             headerPanel.Append(statusText);
 
             detailSectionList = new UIList();
             detailSectionList.Width.Set(562f, 0f);
-            detailSectionList.Height.Set(342f, 0f);
+            detailSectionList.Height.Set(376f, 0f);
             detailSectionList.Left.Set(30f, 0f);
-            detailSectionList.Top.Set(194f, 0f);
-            detailSectionList.ListPadding = 14f;
+            detailSectionList.Top.Set(160f, 0f);
+            detailSectionList.ListPadding = 5f;
             detailSectionList.ManualSortMethod = _ => { };
             infoPanel.Append(detailSectionList);
 
             var detailScrollbar = new UIScrollbar();
-            detailScrollbar.Height.Set(342f, 0f);
+            detailScrollbar.Height.Set(376f, 0f);
             detailScrollbar.Left.Set(600f, 0f);
-            detailScrollbar.Top.Set(194f, 0f);
+            detailScrollbar.Top.Set(160f, 0f);
             infoPanel.Append(detailScrollbar);
             detailSectionList.SetScrollbar(detailScrollbar);
 
             overviewPanel = CreateCodexSectionPanel();
-            overviewPanel.Height.Set(116f, 0f);
+            overviewPanel.Height.Set(72f, 0f);
             detailSectionList.Add(overviewPanel);
 
-            overviewHeader = new UIText("Overview", 1.08f);
-            overviewHeader.Left.Set(18f, 0f);
-            overviewHeader.Top.Set(12f, 0f);
+            overviewHeader = new UIText("Role", 1.02f);
+            overviewHeader.Left.Set(12f, 0f);
+            overviewHeader.Top.Set(8f, 0f);
             overviewPanel.Append(overviewHeader);
 
-            descriptionText = new UIText("View lore-facing kit info and ability details here.", 0.95f);
-            descriptionText.Left.Set(18f, 0f);
-            descriptionText.Top.Set(44f, 0f);
-            descriptionText.Width.Set(-36f, 1f);
+            descriptionText = new UIText("View role, attacks, and ability details here.", 0.88f);
+            descriptionText.Left.Set(12f, 0f);
+            descriptionText.Top.Set(30f, 0f);
+            descriptionText.Width.Set(-24f, 1f);
             descriptionText.IsWrapped = true;
             overviewPanel.Append(descriptionText);
 
             unlockPanel = CreateCodexSectionPanel();
-            unlockPanel.Height.Set(94f, 0f);
-            detailSectionList.Add(unlockPanel);
+            unlockPanel.Height.Set(64f, 0f);
 
-            unlockHeader = new UIText("Unlock / Access", 1.08f);
-            unlockHeader.Left.Set(18f, 0f);
-            unlockHeader.Top.Set(12f, 0f);
+            unlockHeader = new UIText("Access", 1.02f);
+            unlockHeader.Left.Set(12f, 0f);
+            unlockHeader.Top.Set(8f, 0f);
             unlockPanel.Append(unlockHeader);
 
-            unlockConditionText = new UIText("Select a form to inspect how it is unlocked or accessed.", 0.9f);
-            unlockConditionText.Left.Set(18f, 0f);
-            unlockConditionText.Top.Set(44f, 0f);
-            unlockConditionText.Width.Set(-36f, 1f);
+            unlockConditionText = new UIText("Select a form to inspect how it is unlocked or accessed.", 0.84f);
+            unlockConditionText.Left.Set(12f, 0f);
+            unlockConditionText.Top.Set(30f, 0f);
+            unlockConditionText.Width.Set(-24f, 1f);
             unlockConditionText.IsWrapped = true;
             unlockPanel.Append(unlockConditionText);
 
             abilitiesPanel = CreateCodexSectionPanel();
-            abilitiesPanel.Height.Set(96f, 0f);
+            abilitiesPanel.Height.Set(64f, 0f);
             detailSectionList.Add(abilitiesPanel);
 
-            abilitiesHeader = new UIText("Kit Highlights", 1.1f);
-            abilitiesHeader.Left.Set(18f, 0f);
-            abilitiesHeader.Top.Set(12f, 0f);
+            abilitiesHeader = new UIText("Kit Details", 1.02f);
+            abilitiesHeader.Left.Set(12f, 0f);
+            abilitiesHeader.Top.Set(8f, 0f);
             abilitiesPanel.Append(abilitiesHeader);
 
-            abilityList = new UIList();
-            abilityList.Width.Set(-36f, 1f);
-            abilityList.Height.Set(40f, 0f);
-            abilityList.Left.Set(18f, 0f);
-            abilityList.Top.Set(44f, 0f);
-            abilityList.ListPadding = 8f;
-            abilitiesPanel.Append(abilityList);
+            abilityText = new UIText("Select a form to view kit details.", 0.82f);
+            abilityText.Left.Set(12f, 0f);
+            abilityText.Top.Set(30f, 0f);
+            abilityText.Width.Set(-24f, 1f);
+            abilityText.IsWrapped = true;
+            abilitiesPanel.Append(abilityText);
 
             combatPanel = CreateCodexSectionPanel();
-            combatPanel.Height.Set(96f, 0f);
+            combatPanel.Height.Set(64f, 0f);
             detailSectionList.Add(combatPanel);
 
-            combatHeader = new UIText("Combat Slots", 1.1f);
-            combatHeader.Left.Set(18f, 0f);
-            combatHeader.Top.Set(12f, 0f);
+            combatHeader = new UIText("Controls", 1.02f);
+            combatHeader.Left.Set(12f, 0f);
+            combatHeader.Top.Set(8f, 0f);
             combatPanel.Append(combatHeader);
 
-            combatSlotList = new UIList();
-            combatSlotList.Width.Set(-36f, 1f);
-            combatSlotList.Height.Set(40f, 0f);
-            combatSlotList.Left.Set(18f, 0f);
-            combatSlotList.Top.Set(44f, 0f);
-            combatSlotList.ListPadding = 8f;
-            combatPanel.Append(combatSlotList);
+            combatSlotText = new UIText("Select a form to view controls.", 0.78f);
+            combatSlotText.Left.Set(12f, 0f);
+            combatSlotText.Top.Set(30f, 0f);
+            combatSlotText.Width.Set(-24f, 1f);
+            combatSlotText.TextOriginX = 0f;
+            combatSlotText.IsWrapped = true;
+            combatPanel.Append(combatSlotText);
+
+            detailSectionList.Add(unlockPanel);
 
             var closeBtn = new UITextPanel<string>("Close Codex");
             closeBtn.Width.Set(148f, 0f);
@@ -2152,7 +2223,7 @@ namespace Ben10Mod.Content.Interface {
                 bool isSelected = string.Equals(currentlySelectedId, transformationId, StringComparison.OrdinalIgnoreCase);
                 UIPanel row = new UIPanel();
                 row.Width.Set(0f, 1f);
-                row.Height.Set(74f, 0f);
+                row.Height.Set(66f, 0f);
                 row.BackgroundColor = isSelected
                     ? (isUnlocked ? new Color(44, 60, 86, 225) : new Color(58, 50, 68, 225))
                     : (isUnlocked ? new Color(24, 32, 42, 210) : new Color(30, 28, 36, 208));
@@ -2167,10 +2238,10 @@ namespace Ben10Mod.Content.Interface {
                     () => player.IsFavoriteTransformation(capturedId),
                     () => player.IsNewlyUnlockedTransformation(capturedId),
                     showHoverOutline: false);
-                icon.Width.Set(58f, 0f);
-                icon.Height.Set(58f, 0f);
-                icon.Left.Set(8f, 0f);
-                icon.Top.Set(8f, 0f);
+                icon.Width.Set(52f, 0f);
+                icon.Height.Set(52f, 0f);
+                icon.Left.Set(7f, 0f);
+                icon.Top.Set(7f, 0f);
                 icon.IgnoresMouseInteraction = true;
                 row.Append(icon);
 
@@ -2179,14 +2250,14 @@ namespace Ben10Mod.Content.Interface {
                     displayName = $"★ {displayName}";
 
                 var rowName = new UIText(displayName, 0.92f);
-                rowName.Left.Set(78f, 0f);
-                rowName.Top.Set(12f, 0f);
+                rowName.Left.Set(72f, 0f);
+                rowName.Top.Set(9f, 0f);
                 row.Append(rowName);
 
                 string rowSubtitle = player.GetTransformationCodexSubtitle(transformation);
                 var subtitle = new UIText(rowSubtitle, 0.68f);
-                subtitle.Left.Set(78f, 0f);
-                subtitle.Top.Set(42f, 0f);
+                subtitle.Left.Set(72f, 0f);
+                subtitle.Top.Set(37f, 0f);
                 row.Append(subtitle);
 
                 codexList.Add(row);
@@ -2240,19 +2311,18 @@ namespace Ben10Mod.Content.Interface {
                 previewIcon.SetTexture(ModContent.Request<Texture2D>("Ben10Mod/Content/Interface/EmptyAlien"));
                 nameText.SetText("Select a form");
                 statusText.SetText("Choose a form to view its unlock or access details and kit breakdown.");
-                descriptionText.SetText("View lore-facing kit info and ability details here.");
-                overviewHeader.SetText("Overview");
-                unlockHeader.SetText("Unlock / Access");
+                descriptionText.SetText("View role, attacks, and ability details here.");
+                overviewHeader.SetText("Role");
+                unlockHeader.SetText("Access");
                 unlockConditionText.SetText("Select a form to inspect how it is unlocked or accessed.");
-                overviewPanel.Height.Set(116f, 0f);
-                unlockPanel.Height.Set(94f, 0f);
-                abilitiesPanel.Height.Set(96f, 0f);
-                abilityList.Height.Set(40f, 0f);
-                abilityList.Clear();
-                combatHeader.SetText("Combat Slots");
-                combatPanel.Height.Set(96f, 0f);
-                combatSlotList.Height.Set(40f, 0f);
-                combatSlotList.Clear();
+                overviewPanel.Height.Set(72f, 0f);
+                unlockPanel.Height.Set(64f, 0f);
+                abilitiesPanel.Height.Set(64f, 0f);
+                abilityText.SetText("Select a form to view kit details.");
+                combatHeader.SetText("Controls");
+                combatPanel.Height.Set(64f, 0f);
+                combatSlotText.SetText("Select a form to view controls.");
+                detailSectionList.ViewPosition = 0f;
                 detailSectionList.Recalculate();
                 detailSectionList.RecalculateChildren();
                 return;
@@ -2271,8 +2341,8 @@ namespace Ben10Mod.Content.Interface {
                 statusParts.Add("Newly unlocked");
             statusText.SetText(string.Join("  |  ", statusParts));
 
-            overviewHeader.SetText("Overview");
-            descriptionText.SetText(AlienSelectionScreen.GetSafeTransformationDescription(transformation, player));
+            overviewHeader.SetText("Role");
+            descriptionText.SetText(AlienSelectionScreen.GetSafeCodexTransformationDescription(transformation, player));
             descriptionText.Recalculate();
 
             unlockHeader.SetText(player.GetTransformationAccessHeaderText(transformation));
@@ -2284,46 +2354,49 @@ namespace Ben10Mod.Content.Interface {
             unlockConditionText.Recalculate();
 
             float descriptionHeight = descriptionText.MinHeight.Pixels > 0f ? descriptionText.MinHeight.Pixels : 56f;
-            float overviewHeight = Math.Max(112f, descriptionText.Top.Pixels + descriptionHeight + 18f);
+            float overviewHeight = Math.Max(64f, descriptionText.Top.Pixels + descriptionHeight + 8f);
             overviewPanel.Height.Set(overviewHeight, 0f);
 
             float unlockHeight = unlockConditionText.MinHeight.Pixels > 0f ? unlockConditionText.MinHeight.Pixels : 36f;
-            float unlockPanelHeight = Math.Max(88f, unlockConditionText.Top.Pixels + unlockHeight + 18f);
+            float unlockPanelHeight = Math.Max(56f, unlockConditionText.Top.Pixels + unlockHeight + 8f);
             unlockPanel.Height.Set(unlockPanelHeight, 0f);
 
-            IReadOnlyList<string> abilities = AlienSelectionScreen.GetSafeTransformationAbilities(transformation, player);
-            List<UIElement> abilityEntries = new();
-            abilityList.Clear();
-            for (int i = 0; i < abilities.Count; i++) {
-                UIElement entry = AlienSelectionScreen.CreateWrappedListEntry("• " + (abilities[i] ?? "Unknown ability"),
-                    AlienSelectionScreen.CodexEntryWidth, 0.88f, framed: true);
-                abilityEntries.Add(entry);
-                abilityList.Add(entry);
-            }
-
-            float abilitiesContentHeight = AlienSelectionScreen.MeasureEntryListHeight(abilityEntries, abilityList.ListPadding);
-            float abilitiesPanelHeight = Math.Max(112f, 44f + abilitiesContentHeight + 18f);
+            IReadOnlyList<string> abilities = AlienSelectionScreen.GetSafeCodexTransformationAbilities(transformation, player);
+            abilityText.SetText(BuildCodexLineBlock(abilities));
+            abilityText.Recalculate();
+            float abilitiesContentHeight = abilityText.MinHeight.Pixels > 0f ? abilityText.MinHeight.Pixels : 22f;
+            float abilitiesPanelHeight = Math.Max(56f, abilityText.Top.Pixels + abilitiesContentHeight + 6f);
             abilitiesPanel.Height.Set(abilitiesPanelHeight, 0f);
-            abilityList.Height.Set(abilitiesContentHeight, 0f);
 
             IReadOnlyList<string> combatSlotSummaries = transformation.GetCombatSlotSummaries(player);
-            List<UIElement> combatEntries = new();
-            combatSlotList.Clear();
-            for (int i = 0; i < combatSlotSummaries.Count; i++) {
-                UIElement entry = AlienSelectionScreen.CreateWrappedListEntry(
-                    combatSlotSummaries[i] ?? "Unknown combat slot",
-                    AlienSelectionScreen.CodexEntryWidth, 0.88f, framed: true);
-                combatEntries.Add(entry);
-                combatSlotList.Add(entry);
-            }
-
-            float combatContentHeight = AlienSelectionScreen.MeasureEntryListHeight(combatEntries, combatSlotList.ListPadding);
-            float combatPanelHeight = Math.Max(112f, 44f + combatContentHeight + 18f);
+            combatSlotText.SetText(BuildCodexLineBlock(combatSlotSummaries));
+            combatSlotText.Recalculate();
+            float combatContentHeight = combatSlotText.MinHeight.Pixels > 0f ? combatSlotText.MinHeight.Pixels : 20f;
+            float combatPanelHeight = Math.Max(56f, combatSlotText.Top.Pixels + combatContentHeight + 6f);
             combatPanel.Height.Set(combatPanelHeight, 0f);
-            combatSlotList.Height.Set(combatContentHeight, 0f);
 
+            detailSectionList.ViewPosition = 0f;
             detailSectionList.Recalculate();
             detailSectionList.RecalculateChildren();
+        }
+
+        private static string BuildCodexLineBlock(IReadOnlyList<string> lines) {
+            if (lines == null || lines.Count == 0)
+                return "No entries listed.";
+
+            System.Text.StringBuilder builder = new();
+            for (int i = 0; i < lines.Count; i++) {
+                string line = AlienSelectionScreen.NormalizeUiText(lines[i]);
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                if (builder.Length > 0)
+                    builder.Append('\n');
+
+                builder.Append("• ").Append(line);
+            }
+
+            return builder.Length > 0 ? builder.ToString() : "No entries listed.";
         }
 
         private string FindFirstNewTransformation(OmnitrixPlayer player) {

@@ -29,7 +29,7 @@ public class CannonboltTransformation : Transformation {
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
 
     public override string Description =>
-        "An armored momentum tank built almost entirely around rolling state changes. Cannonbolt wants to control when he is uncurled, when he commits to shell mode, and how hard he cashes out every bounce.";
+        "An armored momentum tank who swaps between grounded brawling and full shell mode. Bounce well, keep speed high, and every impact gets nastier.";
 
     public override List<string> Abilities => new() {
         "Grounded Shell Bash alternates between a compact body-check and a wider spin swipe while unrolled.",
@@ -179,7 +179,7 @@ public class CannonboltTransformation : Transformation {
         return resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => state.IsRolled
                 ? compact ? "Use Roll mode" : "Shell Bash only works while unrolled"
-                : compact ? "Grounded melee" : "Grounded bash / swipe filler",
+                : compact ? "Grounded melee" : "Grounded bash and swipe combo",
             OmnitrixPlayer.AttackSelection.Secondary => state.IsRolled
                 ? state.SiegeActive
                     ? compact ? "Siege locked" : "Siege Roll keeps you curled until it ends"

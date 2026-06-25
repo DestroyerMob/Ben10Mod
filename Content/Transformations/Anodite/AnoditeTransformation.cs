@@ -28,11 +28,11 @@ public class AnoditeTransformation : Transformation {
         "A living mana-form that rides the air, threads targets with raw energy, and shapes shields and wards out of pure anodite power.";
 
     public override List<string> Abilities => new() {
-        "Mana Thread that lashes through targets",
-        "Anodite Orb that blooms with arcane energy",
-        "Mana Barrier for protection and control",
-        "Hex Circle that snares enemies in place",
-        "Ascendant Halo that surrounds you with living magic"
+        "Mana Thread lashes through targets quickly while Anodite stays mobile.",
+        "Anodite Orb blooms into a slower burst of arcane area damage.",
+        "Mana Barrier protects space in front of you while Anodite floats above danger.",
+        "Hex Circle snares enemies in place so the orb, thread, or allies can punish them.",
+        "Ascendant Halo surrounds Anodite with living magic and strengthens her air-control tools."
     };
 
     public override string PrimaryAttackName => "Mana Thread";

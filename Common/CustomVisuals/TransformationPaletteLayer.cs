@@ -26,10 +26,13 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
 
     public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead || player.invis)
+        if (player.dead)
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.ShouldShowTransformationVisuals())
+            return false;
+
         global::Ben10Mod.Content.Transformations.Transformation transformation = omp.CurrentTransformation;
         if (transformation == null || !transformation.SupportsPaletteCustomization(omp))
             return false;

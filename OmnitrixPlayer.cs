@@ -280,6 +280,10 @@ namespace Ben10Mod {
         public string pendingEvolutionStepDownTransformationId = "";
         public Omnitrix equippedOmnitrix = null;
         public Item equippedOmnitrixItem = null;
+        public bool activeOmnitrixVisualsHidden = false;
+        internal int activeTransformationHeadSlot = -1;
+        internal int activeTransformationBodySlot = -1;
+        internal int activeTransformationLegsSlot = -1;
 
         public bool inPossessionMode {
             get => Possession.Active;

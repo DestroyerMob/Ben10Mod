@@ -71,7 +71,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
         public override bool IsStarterTransformation(OmnitrixPlayer omp) => true;
 
         public override string Description =>
-            "A fiery Pyronite from the blazing star Pyros. Heatblast floods the arena with burn, builds Flashpoint on overheated targets, then cashes that setup out with bombs, halos, and a charged fireball.";
+            "A fiery Pyronite from the blazing star Pyros. Heatblast spreads burn, builds Flashpoint on overheated enemies, then detonates it with bombs, halos, and charged fireballs.";
 
         public override string IconPath => "Ben10Mod/Content/Interface/HeatBlastSelect";
         public override int TransformationBuffId => ModContent.BuffType<HeatBlast_Buff>();
@@ -101,13 +101,13 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
 
         public override List<string> Abilities => new() {
             "Direct fire against burning targets ignores armor and builds Flashpoint up to 5 stacks.",
-            "Flame Jet is the fast builder and starts popping small flare bursts at max Flashpoint.",
-            "Fire Bomb cashes Flashpoint out into bigger explosions and inferno patches.",
-            "Flame-boosted jump",
-            "Fire & lava immunity",
+            "Flame Jet builds Flashpoint quickly and pops small flares at max stacks.",
+            "Fire Bomb detonates Flashpoint into bigger explosions and inferno patches.",
+            "Flame-boosted jumps help Heatblast keep distance while burns ramp up.",
+            "Fire and lava immunity let Heatblast fight safely inside terrain and burning arenas that punish other forms.",
             "Flare Rod zones space, slowly builds Flashpoint, and can be detonated early on recast.",
-            "Solar Halo now prioritizes your last direct target and rapid-fires when your pressure loop heats up.",
-            "Superheat turns the whole kit into a kill window with stronger direct hits and faster Flashpoint buildup.",
+            "Solar Halo prioritizes your last direct target and rapid-fires when Flashpoint is rolling.",
+            "Superheat makes direct hits stronger and builds Flashpoint faster.",
             "Fireball now scales real damage with charge and detonates Flashpoint on impact."
         };
 
@@ -145,7 +145,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
             if (!HasPotisAltiare(omp?.Player))
                 return Description;
 
-            return $"{Description} Potis Altiare rewires Heatblast into a solar artillery platform with lances, meteor rain, orbiting corona fire, and repeated nova pulses.";
+            return $"{Description} Potis Altiare turns Heatblast into solar artillery with piercing lances, meteor rain, orbiting corona fire, and repeated nova pulses.";
         }
 
         public override List<string> GetAbilities(OmnitrixPlayer omp) {
@@ -153,14 +153,14 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                 return base.GetAbilities(omp);
 
             return new List<string> {
-                "Prominence lances with heavy piercing pressure",
-                "Molten starfall that drags meteors out of the sky",
-                "Sunspot Forge sentries that fire their own solar volleys",
-                "Corona Maelstrom that channels an orbiting barrage around Heatblast",
-                "Cataclysm Core that turns Superheat into repeated nova pulses",
-                "Stronger movement, damage, and tempo while Cataclysm Core is active",
-                "Fire and lava immunity",
-                "Pyroclasm Supernova charged ultimate with impact starfall"
+                "Prominence Lance fires heavy piercing solar shots from long range.",
+                "Molten Starfall calls meteors down along the target lane.",
+                "Sunspot Forge creates sentries that fire their own solar volleys.",
+                "Corona Maelstrom channels an orbiting barrage around Heatblast.",
+                "Cataclysm Core turns Superheat into repeated nova pulses.",
+                "Cataclysm Core also boosts movement, damage, and attack tempo while active.",
+                "Fire and lava immunity let Potis Heatblast fight inside his own solar zones.",
+                "Pyroclasm Supernova charges into a huge blast with impact starfall."
             };
         }
 
@@ -446,7 +446,7 @@ namespace Ben10Mod.Content.Transformations.HeatBlast {
                     : $"Reactive halo fireballs • Drain {FormatEnergyRate(SolarHaloSustainCost, SolarHaloSustainInterval, compact)}",
                 OmnitrixPlayer.AttackSelection.TertiaryAbility => omp.IsTertiaryAbilityActive
                     ? compact ? "Superheat up" : "Superheat active • direct hits hit harder and build faster"
-                    : compact ? $"{SuperheatCost} OE" : $"Kill window with faster Flashpoint and stronger direct hits • {SuperheatCost} OE",
+                    : compact ? $"{SuperheatCost} OE" : $"Faster Flashpoint and stronger direct hits • {SuperheatCost} OE",
                 OmnitrixPlayer.AttackSelection.Ultimate => compact
                     ? "Charge + detonate"
                     : "Charged finisher that scales damage and consumes Flashpoint",

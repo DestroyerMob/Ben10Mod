@@ -14,7 +14,9 @@ public class DiamondHeadShimmerLayer : PlayerDrawLayer {
         Player player = drawInfo.drawPlayer;
         var    omp    = player.GetModPlayer<OmnitrixPlayer>();
 
-        return omp.currentTransformationId == "Ben10Mod:DiamondHead" && omp.PrimaryAbilityEnabled;
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == "Ben10Mod:DiamondHead" &&
+               omp.PrimaryAbilityEnabled;
     }
 
     // Position after armor/body

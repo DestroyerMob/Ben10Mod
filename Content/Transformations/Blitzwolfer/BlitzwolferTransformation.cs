@@ -31,12 +31,12 @@ public class BlitzwolferTransformation : Transformation {
         "A sonic apex hunter who tags prey with resonance, tracks them through echolocation, and tears them apart with savage pounces, pulse howls, and lunar detonations.";
 
     public override List<string> Abilities => new() {
-        "Sonic barks that build resonance",
-        "Wide howls that spread resonance through a crowd",
-        "Echolocation that highlights hunted prey",
-        "Omega Howl, a channeled stream of sonic pulses",
-        "Lupine Pounce that tears through resonating targets",
-        "Lunar Howl that detonates built-up resonance"
+        "Sonic Bark quickly adds Resonance to hunted targets.",
+        "Howl Burst spreads Resonance through clumped enemies.",
+        "Echolocation highlights resonating prey so you can track the right target.",
+        "Omega Howl channels sonic pulses and stacks Resonance quickly in a wide line.",
+        "Lupine Pounce tears through targets that are already resonating.",
+        "Lunar Howl detonates built-up Resonance, so save it for heavily marked enemies."
     };
 
     public override string PrimaryAttackName => "Sonic Bark";

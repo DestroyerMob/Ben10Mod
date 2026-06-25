@@ -1,6 +1,5 @@
 using System;
 using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.Audio;
@@ -15,7 +14,6 @@ public class AlienXForceWaveProjectile : ModProjectile {
     private const float MaxReach = 236f;
     private const float BaseWidth = 34f;
     private const float MaxWidth = 112f;
-    private bool Deliberation => Projectile.ai[0] >= 0.5f;
 
     private float Timer {
         get => Projectile.localAI[0];
@@ -61,11 +59,9 @@ public class AlienXForceWaveProjectile : ModProjectile {
 
         float progress = Utils.GetLerpValue(0f, LifetimeTicks, Timer, true);
         float easedProgress = 1f - MathF.Pow(1f - progress, 2.4f);
-        float reachBonus = Deliberation ? 34f : 0f;
-        float widthBonus = Deliberation ? 18f : 0f;
 
-        CurrentReach = MathHelper.Lerp(BaseReach, MaxReach + reachBonus, easedProgress);
-        CurrentWidth = MathHelper.Lerp(BaseWidth, MaxWidth + widthBonus, easedProgress);
+        CurrentReach = MathHelper.Lerp(BaseReach, MaxReach, easedProgress);
+        CurrentWidth = MathHelper.Lerp(BaseWidth, MaxWidth, easedProgress);
 
         Lighting.AddLight(Projectile.Center + direction * (CurrentReach * 0.25f), new Vector3(0.58f, 0.62f, 0.96f));
         SpawnBurstDust(direction, progress);
@@ -81,29 +77,16 @@ public class AlienXForceWaveProjectile : ModProjectile {
             CurrentWidth, ref collisionPoint);
     }
 
-    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        int judgement = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetAlienXJudgementStacks(Projectile.owner);
-        if (judgement > 0)
-            modifiers.SourceDamage *= 1f + judgement * 0.1f;
-    }
-
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        identity.ApplyAlienXJudgement(Projectile.owner, Deliberation ? 3 : 2, Deliberation ? 340 : 280);
-
         Vector2 direction = Projectile.velocity.SafeNormalize(Vector2.UnitX);
-        float pushForce = Deliberation ? 138f : 102f;
-        int judgement = identity.GetAlienXJudgementStacks(Projectile.owner);
-        pushForce += judgement * 6f;
+        float pushForce = 102f;
 
         if (target.boss)
             pushForce *= 0.6f;
         else if (target.knockBackResist > 0f)
             pushForce *= MathHelper.Lerp(0.92f, 1.4f, target.knockBackResist);
 
-        float lift = target.boss
-            ? (Deliberation ? 5.5f : 4.2f)
-            : (Deliberation ? 11.5f : 8.5f);
+        float lift = target.boss ? 4.2f : 8.5f;
         Vector2 pushedVelocity = direction * pushForce + new Vector2(0f, -lift);
 
         if (target.boss)
@@ -124,7 +107,7 @@ public class AlienXForceWaveProjectile : ModProjectile {
 
         Vector2 perpendicular = direction.RotatedBy(MathHelper.PiOver2);
         Vector2 frontCenter = Projectile.Center + direction * CurrentReach;
-        int arcPoints = Deliberation ? 10 : 8;
+        int arcPoints = 8;
 
         for (int i = 0; i < arcPoints; i++) {
             float arcProgress = arcPoints == 1 ? 0f : i / (float)(arcPoints - 1);
@@ -147,7 +130,7 @@ public class AlienXForceWaveProjectile : ModProjectile {
             crestDust.noGravity = true;
         }
 
-        int spinePoints = Deliberation ? 7 : 5;
+        int spinePoints = 5;
         for (int i = 0; i < spinePoints; i++) {
             float spineProgress = spinePoints == 1 ? 0f : i / (float)(spinePoints - 1);
             Vector2 position = Projectile.Center + direction * MathHelper.Lerp(24f, CurrentReach * 0.92f, spineProgress);
@@ -160,7 +143,7 @@ public class AlienXForceWaveProjectile : ModProjectile {
         }
 
         if ((int)Timer <= 4) {
-            int spokes = Deliberation ? 10 : 8;
+            int spokes = 8;
             float flashReach = MathHelper.Lerp(18f, 52f, progress);
             for (int i = 0; i < spokes; i++) {
                 Vector2 spokeDirection = (direction.RotatedBy(MathHelper.Lerp(-0.9f, 0.9f, i / (float)Math.Max(1, spokes - 1))))

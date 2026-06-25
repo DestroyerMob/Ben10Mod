@@ -61,15 +61,15 @@ public class FourArmsTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<FourArms_Buff>();
 
     public override string Description =>
-        "A Tetramand combo bruiser built around punch strings, slams, and close-range crowd control. Four Arms builds Rage fastest in brawling range, then cashes it out in Berserker mode.";
+        "A Tetramand combo bruiser who thrives in brawling range with punch strings, slams, shock claps, and Rage-fuelled Berserker mode.";
 
     public override List<string> Abilities => new() {
         "Titan Combo chains fast punches, then widens into a cleaving third hit.",
         "Shock Clap sends a short-range shockwave through crowds.",
         "Ground Slam triggers from the ability hotkey or a double tap down input.",
         "Haymaker is a charged super-armored punch for big single-target damage.",
-        "Passive Rage and Brawler Tempo build best from close-range hits, feeding faster punch strings and melee pressure.",
-        "Ultimate Berserker mode activates once Rage reaches 90%, then cashes it out for faster, larger combos and fissure slams."
+        "Rage and Brawler Tempo build fastest from close-range hits, speeding up punch strings and melee swings.",
+        "Berserker mode activates once Rage reaches 90%, giving Four Arms faster, larger combos and fissure slams."
     };
 
     public override string PrimaryAttackName => "Titan Combo";
@@ -118,7 +118,7 @@ public class FourArmsTransformation : Transformation {
         if (!HasPotisAltiare(omp?.Player))
             return Description;
 
-        return $"{Description} Potis Altiare turns Four Arms into a siege brawler, adding faultline follow-ups, wider shock claps, stronger slam armor, and boss-safe quake pressure.";
+        return $"{Description} Potis Altiare turns Four Arms into a siege brawler with faultline follow-ups, wider shock claps, stronger slam armor, and safer boss trading.";
     }
 
     public override List<string> GetAbilities(OmnitrixPlayer omp) {
@@ -131,7 +131,7 @@ public class FourArmsTransformation : Transformation {
             "Meteor Slam has a shorter cooldown, stronger guard, and always sends fissures across the floor.",
             "Colossus Haymaker charges faster and releases a seismic follow-through.",
             "Potis armor improves defense and lets Four Arms stay close to bosses longer.",
-            "Titan Overdrive keeps the Berserker payoff, with stronger Potis pressure while active."
+            "Titan Overdrive keeps Berserker mode active with stronger Potis hits."
         };
     }
 

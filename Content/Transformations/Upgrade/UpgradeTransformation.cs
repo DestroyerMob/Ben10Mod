@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Ben10Mod.Content.Buffs.Abilities;
+using Ben10Mod.Content.Buffs.Debuffs;
 using Ben10Mod.Content.Buffs.Transformations;
 using Ben10Mod.Content.DamageClasses;
+using Ben10Mod.Content.NPCs;
 using Ben10Mod.Content.Projectiles;
 using Microsoft.Xna.Framework;
 using Terraria;
@@ -31,6 +34,15 @@ public class UpgradeTransformation : Transformation {
     private const int DefaultPrimaryUseTime = 22;
     private const float DefaultPrimaryShootSpeed = 18f;
     private const float ConstructDamageMultiplier = 0.82f;
+    private const int OverclockMinimumTechMass = 10;
+    private const int OverclockTechMassDrainPerSecond = 3;
+    private const int ConstructTechMassCost = 25;
+    private const int FullIntegrationTechMassCost = 60;
+    private const int AssimilationRadius = 132;
+    private const int AssimilationOverclockRadiusBonus = 48;
+    private const int HostileProjectileTechMassGain = 8;
+    private const int InfectedHarvestBaseTechMassGain = 6;
+    private const int PrimaryInfectionTime = 240;
 
     public override string FullID => "Ben10Mod:Upgrade";
     public override string TransformationName => "Upgrade";
@@ -41,11 +53,11 @@ public class UpgradeTransformation : Transformation {
         "A Galvanic Mechamorph who scans a weapon signature, rebuilds it into upgraded tech, and then fights through enhanced melee, ranged, magic, or summon tools.";
 
     public override List<string> Abilities => new() {
-        "Adaptive fire based on your synced weapon class",
-        "Assimilate a held, remembered, or hotbar weapon signature",
-        "Overclock your current sync",
-        "Deploy a recompiled construct based on your current class",
-        "Full Integration for maximum upgraded output"
+        "Techno Beam infects enemies and builds Tech Mass for Upgrade's stronger tools.",
+        "Assimilate scans held weapons, harvests infected targets, and absorbs hostile projectiles.",
+        "Overclock drains Tech Mass to speed up infected tech for a short burst.",
+        "Recompile Construct spends Tech Mass to build a helper based on the scanned weapon style.",
+        "Full Integration consumes Tech Mass for Upgrade's strongest output."
     };
 
     public override string PrimaryAttackName => "Adaptive Fire";
@@ -87,10 +99,10 @@ public class UpgradeTransformation : Transformation {
     public override string GetDescription(OmnitrixPlayer omp) {
         UpgradeTechPlayer techPlayer = omp.Player.GetModPlayer<UpgradeTechPlayer>();
         if (!techPlayer.HasSyncedWeapon)
-            return $"{Description} Current sync: Optic fallback. Use Assimilate Weapon to scan a melee, ranged, magic, or summon weapon.";
+            return $"{Description} Current sync: Optic fallback. Tech Mass: {techPlayer.TechMass}/{UpgradeTechPlayer.MaxTechMass}. Use Assimilate to scan, harvest, or absorb.";
 
         return $"{Description} Current sync: {GetTechProfileDisplayName(techPlayer.ActiveTechProfile)} from {techPlayer.GetSyncedWeaponName()} " +
-               $"({techPlayer.SyncedWeaponDamage} base damage).";
+               $"({techPlayer.SyncedWeaponDamage} base damage). Tech Mass: {techPlayer.TechMass}/{UpgradeTechPlayer.MaxTechMass}.";
     }
 
     public override List<string> GetAbilities(OmnitrixPlayer omp) {
@@ -106,15 +118,25 @@ public class UpgradeTransformation : Transformation {
         if (techPlayer.TryGetRememberedWeaponName(out string rememberedWeaponName))
             abilities.Add($"Remembered weapon: {rememberedWeaponName}");
 
+        abilities.Add($"Tech Mass: {techPlayer.TechMass}/{UpgradeTechPlayer.MaxTechMass}");
+
         return abilities;
     }
 
+    public override IReadOnlyList<string> GetCombatSlotSummaries(OmnitrixPlayer omp) {
+        List<string> summaries = new(base.GetCombatSlotSummaries(omp));
+        UpgradeTechPlayer techPlayer = omp.Player.GetModPlayer<UpgradeTechPlayer>();
+        summaries.Add($"Tech Mass: {techPlayer.TechMass}/{UpgradeTechPlayer.MaxTechMass}");
+        summaries.Add($"Sync: {GetCurrentPrimaryName(techPlayer)}");
+        return summaries;
+    }
+
     public override void OnTransform(Player player, OmnitrixPlayer omp) {
-        player.GetModPlayer<UpgradeTechPlayer>().ResetSyncedWeapon();
+        player.GetModPlayer<UpgradeTechPlayer>().ResetTransientTechState();
     }
 
     public override void OnDetransform(Player player, OmnitrixPlayer omp) {
-        player.GetModPlayer<UpgradeTechPlayer>().ResetSyncedWeapon();
+        player.GetModPlayer<UpgradeTechPlayer>().ResetTransientTechState();
     }
 
     public override void UpdateEffects(Player player, OmnitrixPlayer omp) {
@@ -122,6 +144,7 @@ public class UpgradeTransformation : Transformation {
 
         UpgradeTechPlayer techPlayer = player.GetModPlayer<UpgradeTechPlayer>();
         techPlayer.UpdateRememberedWeapon(player);
+        techPlayer.TickTechMassState();
 
         UpgradeTechProfile activeProfile = techPlayer.ActiveTechProfile;
         player.GetDamage<HeroDamage>() += 0.08f;
@@ -152,6 +175,12 @@ public class UpgradeTransformation : Transformation {
         }
 
         if (omp.PrimaryAbilityEnabled) {
+            if (!techPlayer.TryDrainOverclockTechMass(OverclockTechMassDrainPerSecond)) {
+                player.ClearBuff(ModContent.BuffType<PrimaryAbility>());
+                if (player.whoAmI == Main.myPlayer)
+                    omp.ShowTransformFailureFeedback("Overclock needs Tech Mass.");
+            }
+
             player.GetDamage<HeroDamage>() += 0.08f;
             player.GetAttackSpeed<HeroDamage>() += 0.08f;
 
@@ -240,7 +269,54 @@ public class UpgradeTransformation : Transformation {
     }
 
     public override bool HasSecondaryAbilityAttackForState(OmnitrixPlayer omp) {
-        return omp.Player.GetModPlayer<UpgradeTechPlayer>().HasSyncedWeapon;
+        return true;
+    }
+
+    public override bool TryActivatePrimaryAbility(Player player, OmnitrixPlayer omp) {
+        if (player.HasBuff<PrimaryAbilityCooldown>() || player.HasBuff<PrimaryAbility>())
+            return true;
+
+        UpgradeTechPlayer techPlayer = player.GetModPlayer<UpgradeTechPlayer>();
+        if (!techPlayer.HasTechMass(OverclockMinimumTechMass)) {
+            omp.ShowTransformFailureFeedback($"Need {OverclockMinimumTechMass} Tech Mass for {PrimaryAbilityName}.");
+            return true;
+        }
+
+        int overclockCost = GetPrimaryAbilityCost(omp);
+        if (!omp.CanSpendOmnitrixEnergy(overclockCost)) {
+            omp.ShowTransformFailureFeedback($"Need {overclockCost} OE for {PrimaryAbilityName}.");
+            return true;
+        }
+
+        if (!omp.TrySpendOmnitrixEnergy(overclockCost))
+            return true;
+
+        player.AddBuff(ModContent.BuffType<PrimaryAbility>(), GetPrimaryAbilityDuration(omp));
+        omp.Abilities.SetTransformationId(OmnitrixPlayer.AttackSelection.PrimaryAbility, FullID);
+        return true;
+    }
+
+    public override bool TryActivateUltimateAbility(Player player, OmnitrixPlayer omp) {
+        if (player.HasBuff<UltimateAbilityCooldown>() || player.HasBuff<UltimateAbility>() ||
+            omp.ultimateAttack || omp.HasLoadedAbilityAttack)
+            return true;
+
+        UpgradeTechPlayer techPlayer = player.GetModPlayer<UpgradeTechPlayer>();
+        if (!techPlayer.HasTechMass(FullIntegrationTechMassCost)) {
+            omp.ShowTransformFailureFeedback($"Need {FullIntegrationTechMassCost} Tech Mass for {UltimateAbilityName}.");
+            return true;
+        }
+
+        int ultimateCost = GetUltimateAbilityCost(omp);
+        if (!omp.TrySpendOmnitrixEnergy(ultimateCost)) {
+            omp.ShowTransformFailureFeedback($"Need {ultimateCost} OE for {UltimateAbilityName}.");
+            return true;
+        }
+
+        techPlayer.TryConsumeTechMass(FullIntegrationTechMassCost);
+        player.AddBuff(ModContent.BuffType<UltimateAbility>(), GetUltimateAbilityDuration(omp));
+        omp.Abilities.SetTransformationId(OmnitrixPlayer.AttackSelection.Ultimate, FullID);
+        return true;
     }
 
     public override void ModifyPlumbersBadgeStats(Item item, OmnitrixPlayer omp) {
@@ -262,6 +338,22 @@ public class UpgradeTransformation : Transformation {
         };
     }
 
+    public override bool CanStartCurrentAttack(Player player, OmnitrixPlayer omp) {
+        if (!base.CanStartCurrentAttack(player, omp))
+            return false;
+
+        if (!omp.IsSecondaryAbilityAttackLoaded)
+            return true;
+
+        UpgradeTechPlayer techPlayer = player.GetModPlayer<UpgradeTechPlayer>();
+        if (techPlayer.HasTechMass(ConstructTechMassCost))
+            return true;
+
+        if (player.whoAmI == Main.myPlayer)
+            omp.ShowTransformFailureFeedback($"Need {ConstructTechMassCost} Tech Mass for Recompile Construct.");
+        return false;
+    }
+
     public override bool Shoot(Player player, OmnitrixPlayer omp, EntitySource_ItemUse_WithAmmo source, Vector2 position,
         Vector2 velocity, int damage, float knockback) {
         Vector2 direction = ResolveAimDirection(player, velocity);
@@ -275,7 +367,7 @@ public class UpgradeTransformation : Transformation {
         }
 
         if (omp.altAttack) {
-            AttemptAssimilation(player, source, techPlayer);
+            AttemptAssimilation(player, omp, source, techPlayer);
             return false;
         }
 
@@ -315,16 +407,13 @@ public class UpgradeTransformation : Transformation {
     }
 
     private static TransformationAttackProfile BuildConstructProfile(UpgradeTechPlayer techPlayer, OmnitrixPlayer omp) {
-        if (!techPlayer.HasSyncedWeapon)
-            return null;
-
         return new TransformationAttackProfile {
             DisplayName = techPlayer.ActiveTechProfile switch {
                 UpgradeTechProfile.Melee => "Blade Drone",
                 UpgradeTechProfile.Ranged => "Pulse Turret",
                 UpgradeTechProfile.Magic => "Arc Node",
                 UpgradeTechProfile.Summon => "Drone Swarm",
-                _ => "Recompile Construct"
+                _ => "Optic Node"
             },
             ProjectileType = ModContent.ProjectileType<UpgradeConstructProjectile>(),
             DamageMultiplier = ConstructDamageMultiplier,
@@ -380,31 +469,157 @@ public class UpgradeTransformation : Transformation {
         return Utils.Clamp((int)Math.Round(useTime * multiplier), min, max);
     }
 
-    private static void AttemptAssimilation(Player player, IEntitySource source, UpgradeTechPlayer techPlayer) {
-        if (!TryFindAssimilationWeapon(player, techPlayer, out Item weapon)) {
-            Projectile.NewProjectile(source, player.Center, Vector2.Zero,
-                ModContent.ProjectileType<UpgradeAssimilationPulseProjectile>(), 0, 0f, player.whoAmI,
-                (float)UpgradeTechProfile.None, 0f);
+    private static void AttemptAssimilation(Player player, OmnitrixPlayer omp, IEntitySource source, UpgradeTechPlayer techPlayer) {
+        bool overclocked = omp.PrimaryAbilityEnabled;
+        bool fullyIntegrated = omp.IsUltimateAbilityActive;
+        float radius = AssimilationRadius + (overclocked ? AssimilationOverclockRadiusBonus : 0f) +
+                       (fullyIntegrated ? AssimilationOverclockRadiusBonus * 0.5f : 0f);
 
-            if (player.whoAmI == Main.myPlayer)
-                Main.NewText("No compatible melee, ranged, magic, or summon weapon was found to assimilate.", new Color(225, 135, 135));
+        int harvestedProjectiles = AbsorbHostileProjectiles(player, source, techPlayer, radius, overclocked, fullyIntegrated);
+        int harvestedTargets = HarvestInfectedTargets(player, source, techPlayer, radius, fullyIntegrated);
+        bool refreshedConstruct = RefreshConstructFromAssimilate(player, techPlayer);
+        bool scannedWeapon = false;
+        UpgradeTechProfile pulseProfile = techPlayer.ActiveTechProfile;
 
-            return;
+        if (TryFindAssimilationWeapon(player, techPlayer, out Item weapon)) {
+            UpgradeTechProfile profile = ClassifyWeapon(weapon);
+            techPlayer.SetSyncedWeapon(weapon, profile);
+            techPlayer.GainTechMass(18);
+            pulseProfile = profile;
+            scannedWeapon = true;
+
+            Color techColor = GetTechColor(profile);
+            SoundEngine.PlaySound(SoundID.Item93 with { Pitch = -0.18f, Volume = 0.78f }, player.Center);
+            SpawnAssimilationDust(player.Center, 12, techColor);
+
+            if (player.whoAmI == Main.myPlayer) {
+                Main.NewText($"Assimilated {weapon.Name}: {GetTechProfileDisplayName(profile)} online.", techColor);
+                CombatText.NewText(player.getRect(), techColor, weapon.Name, dramatic: true);
+            }
         }
 
-        UpgradeTechProfile profile = ClassifyWeapon(weapon);
-        techPlayer.SetSyncedWeapon(weapon, profile);
+        bool didAnything = scannedWeapon || harvestedProjectiles > 0 || harvestedTargets > 0 || refreshedConstruct;
+        if (!didAnything && techPlayer.TryGainFallbackTechMass(4))
+            didAnything = true;
+
         Projectile.NewProjectile(source, player.Center, Vector2.Zero,
             ModContent.ProjectileType<UpgradeAssimilationPulseProjectile>(), 0, 0f, player.whoAmI,
-            (float)profile, 1f);
+            (float)pulseProfile, didAnything ? 1f : 0f);
 
-        Color techColor = GetTechColor(profile);
-        SoundEngine.PlaySound(SoundID.Item93 with { Pitch = -0.18f, Volume = 0.78f }, player.Center);
-        SpawnAssimilationDust(player.Center, 12, techColor);
+        if (!didAnything && player.whoAmI == Main.myPlayer)
+            Main.NewText("No weapon, infected target, hostile projectile, or construct was found to assimilate.", new Color(225, 135, 135));
+    }
 
-        if (player.whoAmI == Main.myPlayer) {
-            Main.NewText($"Assimilated {weapon.Name}: {GetTechProfileDisplayName(profile)} online.", techColor);
-            CombatText.NewText(player.getRect(), techColor, weapon.Name, dramatic: true);
+    private static int AbsorbHostileProjectiles(Player player, IEntitySource source, UpgradeTechPlayer techPlayer,
+        float radius, bool overclocked, bool fullyIntegrated) {
+        int absorbed = 0;
+        for (int i = 0; i < Main.maxProjectiles && absorbed < 6; i++) {
+            Projectile hostileProjectile = Main.projectile[i];
+            if (!hostileProjectile.active || !hostileProjectile.hostile || hostileProjectile.friendly ||
+                hostileProjectile.damage <= 0)
+                continue;
+
+            if (hostileProjectile.Center.Distance(player.Center) > radius)
+                continue;
+
+            Vector2 sparkOrigin = hostileProjectile.Center;
+            hostileProjectile.Kill();
+            absorbed++;
+            techPlayer.GainTechMass(HostileProjectileTechMassGain);
+
+            NPC target = FindTarget(sparkOrigin, 520f);
+            if (target != null && player.whoAmI == Main.myPlayer) {
+                Vector2 direction = (target.Center - sparkOrigin).SafeNormalize(new Vector2(player.direction, 0f));
+                int sparkDamage = Math.Max(1, (int)Math.Round(techPlayer.ResolveBadgeDamage() * 0.55f));
+                FireAdaptiveShot(player, source, direction, sparkDamage, 1.4f, techPlayer.ActiveTechProfile,
+                    UpgradeAttackVariant.Special, overclocked, fullyIntegrated, sparkOrigin);
+            }
+
+            if (Main.dedServ)
+                continue;
+
+            Color color = GetTechColor(techPlayer.ActiveTechProfile);
+            for (int j = 0; j < 7; j++) {
+                Dust dust = Dust.NewDustPerfect(sparkOrigin, Main.rand.NextBool() ? DustID.Electric : DustID.GreenTorch,
+                    Main.rand.NextVector2Circular(2.2f, 2.2f), 95, color, Main.rand.NextFloat(0.9f, 1.2f));
+                dust.noGravity = true;
+            }
+        }
+
+        return absorbed;
+    }
+
+    private static int HarvestInfectedTargets(Player player, IEntitySource source, UpgradeTechPlayer techPlayer,
+        float radius, bool fullyIntegrated) {
+        int harvested = 0;
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy() || npc.Center.Distance(player.Center) > radius)
+                continue;
+
+            AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
+            int consumedStacks = identity.ConsumeUpgradeInfection(player.whoAmI, out bool fullyInfected);
+            if (consumedStacks <= 0)
+                continue;
+
+            bool mechanical = IsMechanicalTarget(npc);
+            int gainedMass = InfectedHarvestBaseTechMassGain + consumedStacks * 2 + (mechanical ? 4 : 0);
+            if (npc.boss)
+                gainedMass = Math.Max(3, gainedMass / 2);
+
+            techPlayer.GainTechMass(gainedMass);
+            npc.AddBuff(BuffID.BrokenArmor, mechanical ? 210 : 135);
+            if (mechanical || fullyInfected)
+                npc.AddBuff(ModContent.BuffType<EnemySlow>(), mechanical ? 120 : 75);
+
+            if (fullyInfected)
+                TriggerAssimilationBurst(player, source, npc, techPlayer.ActiveTechProfile, fullyIntegrated, consumedStacks);
+
+            harvested++;
+        }
+
+        return harvested;
+    }
+
+    private static bool RefreshConstructFromAssimilate(Player player, UpgradeTechPlayer techPlayer) {
+        int constructIndex = FindOwnedProjectile(player.whoAmI, ModContent.ProjectileType<UpgradeConstructProjectile>());
+        if (constructIndex < 0)
+            return false;
+
+        Projectile construct = Main.projectile[constructIndex];
+        construct.timeLeft = UpgradeConstructProjectile.BaseLifetimeTicks;
+        construct.ai[0] = MathHelper.Clamp(construct.ai[0] + 1f, 0f, 4f);
+        construct.ai[1] = (float)techPlayer.ActiveTechProfile;
+        construct.netUpdate = true;
+        SpawnAssimilationDust(construct.Center, 8, GetTechColor(techPlayer.ActiveTechProfile));
+        return true;
+    }
+
+    private static void TriggerAssimilationBurst(Player player, IEntitySource source, NPC centerTarget,
+        UpgradeTechProfile profile, bool fullyIntegrated, int consumedStacks) {
+        if (Main.netMode != NetmodeID.MultiplayerClient) {
+            int burstDamage = Math.Max(1, (int)Math.Round(player.GetModPlayer<UpgradeTechPlayer>().ResolveBadgeDamage() *
+                                                          (fullyIntegrated ? 0.52f : 0.36f) + consumedStacks * 3));
+            for (int i = 0; i < Main.maxNPCs; i++) {
+                NPC npc = Main.npc[i];
+                if (!npc.CanBeChasedBy() || npc.Center.Distance(centerTarget.Center) > 118f)
+                    continue;
+
+                npc.SimpleStrikeNPC(burstDamage, player.direction, false, 0f, ModContent.GetInstance<HeroDamage>());
+                npc.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyUpgradeInfection(player.whoAmI, 1, 180, IsMechanicalTarget(npc));
+                npc.netUpdate = true;
+            }
+        }
+
+        if (Main.dedServ)
+            return;
+
+        Color color = GetTechColor(profile);
+        for (int i = 0; i < 22; i++) {
+            Dust dust = Dust.NewDustPerfect(centerTarget.Center, Main.rand.NextBool() ? DustID.Electric : DustID.GreenTorch,
+                Main.rand.NextVector2CircularEdge(1f, 1f) * Main.rand.NextFloat(2f, 5.4f), 95,
+                color, Main.rand.NextFloat(1f, 1.45f));
+            dust.noGravity = true;
         }
     }
 
@@ -590,8 +805,49 @@ public class UpgradeTransformation : Transformation {
             (float)profile, PackOpticFlags(overclocked, fullyIntegrated, variant));
     }
 
+    internal static void ApplyUpgradeTechHit(Projectile projectile, NPC target, UpgradeTechProfile profile,
+        UpgradeAttackVariant variant, bool overclocked, bool fullyIntegrated, int damageDone) {
+        if (projectile.owner < 0 || projectile.owner >= Main.maxPlayers)
+            return;
+
+        Player owner = Main.player[projectile.owner];
+        if (!owner.active || owner.dead)
+            return;
+
+        OmnitrixPlayer omp = owner.GetModPlayer<OmnitrixPlayer>();
+        if (!omp.IsTransformed || omp.currentTransformationId != "Ben10Mod:Upgrade")
+            return;
+
+        bool mechanical = IsMechanicalTarget(target);
+        int infectionStacks = variant == UpgradeAttackVariant.Primary ? 1 : 2;
+        if (overclocked)
+            infectionStacks++;
+        if (fullyIntegrated)
+            infectionStacks++;
+
+        int infectionTime = PrimaryInfectionTime + (variant == UpgradeAttackVariant.Primary ? 0 : 60) +
+                            (fullyIntegrated ? 90 : 0);
+        target.GetGlobalNPC<AlienIdentityGlobalNPC>().ApplyUpgradeInfection(projectile.owner, infectionStacks, infectionTime, mechanical);
+
+        int techMassGain = mechanical ? 5 : 3;
+        if (variant != UpgradeAttackVariant.Primary)
+            techMassGain++;
+        if (fullyIntegrated)
+            techMassGain += 2;
+        if (target.boss)
+            techMassGain = Math.Max(1, techMassGain / 2);
+
+        owner.GetModPlayer<UpgradeTechPlayer>().GainTechMass(techMassGain);
+    }
+
     private static void DeployOrRefreshConstruct(Player player, OmnitrixPlayer omp, IEntitySource source, int damage,
         float knockback, UpgradeTechPlayer techPlayer) {
+        if (!techPlayer.TryConsumeTechMass(ConstructTechMassCost)) {
+            if (player.whoAmI == Main.myPlayer)
+                omp.ShowTransformFailureFeedback($"Need {ConstructTechMassCost} Tech Mass for Recompile Construct.");
+            return;
+        }
+
         UpgradeTechProfile constructProfile = techPlayer.ActiveTechProfile;
         int projectileType = ModContent.ProjectileType<UpgradeConstructProjectile>();
         int constructTier = techPlayer.ResolveConstructTier();
@@ -628,6 +884,44 @@ public class UpgradeTransformation : Transformation {
         }
 
         return -1;
+    }
+
+    private static NPC FindTarget(Vector2 origin, float maxDistance) {
+        NPC bestTarget = null;
+        float bestDistanceSquared = maxDistance * maxDistance;
+        for (int i = 0; i < Main.maxNPCs; i++) {
+            NPC npc = Main.npc[i];
+            if (!npc.CanBeChasedBy())
+                continue;
+
+            float distanceSquared = Vector2.DistanceSquared(origin, npc.Center);
+            if (distanceSquared >= bestDistanceSquared)
+                continue;
+
+            bestDistanceSquared = distanceSquared;
+            bestTarget = npc;
+        }
+
+        return bestTarget;
+    }
+
+    internal static bool IsMechanicalTarget(NPC npc) {
+        if (npc == null)
+            return false;
+
+        if (npc.type == NPCID.TheDestroyer || npc.type == NPCID.TheDestroyerBody || npc.type == NPCID.TheDestroyerTail ||
+            npc.type == NPCID.SkeletronPrime || npc.type == NPCID.PrimeCannon || npc.type == NPCID.PrimeLaser ||
+            npc.type == NPCID.PrimeSaw || npc.type == NPCID.PrimeVice || npc.type == NPCID.Retinazer ||
+            npc.type == NPCID.Spazmatism || npc.type == NPCID.Probe)
+            return true;
+
+        string name = npc.GivenOrTypeName ?? string.Empty;
+        return name.Contains("Drone", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Probe", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Turret", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Martian", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Golem", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Machine", StringComparison.OrdinalIgnoreCase);
     }
 
     private static Vector2 ResolveAimDirection(Player player, Vector2 fallbackVelocity) {
@@ -706,6 +1000,8 @@ public class UpgradeTransformation : Transformation {
 }
 
 public class UpgradeTechPlayer : ModPlayer {
+    public const int MaxTechMass = 100;
+
     public UpgradeTechProfile ActiveTechProfile { get; private set; }
     public int SyncedWeaponItemType { get; private set; }
     public int SyncedWeaponDamage { get; private set; }
@@ -715,13 +1011,18 @@ public class UpgradeTechPlayer : ModPlayer {
     public float SyncedWeaponShootSpeed { get; private set; }
     public int RememberedWeaponSlot { get; private set; }
     public int RememberedWeaponItemType { get; private set; }
+    public int TechMass { get; private set; }
+    private int overclockDrainTimer;
+    private int fallbackAssimilationCooldown;
 
     public bool HasSyncedWeapon => ActiveTechProfile != UpgradeTechProfile.None && SyncedWeaponItemType > ItemID.None;
+    public float TechMassRatio => TechMass / (float)MaxTechMass;
 
     public override void Initialize() {
         ResetSyncedWeapon();
         RememberedWeaponSlot = -1;
         RememberedWeaponItemType = ItemID.None;
+        TechMass = 0;
     }
 
     public void ResetSyncedWeapon() {
@@ -732,6 +1033,11 @@ public class UpgradeTechPlayer : ModPlayer {
         SyncedWeaponKnockback = 0f;
         SyncedWeaponCrit = 0;
         SyncedWeaponShootSpeed = 0f;
+    }
+
+    public void ResetTransientTechState() {
+        overclockDrainTimer = 0;
+        fallbackAssimilationCooldown = 0;
     }
 
     public void SetSyncedWeapon(Item item, UpgradeTechProfile profile) {
@@ -747,6 +1053,55 @@ public class UpgradeTechPlayer : ModPlayer {
         SyncedWeaponKnockback = Math.Max(1f, item.knockBack);
         SyncedWeaponCrit = Math.Max(0, item.crit);
         SyncedWeaponShootSpeed = item.shootSpeed > 0f ? item.shootSpeed : 10f;
+    }
+
+    public void TickTechMassState() {
+        if (fallbackAssimilationCooldown > 0)
+            fallbackAssimilationCooldown--;
+    }
+
+    public bool HasTechMass(int amount) {
+        return TechMass >= amount;
+    }
+
+    public int GainTechMass(int amount) {
+        if (amount <= 0)
+            return 0;
+
+        int before = TechMass;
+        TechMass = Utils.Clamp(TechMass + amount, 0, MaxTechMass);
+        return TechMass - before;
+    }
+
+    public bool TryConsumeTechMass(int amount) {
+        if (amount <= 0)
+            return true;
+
+        if (TechMass < amount)
+            return false;
+
+        TechMass -= amount;
+        return true;
+    }
+
+    public bool TryDrainOverclockTechMass(int amountPerSecond) {
+        if (TechMass <= 0)
+            return false;
+
+        overclockDrainTimer++;
+        if (overclockDrainTimer < 20)
+            return true;
+
+        overclockDrainTimer = 0;
+        return TryConsumeTechMass(amountPerSecond);
+    }
+
+    public bool TryGainFallbackTechMass(int amount) {
+        if (fallbackAssimilationCooldown > 0)
+            return false;
+
+        fallbackAssimilationCooldown = 120;
+        return GainTechMass(amount) > 0;
     }
 
     public void UpdateRememberedWeapon(Player player) {

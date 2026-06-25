@@ -32,14 +32,14 @@ public class NRGTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<NRG_Buff>();
 
     public override string Description =>
-        "A living reactor sealed in armor that burns targets with reactor fire, then detonates that heat into radiation blooms and unbound plasma pressure.";
+        "A living reactor sealed in armor. NRG burns enemies through the suit, detonates that heat, then opens the reactor for faster plasma attacks.";
 
     public override List<string> Abilities => new() {
-        "Containment beam that sets targets ablaze",
-        "Radiant seeker that blooms off burning enemies",
-        "Containment heat burst",
-        "Unbound reactor form",
-        "Radiation fallout pressure"
+        "Containment Beam burns enemies and primes them for stronger reactor hits.",
+        "Radiant Seeker homes into the fight and blooms harder when it finds burning targets.",
+        "Containment Burst spends OE on a close heat detonation when enemies crowd the armor.",
+        "Unbound Core opens the reactor, making NRG faster and turning attacks into plasma bursts for a short time.",
+        "Radiation fallout leaves hot zones behind, punishing enemies that stay near the blast."
     };
 
     public override string PrimaryAttackName => "Containment Beam";

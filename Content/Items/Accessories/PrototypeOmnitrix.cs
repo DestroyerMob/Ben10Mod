@@ -70,6 +70,10 @@ namespace Ben10Mod.Content.Items.Accessories
             base.UpdateAccessory(player, hideVisual);
         }
 
+        public override bool UsesEnergyForTransformation(OmnitrixPlayer omp) {
+            return omp?.HasMasterControlAccess == true;
+        }
+
         public override bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
             return defeatedNpcType == NPCID.WallofFlesh;
         }

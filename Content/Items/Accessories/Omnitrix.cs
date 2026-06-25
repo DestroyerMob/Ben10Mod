@@ -143,6 +143,7 @@ namespace Ben10Mod.Content.Items.Accessories
             omp.omnitrixEquipped  = true;
             omp.equippedOmnitrix  = this;
             omp.equippedOmnitrixItem = Item;
+            omp.activeOmnitrixVisualsHidden = hideVisual;
 
             omp.omnitrixEnergyMax += GetEffectiveOmnitrixEnergyMax(omp);
 
@@ -161,7 +162,7 @@ namespace Ben10Mod.Content.Items.Accessories
             HandleAlienSelection(omp);
             HandleTransformationKey(omp);
 
-            if (!omp.isTransformed || !UseEnergyForTransformation) return;
+            if (!omp.isTransformed || !UsesEnergyForTransformation(omp)) return;
 
             if (omp.omnitrixEnergy > 0 && !string.IsNullOrEmpty(omp.currentTransformationId))
             {
@@ -314,7 +315,7 @@ namespace Ben10Mod.Content.Items.Accessories
                 return false;
             }
 
-            if (!UseEnergyForTransformation && !omp.HasMasterControlAccess) {
+            if (!UsesEnergyForTransformation(omp) && !omp.HasMasterControlAccess) {
                 omp.ShowTransformFailureFeedback("Manual detransform requires Master Control on this Omnitrix.");
                 return false;
             }
@@ -408,24 +409,25 @@ namespace Ben10Mod.Content.Items.Accessories
                     return true;
                 }
 
-                if (!omp.HasMasterControlAccess && !UseEnergyForTransformation) {
+                bool usesEnergyForTransformation = UsesEnergyForTransformation(omp);
+                if (!omp.HasMasterControlAccess && !usesEnergyForTransformation) {
                     omp.ShowTransformFailureFeedback(
                         "This Omnitrix cannot switch forms manually. Wait for the transformation to time out or unlock Master Control.");
                     return false;
                 }
 
                 int swapCost = GetEffectiveTransformationSwapCost(omp);
-                if (!omp.HasMasterControlAccess && UseEnergyForTransformation &&
+                if (!omp.HasMasterControlAccess && usesEnergyForTransformation &&
                     !omp.CanSpendOmnitrixEnergy(swapCost)) {
                     omp.ShowTransformFailureFeedback($"Need {swapCost} OE to swap forms.");
                     return false;
                 }
 
-                if (!omp.HasMasterControlAccess && UseEnergyForTransformation &&
+                if (!omp.HasMasterControlAccess && usesEnergyForTransformation &&
                     !omp.TrySpendOmnitrixEnergy(swapCost))
                     return false;
 
-                int nextDuration = UseEnergyForTransformation
+                int nextDuration = usesEnergyForTransformation
                     ? GetTransformationDuration(omp)
                     : GetRemainingTransformationDurationSeconds(omp);
 
@@ -447,12 +449,12 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public virtual int GetTransformationDuration(OmnitrixPlayer omp) {
-            int baseDuration = UseEnergyForTransformation ? 2 : TransformationDuration;
+            int baseDuration = UsesEnergyForTransformation(omp) ? 2 : TransformationDuration;
             return ApplyTransformationDurationModifiers(baseDuration, omp);
         }
 
         public virtual int GetDetransformCooldownDuration(OmnitrixPlayer omp) {
-            int baseDuration = UseEnergyForTransformation ? 0 : TimeoutDuration;
+            int baseDuration = UsesEnergyForTransformation(omp) ? 0 : TimeoutDuration;
             return ApplyCooldownDurationModifiers(baseDuration, omp);
         }
 
@@ -461,13 +463,13 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         public virtual int GetBranchTransformationDuration(OmnitrixPlayer omp) {
-            return UseEnergyForTransformation
+            return UsesEnergyForTransformation(omp)
                 ? GetTransformationDuration(omp)
                 : GetRemainingTransformationDurationSeconds(omp);
         }
 
         public virtual bool ShouldAddDetransformCooldown(OmnitrixPlayer omp) {
-            return !UseEnergyForTransformation;
+            return !UsesEnergyForTransformation(omp);
         }
 
         public virtual void HandleForcedDetransform(Player player, OmnitrixPlayer omp) {
@@ -489,6 +491,10 @@ namespace Ben10Mod.Content.Items.Accessories
                 return 0;
 
             return Math.Max(damageDone / EnergyPerDamageDivisor, MinimumEnergyGainPerHit);
+        }
+
+        public virtual bool UsesEnergyForTransformation(OmnitrixPlayer omp) {
+            return UseEnergyForTransformation;
         }
 
         public virtual bool ShouldStartEvolution(Player player, OmnitrixPlayer omp, int defeatedNpcType) {
@@ -631,6 +637,9 @@ namespace Ben10Mod.Content.Items.Accessories
         }
 
         private int GetEffectiveOmnitrixEnergyDrain(OmnitrixPlayer omp) {
+            if (omp?.HasMasterControlAccess == true)
+                return 0;
+
             int prefixBonus = GetActiveOmnitrixPrefix()?.OmnitrixEnergyDrainBonus ?? 0;
             return Math.Max(0, OmnitrixEnergyDrain + prefixBonus);
         }

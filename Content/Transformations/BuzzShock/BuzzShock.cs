@@ -11,7 +11,7 @@ namespace Ben10Mod.Content.Transformations.BuzzShock
 {
     public class BuzzShock : ModItem {
         public static string TransformationDescription =>
-            "A living electric spark that mixes mobility, summoning, and projectile pressure. Buzzshock can blink across the arena, fire lightning, and call in support units.";
+            "A living electric spark that mixes mobility, lightning, and summoned support. Buzzshock can blink across the arena and call in help.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
             "Primary ability: instant short-range teleport to the cursor.",

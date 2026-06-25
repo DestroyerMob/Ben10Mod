@@ -77,6 +77,9 @@ public class UpgradeBladeWaveProjectile : ModProjectile {
         target.AddBuff(BuffID.BrokenArmor, FullyIntegrated ? 180 : 120);
         if (Variant != UpgradeAttackVariant.Primary)
             target.AddBuff(ModContent.BuffType<EnemySlow>(), FullyIntegrated ? 150 : 105);
+
+        UpgradeTransformation.ApplyUpgradeTechHit(Projectile, target, UpgradeTechProfile.Melee, Variant, Overclocked, FullyIntegrated,
+            damageDone);
     }
 
     public override void OnKill(int timeLeft) {

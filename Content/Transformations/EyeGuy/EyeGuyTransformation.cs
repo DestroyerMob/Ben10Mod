@@ -49,15 +49,15 @@ public class EyeGuyTransformation : Transformation {
     public override string IconPath => "Ben10Mod/Content/Interface/EmptyAlien";
     public override int TransformationBuffId => ModContent.BuffType<EyeGuy_Buff>();
     public override string Description =>
-        "An Opticoid artillery form built around elemental mark cycling, hovering crossfire, and a beam that cashes those marks out into explosive Spectrum Breaks.";
+        "An Opticoid artillery form that cycles elemental marks, fights with hovering eyes, and detonates fully marked enemies with Spectrum Breaks.";
 
     public override List<string> Abilities => new() {
         "Ocular Burst rotates through fire, frost, and shock marks in a fixed order.",
-        "Landing all 3 marks triggers Compound Vision, then opens a 5 second Exposed window.",
-        "Chest Eye Beam is the cash-out tool: it drains light OE while you hold it, and detonates Exposed targets into Spectrum Breaks.",
+        "Landing all 3 marks triggers Compound Vision, then leaves the target Exposed for 5 seconds.",
+        "Chest Eye Beam drains light OE while held and detonates Exposed targets into Spectrum Breaks.",
         "Omni-Gaze fires a 360-degree barrage that fills missing marks first instead of wasting duplicates.",
         "Watcher Array opens 4 hovering eyes that repeat lighter versions of your burst and beam attacks.",
-        "All Eyes Open overloads the full loop for 8 seconds and ends with a final Omni-Gaze pulse."
+        "All Eyes Open overloads the eye network for 8 seconds and ends with a final Omni-Gaze pulse."
     };
 
     public override string PrimaryAttackName => "Ocular Burst";
@@ -260,7 +260,7 @@ public class EyeGuyTransformation : Transformation {
                     : $"Cycles {cycleText} into Exposed",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? FormatEnergyRate(ChestBeamSustainCost, ChestBeamSustainInterval, compact)
-                : $"Focused cash-out beam • Drain {FormatEnergyRate(ChestBeamSustainCost, ChestBeamSustainInterval, compact)}",
+                : $"Focused mark-detonation beam • Drain {FormatEnergyRate(ChestBeamSustainCost, ChestBeamSustainInterval, compact)}",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
                 ? $"{OmniGazeCost} OE"
                 : $"360 barrage that fills missing marks first • {OmniGazeCost} OE",

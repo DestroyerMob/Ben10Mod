@@ -25,11 +25,11 @@ public class GhostFreakTransformation : Transformation {
         "A fear and possession controller who avoids direct fights, phases through danger, and manipulates enemies before taking over.";
 
     public override List<string> Abilities => new() {
-        "Weak Fear Bolt that marks enemies",
-        "Curse Wave that spreads fear and panic",
-        "Intangibility and phasing movement",
-        "Haunt target for delayed damage and possession setup",
-        "Possession payoff against feared or haunted enemies"
+        "Fear Bolt is a low-damage shot for starting Fear on a target.",
+        "Curse Wave spreads Fear in a short area, giving Ghostfreak room when crowds collapse on him.",
+        "Intangibility lets Ghostfreak phase through danger, reposition, then reappear safely.",
+        "Haunt marks one target for delayed damage and makes that target much better possession material.",
+        "Possession lasts longer and hits harder against Feared or Haunted enemies."
     };
 
     public override string PrimaryAttackName => "Fear Bolt";
@@ -175,9 +175,9 @@ public class GhostFreakTransformation : Transformation {
                 : "Phase through danger; control attacks stay available while intangible",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
                 ? $"{fearText} • Haunt"
-                : $"{fearText} • Haunt adds delayed damage and possession setup",
+                : $"{fearText} • Haunt adds delayed damage and improves possession",
             OmnitrixPlayer.AttackSelection.Ultimate => compact
-                ? $"{fearText} • Cashout"
+                ? $"{fearText} • Possess"
                 : $"{fearText} • possession lasts longer against feared or haunted targets",
             _ => fearText
         };

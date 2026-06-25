@@ -34,11 +34,11 @@ public class SwampfireTransformation : Transformation {
         "A regenerative fire-plant bruiser that seeds the arena with gas pods, then ignites the whole garden.";
 
     public override List<string> Abilities => new() {
-        "Methane bolts apply Fuel Vapour",
-        "Seed Pods grow Bloom Pods that release gas",
-        "Regenerative Rooting accelerates pod growth",
-        "Wildfire Bloom ignites pods and fuelled enemies",
-        "Swamp Inferno heals from a larger chain reaction"
+        "Methane Bolt applies Fuel Vapour, marking enemies so later fire effects can ignite harder.",
+        "Seed Pod grows Bloom Pods that release gas and turn the arena into fuel.",
+        "Regenerative Rooting slows Swampfire but grows pods faster and improves self-healing.",
+        "Wildfire Bloom ignites pods and fuelled enemies across the field.",
+        "Swamp Inferno triggers a large chain reaction and heals Swampfire from the burning field."
     };
 
     public override string PrimaryAttackName => "Methane Bolt";

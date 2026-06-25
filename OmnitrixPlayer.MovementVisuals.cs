@@ -5,26 +5,38 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.DataStructures;
+using Ben10Mod.Common.CustomVisuals;
 using Ben10Mod.Content;
 using Ben10Mod.Content.Transformations;
-using Ben10Mod.Content.Interface;
 using Terraria.Audio;
 using Ben10Mod.Content.Projectiles;
 using Ben10Mod.Content.Transformations.XLR8;
 
 namespace Ben10Mod {
     public partial class OmnitrixPlayer {
+        public bool ShouldShowTransformationVisuals()
+            => !activeOmnitrixVisualsHidden && CurrentTransformation != null;
+
+        public override void HideDrawLayers(PlayerDrawSet drawInfo) {
+            if (!ShouldShowTransformationVisuals())
+                return;
+
+            HideUnderlyingPlayerBodyLayers();
+            HideExternalPlayerBodyReplacementLayers();
+        }
+
         public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo) {
             var trans = CurrentTransformation;
             if (trans == null) return;
+            if (!ShouldShowTransformationVisuals()) return;
 
+            RestoreCachedTransformationVisualSlots(trans);
             trans.ModifyDrawInfo(Player, this, ref drawInfo);
         }
 
         public override void DrawEffects(PlayerDrawSet drawInfo, ref float r, ref float g, ref float b, ref float a,
             ref bool fullBright) {
-            var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
+            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, activeOmnitrixVisualsHidden);
 
             if (TryGetActiveAbsorptionProfile(out MaterialAbsorptionProfile absorptionProfile)) {
                 Color tint = absorptionProfile.TintColor;
@@ -44,7 +56,10 @@ namespace Ben10Mod {
             }
 
             var trans = CurrentTransformation;
-            if (trans != null && trans.TryGetTransformationTint(Player, this, out Color transformationTint,
+            bool showTransformationVisuals = ShouldShowTransformationVisuals();
+            if (showTransformationVisuals &&
+                trans != null &&
+                trans.TryGetTransformationTint(Player, this, out Color transformationTint,
                     out float tintBlendStrength, out bool forceTransformationFullBright)) {
                 Vector3 vividTint = Color.Lerp(transformationTint, Color.White, 0.16f).ToVector3();
                 float safeBlendStrength = MathHelper.Clamp(tintBlendStrength, 0f, 1f);
@@ -56,15 +71,23 @@ namespace Ben10Mod {
                     fullBright = true;
             }
 
-            if (trans != null)
+            if (trans != null && showTransformationVisuals)
                 trans.DrawEffects(ref drawInfo);
         }
 
-        public override void FrameEffects() {
-            var customSlot = ModContent.GetInstance<OmnitrixSlot>();
-            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, customSlot.HideVisuals);
+        public override void TransformDrawData(ref PlayerDrawSet drawInfo) {
+            if (!ShouldShowTransformationVisuals())
+                return;
 
-            if (!customSlot.HideVisuals && isTransformed) {
+            TransformationCostumeDrawHelper.EnsureBodyAndLegs(ref drawInfo);
+            TransformationCostumeDrawHelper.EnsureArms(ref drawInfo);
+        }
+
+        public override void FrameEffects() {
+            bool showTransformationVisuals = ShouldShowTransformationVisuals();
+            GetActiveOmnitrix()?.ApplyHandVisuals(Player, this, activeOmnitrixVisualsHidden);
+
+            if (showTransformationVisuals) {
                 Player.wings = -1;
                 Player.shoe = -1;
                 Player.handoff = -1;
@@ -74,11 +97,65 @@ namespace Ben10Mod {
                 Player.shield = -1;
             }
 
-            CurrentTransformation?.FrameEffects(Player, this);
-            ApplySelectedTransformationCostumeVisuals(Player, CurrentTransformation);
+            if (showTransformationVisuals)
+                ApplyTransformationVisualSlots(CurrentTransformation);
 
             if (ShouldShowXlr8DashAccessoryVisuals())
-                ApplyXlr8DashAccessoryVisuals(customSlot.HideVisuals);
+                ApplyXlr8DashAccessoryVisuals(activeOmnitrixVisualsHidden);
+        }
+
+        private void ApplyTransformationVisualSlots(Transformation transformation) {
+            if (transformation == null)
+                return;
+
+            transformation.FrameEffects(Player, this);
+            ApplySelectedTransformationCostumeVisuals(Player, transformation);
+            activeTransformationHeadSlot = Player.head;
+            activeTransformationBodySlot = Player.body;
+            activeTransformationLegsSlot = Player.legs;
+        }
+
+        private void RestoreCachedTransformationVisualSlots(Transformation transformation) {
+            if (activeTransformationHeadSlot < 0 || activeTransformationBodySlot < 0 || activeTransformationLegsSlot < 0) {
+                ApplyTransformationVisualSlots(transformation);
+                return;
+            }
+
+            Player.head = activeTransformationHeadSlot;
+            Player.body = activeTransformationBodySlot;
+            Player.legs = activeTransformationLegsSlot;
+        }
+
+        private static void HideUnderlyingPlayerBodyLayers() {
+            PlayerDrawLayers.HeadBack.Hide();
+            PlayerDrawLayers.Head.Hide();
+            PlayerDrawLayers.Skin.Hide();
+            PlayerDrawLayers.SkinLongCoat.Hide();
+            PlayerDrawLayers.HairBack.Hide();
+            PlayerDrawLayers.Tails.Hide();
+            PlayerDrawLayers.Shoes.Hide();
+        }
+
+        private static void HideExternalPlayerBodyReplacementLayers() {
+            foreach (PlayerDrawLayer layer in PlayerDrawLayerLoader.Layers) {
+                if (layer == null || IsBen10DrawLayer(layer) || IsVanillaDrawLayer(layer))
+                    continue;
+
+                layer.Hide();
+            }
+        }
+
+        private static bool IsBen10DrawLayer(PlayerDrawLayer layer) {
+            string layerNamespace = layer.GetType().Namespace;
+            return layerNamespace != null &&
+                   (layerNamespace == "Ben10Mod" ||
+                    layerNamespace.StartsWith("Ben10Mod.", StringComparison.Ordinal));
+        }
+
+        private static bool IsVanillaDrawLayer(PlayerDrawLayer layer) {
+            string layerNamespace = layer.GetType().Namespace;
+            return layerNamespace != null &&
+                   layerNamespace.StartsWith("Terraria.", StringComparison.Ordinal);
         }
 
         public override void PreUpdateMovement() {
@@ -166,15 +243,16 @@ namespace Ben10Mod {
         }
 
         private void ApplyXlr8DashAccessoryVisuals(bool hideVisuals) {
-            if (!hideVisuals) {
-                Player.wings = -1;
-                Player.shoe = -1;
-                Player.handoff = -1;
-                Player.handon = -1;
-                Player.back = -1;
-                Player.waist = -1;
-                Player.shield = -1;
-            }
+            if (hideVisuals)
+                return;
+
+            Player.wings = -1;
+            Player.shoe = -1;
+            Player.handoff = -1;
+            Player.handon = -1;
+            Player.back = -1;
+            Player.waist = -1;
+            Player.shield = -1;
 
             var costume = ModContent.GetInstance<XLR8>();
             Player.armorEffectDrawShadow = true;

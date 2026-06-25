@@ -13,7 +13,8 @@ public class GoopSquishLayer : PlayerDrawLayer {
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        return omp.currentTransformationId == "Ben10Mod:Goop" &&
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == "Ben10Mod:Goop" &&
                Vector2.DistanceSquared(omp.GoopVisualScale, Vector2.One) > 0.0001f;
     }
 

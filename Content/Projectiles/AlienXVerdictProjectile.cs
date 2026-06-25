@@ -18,10 +18,8 @@ public class AlienXVerdictProjectile : ModProjectile {
     private const float StartRadius = 18f;
     private const float ChargeRadius = 54f;
     private const float BaseMaxRadius = 320f;
-    private const float DeliberationRadiusBonus = 60f;
     private const int BaseDustPoints = 24;
     private const int MaxDustPoints = 68;
-    private bool Deliberation => Projectile.ai[0] >= 0.5f;
     private bool IsCharging => Timer < ChargeTicks;
 
     private float CurrentRadius {
@@ -78,7 +76,7 @@ public class AlienXVerdictProjectile : ModProjectile {
         }
         Timer++;
 
-        float maxRadius = BaseMaxRadius + (Deliberation ? DeliberationRadiusBonus : 0f);
+        float maxRadius = BaseMaxRadius;
         float radius;
 
         if (IsCharging) {
@@ -113,20 +111,17 @@ public class AlienXVerdictProjectile : ModProjectile {
     }
 
     public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        int judgement = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetAlienXJudgementStacks(Projectile.owner);
         float eruptionBonus = IsCharging ? 0f : 0.45f;
-        modifiers.SourceDamage *= 1f + judgement * 0.12f + (Deliberation ? 0.12f : 0f) + eruptionBonus;
+        modifiers.SourceDamage *= 1f + eruptionBonus;
     }
 
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
         AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        int judgement = identity.GetAlienXJudgementStacks(Projectile.owner);
-        identity.ApplyAlienXJudgement(Projectile.owner, judgement >= 2 ? 3 : 2, Deliberation ? 360 : 300);
-        identity.ApplyAlienXStasis(Projectile.owner, Deliberation ? 86 : 68);
+        identity.ApplyAlienXStasis(Projectile.owner, 68);
         target.AddBuff(ModContent.BuffType<AlienXSupernovaBurn>(), BurnOnContactTime);
 
         Vector2 blastDirection = (target.Center - Projectile.Center).SafeNormalize(Vector2.UnitY);
-        float blastForce = (IsCharging ? 6.5f : 13.5f) + judgement * 1.35f;
+        float blastForce = IsCharging ? 6.5f : 13.5f;
         target.velocity = Vector2.Lerp(target.velocity, blastDirection * blastForce, target.boss ? 0.12f : 0.48f);
         target.netUpdate = true;
     }
@@ -152,9 +147,9 @@ public class AlienXVerdictProjectile : ModProjectile {
         if (Main.netMode == NetmodeID.MultiplayerClient)
             return;
 
-        float finalRadius = Math.Max(CurrentRadius, BaseMaxRadius + (Deliberation ? DeliberationRadiusBonus : 0f));
+        float finalRadius = Math.Max(CurrentRadius, BaseMaxRadius);
         Player owner = Main.player[Projectile.owner];
-        int detonationBaseDamage = Math.Max(1, (int)Math.Round(Projectile.damage * (Deliberation ? 2.35f : 1.95f)));
+        int detonationBaseDamage = Math.Max(1, (int)Math.Round(Projectile.damage * 1.95f));
 
         for (int i = 0; i < Main.maxNPCs; i++) {
             NPC npc = Main.npc[i];
@@ -166,13 +161,12 @@ public class AlienXVerdictProjectile : ModProjectile {
                 continue;
 
             AlienIdentityGlobalNPC identity = npc.GetGlobalNPC<AlienIdentityGlobalNPC>();
-            identity.ApplyAlienXJudgement(Projectile.owner, 2, 360);
-            identity.ApplyAlienXStasis(Projectile.owner, Deliberation ? 98 : 76);
+            identity.ApplyAlienXStasis(Projectile.owner, 76);
             npc.AddBuff(ModContent.BuffType<AlienXSupernovaBurn>(), BurnOnDetonationTime);
 
             Vector2 blastDirection = (npc.Center - Projectile.Center).SafeNormalize(Vector2.UnitY);
             float proximity = 1f - distance / finalRadius;
-            float blastForce = MathHelper.Lerp(10f, Deliberation ? 28f : 22f, proximity);
+            float blastForce = MathHelper.Lerp(10f, 22f, proximity);
             npc.velocity = Vector2.Lerp(npc.velocity, blastDirection * blastForce, npc.boss ? 0.1f : 0.42f);
             int detonationDamage = Math.Max(1, (int)Math.Round(detonationBaseDamage * MathHelper.Lerp(0.8f, 1.35f, proximity)));
             npc.SimpleStrikeNPC(detonationDamage, owner.direction, false, 0f, ModContent.GetInstance<HeroDamage>());
@@ -249,7 +243,7 @@ public class AlienXVerdictProjectile : ModProjectile {
 
         float shellThickness = 42f;
         float innerRadius = Math.Max(0f, Math.Max(previousRadius, radius - shellThickness));
-        float radiusProgress = MathHelper.Clamp(radius / (BaseMaxRadius + DeliberationRadiusBonus), 0f, 1f);
+        float radiusProgress = MathHelper.Clamp(radius / BaseMaxRadius, 0f, 1f);
         int points = Math.Max(BaseDustPoints, (int)Math.Round(MathHelper.Lerp(BaseDustPoints, MaxDustPoints, radiusProgress)));
         float rotation = Main.GlobalTimeWrappedHourly * 3.2f;
 

@@ -27,6 +27,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public SnareOhNpcState SnareOh;
     public AlienXNpcState AlienX;
     public PeskyDustNpcState PeskyDust;
+    public UpgradeNpcState Upgrade;
 
     public bool IsFasttrackComboActiveFor(int owner) => Fasttrack.IsComboActiveFor(owner);
     public bool IsSkyMarkedFor(int owner) => Astrodactyl.IsSkyMarkedFor(owner);
@@ -54,6 +55,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public bool IsSnareOhCursedFor(int owner) => SnareOh.IsCursedFor(owner);
     public bool IsAlienXJudgedFor(int owner) => AlienX.IsJudgedFor(owner);
     public bool IsDreamboundFor(int owner) => PeskyDust.IsDreamboundFor(owner);
+    public bool IsUpgradeInfectedFor(int owner) => Upgrade.IsInfectedFor(owner);
 
     public int GetFasttrackComboStacks(int owner) => Fasttrack.GetComboStacks(owner);
     public int GetSkyMarkTime(int owner) => Astrodactyl.GetSkyMarkTime(owner);
@@ -80,6 +82,8 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
     public int GetSnareOhCurseStacks(int owner) => SnareOh.GetCurseStacks(owner);
     public int GetAlienXJudgementStacks(int owner) => AlienX.GetJudgementStacks(owner);
     public int GetPeskyDustDreamTime(int owner) => PeskyDust.GetDreamTime(owner);
+    public int GetUpgradeInfectionStacks(int owner) => Upgrade.GetInfectionStacks(owner);
+    public int GetUpgradeInfectionTime(int owner) => Upgrade.GetInfectionTime(owner);
 
     public void ApplyBigChillHoarfrost(int owner, int time, int armorPenetrationBonus = 4) {
         BigChill.ApplyHoarfrost(owner, time, armorPenetrationBonus);
@@ -274,6 +278,14 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         AlienX.ApplyStasis(owner, time, judgementStacks);
     }
 
+    public void ApplyUpgradeInfection(int owner, int stacks, int time, bool mechanicalTarget) {
+        Upgrade.ApplyInfection(owner, stacks, time, mechanicalTarget);
+    }
+
+    public int ConsumeUpgradeInfection(int owner, out bool wasFullyInfected) {
+        return Upgrade.ConsumeInfection(owner, out wasFullyInfected);
+    }
+
     public void AddPeskyDrowsy(int owner, int amount, int refreshTime, int dreamThreshold, int dreamTime) {
         PeskyDust.AddDrowsy(owner, amount, refreshTime, dreamThreshold, dreamTime);
     }
@@ -294,6 +306,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         BigChill.ApplyAI(npc);
         Humungousaur.ApplyAI(npc);
         PeskyDust.ApplyAI(npc);
+        Upgrade.HandleOverclockPulse(npc);
     }
 
     public override void ModifyHitByItem(NPC npc, Player player, Item item, ref NPC.HitModifiers modifiers) {
@@ -354,6 +367,7 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         SnareOh.ApplyDrawEffects(ref drawColor);
         AlienX.ApplyDrawEffects(ref drawColor);
         PeskyDust.ApplyDrawEffects(ref drawColor);
+        Upgrade.ApplyDrawEffects(ref drawColor);
     }
 
     private void TickStatuses() {
@@ -375,5 +389,6 @@ public class AlienIdentityGlobalNPC : GlobalNPC {
         SnareOh.Tick();
         AlienX.Tick();
         PeskyDust.Tick();
+        Upgrade.Tick();
     }
 }

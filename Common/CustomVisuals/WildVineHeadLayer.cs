@@ -22,7 +22,9 @@ internal static class WildVineHeadDrawHelper {
         if (player.dead || player.invis)
             return false;
 
-        return player.GetModPlayer<OmnitrixPlayer>().currentTransformationId == WildVineTransformationId;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == WildVineTransformationId;
     }
 
     public static void DrawHead(ref PlayerDrawSet drawInfo) {

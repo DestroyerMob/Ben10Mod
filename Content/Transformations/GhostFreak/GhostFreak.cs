@@ -11,13 +11,13 @@ namespace Ben10Mod.Content.Transformations.GhostFreak
 {
     public class GhostFreak : ModItem {
         public static string TransformationDescription =>
-            "An eerie controller built around fear, haunt setup, intangibility, and possession. Ghostfreak avoids direct fights and turns enemy panic into payoff.";
+            "An eerie controller who spreads Fear, haunts targets, phases through danger, and possesses enemies after they panic.";
 
         public static IReadOnlyList<string> TransformationAbilities => new[] {
             "Main attack: weak Fear Bolt that marks enemies.",
             "Alt attack: Curse Wave spreads Fear and disrupts aggression.",
             "Primary ability: intangibility and free phasing movement.",
-            "Secondary ability: Haunt a target for delayed damage and possession setup.",
+            "Secondary ability: Haunt a target for delayed damage and stronger possession.",
             "Ultimate attack: possession lasts longer and hits harder against feared or haunted targets."
         };
 

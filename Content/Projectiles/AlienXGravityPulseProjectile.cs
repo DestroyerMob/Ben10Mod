@@ -1,5 +1,4 @@
 using Ben10Mod.Content.DamageClasses;
-using Ben10Mod.Content.NPCs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -9,7 +8,6 @@ namespace Ben10Mod.Content.Projectiles;
 
 public class AlienXGravityPulseProjectile : ModProjectile {
     private const int LifetimeTicks = 28;
-    private bool Deliberation => Projectile.ai[0] >= 0.5f;
     private float CurrentRadius {
         get => Projectile.localAI[0];
         set => Projectile.localAI[0] = value;
@@ -35,17 +33,15 @@ public class AlienXGravityPulseProjectile : ModProjectile {
 
     public override void AI() {
         if (Projectile.velocity.LengthSquared() < 1f)
-            Projectile.velocity = Projectile.velocity.SafeNormalize(Vector2.UnitX) * (Deliberation ? 4f : 10f);
+            Projectile.velocity = Projectile.velocity.SafeNormalize(Vector2.UnitX) * 10f;
 
-        if (Deliberation)
-            Projectile.velocity *= 0.992f;
-        else if (Projectile.velocity.LengthSquared() < 196f)
+        if (Projectile.velocity.LengthSquared() < 196f)
             Projectile.velocity *= 1.015f;
 
         Projectile.rotation = Projectile.velocity.ToRotation();
 
         float progress = 1f - Projectile.timeLeft / (float)LifetimeTicks;
-        CurrentRadius = MathHelper.Lerp(18f, Deliberation ? 54f : 44f, progress);
+        CurrentRadius = MathHelper.Lerp(18f, 44f, progress);
         Lighting.AddLight(Projectile.Center, new Vector3(0.34f, 0.46f, 0.88f) * 0.85f);
         SpawnWaveDust();
     }
@@ -61,19 +57,9 @@ public class AlienXGravityPulseProjectile : ModProjectile {
             18f + CurrentRadius * 0.32f, ref collisionPoint);
     }
 
-    public override void ModifyHitNPC(NPC target, ref NPC.HitModifiers modifiers) {
-        int judgement = target.GetGlobalNPC<AlienIdentityGlobalNPC>().GetAlienXJudgementStacks(Projectile.owner);
-        if (judgement > 0)
-            modifiers.SourceDamage *= 1f + judgement * 0.08f;
-    }
-
     public override void OnHitNPC(NPC target, NPC.HitInfo hit, int damageDone) {
-        AlienIdentityGlobalNPC identity = target.GetGlobalNPC<AlienIdentityGlobalNPC>();
-        identity.ApplyAlienXJudgement(Projectile.owner, Deliberation ? 2 : 1, Deliberation ? 320 : 240);
-
-        int judgement = identity.GetAlienXJudgementStacks(Projectile.owner);
         Vector2 pushDirection = Projectile.velocity.SafeNormalize(Vector2.UnitX);
-        float pushForce = (Deliberation ? 18f : 14f) + judgement * 1.35f;
+        float pushForce = 14f;
         if (target.boss)
             pushForce *= 0.45f;
         else if (target.knockBackResist > 0f)

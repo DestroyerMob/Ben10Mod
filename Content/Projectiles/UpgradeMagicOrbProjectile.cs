@@ -60,6 +60,8 @@ public class UpgradeMagicOrbProjectile : ModProjectile {
         if (Overclocked || Variant != UpgradeAttackVariant.Primary)
             target.AddBuff(BuffID.Confused, FullyIntegrated ? 120 : 75);
 
+        UpgradeTransformation.ApplyUpgradeTechHit(Projectile, target, UpgradeTechProfile.Magic, Variant, Overclocked, FullyIntegrated,
+            damageDone);
         EmitBurst(8);
     }
 

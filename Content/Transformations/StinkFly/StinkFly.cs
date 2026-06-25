@@ -7,7 +7,7 @@ namespace Ben10Mod.Content.Transformations.StinkFly;
 
 public class StinkFly : ModItem {
     public static string TransformationDescription =>
-        "An airborne skirmisher that builds venom pressure by staying fast, evasive, and off the ground.";
+        "An airborne skirmisher who gets the most out of venom by staying fast, evasive, and off the ground.";
 
     public static IReadOnlyList<string> TransformationAbilities => new[] {
         "Built-in wings while transformed.",

@@ -124,6 +124,8 @@ public class UpgradeOpticRayProjectile : ModProjectile {
                     target.AddBuff(BuffID.Electrified, 90);
                 break;
         }
+
+        UpgradeTransformation.ApplyUpgradeTechHit(Projectile, target, Profile, Variant, Overclocked, FullyIntegrated, damageDone);
     }
 
     public override void OnKill(int timeLeft) {

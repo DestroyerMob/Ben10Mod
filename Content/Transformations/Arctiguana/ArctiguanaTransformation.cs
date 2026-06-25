@@ -27,16 +27,16 @@ public class ArctiguanaTransformation : Transformation {
     public override string TransformationName => "Arctiguana";
     public override int TransformationBuffId => ModContent.BuffType<Arctiguana_Buff>();
     public override string Description =>
-        "A cold-blooded reptilian bruiser that controls space with focused freeze rays, icy breath, solid constructs, and recoil-powered movement.";
+        "A cold-blooded reptilian bruiser who freezes lanes, blocks approaches with ice, and blasts himself out of danger with recoil movement.";
 
     public override List<string> Abilities => new() {
-        "Freeze ray that chills and locks enemies down",
-        "Freezing breath for close-range control",
-        "Freeze-Ray Propulsion for instant repositioning",
-        "Ice constructs that block space and punish approach",
-        "Enhanced strength, durability, and jumping",
-        "Cold immunity and wall climbing",
-        "Absolute Zero Ray for sustained freezing pressure"
+        "Freeze Ray chills enemies from range and can lock them down if you keep the beam on target.",
+        "Freezing Breath covers close range when enemies push past the beam.",
+        "Freeze-Ray Propulsion launches Arctiguana away from danger without dropping the fight.",
+        "Ice Construct blocks paths and punishes enemies that try to force through choke points.",
+        "Enhanced strength, durability, and jumping make Arctiguana sturdy for a beam form.",
+        "Cold immunity and wall climbing help Arctiguana fight from awkward terrain.",
+        "Absolute Zero Ray is a sustained ultimate beam for freezing anything caught in its path."
     };
 
     public override string PrimaryAttackName => "Freeze Ray";

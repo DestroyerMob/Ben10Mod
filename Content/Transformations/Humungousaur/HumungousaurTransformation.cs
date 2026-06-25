@@ -39,12 +39,12 @@ public class HumungousaurTransformation : Transformation {
         "A towering Vaxasaurian bruiser that grows stronger mid-battle, then enters Titanic Rampage to trade blows with bosses and smash the ground apart.";
 
     public override List<string> Abilities => new() {
-        "Close-range power punch that gains reach and ground shockwaves at larger sizes",
-        "Armored crushing charge that trades speed for heavier impacts while grown",
-        "Growth Surge increases size, range, power, and toughness while clearly reducing agility",
-        "Hold down while grown to brace for boss trades",
-        "Titanic Rampage becomes controlled kaiju mode with braced pulses, punch shockwaves, and Crater Stomp",
-        "Ultimate evolution"
+        "Power Punch gains reach and ground shockwaves at larger sizes.",
+        "Crushing Charge trades speed for heavier impacts while Humungousaur is grown.",
+        "Growth Surge increases size, range, power, and toughness, but makes movement less agile.",
+        "Hold down while grown to brace, reducing knockback and helping Humungousaur survive boss trades.",
+        "Titanic Rampage becomes controlled kaiju mode with braced pulses, punch shockwaves, and Crater Stomp.",
+        "The Ultimatrix can evolve Humungousaur into Ultimate Humungousaur for a siege-focused moveset."
     };
 
     public override string PrimaryAttackName => "Power Punch";

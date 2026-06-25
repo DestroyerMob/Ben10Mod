@@ -29,10 +29,10 @@ public class ArmodrilloTransformation : Transformation {
         "A grounded seismic engineer that charges the terrain with piston drills, then splits fault lines through enemies.";
 
     public override List<string> Abilities => new() {
-        "Piston drill that charges the ground",
-        "Ground-connected seismic waves that split when charged",
-        "Siege plating that roots Armodrillo and amplifies ground attacks",
-        "Travelling fault line ultimate"
+        "Piston Drill tears into enemies and charges the ground beneath the fight.",
+        "Seismic Wave travels through connected ground and splits harder after the terrain is charged.",
+        "Siege Plating roots Armodrillo in place, trading agility for tougher armor and stronger ground attacks.",
+        "Fault Line sends a travelling rupture across the arena when you commit to the ground fight."
     };
 
     public override string PrimaryAttackName => "Piston Drill";
@@ -208,7 +208,7 @@ public class ArmodrilloTransformation : Transformation {
         string baseText = base.GetAttackResourceSummary(selection, omp, compact);
         string identityText = resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? $"{chargeText} • Drill setup"
+                ? $"{chargeText} • Drill"
                 : $"{chargeText} • drills charge the ground",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? $"{chargeText} • {stanceText}"

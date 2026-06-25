@@ -26,14 +26,14 @@ public class WaterHazardTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<WaterHazard_Buff>();
 
     public override string Description =>
-        "A pressure-resource artillery form that builds reservoir pressure, drenches enemies, and spends that stored force on bursts, snares, and Monsoon Break.";
+        "A water artillery form that fills a pressure reservoir, drenches enemies, then releases that force through bursts, snares, and Monsoon Break.";
 
     public override List<string> Abilities => new() {
-        "Pressure Jet builds reservoir pressure",
-        "Riptide Burst spends pressure to pop soaked targets",
-        "Reservoir Vent builds pressure faster",
-        "Tidal Snare spends heavier pressure for control",
-        "Monsoon Break spends the biggest pressure charge for payoff"
+        "Pressure Jet fills the reservoir while soaking targets for later bursts.",
+        "Riptide Burst releases stored pressure to pop soaked targets.",
+        "Reservoir Vent builds pressure faster when Water Hazard can afford to hold ground.",
+        "Tidal Snare spends a heavier pressure charge to trap enemies in a whirlpool.",
+        "Monsoon Break releases the largest pressure charge in one heavy water blast."
     };
 
     public override string PrimaryAttackName => "Pressure Jet";
@@ -179,20 +179,20 @@ public class WaterHazardTransformation : Transformation {
             : $"Reservoir pressure {GetPressurePercent(identityPlayer)}%";
         string identityText = resolvedSelection switch {
             OmnitrixPlayer.AttackSelection.Primary => compact
-                ? $"{pressureText} • Build"
-                : $"{pressureText} • Pressure Jet builds pressure; wet/rain builds faster",
+                ? $"{pressureText} • Fill"
+                : $"{pressureText} • Pressure Jet fills the reservoir; wet/rain fills faster",
             OmnitrixPlayer.AttackSelection.Secondary => compact
                 ? $"{pressureText} • Spend {RiptidePressureSpend:0}"
-                : $"{pressureText} • spends {RiptidePressureSpend:0} pressure; weak if starved",
+                : $"{pressureText} • uses {RiptidePressureSpend:0} pressure; weak if starved",
             OmnitrixPlayer.AttackSelection.PrimaryAbility => compact
-                ? $"{pressureText} • Vent build"
-                : $"{pressureText} • Reservoir Vent triples jets and builds pressure faster",
+                ? $"{pressureText} • Vent fill"
+                : $"{pressureText} • Reservoir Vent triples jets and fills pressure faster",
             OmnitrixPlayer.AttackSelection.SecondaryAbility => compact
                 ? $"{pressureText} • Spend {TidalSnarePressureSpend:0}"
-                : $"{pressureText} • spends {TidalSnarePressureSpend:0} pressure for whirlpool control",
+                : $"{pressureText} • uses {TidalSnarePressureSpend:0} pressure for whirlpool control",
             OmnitrixPlayer.AttackSelection.Ultimate => compact
                 ? $"{pressureText} • Spend {MonsoonBreakPressureSpend:0}"
-                : $"{pressureText} • spends {MonsoonBreakPressureSpend:0} pressure for Monsoon Break payoff",
+                : $"{pressureText} • uses {MonsoonBreakPressureSpend:0} pressure for Monsoon Break",
             _ => pressureText
         };
 

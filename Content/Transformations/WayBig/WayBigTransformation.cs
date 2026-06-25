@@ -34,13 +34,13 @@ public class WayBigTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<WayBig_Buff>();
 
     public override string Description =>
-        "A colossal set-piece form with slow, committed attacks that dominate the arena at heavy Omnitrix energy cost.";
+        "A colossal form with slow, expensive attacks that dominate the arena when you choose the moment carefully.";
 
     public override List<string> Abilities => new() {
-        "Committed titan punch with huge collateral impact",
-        "Planetary stomp that tears long shockwave lines through the arena",
-        "Cosmic surge that makes Way Big absurdly strong but awkward",
-        "Cosmic Ray, a rooted sustained stellar beam"
+        "Cosmic Punch is slow but enormous, landing with heavy collateral impact.",
+        "Planetary Stomp tears long shockwave lines through the arena.",
+        "Cosmic Surge makes Way Big much stronger and tougher, but even harder to maneuver.",
+        "Cosmic Ray roots Way Big into a sustained stellar beam, so line it up before spending the heavy OE cost."
     };
 
     public override string PrimaryAttackName => "Cosmic Punch";

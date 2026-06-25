@@ -26,14 +26,14 @@ public class WildVineTransformation : Transformation {
     public override int TransformationBuffId => ModContent.BuffType<WildVine_Buff>();
 
     public override string Description =>
-        "A trap-controller Florauna who grows vine anchors, tethers enemies, and decides where enemies should be moved.";
+        "A trap-control Florauna who grows vine anchors, tethers enemies, and drags targets where he wants them.";
 
     public override List<string> Abilities => new() {
-        "Thorn whip pulls light enemies or tethers heavy ones toward your vine geometry",
-        "Gas seed bombs grow vine anchors when they land on tiles",
-        "Vine Grapple repositions Wildvine or yanks enemies toward anchors",
-        "Briar Snare creates a temporary anchor and drags enemies into control points",
-        "Verdant Bloom grows from existing anchors before falling back to a seed barrage"
+        "Thorn Whip pulls light enemies or tethers heavy ones toward vine anchors.",
+        "Gas Seed Bombs grow vine anchors when they land on tiles.",
+        "Vine Grapple repositions Wildvine or yanks enemies toward anchors.",
+        "Briar Snare creates a temporary anchor and drags enemies into it.",
+        "Verdant Bloom grows from existing anchors before falling back to a seed barrage."
     };
 
     public override string PrimaryAttackName => "Thorn Whip";

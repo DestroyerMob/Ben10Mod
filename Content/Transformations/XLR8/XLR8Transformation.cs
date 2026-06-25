@@ -48,15 +48,15 @@ public class XLR8Transformation : Transformation {
     public override string IconPath                => "Ben10Mod/Content/Interface/XLR8Select";
     public override int    TransformationBuffId    => ModContent.BuffType<XLR8_Buff>();
     public override string Description =>
-        "A Kineceleran momentum assassin built around ground-speed execution, direction-change strike windows, precision dashes, and timebreak pass-throughs.";
+        "A Kineceleran speedster who turns ground speed, sharp reversals, precision dashes, and timebreak passes into burst damage.";
 
     public override List<string> Abilities => new() {
-        "Speed Strike hits harder shortly after reversing direction",
-        "Velocity Dash damage scales with recent ground speed",
-        "Overdrive opens stronger speed windows",
-        "Vector Dash to the cursor, scaling with distance and momentum",
-        "Water running at speed",
-        "Temporal Distortion rewards passing through enemies and projectiles"
+        "Speed Strike hits harder shortly after reversing direction.",
+        "Velocity Dash damage scales with recent ground speed, so build momentum before using it.",
+        "Overdrive boosts movement, mining speed, and attack tempo for a short time.",
+        "Vector Dash snaps to the cursor and scales with distance and momentum.",
+        "High speed lets XLR8 run across water, preserving routes that other forms would lose.",
+        "Temporal Distortion freezes the battlefield longer when XLR8 passes through enemies and projectiles."
     };
 
     public override string PrimaryAttackName       => "Speed Strike";
@@ -95,7 +95,7 @@ public class XLR8Transformation : Transformation {
         if (!HasPotisAltiare(omp?.Player))
             return Description;
 
-        return $"{Description} Potis Altiare turns XLR8 into a slipstream duelist with denser reversal flurries, safer piercing dashes, longer cursor vectors, and a brighter timebreak field.";
+        return $"{Description} Potis Altiare turns XLR8 into a slipstream duelist with denser reversal flurries, safer piercing dashes, longer cursor vectors, and a stronger timebreak field.";
     }
 
     public override List<string> GetAbilities(OmnitrixPlayer omp) {
@@ -104,11 +104,11 @@ public class XLR8Transformation : Transformation {
 
         return new List<string> {
             "Afterimage Flurry releases denser Potis speed-strikes that spike after a clean direction change.",
-            "Slipstream Cut is a longer, safer piercing dash whose payoff rises with speed.",
-            "Slipstream Overdrive makes XLR8 faster, sharper, and better at chaining reversal windows.",
-            "Chrono Vector reaches farther, costs less Omnitrix energy, and rewards long cursor vectors.",
-            "Water running at speed.",
-            "Timebreak Field extends the battlefield freeze and builds flow when XLR8 passes through threats."
+            "Slipstream Cut is a longer, safer piercing dash that hits harder at high speed.",
+            "Slipstream Overdrive makes XLR8 faster, sharper, and better at chaining reversals.",
+            "Chrono Vector reaches farther and costs less Omnitrix energy.",
+            "High speed still lets XLR8 run across water during Potis bursts.",
+            "Timebreak Field extends the battlefield freeze when XLR8 passes through threats."
         };
     }
 
@@ -463,7 +463,7 @@ public class XLR8Transformation : Transformation {
                 : $"{momentumText} • Vector Dash damage scales with cursor distance and momentum",
             OmnitrixPlayer.AttackSelection.Ultimate => compact
                 ? flowText
-                : $"{flowText} • pass through enemies and hostile projectiles to build speed payoff",
+                : $"{flowText} • pass through enemies and hostile projectiles to extend the freeze",
             _ => momentumText
         };
 

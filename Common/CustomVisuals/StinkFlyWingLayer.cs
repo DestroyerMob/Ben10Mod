@@ -24,11 +24,12 @@ internal static class StinkFlyWingDrawHelper {
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead || player.invis)
+        if (player.dead)
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
-        return omp.currentTransformationId == StinkFlyTransformationId;
+        return omp.ShouldShowTransformationVisuals() &&
+               omp.currentTransformationId == StinkFlyTransformationId;
     }
 
     public static void DrawWings(ref PlayerDrawSet drawInfo) {
@@ -123,7 +124,7 @@ public class StinkFlyWingLayer : PlayerDrawLayer {
     }
 
     public override Position GetDefaultPosition() {
-        return new AfterParent(PlayerDrawLayers.Torso);
+        return new AfterParent(ModContent.GetInstance<TransformationCostumeBodyLayer>());
     }
 
     protected override void Draw(ref PlayerDrawSet drawInfo) {

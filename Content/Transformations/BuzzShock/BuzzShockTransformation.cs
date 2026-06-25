@@ -34,11 +34,11 @@ public class BuzzShockTransformation : Transformation {
         "A skittish living spark that floods enemies with tags, blinks through danger, and lets small shocks pile into a storm.";
 
     public override List<string> Abilities => new() {
-        "Shock Bolt tag spam with small forked follow-up sparks",
-        "Arc Volley that chains harder through tagged groups",
-        "Teleport Burst that leaves an electric afterimage",
-        "Spark Buddy summon that prioritizes tagged targets",
-        "Storm Barrage that shocks every tagged enemy"
+        "Shock Bolt quickly tags enemies with forked sparks.",
+        "Arc Volley chains harder through tagged groups, so fire it after Shock Bolt has spread marks.",
+        "Teleport Burst is the escape and reposition tool, leaving an electric afterimage behind.",
+        "Spark Buddy summons a helper that prioritizes tagged targets while you move.",
+        "Storm Barrage shocks every tagged enemy at once."
     };
 
     public override string PrimaryAttackName => "Shock Bolt";

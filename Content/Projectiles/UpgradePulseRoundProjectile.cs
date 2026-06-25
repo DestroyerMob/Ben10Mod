@@ -60,6 +60,9 @@ public class UpgradePulseRoundProjectile : ModProjectile {
 
         if (Variant != UpgradeAttackVariant.Primary)
             target.AddBuff(ModContent.BuffType<EnemySlow>(), 75);
+
+        UpgradeTransformation.ApplyUpgradeTechHit(Projectile, target, UpgradeTechProfile.Ranged, Variant, Overclocked, FullyIntegrated,
+            damageDone);
     }
 
     public override void OnKill(int timeLeft) {

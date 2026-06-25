@@ -13,6 +13,7 @@ public class GrowthLayer : PlayerDrawLayer {
 
         return !player.dead &&
                !player.invis &&
+               omp.ShouldShowTransformationVisuals() &&
                System.Math.Abs(omp.CurrentTransformationScale - 1f) > 0.001f;
     }
 
