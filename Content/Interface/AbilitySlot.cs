@@ -18,6 +18,9 @@ namespace Ben10Mod.Content.Interface
         public override string FunctionalTexture => "Ben10Mod/Content/Items/Accessories/PrototypeOmnitrix";
 
 
+        public override bool CanAcceptItem(Item checkItem, AccessorySlotType context) {
+            return false;
+        }
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) {
             return false;
