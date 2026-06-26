@@ -66,6 +66,9 @@ namespace Ben10Mod {
 
 
         public override void OnHitByItem(NPC npc, Player player, Item item, NPC.HitInfo hit, int damageDone) {
+            if (damageDone > 0)
+                player.GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
             if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
             if (!CountsAsTrackedEncounter(npc)) return;
@@ -78,6 +81,8 @@ namespace Ben10Mod {
 
             int owner = projectile.owner;
             if (owner >= 0 && owner < Main.maxPlayers && projectile.friendly && !projectile.hostile) {
+                Main.player[owner].GetModPlayer<OmnitrixPlayer>().RecordEventParticipation(npc);
+
                 if (Main.netMode == NetmodeID.MultiplayerClient) return;
 
                 if (!CountsAsTrackedEncounter(npc)) return;
@@ -113,6 +118,10 @@ namespace Ben10Mod {
                 if (!player.active) continue;
 
                 var omp = player.GetModPlayer<OmnitrixPlayer>();
+
+                if (!string.IsNullOrEmpty(transformationId) &&
+                    ModContent.GetInstance<Ben10ServerConfig>().AllowDirectProgressionUnlocks)
+                    omp.UnlockTransformation(transformationId);
 
                 Omnitrix activeOmnitrix = omp.GetActiveOmnitrix();
                 if (activeOmnitrix?.ShouldStartEvolution(player, omp, npc.type) == true)

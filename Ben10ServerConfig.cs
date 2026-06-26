@@ -17,4 +17,7 @@ public sealed class Ben10ServerConfig : ModConfig {
 
     [DefaultValue(false)]
     public bool AllowBlacklistedBaseWorldGen { get; set; } = false;
+
+    [DefaultValue(false)]
+    public bool AllowDirectProgressionUnlocks { get; set; } = false;
 }

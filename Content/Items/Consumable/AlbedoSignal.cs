@@ -31,17 +31,21 @@ namespace Ben10Mod.Content.Items.Consumable {
         }
 
         public override bool? UseItem(Player player) {
-            if (player.whoAmI != Main.myPlayer)
-                return false;
+            int albedoBossType = ModContent.NPCType<AlbedoBoss>();
 
-            NPC.SpawnBoss((int)player.Center.X + (player.direction * 80), (int)player.Center.Y, ModContent.NPCType<AlbedoBoss>(), player.whoAmI);
-            Item.stack--;
+            if (Main.netMode == NetmodeID.MultiplayerClient) {
+                if (player.whoAmI != Main.myPlayer)
+                    return false;
+
+                NetMessage.SendData(MessageID.SpawnBossUseLicenseStartEvent, number: player.whoAmI,
+                    number2: albedoBossType);
+                return true;
+            }
+
+            NPC.SpawnBoss((int)player.Center.X + (player.direction * 80), (int)player.Center.Y, albedoBossType,
+                player.whoAmI);
 
             return true;
-        }
-
-        public override bool ConsumeItem(Player player) {
-            return false;
         }
 
         public override void AddRecipes() {

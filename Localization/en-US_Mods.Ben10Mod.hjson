@@ -1401,6 +1401,11 @@ Configs: {
 			Label: Allow Blacklisted Base World Gen
 			Tooltip: ""
 		}
+
+		AllowDirectProgressionUnlocks: {
+			Label: Allow Direct Progression Unlocks
+			Tooltip: When enabled, boss kills and completed events can unlock transformations directly for participating players. When disabled, players must collect Souls of Transformation.
+		}
 	}
 }
 

@@ -21,6 +21,9 @@ public sealed class TransformationProgressionSystem {
         "Ben10Mod:EchoEcho"
     };
 
+    internal HashSet<int> ParticipatedEvents { get; } = new();
+    internal HashSet<int> ActiveEvents { get; } = new();
+
     public bool CanAcceptClientUnlockRequest(global::Ben10Mod.OmnitrixPlayer owner, Transformation transformation) {
         if (owner == null || transformation == null)
             return false;
@@ -155,8 +158,14 @@ public sealed class TransformationProgressionSystem {
 
         if (TryGetTrackedEventForTransformation(transformation.FullID, out int eventId)) {
             string eventName = GetTrackedEventDisplayName(eventId);
-            if (IsTrackedEventCurrentlyActive(eventId))
-                return $"{eventName} is active. Defeat event enemies and pick up the Soul of Transformation they leave behind.";
+            if (IsTrackedEventCurrentlyActive(eventId)) {
+                if (!AllowDirectProgressionUnlocks)
+                    return $"{eventName} is active. Defeat event enemies and pick up the Soul of Transformation they leave behind.";
+
+                return ParticipatedEvents.Contains(eventId)
+                    ? $"Participation recorded for the current {eventName}. Finish it to unlock this form."
+                    : $"{eventName} is active. Deal damage during the event to qualify.";
+            }
         }
 
         return string.Empty;
@@ -181,7 +190,12 @@ public sealed class TransformationProgressionSystem {
 
         if (TryGetTrackedEventForTransformation(transformation.FullID, out int eventId) &&
             IsTrackedEventCurrentlyActive(eventId)) {
-            return "Locked  |  Event active  |  Soul drops from event enemies";
+            if (!AllowDirectProgressionUnlocks)
+                return "Locked  |  Event active  |  Soul drops from event enemies";
+
+            return ParticipatedEvents.Contains(eventId)
+                ? "Locked  |  Event active  |  Participation recorded"
+                : "Locked  |  Event active  |  Deal damage to qualify";
         }
 
         if (string.Equals(transformation.FullID, "Ben10Mod:Upgrade", StringComparison.OrdinalIgnoreCase))
@@ -226,13 +240,61 @@ public sealed class TransformationProgressionSystem {
     }
 
     public void RecordEventParticipation(global::Ben10Mod.OmnitrixPlayer owner, NPC npc) {
+        if (owner == null || npc == null || !npc.active || npc.friendly || npc.townNPC || npc.CountsAsACritter)
+            return;
+
+        List<int> newlyRecordedEvents = null;
+        foreach (int eventId in GetActiveTrackedEvents()) {
+            if (!DoesNpcCountForEventParticipation(eventId, npc))
+                continue;
+
+            if (ParticipatedEvents.Add(eventId) && Main.netMode == NetmodeID.MultiplayerClient &&
+                owner.Player.whoAmI == Main.myPlayer) {
+                newlyRecordedEvents ??= new List<int>();
+                newlyRecordedEvents.Add(eventId);
+            }
+        }
+
+        if (newlyRecordedEvents is { Count: > 0 })
+            RequestServerEventParticipationSync(owner, newlyRecordedEvents);
     }
 
     public void ApplyRecordedEventParticipation(IEnumerable<int> eventIds) {
+        if (eventIds == null)
+            return;
+
+        HashSet<int> activeTrackedEvents = new(GetActiveTrackedEvents());
+        foreach (int eventId in eventIds) {
+            if (activeTrackedEvents.Contains(eventId) || ActiveEvents.Contains(eventId))
+                ParticipatedEvents.Add(eventId);
+        }
     }
 
     public void UpdateEventTransformationUnlocks(global::Ben10Mod.OmnitrixPlayer owner) {
-        // Event rewards are now real item drops from event enemies, handled by bossTrackerNPC.OnKill.
+        if (owner == null || Main.netMode == NetmodeID.MultiplayerClient)
+            return;
+
+        HashSet<int> currentlyActiveEvents = new(GetActiveTrackedEvents());
+
+        foreach (int eventId in currentlyActiveEvents)
+            ActiveEvents.Add(eventId);
+
+        List<int> completedEvents = new();
+        foreach (int eventId in ActiveEvents) {
+            if (!currentlyActiveEvents.Contains(eventId))
+                completedEvents.Add(eventId);
+        }
+
+        foreach (int eventId in completedEvents) {
+            if (AllowDirectProgressionUnlocks && ParticipatedEvents.Contains(eventId) && DidEventComplete(eventId)) {
+                string transformationId = GetTransformationIdForCompletedEvent(eventId);
+                if (!string.IsNullOrEmpty(transformationId))
+                    owner.UnlockTransformation(transformationId);
+            }
+
+            ParticipatedEvents.Remove(eventId);
+            ActiveEvents.Remove(eventId);
+        }
     }
 
     public void UpdateProgressionTransformationUnlocks(global::Ben10Mod.OmnitrixPlayer owner) {
@@ -389,7 +451,105 @@ public sealed class TransformationProgressionSystem {
     }
 
     private static bool IsInvasionEventActive(int invasionId) {
-        return Main.invasionType == invasionId;
+        return Main.invasionType == invasionId && Main.invasionSize > 0;
+    }
+
+    private static bool AllowDirectProgressionUnlocks
+        => ModContent.GetInstance<Ben10ServerConfig>().AllowDirectProgressionUnlocks;
+
+    private static void RequestServerEventParticipationSync(global::Ben10Mod.OmnitrixPlayer owner,
+        IReadOnlyList<int> eventIds) {
+        if (Main.netMode != NetmodeID.MultiplayerClient || owner.Player.whoAmI != Main.myPlayer || eventIds == null ||
+            eventIds.Count == 0)
+            return;
+
+        ModPacket packet = owner.Mod.GetPacket();
+        packet.Write((byte)global::Ben10Mod.Ben10Mod.MessageType.RecordEventParticipation);
+        packet.Write((byte)eventIds.Count);
+        for (int i = 0; i < eventIds.Count; i++)
+            packet.Write(eventIds[i]);
+
+        packet.Send();
+    }
+
+    private static IEnumerable<int> GetActiveTrackedEvents() {
+        if (Main.bloodMoon)
+            yield return EventBloodMoon;
+
+        if (Main.eclipse)
+            yield return EventSolarEclipse;
+
+        if (Main.slimeRain)
+            yield return EventSlimeRain;
+
+        if (Main.pumpkinMoon)
+            yield return EventPumpkinMoon;
+
+        if (Main.snowMoon)
+            yield return EventFrostMoon;
+
+        if (IsInvasionEventActive(InvasionID.GoblinArmy))
+            yield return InvasionID.GoblinArmy;
+
+        if (IsInvasionEventActive(InvasionID.SnowLegion))
+            yield return InvasionID.SnowLegion;
+
+        if (IsInvasionEventActive(InvasionID.PirateInvasion))
+            yield return InvasionID.PirateInvasion;
+
+        if (IsInvasionEventActive(InvasionID.MartianMadness))
+            yield return InvasionID.MartianMadness;
+    }
+
+    private static bool DoesNpcCountForEventParticipation(int eventId, NPC npc) {
+        if (eventId == InvasionID.GoblinArmy)
+            return IsGoblinArmyNpc(npc);
+
+        return true;
+    }
+
+    private static bool DidEventComplete(int eventId) {
+        switch (eventId) {
+            case EventBloodMoon:
+            case EventSolarEclipse:
+            case EventSlimeRain:
+            case EventPumpkinMoon:
+            case EventFrostMoon:
+                return true;
+            case InvasionID.GoblinArmy:
+                return NPC.downedGoblins;
+            case InvasionID.SnowLegion:
+            case InvasionID.PirateInvasion:
+            case InvasionID.MartianMadness:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static string GetTransformationIdForCompletedEvent(int eventId) {
+        switch (eventId) {
+            case EventBloodMoon:
+                return "Ben10Mod:GhostFreak";
+            case EventSolarEclipse:
+                return "Ben10Mod:Frankenstrike";
+            case EventSlimeRain:
+                return "Ben10Mod:Goop";
+            case EventPumpkinMoon:
+                return "Ben10Mod:Whampire";
+            case EventFrostMoon:
+                return "Ben10Mod:Lodestar";
+            case InvasionID.GoblinArmy:
+                return "Ben10Mod:RipJaws";
+            case InvasionID.SnowLegion:
+                return "Ben10Mod:Fasttrack";
+            case InvasionID.PirateInvasion:
+                return "Ben10Mod:WaterHazard";
+            case InvasionID.MartianMadness:
+                return "Ben10Mod:Astrodactyl";
+            default:
+                return string.Empty;
+        }
     }
 
     private static bool HasAllUpgradeRequirementsUnlocked(global::Ben10Mod.OmnitrixPlayer owner) {
@@ -399,5 +559,14 @@ public sealed class TransformationProgressionSystem {
         }
 
         return true;
+    }
+
+    private static bool IsGoblinArmyNpc(NPC npc) {
+        return npc.type == NPCID.GoblinPeon ||
+               npc.type == NPCID.GoblinThief ||
+               npc.type == NPCID.GoblinWarrior ||
+               npc.type == NPCID.GoblinSorcerer ||
+               npc.type == NPCID.GoblinArcher ||
+               npc.type == NPCID.GoblinSummoner;
     }
 }
