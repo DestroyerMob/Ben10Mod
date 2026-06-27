@@ -1363,6 +1363,11 @@ Configs: {
 			Label: Limit Transform Key to Transforming
 		}
 
+		EnableRaceTransformationVisualFixes: {
+			Tooltip: Opt-in workaround for race mods that hide or replace vanilla player body layers, which can otherwise break Omnitrix transformation visuals.
+			Label: Enable Race Transformation Visual Fixes
+		}
+
 		ShowHeroInterface: {
 			Tooltip: ""
 			Label: Show Hero Interface

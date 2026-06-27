@@ -15,6 +15,9 @@ public class HeatShimmerLayer : PlayerDrawLayer {
         Player player = drawInfo.drawPlayer;
         var    omp    = player.GetModPlayer<OmnitrixPlayer>();
 
+        if (player.dead || OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player))
+            return false;
+
         return omp.ShouldShowTransformationVisuals() &&
                omp.currentTransformationId == "Ben10Mod:HeatBlast";
     }

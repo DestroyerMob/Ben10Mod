@@ -26,7 +26,7 @@ public class TransformationPaletteLayer : PlayerDrawLayer {
 
     public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead)
+        if (player.dead || OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player))
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();

@@ -9,7 +9,7 @@ namespace Ben10Mod.Common.CustomVisuals;
 public class GoopSquishLayer : PlayerDrawLayer {
     public override bool GetDefaultVisibility(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead || player.invis)
+        if (player.dead || OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player))
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();

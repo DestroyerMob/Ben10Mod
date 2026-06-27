@@ -17,8 +17,26 @@ namespace Ben10Mod {
         public bool ShouldShowTransformationVisuals()
             => !activeOmnitrixVisualsHidden && CurrentTransformation != null;
 
+        public bool ShouldUseRaceTransformationVisualFixes()
+            => ShouldShowTransformationVisuals() && RaceTransformationVisualFixesEnabled();
+
+        public static bool RaceTransformationVisualFixesEnabled()
+            => ModContent.GetInstance<Ben10ClientConfig>().EnableRaceTransformationVisualFixes;
+
+        public static bool ShouldSkipTransformationVisualLayerForInvisibility(Player player)
+            => player.invis && !RaceTransformationVisualFixesEnabled();
+
+        internal bool HasExplicitTransformationHeadVisual()
+            => activeTransformationHeadSlot >= ArmorIDs.Head.Count;
+
+        internal bool HasExplicitTransformationBodyVisual()
+            => activeTransformationBodySlot >= ArmorIDs.Body.Count;
+
+        internal bool HasExplicitTransformationLegsVisual()
+            => activeTransformationLegsSlot >= ArmorIDs.Legs.Count;
+
         public override void HideDrawLayers(PlayerDrawSet drawInfo) {
-            if (!ShouldShowTransformationVisuals())
+            if (!ShouldUseRaceTransformationVisualFixes())
                 return;
 
             HideUnderlyingPlayerBodyLayers();
@@ -30,7 +48,9 @@ namespace Ben10Mod {
             if (trans == null) return;
             if (!ShouldShowTransformationVisuals()) return;
 
-            RestoreCachedTransformationVisualSlots(trans);
+            if (ShouldUseRaceTransformationVisualFixes())
+                RestoreCachedTransformationVisualSlots(trans);
+
             trans.ModifyDrawInfo(Player, this, ref drawInfo);
         }
 
@@ -76,9 +96,10 @@ namespace Ben10Mod {
         }
 
         public override void TransformDrawData(ref PlayerDrawSet drawInfo) {
-            if (!ShouldShowTransformationVisuals())
+            if (!ShouldUseRaceTransformationVisualFixes() || drawInfo.headOnlyRender)
                 return;
 
+            TransformationCostumeDrawHelper.EnsureFallbackVanillaParts(ref drawInfo);
             TransformationCostumeDrawHelper.EnsureBodyAndLegs(ref drawInfo);
             TransformationCostumeDrawHelper.EnsureArms(ref drawInfo);
         }
@@ -126,14 +147,27 @@ namespace Ben10Mod {
             Player.legs = activeTransformationLegsSlot;
         }
 
-        private static void HideUnderlyingPlayerBodyLayers() {
-            PlayerDrawLayers.HeadBack.Hide();
-            PlayerDrawLayers.Head.Hide();
-            PlayerDrawLayers.Skin.Hide();
-            PlayerDrawLayers.SkinLongCoat.Hide();
-            PlayerDrawLayers.HairBack.Hide();
-            PlayerDrawLayers.Tails.Hide();
-            PlayerDrawLayers.Shoes.Hide();
+        private void HideUnderlyingPlayerBodyLayers() {
+            bool hasExplicitHead = HasExplicitTransformationHeadVisual();
+            bool hasExplicitBody = HasExplicitTransformationBodyVisual();
+            bool hasExplicitLegs = HasExplicitTransformationLegsVisual();
+
+            if (hasExplicitHead) {
+                PlayerDrawLayers.HeadBack.Hide();
+                PlayerDrawLayers.Head.Hide();
+                PlayerDrawLayers.HairBack.Hide();
+            }
+
+            if (hasExplicitBody && hasExplicitLegs) {
+                PlayerDrawLayers.Skin.Hide();
+                PlayerDrawLayers.SkinLongCoat.Hide();
+            }
+
+            if (hasExplicitBody || hasExplicitLegs)
+                PlayerDrawLayers.Tails.Hide();
+
+            if (hasExplicitLegs)
+                PlayerDrawLayers.Shoes.Hide();
         }
 
         private static void HideExternalPlayerBodyReplacementLayers() {

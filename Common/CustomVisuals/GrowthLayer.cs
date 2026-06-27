@@ -12,7 +12,7 @@ public class GrowthLayer : PlayerDrawLayer {
         var omp = player.GetModPlayer<OmnitrixPlayer>();
 
         return !player.dead &&
-               !player.invis &&
+               !OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player) &&
                omp.ShouldShowTransformationVisuals() &&
                System.Math.Abs(omp.CurrentTransformationScale - 1f) > 0.001f;
     }

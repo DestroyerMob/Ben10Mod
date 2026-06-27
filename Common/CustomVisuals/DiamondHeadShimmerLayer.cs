@@ -31,7 +31,7 @@ public class DiamondHeadShimmerLayer : PlayerDrawLayer {
             Player player = drawInfo.drawPlayer;
 
             // If our player is dead or invisible, skip
-            if (player.dead || player.invis)
+            if (player.dead || OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player))
                 return;
 
             // How many existing draw entries there are; we only clone the originals

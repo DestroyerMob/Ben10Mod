@@ -52,6 +52,9 @@ public sealed class Ben10ClientConfig : ModConfig {
     [DefaultValue(false)]
     public bool TransformKeyStartsTransformOnly { get; set; } = false;
 
+    [DefaultValue(false)]
+    public bool EnableRaceTransformationVisualFixes { get; set; } = false;
+
     [DefaultValue(true)]
     public bool ShowHeroAffordabilityTinting { get; set; } = true;
 

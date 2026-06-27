@@ -18,10 +18,10 @@ internal static class TransformationCostumeDrawHelper {
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead)
+        if (player.dead || drawInfo.headOnlyRender)
             return false;
 
-        return player.GetModPlayer<OmnitrixPlayer>().ShouldShowTransformationVisuals();
+        return player.GetModPlayer<OmnitrixPlayer>().ShouldUseRaceTransformationVisualFixes();
     }
 
     public static void EnsureBodyParts(ref PlayerDrawSet drawInfo) {
@@ -42,6 +42,40 @@ internal static class TransformationCostumeDrawHelper {
         RestoreArmLayer(PlayerDrawLayers.ArmOverItem, ref drawInfo, frontArm: true, onlyWhenMissing: true);
     }
 
+    public static void EnsureFallbackVanillaParts(ref PlayerDrawSet drawInfo) {
+        Player player = drawInfo.drawPlayer;
+        if (!ShouldDraw(drawInfo) || !player.invis)
+            return;
+
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
+        if (omp.inPossessionMode)
+            return;
+
+        bool needsVanillaHead = !omp.HasExplicitTransformationHeadVisual();
+        bool needsVanillaBody = !omp.HasExplicitTransformationBodyVisual();
+        bool needsVanillaLegs = !omp.HasExplicitTransformationLegsVisual();
+
+        if (needsVanillaBody || needsVanillaLegs)
+            DrawVanillaLayer(PlayerDrawLayers.Skin, ref drawInfo,
+                forceVisiblePlayer: true,
+                forceNeutralPose: true);
+
+        if (needsVanillaLegs)
+            DrawVanillaLayer(PlayerDrawLayers.Leggings, ref drawInfo,
+                forceVisiblePlayer: true,
+                forceNeutralPose: true);
+
+        if (needsVanillaBody)
+            DrawVanillaLayer(PlayerDrawLayers.Torso, ref drawInfo,
+                forceVisiblePlayer: true,
+                forceNeutralPose: true);
+
+        if (needsVanillaHead)
+            DrawVanillaLayer(PlayerDrawLayers.Head, ref drawInfo,
+                forceVisiblePlayer: true,
+                forceNeutralPose: true);
+    }
+
     public static void RestoreBackArm(ref PlayerDrawSet drawInfo) {
         RestoreArmLayer(PlayerDrawLayers.Skin, ref drawInfo, frontArm: false, onlyWhenMissing: false);
     }
@@ -56,8 +90,11 @@ internal static class TransformationCostumeDrawHelper {
 
     private static void RestoreLegs(ref PlayerDrawSet drawInfo, bool onlyWhenMissing) {
         Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
         int legsSlot = ResolveLegsSlot(player);
-        if (!ShouldDraw(drawInfo) || !TryGetTexture(TextureAssets.ArmorLeg, legsSlot, out Texture2D legsTexture))
+        if (!omp.HasExplicitTransformationLegsVisual() ||
+            !ShouldDraw(drawInfo) ||
+            !TryGetTexture(TextureAssets.ArmorLeg, legsSlot, out Texture2D legsTexture))
             return;
 
         if (onlyWhenMissing && HasAnyDrawData(drawInfo, legsTexture))
@@ -81,8 +118,11 @@ internal static class TransformationCostumeDrawHelper {
 
     private static void RestoreTorso(ref PlayerDrawSet drawInfo, bool onlyWhenMissing) {
         Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
         int bodySlot = ResolveBodySlot(player);
-        if (!ShouldDraw(drawInfo) || !TryGetBodyTexture(bodySlot,
+        if (!omp.HasExplicitTransformationBodyVisual() ||
+            !ShouldDraw(drawInfo) ||
+            !TryGetBodyTexture(bodySlot,
                 out Texture2D bodyTexture, out Texture2D compositeBodyTexture))
             return;
 
@@ -108,8 +148,11 @@ internal static class TransformationCostumeDrawHelper {
 
     public static void DrawStableHead(ref PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
         int headSlot = ResolveHeadSlot(player);
-        if (!ShouldDraw(drawInfo) || !TryGetTexture(TextureAssets.ArmorHead, headSlot, out Texture2D headTexture))
+        if (!omp.HasExplicitTransformationHeadVisual() ||
+            !ShouldDraw(drawInfo) ||
+            !TryGetTexture(TextureAssets.ArmorHead, headSlot, out Texture2D headTexture))
             return;
 
         RemoveDrawData(drawInfo, headTexture);
@@ -139,8 +182,11 @@ internal static class TransformationCostumeDrawHelper {
 
     private static void RestoreArmLayer(PlayerDrawLayer layer, ref PlayerDrawSet drawInfo, bool frontArm, bool onlyWhenMissing) {
         Player player = drawInfo.drawPlayer;
+        OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
         int bodySlot = ResolveBodySlot(player);
-        if (!ShouldDraw(drawInfo) || !TryGetBodyTexture(bodySlot,
+        if (!omp.HasExplicitTransformationBodyVisual() ||
+            !ShouldDraw(drawInfo) ||
+            !TryGetBodyTexture(bodySlot,
                 out Texture2D bodyTexture, out Texture2D compositeBodyTexture))
             return;
 

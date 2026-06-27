@@ -24,7 +24,7 @@ internal static class StinkFlyWingDrawHelper {
 
     public static bool ShouldDraw(PlayerDrawSet drawInfo) {
         Player player = drawInfo.drawPlayer;
-        if (player.dead)
+        if (player.dead || OmnitrixPlayer.ShouldSkipTransformationVisualLayerForInvisibility(player))
             return false;
 
         OmnitrixPlayer omp = player.GetModPlayer<OmnitrixPlayer>();
@@ -124,7 +124,7 @@ public class StinkFlyWingLayer : PlayerDrawLayer {
     }
 
     public override Position GetDefaultPosition() {
-        return new AfterParent(ModContent.GetInstance<TransformationCostumeBodyLayer>());
+        return new AfterParent(PlayerDrawLayers.ArmOverItem);
     }
 
     protected override void Draw(ref PlayerDrawSet drawInfo) {
